@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "@radix-ui/themes/styles.css";
+/* @import "@radix-ui/themes/styles.css"; */
 
 .logo.vite:hover {
   filter: drop-shadow(0 0 2em #747bff);
