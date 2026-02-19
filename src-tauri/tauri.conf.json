@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "mc-launcher-shell",
+  "productName": "s1yle-launcher",
   "version": "0.1.0",
-  "identifier": "com.mc-launcher.shell",
+  "identifier": "art.s1yle.mclauncher",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
