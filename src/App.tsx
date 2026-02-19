@@ -15,7 +15,8 @@ import {
 } from './pages';
 
 // MC风格背景图URL
-const BACKGROUND_IMAGE_URL = 'assets/img/bg-1.png';
+// const BACKGROUND_IMAGE_URL = './assets/img/bg-1.png';
+const BACKGROUND_IMAGE_URL = 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
 
 // 组件映射
 const componentMap: Record<string, React.FC> = {
@@ -44,19 +45,17 @@ const MainLayout = () => {
         {/* 主内容区域 - 核心修改：背景元素移到内容容器内，跟随内容高度 */}
         <main className="flex-1 overflow-auto relative">
           {/* 页面内容容器（背景+内容）- 关键：让容器高度适配内容 */}
-          <div className="relative min-h-full">
+          <div className="relative ">
             {/* MC风格背景图 - 改为相对于内容容器定位，高度跟随内容 */}
             <div 
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat z-0"
+              className="absolute min-h-full min-w-full z-0"
               style={{ 
-                backgroundImage: `url(${BACKGROUND_IMAGE_URL})`,
-                // 确保背景图覆盖整个内容区域，即使内容超过可视高度
-                minHeight: '100%',
-                // 可选：如果想让背景图不重复，且完整展示，可调整background-size
-                // backgroundSize: 'contain', // 替换cover，适合想看到完整图片的场景
+                top: 0,
+                background: `url(${BACKGROUND_IMAGE_URL}) no-repeat center center / cover`, 
+                backgroundAttachment: 'fixed'
               }}
             >
-              <div className="absolute inset-0 bg-gradient-to-b from-gray-900/90 via-gray-900/80 to-gray-900/90"></div>
+              {/* <div className="absolute inset-0 bg-gradient-to-b from-gray-900/90 via-gray-900/80 to-gray-900/90"></div> */}
             </div>
             
             {/* 页面内容（在背景之上）- 移除h-full，改为min-h-full适配内容 */}
