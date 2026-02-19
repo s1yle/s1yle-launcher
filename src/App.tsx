@@ -43,20 +43,14 @@ const MainLayout = () => {
         <Sidebar />
         
         {/* 主内容区域 - 核心修改：背景元素移到内容容器内，跟随内容高度 */}
-        <main className="flex-1 overflow-auto relative">
+        <main 
+          className="flex-1 overflow-auto relative"
+          style={{
+            background: `url(${BACKGROUND_IMAGE_URL}) no-repeat center center / cover`,
+            backgroundAttachment: 'fixed'
+          }}
+        >
           {/* 页面内容容器（背景+内容）- 关键：让容器高度适配内容 */}
-          <div className="relative ">
-            {/* MC风格背景图 - 改为相对于内容容器定位，高度跟随内容 */}
-            <div 
-              className="absolute min-h-full min-w-full z-0"
-              style={{ 
-                top: 0,
-                background: `url(${BACKGROUND_IMAGE_URL}) no-repeat center center / cover`, 
-                backgroundAttachment: 'fixed'
-              }}
-            >
-              {/* <div className="absolute inset-0 bg-gradient-to-b from-gray-900/90 via-gray-900/80 to-gray-900/90"></div> */}
-            </div>
             
             {/* 页面内容（在背景之上）- 移除h-full，改为min-h-full适配内容 */}
             <div className="relative z-10 min-h-full">
@@ -73,7 +67,6 @@ const MainLayout = () => {
                 })}
               </Routes>
             </div>
-          </div>
         </main>
       </div>
       
