@@ -6,12 +6,12 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ onMenuClick }: SidebarProps) => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const location = useLocation();
   const groups = getSidebarGroups();
 
   const handleMenuClick = (path: string) => {
-    navigate(path);
+    if (path === location.pathname) return;
     if (onMenuClick) {
       onMenuClick(path);
     }
