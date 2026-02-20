@@ -47,7 +47,7 @@ const Hint = () => {
         <div className="max-w-4xl w-full space-y-8">
             {/* 标题区域 */}
             <div className="text-center">
-            <h1 className="text-4xl font-bold text-white mb-4">MC启动器首页</h1>
+            <h1 className="text-4xl font-bold text-white mb-4">MC启动器说明</h1>
             <p className="text-lg text-gray-300">欢迎使用MC启动器壳子，这是一个基于Tauri+React+TypeScript+Rust的基础框架</p>
             </div>
 
