@@ -1,4 +1,4 @@
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { getSidebarGroups, SidebarMenuItem } from '../router/config';
 
 interface SidebarProps {

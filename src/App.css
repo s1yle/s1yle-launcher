@@ -1,13 +1,39 @@
 @import "tailwindcss";
 /* @import "@radix-ui/themes/styles.css"; */
 
+* {
+  /* 禁止文本选中 */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+
+  /* 禁止长按弹出菜单 */
+  -webkit-touch-callout: none;
+  /* 禁止元素拖拽，避免误操作拖拽图片/文本 */
+  -webkit-user-drag: none;
+}
+
 html {
+  --scale: 1;
   --scale-factor: 1;
 }
 
 body {
   background: #1a1a1a;
   color: #fff;
+}
+
+input, textarea, [contenteditable="true"] {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+.allow-select {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .logo.vite:hover {
