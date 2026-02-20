@@ -76,7 +76,15 @@ export const routes: RouteConfig[] = [
       type: 'sub',
       title: '反馈与群组'
     }
-  }
+  },
+  {
+    path: '/hint',
+    componentName: 'Hint',
+    header: {
+      type: 'sub',
+      title: '启动器说明'
+    }
+  },
 ];
 
 // 侧边栏菜单配置
@@ -140,7 +148,15 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
     icon: '💬',
     path: '/feedback',
     group: 'common'
-  }
+  },
+  {
+    id: 'hint',
+    title: '启动器说明',
+    icon: '❕',
+    path: '/hint',
+    group: 'common'
+  },
+
 ];
 
 // 获取侧边栏分组

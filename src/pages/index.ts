@@ -7,3 +7,4 @@ export { default as Download } from './Download';
 export { default as Settings } from './Settings';
 export { default as Multiplayer } from './Multiplayer';
 export { default as Feedback } from './Feedback';
+export { default as Hint } from './Hint'

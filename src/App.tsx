@@ -11,7 +11,8 @@ import {
   Download,
   Settings,
   Multiplayer,
-  Feedback
+  Feedback,
+  Hint
 } from './pages';
 
 // MC风格背景图URL
@@ -27,7 +28,8 @@ const componentMap: Record<string, React.FC> = {
   Download,
   Settings,
   Multiplayer,
-  Feedback
+  Feedback,
+  Hint
 };
 
 // 主布局组件
