@@ -19,13 +19,25 @@
         "fullscreen": false,
         "decorations": false,
         "transparent": true,
-        "theme": "Dark"
+        "theme": "Dark",
+        "label": "main",
+        "minWidth": 960,
+        "minHeight": 600,
+        "center": true,
+        "focus": true,
+        "visible": true,
+        "maximizable": true,
+        "minimizable": true,
+        "closable": true,
+        "zoomHotkeysEnabled": false,
+        "backgroundThrottling": "disabled"
       }
     ],
     "security": {
       "csp": null
     }
   },
+
   "bundle": {
     "active": true,
     "targets": "all",

@@ -1,6 +1,15 @@
 @import "tailwindcss";
 /* @import "@radix-ui/themes/styles.css"; */
 
+html {
+  --scale-factor: 1;
+}
+
+body {
+  background: #1a1a1a;
+  color: #fff;
+}
+
 .logo.vite:hover {
   filter: drop-shadow(0 0 2em #747bff);
 }
