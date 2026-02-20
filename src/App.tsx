@@ -63,9 +63,27 @@ const MainLayout = () => {
     }, EXIT_DUR * 1000); // 这里的 250 要和下面 exit 的 duration 对应
   };
 
+  // 核心：全局右键菜单拦截函数
+  const handleContextMenu = (e: React.MouseEvent) => {
+    // const target = e.target as HTMLElement;
+    const isAllowRightClick = true;
+    
+    // (兼容逻辑) 判断是否为需要保留右键的元素
+    // const isAllowRightClick = 
+    //   target.tagName === 'INPUT' || 
+    //   target.tagName === 'TEXTAREA' || 
+    //   target.isContentEditable;
+
+    // 如果不是允许的元素，直接阻止右键菜单弹出
+    if (!isAllowRightClick) {
+      e.preventDefault();
+    }
+  };
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden dpi-transition">
+    <div className="h-screen flex flex-col overflow-hidden dpi-transition"
+      onContextMenu={handleContextMenu}>
+
       <Header type={currentRoute.header.type} title={currentRoute.header.title} />
       
       <div className="flex flex-1 overflow-hidden">
