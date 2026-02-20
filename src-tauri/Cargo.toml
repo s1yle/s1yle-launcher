@@ -1,8 +1,8 @@
 [package]
 name = "s1yle-launcher"
 version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
+description = "做一个有特色的mc 启动器"
+authors = ["s1yle"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
