@@ -1,3 +1,5 @@
+import ActionButton from '../components/ActionButton';
+
 
 const Home = () => {
 
@@ -10,6 +12,8 @@ const Home = () => {
           <p className="text-lg text-gray-300">请在启动器说明中查看详细说明！</p>
         </div>
       </div>
+
+      <ActionButton/>
     </div>
   );
 };

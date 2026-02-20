@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
-import ActionButton from './components/ActionButton';
 import { routes } from './router/config';
 import {
   Home,
@@ -72,7 +71,6 @@ const MainLayout = () => {
         </main>
       </div>
       
-      <ActionButton />
     </div>
   );
 };
