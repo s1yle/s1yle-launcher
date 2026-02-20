@@ -37,7 +37,7 @@ const MainLayout = () => {
   const currentRoute = routes.find(route => route.path === location.pathname) || routes[0];
   
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="h-screen flex flex-col overflow-hidden dpi-transition">
       <Header type={currentRoute.header.type} title={currentRoute.header.title} />
       
       <div className="flex flex-1 overflow-hidden">
