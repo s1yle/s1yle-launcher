@@ -129,7 +129,10 @@ const Popup: React.FC<PopupProps> = ({
   return (
     <div
       className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex ${positionClasses[position]} z-50 ${overlayClassName} ${animationClasses[animation]}`}
-      style={{ animationDuration: `${animationDuration}ms` }}
+      style={{ animationDuration: `${animationDuration}ms`,
+               animation: isOpen ? animationClasses[animation] : ''
+              
+              }}
       onClick={handleOverlayClick}
       role="dialog"
       aria-modal="true"

@@ -50,13 +50,57 @@ const AccountList = ({ onClickAddAccount }: AccountListProps) => {
         </div>
       </div>
 
-      {showPopup && (
-        <Popup
-          popTitle="添加账户"
-          popContent="这是添加账户的弹窗，你可以在这里放置表单或者其他组件来实现添加账户的功能。"
-          onClose={handleClosePopup}
-        />
-      )}
+      {/* 核心修改：在这里渲染 Popup 组件 */}
+      <Popup
+        isOpen={showPopup}
+        onClose={handleClosePopup}
+        title="添加新账户"
+        size="md"
+        position="center"
+        showCloseButton={true}
+        closeOnEsc={true}
+        closeOnOverlayClick={true}
+        footer={
+          <div className="flex justify-end gap-4">
+            <button 
+              onClick={handleClosePopup}
+              className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+            >
+              取消
+            </button>
+            <button 
+              onClick={() => {
+                // 这里可以添加确认添加的逻辑
+                console.log('确认添加账户');
+                handleClosePopup();
+              }}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            >
+              确认添加
+            </button>
+          </div>
+        }
+      >
+        {/* 弹窗内容区域（children） */}
+        <div className="space-y-4">
+          <div>
+            <label className="block text-white mb-2">账户名称</label>
+            <input 
+              type="text" 
+              placeholder="请输入账户名称"
+              className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-white mb-2">账户类型</label>
+            <select className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-blue-500">
+              <option value="microsoft">Microsoft 账户</option>
+              <option value="offline">离线账户</option>
+            </select>
+          </div>
+        </div>
+      </Popup>
+
     </div>
   );
 };
