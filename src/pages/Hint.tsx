@@ -145,6 +145,19 @@ const Hint = () => {
                 <li>• 多人联机功能</li>
             </ul>
             </div>
+
+            {/* 账户列表功能说明 */}
+            <div className="bg-white/5 backdrop-blur-sm mt-9 pt-8 border border-white/20 rounded-xl p-6 ">
+                <h2 className="text-xl font-bold text-white mb-4">账户管理功能规划</h2>
+                <ul className="grid grid-cols-2 md:grid-cols-2 gap-3 text-gray-300">
+                <li>• Microsoft账户登录集成</li>
+                <li>• Mojang账户登录（旧版）</li>
+                <li>• 离线账户创建和管理</li>
+                <li>• 账户切换和自动登录</li>
+                <li>• 账户资料同步</li>
+                <li>• 皮肤和披风管理</li>
+                </ul>
+            </div>
         </div>
         </div>
     );
