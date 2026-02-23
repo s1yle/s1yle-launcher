@@ -54,9 +54,9 @@ const MainLayout = () => {
     setIsAnimating(true);
     
     // 等待退场动画时间
-    navigate(targetPath);
+    setDisplayKey(targetPath);
     setTimeout(() => {
-      setDisplayKey(targetPath);
+      navigate(targetPath);
       setTimeout(() => {
         setIsAnimating(false);
       }, EXIT_DUR * 1000 + 50);
@@ -111,7 +111,7 @@ const MainLayout = () => {
             // 离场状态
             exit={{ opacity: 0, x: -20 }}
             // 动画配置
-            transition={{ duration: EXIT_DUR, ease: "easeInOut" }}
+            transition={{ duration: EXIT_DUR, ease: "easeOut" }}
           >
         
             {/* 页面内容（在背景之上）- 移除h-full，改为min-h-full适配内容 */}

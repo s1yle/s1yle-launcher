@@ -28,7 +28,7 @@ const AccountList = ({ onClickAddAccount }: AccountListProps) => {
         <h1 className="text-4xl font-bold text-white mb-6 text-center">账户列表</h1>
         
         <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8 border border-white/20">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid gap-6">
             
             <div className="bg-blue-500/20 rounded-lg p-6 border border-blue-500/30">
               <div className="flex items-center mb-4">
