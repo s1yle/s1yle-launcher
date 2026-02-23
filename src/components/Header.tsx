@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { motion } from 'framer-motion';
 
 interface HeaderProps {
   type: 'main' | 'sub';
@@ -50,12 +51,18 @@ const Header = ({ type, title }: HeaderProps) => {
         ) : (
           // Sub类型：返回箭头 + 标题
           <>
-            <button
+            <motion.button
               onClick={handleBackToHome}
               className="p-2 hover:bg-white/20 rounded-lg transition-colors"
               title="返回首页"
+              whileHover={{ 
+                scale: 1.1,       // 悬停时轻微放大
+                x: -2             // 悬停时向左轻微偏移
+              }}
+              whileTap={{ scale: 0.95 }}  // 点击时轻微缩小
+              transition={{ type: "spring", stiffness: 400, damping: 10 }}
             >
-              <svg 
+              <motion.svg 
                 className="w-6 h-6" 
                 fill="none" 
                 stroke="currentColor" 
@@ -67,8 +74,8 @@ const Header = ({ type, title }: HeaderProps) => {
                   strokeWidth={2} 
                   d="M10 19l-7-7m0 0l7-7m-7 7h18"
                 />
-              </svg>
-            </button>
+              </motion.svg>
+            </motion.button>
             <h2 className="text-xl font-bold" data-tauri-drag-region>{title}</h2>
           </>
         )}
