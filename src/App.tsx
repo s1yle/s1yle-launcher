@@ -63,7 +63,7 @@ const MainLayout = () => {
     }, EXIT_DUR * 1000); // 这里的 250 要和下面 exit 的 duration 对应
   };
 
-  // 核心：全局右键菜单拦截函数
+  // 全局右键菜单拦截函数
   const handleContextMenu = (e: React.MouseEvent) => {
     // const target = e.target as HTMLElement;
     const isAllowRightClick = true;

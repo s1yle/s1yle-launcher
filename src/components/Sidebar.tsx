@@ -56,7 +56,10 @@ const Sidebar = ({ onMenuClick }: SidebarProps) => {
   };
 
   return (
-    <aside className="w-72 bg-white/10 backdrop-blur-md h-full border-r border-white/20 flex flex-col">
+    <aside style={{
+      backgroundColor: '#191919',   //黑色背景
+    }}
+    className="w-72 bg-white/10 backdrop-blur-md h-full flex flex-col">
       <div className="p-6 border-b border-white/20">
         <h2 className="text-lg font-bold text-white">MC启动器</h2>
         <p className="text-sm text-gray-300 mt-1">简洁高效的游戏启动管理</p>
