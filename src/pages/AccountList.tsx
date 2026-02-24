@@ -9,9 +9,13 @@ interface AccountListProps {
 
 const AccountList = ({ onClickAddAccount }: AccountListProps) => {
   const [showPopup, setShowPopup] = useState(false);
+
+  const [accountName, setAccountName] = useState("");
+  const [accountType, setAccountType] = useState("microsoft");
   
   const handleAddAccount = () => {
     console.log('Add Account button clicked');
+    
     setShowPopup(true);
     if(onClickAddAccount) {
       onClickAddAccount();
@@ -21,6 +25,13 @@ const AccountList = ({ onClickAddAccount }: AccountListProps) => {
   const handleClosePopup = () => {
     setShowPopup(false);
   };
+
+  function handleSubmit() {
+    console.log('确认添加账户');
+    console.log('accountname: ', accountName, 'accounttype: ', accountType);
+
+    handleClosePopup();
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] p-8">
@@ -69,12 +80,7 @@ const AccountList = ({ onClickAddAccount }: AccountListProps) => {
               取消
             </button>
             <button 
-              onClick={() => {
-                // 这里可以添加确认添加的逻辑
-                console.log('确认添加账户');
-                handleClosePopup();
-                
-              }}
+              onClick={handleSubmit}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
             >
               确认添加
@@ -91,11 +97,18 @@ const AccountList = ({ onClickAddAccount }: AccountListProps) => {
               type="text" 
               placeholder="请输入账户名称"
               className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+
+              value={accountName}
+              onChange={(e) => {setAccountName(e.target.value)}}
             />
           </div>
           <div>
             <label className="block text-white mb-2">账户类型</label>
-            <select className="w-full px-4 py-2 rounded-lg focus:outline-none">
+            <select 
+              className="w-full px-4 py-2 rounded-lg focus:outline-none"
+              value={accountType}
+              onChange={(e) => {setAccountType(e.target.value)}}
+            >
               <option value="microsoft">Microsoft 账户</option>
               <option value="offline">离线账户</option>
             </select>
