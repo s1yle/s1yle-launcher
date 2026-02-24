@@ -4,6 +4,10 @@
 use tauri::command;
 use serde::Serialize;
 
+pub fn gen_uuid() {
+    
+}
+
 /// 账户信息结构体
 #[derive(Serialize)]
 pub struct AccountInfo {
