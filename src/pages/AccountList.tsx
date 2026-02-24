@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Popup from "../components/Popup";
+import { addAccount } from "../helper/rustInvoke";
 
 interface AccountListProps {
     // 这里可以添加一些属性，比如账户数据等
@@ -12,6 +13,9 @@ const AccountList = ({ onClickAddAccount }: AccountListProps) => {
 
   const [accountName, setAccountName] = useState("");
   const [accountType, setAccountType] = useState("microsoft");
+
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
   
   const handleAddAccount = () => {
     console.log('Add Account button clicked');
@@ -26,9 +30,24 @@ const AccountList = ({ onClickAddAccount }: AccountListProps) => {
     setShowPopup(false);
   };
 
-  function handleSubmit() {
+  async function handleSubmit() {
+    if(loading) return;
+
     console.log('确认添加账户');
     console.log('accountname: ', accountName, 'accounttype: ', accountType);
+
+    setLoading(true);
+    setErrorMsg("");
+
+    try {
+      const result = await addAccount(accountName);
+      console.log('账户添加成功：', result);
+    } catch (e) {
+      setErrorMsg((e as Error).message);
+      console.error('添加账户失败：', errorMsg);
+    } finally {
+      setLoading(false);
+    }
 
     handleClosePopup();
   }
