@@ -31,6 +31,26 @@ input, textarea, [contenteditable="true"] {
   user-select: text;
 }
 
+select {
+  /* 禁用系统原生select外观 */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  background-color: #396cd8;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  outline: none;
+  cursor: pointer;
+
+  /* 下拉箭头 */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 16px;
+}
+
 .allow-select {
   -webkit-user-select: text;
   user-select: text;

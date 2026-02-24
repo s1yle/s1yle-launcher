@@ -73,6 +73,7 @@ const AccountList = ({ onClickAddAccount }: AccountListProps) => {
                 // 这里可以添加确认添加的逻辑
                 console.log('确认添加账户');
                 handleClosePopup();
+                
               }}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
             >
@@ -81,6 +82,7 @@ const AccountList = ({ onClickAddAccount }: AccountListProps) => {
           </div>
         }
       >
+
         {/* 弹窗内容区域（children） */}
         <div className="space-y-4">
           <div>
@@ -93,12 +95,13 @@ const AccountList = ({ onClickAddAccount }: AccountListProps) => {
           </div>
           <div>
             <label className="block text-white mb-2">账户类型</label>
-            <select className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-blue-500">
+            <select className="w-full px-4 py-2 rounded-lg focus:outline-none">
               <option value="microsoft">Microsoft 账户</option>
               <option value="offline">离线账户</option>
             </select>
           </div>
         </div>
+
       </Popup>
 
     </div>
