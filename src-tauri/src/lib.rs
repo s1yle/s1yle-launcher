@@ -1,9 +1,10 @@
 // src-tauri/src/lib.rs
 
-use std::fmt::format;
-
 mod account;
-use account::{add_account, get_account_list};
+mod config;
+mod json;
+pub use crate::account::{add_account, get_account_list};
+pub use crate::config::{get_config, init_config, DEV};
 
 #[tauri::command]
 fn greet(name: &str) -> String {
