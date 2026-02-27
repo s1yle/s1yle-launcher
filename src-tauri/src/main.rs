@@ -3,10 +3,12 @@
 
 use std::fs;
 
-use s1yle_launcher_lib::{init_config, DEV, run};
+use s1yle_launcher_lib::{init_config, DEV, run, init_account_manager, init_launch_manager};
 
 fn main() {
-    init_config();
+    init_config();  // 1
+    init_account_manager(); // 2
+    init_launch_manager(); // 3
     run();
 
     if DEV {

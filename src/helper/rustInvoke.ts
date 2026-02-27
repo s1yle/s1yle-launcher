@@ -1,5 +1,32 @@
 import { invoke, InvokeArgs, InvokeOptions } from "@tauri-apps/api/core";
 
+// ======================== 启动相关类型定义 ========================
+
+/**
+ * 启动状态枚举（与Rust后端保持一致）
+ */
+export enum LaunchStatus {
+  Idle = "Idle",           // 未启动
+  Launching = "Launching", // 启动中
+  Running = "Running",     // 运行中
+  Crashed = "Crashed",     // 崩溃
+  Stopped = "Stopped",     // 已停止
+}
+
+/**
+ * 启动配置接口（与Rust后端保持一致）
+ */
+export interface LaunchConfig {
+  java_path: string;           // Java可执行文件路径
+  memory_mb: number;           // 内存大小（MB）
+  version: string;             // Minecraft版本
+  game_dir: string;            // 游戏目录
+  assets_dir: string;          // 资源目录
+  username: string;            // 用户名
+  uuid: string;                // 用户UUID
+  access_token?: string;       // 访问令牌（微软账户）
+}
+
 /**
  * 调用Rust函数的通用工具函数
  * @param fnName Rust函数名
@@ -66,4 +93,144 @@ export const addAccount = async (
     name: trimmedName,
     ...accountArgs, // 合并账户名称和其他参数
   }, options);
+};
+
+// ======================== 启动相关函数 ========================
+
+/**
+ * 启动Minecraft实例
+ * @param config 可选的启动配置（如不提供则使用默认配置）
+ * @param options invoke配置（可选）
+ * @returns Promise<string> 启动结果消息
+ */
+export const launchInstance = async (
+  config?: LaunchConfig,
+  options?: InvokeOptions
+): Promise<string> => {
+  try {
+    console.log('启动Minecraft实例，配置:', config);
+    
+    const result = await invokeRustFunction("tauri_launch_instance", {
+      config: config || null,
+    }, options);
+    
+    console.log('启动结果:', result);
+    return result;
+  } catch (e) {
+    console.error('启动失败:', e);
+    throw new Error(e instanceof Error ? e.message : "启动Minecraft失败");
+  }
+};
+
+/**
+ * 停止Minecraft实例
+ * @param options invoke配置（可选）
+ * @returns Promise<string> 停止结果消息
+ */
+export const stopInstance = async (
+  options?: InvokeOptions
+): Promise<string> => {
+  try {
+    console.log('停止Minecraft实例');
+    
+    const result = await invokeRustFunction("tauri_stop_instance", {}, options);
+    
+    console.log('停止结果:', result);
+    return result;
+  } catch (e) {
+    console.error('停止失败:', e);
+    throw new Error(e instanceof Error ? e.message : "停止Minecraft失败");
+  }
+};
+
+/**
+ * 获取当前启动状态
+ * @param options invoke配置（可选）
+ * @returns Promise<LaunchStatus> 启动状态
+ */
+export const getLaunchStatus = async (
+  options?: InvokeOptions
+): Promise<LaunchStatus> => {
+  try {
+    const result = await invokeRustFunction("tauri_get_launch_status", {}, options);
+    
+    // 将字符串转换为枚举
+    switch (result) {
+      case "Idle":
+      case "Launching":
+      case "Running":
+      case "Crashed":
+      case "Stopped":
+        return result as LaunchStatus;
+      default:
+        console.warn(`未知的启动状态: ${result}，返回Idle`);
+        return LaunchStatus.Idle;
+    }
+  } catch (e) {
+    console.error('获取启动状态失败:', e);
+    return LaunchStatus.Idle; // 默认返回空闲状态
+  }
+};
+
+/**
+ * 获取当前启动配置
+ * @param options invoke配置（可选）
+ * @returns Promise<LaunchConfig> 启动配置
+ */
+export const getLaunchConfig = async (
+  options?: InvokeOptions
+): Promise<LaunchConfig> => {
+  try {
+    const result = await invokeRustFunction("tauri_get_launch_config", {}, options);
+    
+    // 验证返回的配置结构
+    if (typeof result !== 'object' || result === null) {
+      throw new Error("无效的启动配置格式");
+    }
+    
+    return result as LaunchConfig;
+  } catch (e) {
+    console.error('获取启动配置失败:', e);
+    
+    // 返回默认配置
+    return {
+      java_path: "java",
+      memory_mb: 2048,
+      version: "1.20.4",
+      game_dir: "./.minecraft",
+      assets_dir: "./.minecraft/assets",
+      username: "Steve",
+      uuid: "069a79f4-44e9-4726-a5be-fca90e38aaf5",
+    };
+  }
+};
+
+/**
+ * 更新启动配置
+ * @param config 新的启动配置
+ * @param options invoke配置（可选）
+ * @returns Promise<string> 更新结果消息
+ */
+export const updateLaunchConfig = async (
+  config: LaunchConfig,
+  options?: InvokeOptions
+): Promise<string> => {
+  try {
+    console.log('更新启动配置:', config);
+    
+    // 验证配置
+    if (!config.java_path || !config.version || !config.username) {
+      throw new Error("Java路径、版本和用户名不能为空");
+    }
+    
+    const result = await invokeRustFunction("tauri_update_launch_config", {
+      config,
+    }, options);
+    
+    console.log('更新结果:', result);
+    return result;
+  } catch (e) {
+    console.error('更新启动配置失败:', e);
+    throw new Error(e instanceof Error ? e.message : "更新启动配置失败");
+  }
 };

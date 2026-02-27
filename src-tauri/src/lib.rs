@@ -3,8 +3,19 @@
 mod account;
 mod config;
 mod json;
-pub use crate::account::{add_account, get_account_list};
+mod launch;
+pub use crate::account::{add_account, get_account_list, init_account_manager};
 pub use crate::config::{get_config, init_config, DEV};
+pub use crate::launch::{
+    init_launch_manager,
+    tauri_launch_instance,
+    tauri_stop_instance,
+    tauri_get_launch_status,
+    tauri_get_launch_config,
+    tauri_update_launch_config,
+    LaunchConfig,
+    LaunchStatus,
+};
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -55,7 +66,12 @@ pub fn run() {
             greet, 
             get_system_info, 
             add_account,  
-            get_account_list 
+            get_account_list,
+            tauri_launch_instance,
+            tauri_stop_instance,
+            tauri_get_launch_status,
+            tauri_get_launch_config,
+            tauri_update_launch_config
         ])
 
         .run(tauri::generate_context!())
