@@ -4,6 +4,7 @@ mod account;
 mod config;
 mod json;
 mod launch;
+mod window;
 pub use crate::account::{add_account, get_account_list, init_account_manager};
 pub use crate::config::{get_config, init_config, DEV};
 pub use crate::launch::{
@@ -15,6 +16,10 @@ pub use crate::launch::{
     tauri_update_launch_config,
     LaunchConfig,
     LaunchStatus,
+};
+pub use crate::window::{
+    close_window,
+    tauri_close_window
 };
 
 #[tauri::command]
@@ -71,7 +76,8 @@ pub fn run() {
             tauri_stop_instance,
             tauri_get_launch_status,
             tauri_get_launch_config,
-            tauri_update_launch_config
+            tauri_update_launch_config,
+            tauri_close_window
         ])
 
         .run(tauri::generate_context!())

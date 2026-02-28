@@ -10,17 +10,4 @@ fn main() {
     init_account_manager(); // 2
     init_launch_manager(); // 3
     run();
-
-    if DEV {
-        let rs = fs::remove_dir_all("./slauncher");
-        match rs {
-            Ok(_)=>{
-                println!("成功删除配置目录");
-            },
-            Err(err)=>{
-                println!("删除配置目录失败, {}", err);
-            }
-        }
-    }
-
 }

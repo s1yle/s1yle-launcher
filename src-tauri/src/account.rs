@@ -7,7 +7,7 @@ use std::{
     sync::{Mutex, Arc},
     collections::HashMap,
 };
-use chrono::{Local, DateTime, TimeZone, Utc, format::ParseError};
+use chrono::{DateTime, FixedOffset, Local, TimeZone, Utc, format::ParseError};
 
 // ======================== 类型定义 ========================
 /// 账户类型枚举（强类型替代字符串，避免魔法值）
@@ -101,8 +101,8 @@ impl Account {
     }
 
     /// 解析时间字符串为 DateTime（辅助方法）
-    pub fn parse_time(time_str: &str) -> Result<DateTime<Utc>, ParseError> {
-        Utc.datetime_from_str(time_str, "%Y-%m-%dT%H:%M:%S%.f%:z")
+    pub fn parse_time(time_str: &str) -> Result<DateTime<FixedOffset>, ParseError> {
+        DateTime::parse_from_str(time_str, "%Y-%m-%dT%H:%M:%S%.f%:z")
     }
 }
 

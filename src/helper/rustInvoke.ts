@@ -1,4 +1,5 @@
 import { invoke, InvokeArgs, InvokeOptions } from "@tauri-apps/api/core";
+import { resourceLimits } from "node:worker_threads";
 
 // ======================== 启动相关类型定义 ========================
 
@@ -232,5 +233,25 @@ export const updateLaunchConfig = async (
   } catch (e) {
     console.error('更新启动配置失败:', e);
     throw new Error(e instanceof Error ? e.message : "更新启动配置失败");
+  }
+};
+
+/**
+ * 更新启动配置
+ * @returns Promise<string> 调用rust tauri_close_window消息
+ */
+export const closeWindow = async (
+): Promise<string> => {
+  try {
+    console.log('调用rust tauri_close_window:');
+
+    const result = await invokeRustFunction("tauri_close_window");
+    
+    console.log("调用rust tauri_close_window 结果: ", result);
+
+    return result;
+  } catch (e) {
+    console.error('调用rust [tauri_close_window] 失败:', e);
+    throw new Error(e instanceof Error ? e.message : "调用rust [tauri_close_window] 失败");
   }
 };

@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { motion } from 'framer-motion';
+import { closeWindow } from '../helper/rustInvoke';
 
 interface HeaderProps {
   type: 'main' | 'sub';
@@ -23,6 +24,7 @@ const Header = ({ type, title }: HeaderProps) => {
   const handleClose = async () => {
     try {
       const window = getCurrentWindow();
+      await closeWindow();  //调用rust
       await window.close();
     } catch (error) {
       console.error('关闭窗口失败:', error);
