@@ -161,7 +161,16 @@ pub fn add_account(
     account_type: String,
     access_token: Option<String>,
     refresh_token: Option<String>,
-) -> Result<String, String> {    
+) -> Result<String, String> {
+
+    tracing::info!(
+        "收到 add_account 请求: name={}, account_type={}, access_token={}, refresh_token={}",
+        name,
+        account_type,
+        access_token.is_some(),
+        refresh_token.is_some()
+    );
+
     if name.is_empty() {
         return Err("用户名不能为空".to_string());
     }
@@ -203,6 +212,9 @@ pub fn add_account(
     let uuid = account.info.uuid.clone();
 
     add_account_to_manager(account)?;
+
+    // 持久化存储
+    
 
     Ok(format!("账户创建成功，UUID: {}", uuid))
 }

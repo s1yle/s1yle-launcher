@@ -94,18 +94,22 @@ pub fn init_logging(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> 
     let env_filter = EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| EnvFilter::new("info"));
 
-    // let time_format = UtcTime::rfc_3339();
+    let time_format = UtcTime::rfc_3339();
 
     // 4. 构建「控制台 layer」
     let console_layer = tracing_fmt::layer()
         .with_target(true)
         .with_level(true)
+        .with_ansi(true)
+        .with_timer(time_format)
         .with_writer(std::io::stdout);
 
     // 5. 构建「文件 layer」
     let file_layer = tracing_fmt::layer()
         .with_target(true)
         .with_level(true)
+        .with_timer(UtcTime::rfc_3339())
+        .with_ansi(false)
         .with_writer(file_appender);
 
     // 5. 初始化订阅者：同时输出到控制台和文件

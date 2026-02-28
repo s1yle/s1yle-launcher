@@ -17,7 +17,6 @@ export const logger = {
 
 // 内部实现：转发到 Rust，失败时降级到 console
 async function log(level: LogLevel, message: string, args: any[]) {
-  // 格式化参数（把对象转成字符串）
   const fullMessage = args.length > 0 
     ? `${message} ${args.map(arg => JSON.stringify(arg)).join(' ')}`
     : message;

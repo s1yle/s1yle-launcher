@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Popup from "../components/Popup";
-import { addAccount } from "../helper/rustInvoke";
+import { invokeAddAccount } from "../helper/rustInvoke";
 import { logger } from "../helper/logger";
 
 interface AccountListProps {
@@ -33,16 +33,32 @@ const AccountList = ({ onClickAddAccount }: AccountListProps) => {
 
   async function handleSubmit() {
     if(loading) return;
+    let name = accountName.trim();
+    if(name == " " || name.length <= 0 || name.length >16) {
+      logger.error("名称不能为空且长度为1-16");
+      return;
+    }
 
     setLoading(true);
     setErrorMsg("");
 
     try {
-      const result = await addAccount(accountName, { account_type: accountType });
+      const accountArgs: any = {};
+      if (accountType === "microsoft") {
+        // 微软账户：必须传递 token（这里你需要从你的 OAuth 流程中获取）
+        accountArgs.access_token = "实际access_token";
+        accountArgs.refresh_token = "实际refresh_token";
+      } else {
+        accountArgs.access_token = null;
+        accountArgs.refresh_token = null;
+      }
+
+      const result = await invokeAddAccount(accountName, accountType, accountArgs);
       logger.info('账户添加成功：', result);
     } catch (e) {
-      setErrorMsg((e as Error).message);
-      logger.error('添加账户失败：', errorMsg);
+      const errorMessage = (e as Error).message || "未知错误";
+      setErrorMsg(errorMessage);
+      logger.error('添加账户失败：', errorMessage); // 直接用 errorMessage
     } finally {
       setLoading(false);
     }
