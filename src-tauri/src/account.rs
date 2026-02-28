@@ -161,19 +161,47 @@ pub fn add_account(
     account_type: String,
     access_token: Option<String>,
     refresh_token: Option<String>,
-) -> Result<String, String> {
-    // 转换账户类型（字符串 -> 枚举）
+) -> Result<String, String> {    
+    if name.is_empty() {
+        return Err("用户名不能为空".to_string());
+    }
+
+    // 用户名不能包含非法字符（模拟 MC 规则：只允许字母、数字、下划线）
+    if !name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+        return Err(format!("用户名 '{}' 包含非法字符，仅允许字母、数字、下划线", name));
+    }
+
+    // 转换并验证账户类型
     let account_type = match account_type.as_str() {
         "microsoft" => AccountType::Microsoft,
         "offline" => AccountType::Offline,
         _ => return Err(format!("不支持的账户类型: {}", account_type)),
     };
 
+    // 根据账户类型验证 token
+    match account_type {
+        AccountType::Microsoft => {
+            // 微软账户必须有 access_token
+            if access_token.is_none() {
+                return Err("微软账户必须提供 access_token".to_string());
+            }
+            // 可选：也可以要求 refresh_token 必须存在
+            if refresh_token.is_none() {
+                return Err("微软账户必须提供 refresh_token".to_string());
+            }
+        }
+        AccountType::Offline => {
+            // 离线账户不需要 token，即使传了也可以忽略（或者提示）
+            if access_token.is_some() || refresh_token.is_some() {
+                println!("警告：离线账户不需要 token，已忽略");
+            }
+        }
+    }
+    
     // 创建账户
     let account = Account::new(name, account_type, access_token, refresh_token);
     let uuid = account.info.uuid.clone();
 
-    // 添加到全局管理器
     add_account_to_manager(account)?;
 
     Ok(format!("账户创建成功，UUID: {}", uuid))

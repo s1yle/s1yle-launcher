@@ -3,7 +3,7 @@
 
 use std::fs;
 
-use s1yle_launcher_lib::{init_config, DEV, run, init_account_manager, init_launch_manager};
+use s1yle_launcher_lib::{init_config, DEV, run, init_account_manager, init_launch_manager, init_logging};
 
 fn main() {
     init_config();  // 1

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Popup from "../components/Popup";
 import { addAccount } from "../helper/rustInvoke";
+import { logger } from "../helper/logger";
 
 interface AccountListProps {
     // 这里可以添加一些属性，比如账户数据等
@@ -33,18 +34,15 @@ const AccountList = ({ onClickAddAccount }: AccountListProps) => {
   async function handleSubmit() {
     if(loading) return;
 
-    console.log('确认添加账户');
-    console.log('accountname: ', accountName, 'accounttype: ', accountType);
-
     setLoading(true);
     setErrorMsg("");
 
     try {
-      const result = await addAccount(accountName);
-      console.log('账户添加成功：', result);
+      const result = await addAccount(accountName, { account_type: accountType });
+      logger.info('账户添加成功：', result);
     } catch (e) {
       setErrorMsg((e as Error).message);
-      console.error('添加账户失败：', errorMsg);
+      logger.error('添加账户失败：', errorMsg);
     } finally {
       setLoading(false);
     }

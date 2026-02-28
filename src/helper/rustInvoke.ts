@@ -1,5 +1,4 @@
 import { invoke, InvokeArgs, InvokeOptions } from "@tauri-apps/api/core";
-import { resourceLimits } from "node:worker_threads";
 
 // ======================== 启动相关类型定义 ========================
 
@@ -75,7 +74,6 @@ export const addAccount = async (
   accountArgs?: InvokeArgs,
   options?: InvokeOptions
 ): Promise<any> => {
-  // 1. 校验账户名称
   const trimmedName = accountName.trim();
   if (trimmedName.length < 1 || trimmedName.length > 16) {
     throw new Error("账户名称必须控制在1-16字之间且不能为空！");
@@ -84,12 +82,10 @@ export const addAccount = async (
   accountArgs = {name:accountName};
   console.log('accountArgs, ', accountArgs);
 
-  // 2. 校验账户参数
   if (!accountArgs || Object.keys(accountArgs).length === 0) {
     throw new Error("账户参数不能为空！");
   }
 
-  // 3. 调用通用Rust函数（假设Rust端的函数名是 "add_account"）
   return await invokeRustFunction("add_account", {
     name: trimmedName,
     ...accountArgs, // 合并账户名称和其他参数
@@ -237,7 +233,7 @@ export const updateLaunchConfig = async (
 };
 
 /**
- * 更新启动配置
+ * 关闭window
  * @returns Promise<string> 调用rust tauri_close_window消息
  */
 export const closeWindow = async (
@@ -253,5 +249,29 @@ export const closeWindow = async (
   } catch (e) {
     console.error('调用rust [tauri_close_window] 失败:', e);
     throw new Error(e instanceof Error ? e.message : "调用rust [tauri_close_window] 失败");
+  }
+};
+
+/**
+ * 日志
+ * @param args 传递 level 和 message
+ * @param options invoke配置（可选）
+ * @returns Promise<any> 调用 invokeLogger
+ */
+export const invokeLogger = async (
+  args?: InvokeArgs,
+  options?: InvokeOptions
+): Promise<any> => {
+  try {
+    console.log('调用 invokeLogger:');
+
+    const result = await invokeRustFunction("log_frontend",args, options);
+    
+    console.log("调用 invokeLogger 结果: ", result);
+
+    return result;
+  } catch (e) {
+    console.error('调用 [invokeLogger] 失败:', e);
+    throw new Error(e instanceof Error ? e.message : "调用 [invokeLogger] 失败");
   }
 };

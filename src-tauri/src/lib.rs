@@ -5,6 +5,8 @@ mod config;
 mod json;
 mod launch;
 mod window;
+use std::fs;
+
 pub use crate::account::{add_account, get_account_list, init_account_manager};
 pub use crate::config::{get_config, init_config, DEV};
 pub use crate::launch::{
@@ -21,6 +23,13 @@ pub use crate::window::{
     close_window,
     tauri_close_window
 };
+use tauri::Manager;
+use tauri::webview::cookie::time::format_description::well_known::Rfc3339;
+use tracing_subscriber::fmt::time::UtcTime;
+use tracing_subscriber::{prelude::*};
+use tracing_appender::rolling::{RollingFileAppender, Rotation};
+use tracing_subscriber::{EnvFilter, fmt as tracing_fmt, prelude::*};
+
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -62,10 +71,76 @@ fn get_system_info() -> Result<SystemInfo, String> {
     Ok(SystemInfo { os: os.to_string(), arch: arch.to_string() })
 }
 
+// 初始化日志系统
+pub fn init_logging(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+    // 1. 获取日志存储目录（跨平台：app_data_dir/logs）
+    let log_dir = app.path()
+        .app_data_dir()?
+        .join("logs");
+    fs::create_dir_all(&log_dir)?; // 自动创建目录
+
+    println!("日志存储位置，{}",log_dir.to_string_lossy());
+
+    // 2. 配置日志文件：按天滚动，保留 30 天，文件名格式 mc-launcher-2026-02-28.log
+    let file_appender = RollingFileAppender::builder()
+        .rotation(Rotation::DAILY)
+        .filename_prefix("mc-launcher")
+        .filename_suffix("log")
+        .max_log_files(30)
+        .build(log_dir)?;
+
+    // 3. 配置日志级别：从环境变量 RUST_LOG 读取，默认 info
+    // 开发时设 RUST_LOG=debug，生产默认 info
+    let env_filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new("info"));
+
+    // let time_format = UtcTime::rfc_3339();
+
+    // 4. 构建「控制台 layer」
+    let console_layer = tracing_fmt::layer()
+        .with_target(true)
+        .with_level(true)
+        .with_writer(std::io::stdout);
+
+    // 5. 构建「文件 layer」
+    let file_layer = tracing_fmt::layer()
+        .with_target(true)
+        .with_level(true)
+        .with_writer(file_appender);
+
+    // 5. 初始化订阅者：同时输出到控制台和文件
+    tracing_subscriber::registry()
+        .with(env_filter)
+        .with(console_layer) // 控制台输出
+        .with(file_layer)    // 文件输出
+        .init();
+
+    tracing::info!("日志系统初始化完成");
+    Ok(())
+}
+
+// 接收前端日志的 Command
+#[tauri::command]
+fn log_frontend(level: String, message: String) {
+    match level.as_str() {
+        "debug" => tracing::debug!("[Frontend] {}", message),
+        "info" => tracing::info!("[Frontend] {}", message),
+        "warn" => tracing::warn!("[Frontend] {}", message),
+        "error" => tracing::error!("[Frontend] {}", message),
+        _ => tracing::info!("[Frontend] [Unknown] {}", message),
+    }
+}
+
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+
+        .setup(|app| {
+            init_logging(app)?;
+            Ok(())
+        })
 
         .invoke_handler(tauri::generate_handler![
             greet, 
@@ -77,9 +152,10 @@ pub fn run() {
             tauri_get_launch_status,
             tauri_get_launch_config,
             tauri_update_launch_config,
-            tauri_close_window
+            tauri_close_window,
+            log_frontend
         ])
 
         .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .expect("启动失败！");
 }
