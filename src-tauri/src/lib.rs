@@ -8,7 +8,7 @@ mod window;
 use std::fs;
 use std::sync::Mutex;
 
-pub use crate::account::{add_account, get_account_list, init_account_manager, save_accounts_to_disk, load_accounts_from_disk, initialize_account_system};
+pub use crate::account::{add_account, get_account_list, get_current_account, delete_account, set_current_account, init_account_manager, save_accounts_to_disk, load_accounts_from_disk, initialize_account_system};
 pub use crate::config::{get_config, init_config, DEV};
 pub use crate::launch::{
     init_launch_manager,
@@ -209,6 +209,9 @@ pub fn run() {
             get_system_info, 
             add_account,  
             get_account_list,
+            get_current_account,
+            delete_account,
+            set_current_account,
             tauri_launch_instance,
             tauri_stop_instance,
             tauri_get_launch_status,

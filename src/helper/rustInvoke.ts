@@ -1,6 +1,36 @@
 import { invoke, InvokeArgs, InvokeOptions } from "@tauri-apps/api/core";
 import { logger } from "./logger";
 
+// ======================== 账户相关类型定义 ========================
+
+/**
+ * 账户类型枚举（与Rust后端保持一致）
+ */
+export enum AccountType {
+  Microsoft = "microsoft",
+  Offline = "offline"
+}
+
+/**
+ * 账户信息接口（与Rust后端保持一致）
+ */
+export interface AccountInfo {
+  name: string;
+  account_type: AccountType;
+  uuid: string;
+  create_time: string;
+  last_login_time: string | null;
+}
+
+/**
+ * 账户接口（包含敏感信息，仅后端使用）
+ */
+export interface Account {
+  info: AccountInfo;
+  access_token: string | null;
+  refresh_token: string | null;
+}
+
 // ======================== 启动相关类型定义 ========================
 
 /**
@@ -84,30 +114,89 @@ export const invokeRustFunction = async (
 export const invokeAddAccount = async (
   accountName: string,
   accountType: string,
-  accountArgs?: InvokeArgs,
+  accessToken?: string,
+  refreshToken?: string,
   options?: InvokeOptions
-): Promise<any> => {
+): Promise<string> => {
   const trimmedName = accountName.trim();
-  if (trimmedName.length <= 0  || trimmedName.length > 16) {
+  if (trimmedName.length <= 0 || trimmedName.length > 16) {
     throw new Error("账户名称必须控制在1-16字之间且不能为空！");
   }
 
-  logger.info('准备调用 add_account', {
+  const args: InvokeArgs = {
     name: trimmedName,
     account_type: accountType,
-    ...accountArgs
-  });
+  };
 
-  return await invokeRustFunction("add_account", {
-    name: trimmedName,
-    accountType: accountType,
-    ...accountArgs, // 合并账户名称和其他参数
-  }, options);
+  if (accountType === "microsoft") {
+    if (!accessToken || !refreshToken) {
+      throw new Error("微软账户必须提供完整的 Token");
+    }
+    args.access_token = accessToken;
+    args.refresh_token = refreshToken;
+  }
+
+  logger.info('准备调用 add_account', args);
+
+  return await invokeRustFunction("add_account", args, options);
 };
 
+/**
+ * 获取账户列表
+ * @param options invoke配置（可选）
+ * @returns Promise<AccountInfo[]> 账户信息列表
+ */
+export const getAccountList = async (
+  options?: InvokeOptions
+): Promise<AccountInfo[]> => {
+  logger.info('准备调用 get_account_list');
+  const result = await invokeRustFunction("get_account_list", {}, options);
+  return result as AccountInfo[];
+};
 
 /**
- * 保存账户的专用函数（业务逻辑封装）
+ * 获取当前账户
+ * @param options invoke配置（可选）
+ * @returns Promise<AccountInfo | null> 当前账户信息，如果没有则为null
+ */
+export const getCurrentAccount = async (
+  options?: InvokeOptions
+): Promise<AccountInfo | null> => {
+  logger.info('准备调用 get_current_account');
+  const result = await invokeRustFunction("get_current_account", {}, options);
+  return result as AccountInfo | null;
+};
+
+/**
+ * 删除账户
+ * @param uuid 账户UUID
+ * @param options invoke配置（可选）
+ * @returns Promise<string> 删除结果消息
+ */
+export const deleteAccount = async (
+  uuid: string,
+  options?: InvokeOptions
+): Promise<string> => {
+  logger.info('准备调用 delete_account', { uuid });
+  return await invokeRustFunction("delete_account", { uuid }, options);
+};
+
+/**
+ * 设为当前账户
+ * @param uuid 账户UUID
+ * @param options invoke配置（可选）
+ * @returns Promise<string> 设置结果消息
+ */
+export const setCurrentAccount = async (
+  uuid: string,
+  options?: InvokeOptions
+): Promise<string> => {
+  logger.info('准备调用 set_current_account', { uuid });
+  return await invokeRustFunction("set_current_account", { uuid }, options);
+};
+
+/**
+ * 保存账户到磁盘
  * @param args （传给Rust）
  * @param options invoke配置（可选）
  * @returns Promise<any> Rust返回的账户添加结果
@@ -116,18 +205,12 @@ export const invokeSaveAccount = async (
   args?: InvokeArgs,
   options?: InvokeOptions
 ): Promise<any> => {
-
-  logger.info('准备调用 save_accounts_to_disk', {
-    ...args
-  });
-
-  return await invokeRustFunction("save_accounts_to_disk", {
-    ...args, // 合并账户名称和其他参数
-  }, options);
+  logger.info('准备调用 save_accounts_to_disk', args);
+  return await invokeRustFunction("save_accounts_to_disk", args, options);
 };
 
 /**
- * 保存账户的专用函数（业务逻辑封装）
+ * 从磁盘加载账户
  * @param args （传给Rust）
  * @param options invoke配置（可选）
  * @returns Promise<any> Rust返回的账户添加结果
@@ -136,18 +219,12 @@ export const invokeLoadAccount = async (
   args?: InvokeArgs,
   options?: InvokeOptions
 ): Promise<any> => {
-
-  logger.info('准备调用 load_accounts_from_disk', {
-    ...args
-  });
-
-  return await invokeRustFunction("load_accounts_from_disk", {
-    ...args, // 合并账户名称和其他参数
-  }, options);
+  logger.info('准备调用 load_accounts_from_disk', args);
+  return await invokeRustFunction("load_accounts_from_disk", args, options);
 };
 
 /**
- * 保存账户的专用函数（业务逻辑封装）
+ * 初始化账户系统
  * @param args （传给Rust）
  * @param options invoke配置（可选）
  * @returns Promise<any> Rust返回的账户添加结果
@@ -156,14 +233,8 @@ export const invokeAccInit = async (
   args?: InvokeArgs,
   options?: InvokeOptions
 ): Promise<any> => {
-
-  logger.info('准备调用 initialize_account_system', {
-    ...args
-  });
-
-  return await invokeRustFunction("initialize_account_system", {
-    ...args, // 合并账户名称和其他参数
-  }, options);
+  logger.info('准备调用 initialize_account_system', args);
+  return await invokeRustFunction("initialize_account_system", args, options);
 };
 
 // ======================== 启动相关函数 ========================

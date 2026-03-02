@@ -194,7 +194,7 @@ pub fn add_account_to_manager(account: Account) -> Result<(), String> {
     Ok(())
 }
 
-pub fn set_current_account(uuid: &str) -> Result<(), String> {
+pub fn set_current_account_internal(uuid: &str) -> Result<(), String> {
     let mut manager = ACCOUNT_MANAGER
         .get()
         .ok_or("账户管理器未初始化")?
@@ -222,6 +222,13 @@ pub fn set_current_account(uuid: &str) -> Result<(), String> {
 /// 初始化命令（推荐在前端应用启动时调用一次）
 #[command]
 pub fn initialize_account_system() -> Result<(), String> {
+    // 确保账户管理器已初始化
+    if ACCOUNT_MANAGER.get().is_none() {
+        ACCOUNT_MANAGER
+            .set(Mutex::new(AccountManager::default()))
+            .map_err(|_| "账户管理器已初始化".to_string())?;
+        println!("✅ 账户管理器初始化完成");
+    }
     load_accounts_from_disk_internal()?;
     Ok(())
 }
@@ -305,6 +312,30 @@ pub fn delete_account(uuid: String) -> Result<String, String> {
     save_accounts_to_disk_internal()?; // 修改后自动保存
 
     Ok(format!("账户 {} 删除成功", uuid))
+}
+
+#[command]
+pub fn set_current_account(uuid: String) -> Result<String, String> {
+    let mut manager = ACCOUNT_MANAGER
+        .get()
+        .ok_or("账户管理器未初始化")?
+        .lock()
+        .map_err(|e| format!("获取账户锁失败: {}", e))?;
+
+    if !manager.accounts.contains_key(&uuid) {
+        return Err(format!("账户 {} 不存在", uuid));
+    }
+
+    manager.current_uuid = Some(uuid.clone());
+    
+    if let Some(account) = manager.accounts.get_mut(&uuid) {
+        account.update_last_login();
+    }
+
+    drop(manager);
+    save_accounts_to_disk_internal()?; // 修改后自动保存
+
+    Ok(format!("账户 {} 已设为当前账户", uuid))
 }
 
 #[command]
