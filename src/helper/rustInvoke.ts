@@ -105,6 +105,67 @@ export const invokeAddAccount = async (
   }, options);
 };
 
+
+/**
+ * 保存账户的专用函数（业务逻辑封装）
+ * @param args （传给Rust）
+ * @param options invoke配置（可选）
+ * @returns Promise<any> Rust返回的账户添加结果
+ */
+export const invokeSaveAccount = async (
+  args?: InvokeArgs,
+  options?: InvokeOptions
+): Promise<any> => {
+
+  logger.info('准备调用 save_accounts_to_disk', {
+    ...args
+  });
+
+  return await invokeRustFunction("save_accounts_to_disk", {
+    ...args, // 合并账户名称和其他参数
+  }, options);
+};
+
+/**
+ * 保存账户的专用函数（业务逻辑封装）
+ * @param args （传给Rust）
+ * @param options invoke配置（可选）
+ * @returns Promise<any> Rust返回的账户添加结果
+ */
+export const invokeLoadAccount = async (
+  args?: InvokeArgs,
+  options?: InvokeOptions
+): Promise<any> => {
+
+  logger.info('准备调用 load_accounts_from_disk', {
+    ...args
+  });
+
+  return await invokeRustFunction("load_accounts_from_disk", {
+    ...args, // 合并账户名称和其他参数
+  }, options);
+};
+
+/**
+ * 保存账户的专用函数（业务逻辑封装）
+ * @param args （传给Rust）
+ * @param options invoke配置（可选）
+ * @returns Promise<any> Rust返回的账户添加结果
+ */
+export const invokeAccInit = async (
+  args?: InvokeArgs,
+  options?: InvokeOptions
+): Promise<any> => {
+
+  logger.info('准备调用 initialize_account_system', {
+    ...args
+  });
+
+  return await invokeRustFunction("initialize_account_system", {
+    ...args, // 合并账户名称和其他参数
+  }, options);
+};
+
 // ======================== 启动相关函数 ========================
 
 /**

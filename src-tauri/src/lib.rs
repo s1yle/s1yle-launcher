@@ -6,8 +6,9 @@ mod json;
 mod launch;
 mod window;
 use std::fs;
+use std::sync::Mutex;
 
-pub use crate::account::{add_account, get_account_list, init_account_manager};
+pub use crate::account::{add_account, get_account_list, init_account_manager, save_accounts_to_disk, load_accounts_from_disk, initialize_account_system};
 pub use crate::config::{get_config, init_config, DEV};
 pub use crate::launch::{
     init_launch_manager,
@@ -23,12 +24,13 @@ pub use crate::window::{
     close_window,
     tauri_close_window
 };
+use once_cell::sync::Lazy;
 use tauri::Manager;
-use tauri::webview::cookie::time::format_description::well_known::Rfc3339;
+use tracing::info;
 use tracing_subscriber::fmt::time::UtcTime;
 use tracing_subscriber::{prelude::*};
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
-use tracing_subscriber::{EnvFilter, fmt as tracing_fmt, prelude::*};
+use tracing_subscriber::{EnvFilter, fmt as tracing_fmt};
 
 
 #[tauri::command]
@@ -123,7 +125,63 @@ pub fn init_logging(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> 
     Ok(())
 }
 
-// 接收前端日志的 Command
+
+enum LogLevel {
+    Info,
+    Warn,
+    Debug,
+    Error
+}
+
+struct Logger {
+    level: LogLevel
+}
+
+impl Logger {
+    fn new(level: LogLevel) -> Self {
+        Logger { level }
+    }
+
+    fn log_internal(&self, level: LogLevel, message: impl AsRef<str>) {
+        let msg = message.as_ref();
+        match level {
+            LogLevel::Debug => tracing::debug!("[Internal] {}", msg),
+            LogLevel::Info => tracing::info!("[Internal] {}", msg),
+            LogLevel::Warn=> tracing::warn!("[Internal] {}", msg),
+            LogLevel::Error => tracing::error!("[Internal] {}", msg),
+            _ => tracing::info!("[Internal] [Unknown] {}", msg),
+        }
+    }
+}
+
+static GLOBAL_LOGGER: Lazy<Mutex<Logger>> = Lazy::new(|| {
+    Mutex::new(Logger::new(LogLevel::Info)) // 默认级别为 Info
+});
+
+#[macro_export]
+macro_rules! log_internal {
+    ($level:expr, $($arg:tt)*) => ({
+        if let Ok(logger) = $crate::GLOBAL_LOGGER.lock() {
+            // 利用 format! 把模板转成 String
+            let msg = format!($($arg)*);
+            // 调用真正的实例方法
+            logger.log_internal($level, msg);
+        }
+    })
+}
+
+// 为了方便调用，我们也可以给每个级别单独定义宏
+#[macro_export]
+macro_rules! log_info {
+    ($($arg:tt)*) => ($crate::log_internal!($crate::LogLevel::Info, $($arg)*));
+}
+
+#[macro_export]
+macro_rules! log_error {
+    ($($arg:tt)*) => ($crate::log_internal!($crate::LogLevel::Error, $($arg)*));
+}
+
+
 #[tauri::command]
 fn log_frontend(level: String, message: String) {
     match level.as_str() {
@@ -157,7 +215,10 @@ pub fn run() {
             tauri_get_launch_config,
             tauri_update_launch_config,
             tauri_close_window,
-            log_frontend
+            log_frontend,
+            save_accounts_to_disk,
+            load_accounts_from_disk,
+            initialize_account_system
         ])
 
         .run(tauri::generate_context!())

@@ -3,13 +3,15 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use once_cell::sync::OnceCell;
 use std::{
-    sync::{Mutex, Arc},
+    sync::{Mutex},
     collections::HashMap,
     path::PathBuf,
     fs,
 };
-use chrono::{DateTime, FixedOffset, Local, TimeZone, Utc, format::ParseError};
+use chrono::{Local};
 use directories::ProjectDirs;
+
+use crate::log_info;
 
 // ======================== 配置常量 ========================
 const CONFIG_QUALIFIER: &str = "art";
@@ -78,7 +80,7 @@ fn get_config_path() -> Result<PathBuf, String> {
 }
 
 /// 从磁盘加载账户数据（启动时调用一次）
-pub fn load_accounts_from_disk() -> Result<(), String> {
+pub fn load_accounts_from_disk_internal() -> Result<(), String> {
     let path = get_config_path()?;
     
     if !path.exists() {
@@ -119,13 +121,12 @@ fn save_accounts_to_disk_internal() -> Result<(), String> {
     fs::write(&path, json_str)
         .map_err(|e| format!("写入配置文件失败: {}", e))?;
 
+    log_info!("账号配置文件保存成功，存放路径：{}", path.to_string_lossy());
+
     Ok(())
 }
 
 /// 公共保存接口（如果需要手动强制保存）
-pub fn save_accounts_to_disk() -> Result<(), String> {
-    save_accounts_to_disk_internal()
-}
 
 // ======================== 核心方法 ========================
 impl Account {
@@ -220,9 +221,8 @@ pub fn set_current_account(uuid: &str) -> Result<(), String> {
 
 /// 初始化命令（推荐在前端应用启动时调用一次）
 #[command]
-pub fn initialize_system() -> Result<(), String> {
-    init_account_manager();
-    load_accounts_from_disk()?;
+pub fn initialize_account_system() -> Result<(), String> {
+    load_accounts_from_disk_internal()?;
     Ok(())
 }
 
@@ -255,6 +255,7 @@ pub fn add_account(
     let account = Account::new(name, account_type, access_token, refresh_token);
     let uuid = account.info.uuid.clone();
     add_account_to_manager(account)?;
+    save_accounts_to_disk_internal()?;
 
     Ok(format!("账户创建成功，UUID: {}", uuid))
 }
@@ -304,4 +305,14 @@ pub fn delete_account(uuid: String) -> Result<String, String> {
     save_accounts_to_disk_internal()?; // 修改后自动保存
 
     Ok(format!("账户 {} 删除成功", uuid))
+}
+
+#[command]
+pub fn save_accounts_to_disk() -> Result<(), String> {
+    save_accounts_to_disk_internal()
+}
+
+#[command]
+pub fn load_accounts_from_disk() -> Result<(), String> {
+    load_accounts_from_disk_internal()
 }
