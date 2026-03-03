@@ -125,7 +125,7 @@ export const invokeAddAccount = async (
 
   const args: InvokeArgs = {
     name: trimmedName,
-    account_type: accountType,
+    accountType: accountType,
   };
 
   if (accountType === "microsoft") {

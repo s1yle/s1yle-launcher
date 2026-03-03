@@ -51,6 +51,16 @@ select {
   background-size: 16px;
 }
 
+.sideContainer {
+  transition: all 0.3s ease-out;
+  backdrop-filter: blur(8px);
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+main>div * {
+  transition: all 0.3s ease-out;
+}
+
 .allow-select {
   -webkit-user-select: text;
   user-select: text;

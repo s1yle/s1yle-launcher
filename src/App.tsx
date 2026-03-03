@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -15,6 +15,8 @@ import {
   Feedback,
   Hint
 } from './pages';
+import { logger } from './helper/logger';
+import { setDefaultAutoSelectFamilyAttemptTimeout } from 'node:net';
 
 // MC风格背景图URL
 const BACKGROUND_IMAGE_URL = './src/assets/img/bg-1.png';
@@ -46,13 +48,16 @@ const MainLayout = () => {
   // 2. 锁状态：防止动画过程中用户重复点击
   const [isAnimating, setIsAnimating] = useState(false);
 
+  const [isSideContainerActive, setIsSideContainerActive] = useState(false);
+
   const handleMenuClick = (targetPath: string) => {
     // 如果正在动画中，或者点的是当前页，直接忽略
     if (isAnimating || targetPath === location.pathname) return;
 
     // 上锁，禁止重复点击
     setIsAnimating(true);
-    
+
+
     // 等待退场动画时间
     setDisplayKey(targetPath);
     setTimeout(() => {
@@ -62,6 +67,27 @@ const MainLayout = () => {
       }, EXIT_DUR * 1000 + 50);
     }, EXIT_DUR * 1000); // 这里的 250 要和下面 exit 的 duration 对应
   };
+
+  // 页面加载后自动清除模糊效果
+  useEffect(() => {
+    logger.info(`Navigated to ${location.pathname}`);
+    
+    setTimeout(() => {
+      setIsSideContainerActive(false);
+    }, 5);
+
+    if (!isAnimating) {
+      if(location.pathname !== '/') {
+        setTimeout(() => {
+          setIsSideContainerActive(true);
+        }, 10);
+      }
+    }
+
+    if(location.pathname === '/') {
+      setIsSideContainerActive(false);
+    }
+  }, [location.pathname, isAnimating]);
 
   // 全局右键菜单拦截函数
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -103,19 +129,30 @@ const MainLayout = () => {
           {/* motion.div 是动画容器，key 必须是唯一的（这里用路径） */}
           <motion.div
             key={displayKey}
-            className="absolute inset-0 p-8"
+            className="absolute inset-0"
             // 初始状态（入场前）
             initial={{ opacity: 0, x: 20 }}
             // 激活状态（入场后）
-            animate={{ opacity: 1, x: 0 }}
+            animate={{ 
+              opacity: 1, x: 0,
+            }}
             // 离场状态
-            exit={{ opacity: 0, x: -20 }}
+            exit={{ 
+              opacity: 0, x: -20, 
+              backdropFilter: 'blur(0px)',
+            }}
             // 动画配置
             transition={{ duration: EXIT_DUR, ease: "easeOut" }}
           >
         
             {/* 页面内容（在背景之上）- 移除h-full，改为min-h-full适配内容 */}
-            <div className="relative z-10 min-h-full">
+            <div className={`relative z-10 min-h-full rounded-lg shadow-lg transition-all duration-300
+                `}>
+                <div className={`${isSideContainerActive ? 'sideContainer' : ''}`}
+                    style={{position: 'absolute', top:'0', left:'0', width:'100%'}}>
+
+<div className='p-8'>
+
               <Routes>
                 {routes.map((route) => {
                   const Component = componentMap[route.componentName];
@@ -128,6 +165,10 @@ const MainLayout = () => {
                   );
                 })}
               </Routes>
+
+</div>
+
+                </div>
             </div>
             <Outlet />
 
