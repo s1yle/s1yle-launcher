@@ -146,9 +146,10 @@ const MainLayout = () => {
         
             {/* 页面内容（在背景之上）- 移除h-full，改为min-h-full适配内容 */}
             <div className={`relative z-10 min-h-full rounded-lg shadow-lg transition-all duration-300
-                `}>
-                <div className={`${isSideContainerActive ? 'sideContainer' : ''}`}
-                    style={{position: 'absolute', top:'0', left:'0', width:'100%'}}>
+                  ${isSideContainerActive ? 'sideContainer' : ''}`}>
+
+                {/* 备用容器标签 */}
+                <div>
 
 <div className='p-8'>
 
@@ -168,6 +169,7 @@ const MainLayout = () => {
 </div>
 
                 </div>
+
             </div>
             <Outlet />
 
