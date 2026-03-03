@@ -39,7 +39,7 @@ const Sidebar = ({ onMenuClick }: SidebarProps) => {
               key={item.id}
               onClick={() => handleMenuClick(item.path)}
               className={`
-                w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all
+                w-full flex items-center gap-3 px-4 py-3 mb-2 rounded-lg transition-all
                 ${isActive(item.path) 
                   ? 'bg-white/20 text-white font-semibold' 
                   : 'text-gray-300 hover:bg-white/10 hover:text-white'
@@ -76,14 +76,14 @@ const Sidebar = ({ onMenuClick }: SidebarProps) => {
         {renderGroup('common', groups.common, 2)}
       </div>
 
-      <div className="p-4 border-t border-white/20">
+      {/* <div className="p-4 border-t border-white/20">
         <div className="bg-indigo-500/20 rounded-lg p-4">
           <p className="text-sm text-gray-300">
             <span className="font-semibold text-white">提示：</span>
             点击菜单切换页面，左侧侧边栏固定显示
           </p>
         </div>
-      </div>
+      </div> */}
     </aside>
   );
 };

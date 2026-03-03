@@ -10,6 +10,7 @@ import {
   AccountType 
 } from "../helper/rustInvoke";
 import { logger } from "../helper/logger";
+import ConfirmPopup from "../components/popup/ConfirmPopup";
 
 interface AccountListProps {
   onClickAddAccount?: () => void;

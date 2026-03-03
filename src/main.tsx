@@ -16,6 +16,26 @@ async function initApp() {
 
 initApp();
 
+document.addEventListener("wheel", function (e) {
+  console.log("Wheel event detected, preventing default behavior.");
+  e.preventDefault();
+}, { passive: false });
+
+document.querySelector('body')?.addEventListener('wheel', function (e) {
+  console.log("Wheel event detected, stopping propagation.");
+  e.stopPropagation();
+});
+
+document.addEventListener('touchstart', function(event) {
+    console.log("Touchstart event detected, preventing default behavior.");
+    event.preventDefault()
+}, { passive: false })
+
+document.querySelector('body')?.addEventListener('touchstart', function(event) {
+  event.stopPropagation()
+})
+
+
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <App />

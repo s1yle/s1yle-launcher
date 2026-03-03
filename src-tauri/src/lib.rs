@@ -26,7 +26,6 @@ pub use crate::window::{
 };
 use once_cell::sync::Lazy;
 use tauri::Manager;
-use tracing::info;
 use tracing_subscriber::fmt::time::UtcTime;
 use tracing_subscriber::{prelude::*};
 use tracing_appender::rolling::{RollingFileAppender, Rotation};

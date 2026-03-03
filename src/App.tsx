@@ -16,7 +16,6 @@ import {
   Hint
 } from './pages';
 import { logger } from './helper/logger';
-import { setDefaultAutoSelectFamilyAttemptTimeout } from 'node:net';
 
 // MC风格背景图URL
 const BACKGROUND_IMAGE_URL = './src/assets/img/bg-1.png';
