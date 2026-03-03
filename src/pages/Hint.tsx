@@ -158,6 +158,36 @@ const Hint = () => {
                 <li>• 皮肤和披风管理</li>
                 </ul>
             </div>
+
+
+            {/* 实例管理功能说明 */}
+            <div className="mt-8 pt-8 border-t border-white/20">
+                <h3 className="text-xl font-bold text-white mb-4">实例管理功能规划</h3>
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-300">
+                <li>• 创建自定义游戏实例</li>
+                <li>• 导入/导出实例配置</li>
+                <li>• 模组管理界面</li>
+                <li>• 资源包和材质包管理</li>
+                <li>• Java版本配置</li>
+                <li>• 启动参数自定义</li>
+                </ul>
+            </div>
+
+
+            {/* 实例列表功能说明 */}
+            <div className="mt-8 pt-8 border-t border-white/20">
+                <h3 className="text-xl font-bold text-white mb-4">实例列表功能规划</h3>
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-300">
+                <li>• 快速启动游戏实例</li>
+                <li>• 实例状态监控</li>
+                <li>• 批量操作支持</li>
+                <li>• 实例搜索和筛选</li>
+                <li>• 最近运行历史</li>
+                <li>• 性能统计和监控</li>
+                </ul>
+            </div>
+
+
         </div>
         </div>
     );
