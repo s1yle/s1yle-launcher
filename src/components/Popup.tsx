@@ -108,7 +108,7 @@ const Popup: React.FC<PopupProps> = ({
 
   // 位置映射
   const positionClasses = {
-    center: 'item_mid_wsure',
+    center: 'item_mid_wunsure',
     top: 'items-start justify-center pt-8',
     bottom: 'items-end justify-center pb-8',
   };
@@ -128,32 +128,26 @@ const Popup: React.FC<PopupProps> = ({
   if (ariaDescribedby) ariaProps['aria-describedby'] = ariaDescribedby;
 
   const popupContent = (
+    <>
+    
     <div
       className={`flex ${positionClasses[position]} z-50 ${overlayClassName} ${animationClasses[animation]}`}
       style={{ animationDuration: `${animationDuration}ms`,
                animation: isOpen ? animationClasses[animation] : '',
-               minWidth: '20%',
-               minHeight: '30%',
-               maxWidth: '50%',
-               maxHeight: '40%'
               }}
       onClick={handleOverlayClick}
       role="dialog"
       aria-modal="true"
       {...ariaProps}
     >
-      <div 
-        className='bg-black/50 backdrop-blur-sm'
-        style={{
-          position:'fixed',
-          top:'0',
-          left:'0',
-          width:'100%',
-          height:'100%'
-        }}></div>
+
       <div
         className={`bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 w-full ${sizeClasses[size]} ${className}`}
         onClick={(e) => e.stopPropagation()}
+        style={{
+          paddingLeft:'10px',
+          paddingRight:'10px'
+        }}
       >
         {/* 头部 */}
         {(title || showCloseButton) && (
@@ -188,6 +182,19 @@ const Popup: React.FC<PopupProps> = ({
         )}
       </div>
     </div>
+
+    <div 
+      className='bg-black/50 backdrop-blur-sm'
+      style={{
+        position:'absolute',
+        top:'0',
+        left:'0',
+        width:'100%',
+        height:'100%',
+        zIndex: '49'  // 49 for the mask
+      }}></div>
+      
+    </>
   );
 
   return createPortal(popupContent, document.body);
