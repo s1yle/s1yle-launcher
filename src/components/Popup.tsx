@@ -107,7 +107,7 @@ const Popup: React.FC<PopupProps> = ({
 
   // 位置映射
   const positionClasses = {
-    center: 'items-center justify-center',
+    center: 'item_mid_wsure',
     top: 'items-start justify-center pt-8',
     bottom: 'items-end justify-center pb-8',
   };
@@ -128,16 +128,26 @@ const Popup: React.FC<PopupProps> = ({
 
   return (
     <div
-      className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex ${positionClasses[position]} z-50 ${overlayClassName} ${animationClasses[animation]}`}
+      className={`flex ${positionClasses[position]} z-50 ${overlayClassName} ${animationClasses[animation]}`}
       style={{ animationDuration: `${animationDuration}ms`,
-               animation: isOpen ? animationClasses[animation] : ''
-              
+               animation: isOpen ? animationClasses[animation] : '',
+               width: '50%',
+               height: '40%'
               }}
       onClick={handleOverlayClick}
       role="dialog"
       aria-modal="true"
       {...ariaProps}
     >
+      <div 
+        className='bg-black/50 backdrop-blur-sm'
+        style={{
+          position:'fixed',
+          top:'0',
+          left:'0',
+          width:'100%',
+          height:'100%'
+        }}></div>
       <div
         className={`bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 w-full ${sizeClasses[size]} ${className}`}
         onClick={(e) => e.stopPropagation()}

@@ -55,6 +55,23 @@ select {
   background-size: 16px;
 }
 
+.item_mid_wunsure {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50% -50%);
+}
+
+.item_mid_wsure {
+  /* 宽度应该自行设置 */
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    margin: auto auto;
+}
+
 .sideContainer {
   transition: all 0.3s ease-out;
   backdrop-filter: blur(8px);
