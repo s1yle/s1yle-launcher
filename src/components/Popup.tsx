@@ -1,4 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 
 export interface PopupProps {
   // 核心控制
@@ -126,13 +127,15 @@ const Popup: React.FC<PopupProps> = ({
   if (ariaLabelledby) ariaProps['aria-labelledby'] = ariaLabelledby;
   if (ariaDescribedby) ariaProps['aria-describedby'] = ariaDescribedby;
 
-  return (
+  const popupContent = (
     <div
       className={`flex ${positionClasses[position]} z-50 ${overlayClassName} ${animationClasses[animation]}`}
       style={{ animationDuration: `${animationDuration}ms`,
                animation: isOpen ? animationClasses[animation] : '',
-               width: '50%',
-               height: '40%'
+               minWidth: '20%',
+               minHeight: '30%',
+               maxWidth: '50%',
+               maxHeight: '40%'
               }}
       onClick={handleOverlayClick}
       role="dialog"
@@ -186,6 +189,8 @@ const Popup: React.FC<PopupProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(popupContent, document.body);
 };
 
 export default Popup;
