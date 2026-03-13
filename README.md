@@ -21,6 +21,30 @@
 ****
 
 # 项目构建和未来愿景
+
+## 项目编译
+
+1. 将本项目下载至本地（git clone 或别的方式）
+
+2. 使用npm等包管理器下载依赖
+
+    ```
+    # 进入项目目录，并安装项目依赖
+    cd s1yle-launcher
+    pnpm install
+    pnpm install tauri
+    ```
+
+3. 运行项目或编译为可运行程序
+
+    ```
+    # 运行项目
+    pnpm tauri dev
+
+    # 编译
+    pnpm tauri build
+    ```
+
 ## 项目工具链
 - tauri
 - ts + react 前端
