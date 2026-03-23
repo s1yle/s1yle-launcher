@@ -16,6 +16,7 @@ import {
   Hint
 } from './pages';
 import { logger } from './helper/logger';
+import RouterRenderer from './components/RouterRenderer';
 
 // MC风格背景图URL
 const BACKGROUND_IMAGE_URL = './src/assets/img/bg-1.png';
@@ -153,18 +154,7 @@ const MainLayout = () => {
 
 <div className='p-8'>
 
-              <Routes>
-                {routes.map((route) => {
-                  const Component = componentMap[route.componentName];
-                  return (
-                    <Route 
-                      key={route.path} 
-                      path={route.path} 
-                      element={<Component />} 
-                    />
-                  );
-                })}
-              </Routes>
+              <RouterRenderer />
 
 </div>
 
