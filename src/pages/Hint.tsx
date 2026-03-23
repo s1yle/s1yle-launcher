@@ -187,6 +187,17 @@ const Hint = () => {
                 </ul>
             </div>
 
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-6">
+                <h3 className="text-xl font-bold text-white mb-3">下载管理功能规划</h3>
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-300">
+                <li>• 游戏版本下载和安装</li>
+                <li>• 模组库集成</li>
+                <li>• 资源包和材质包管理</li>
+                <li>• 下载队列和进度监控</li>
+                <li>• 断点续传支持</li>
+                <li>• 版本依赖检查</li>
+                </ul>
+            </div>
 
         </div>
         </div>
