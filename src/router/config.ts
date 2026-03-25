@@ -1,9 +1,14 @@
+export enum SidebarType {
+  MAIN = 'main',
+  SUB = 'sub',
+  SECONDARY = 'secondary'
+}
 
 // Header配置类型
 export interface HeaderConfig {
-  type: 'main' | 'sub';
+  type: SidebarType;
   title: string;
-}
+} 
 
 export enum RoutePosition {
   TOP = 'top',  // 默认项，贴近顶部显示
@@ -17,7 +22,7 @@ export interface RouteConfig {
   componentName: string;
   header: HeaderConfig;
   position?: RoutePosition;
-  sub?: RouteConfig[]; // 可选的子路由
+  children?: RouteConfig[]; // 可选的子路由
 }
 
 // 路由配置表
@@ -26,7 +31,7 @@ export const routes: RouteConfig[] = [
     path: '/',
     componentName: 'Home',
     header: {
-      type: 'main',
+      type: SidebarType.MAIN,
       title: 'Hello Minecraft! Launcher'
     }
   },
@@ -34,15 +39,15 @@ export const routes: RouteConfig[] = [
     path: '/account',
     componentName: 'AccountList',
     header: {
-      type: 'sub',
+      type: SidebarType.SUB,
       title: '账户列表'
     },
-    sub:[
+    children:[
       {
         path: '/account/microsoft',
         componentName: 'MicrosoftAccount',
         header: {
-          type: 'sub',
+          type: SidebarType.SECONDARY,
           title: '微软账户'
         }
       },
@@ -50,7 +55,7 @@ export const routes: RouteConfig[] = [
         path: '/account/offline',
         componentName: 'OfflineAccount',
         header: {
-          type: 'sub',
+          type: SidebarType.SECONDARY,
           title: '离线账户'
         }
       },
@@ -60,7 +65,7 @@ export const routes: RouteConfig[] = [
     path: '/instance-manage',
     componentName: 'InstanceManage',
     header: {
-      type: 'sub',
+      type: SidebarType.SUB,
       title: '实例管理'
     }
   },
@@ -68,7 +73,7 @@ export const routes: RouteConfig[] = [
     path: '/instance-list',
     componentName: 'InstanceList',
     header: {
-      type: 'sub',
+      type: SidebarType.SUB,
       title: '实例列表'
     }
   },
@@ -76,15 +81,15 @@ export const routes: RouteConfig[] = [
     path: '/download',
     componentName: 'Download',
     header: {
-      type: 'sub',
+      type: SidebarType.SUB,
       title: '下载'
     },
-    sub:[
+    children:[
       {
         path: '/download/game',
         componentName: 'DownloadGame',
         header: {
-          type: 'sub',
+          type: SidebarType.SECONDARY,
           title: '游戏'
         }
       },
@@ -92,7 +97,7 @@ export const routes: RouteConfig[] = [
         path: '/download/modpack',
         componentName: 'DownloadModpack',
         header: {
-          type: 'sub',
+          type: SidebarType.SECONDARY,
           title: '整合包'
         }
       },
@@ -102,7 +107,7 @@ export const routes: RouteConfig[] = [
     path: '/settings',
     componentName: 'Settings',
     header: {
-      type: 'sub',
+      type: SidebarType.SUB,
       title: '设置'
     }
   },
@@ -110,7 +115,7 @@ export const routes: RouteConfig[] = [
     path: '/multiplayer',
     componentName: 'Multiplayer',
     header: {
-      type: 'sub',
+      type: SidebarType.SUB,
       title: '多人联机'
     }
   },
@@ -118,7 +123,7 @@ export const routes: RouteConfig[] = [
     path: '/feedback',
     componentName: 'Feedback',
     header: {
-      type: 'sub',
+      type: SidebarType.SUB,
       title: '反馈与群组'
     }
   },
@@ -126,7 +131,7 @@ export const routes: RouteConfig[] = [
     path: '/hint',
     componentName: 'Hint',
     header: {
-      type: 'sub',
+      type: SidebarType.SUB,
       title: '启动器说明'
     }
   },
@@ -248,6 +253,8 @@ export const getSidebarGroups = () => {
   sidebarMenuItems.forEach(item => {
     groups[item.group].push(item);
   });
+
+  console.log('Sidebar groups:', groups); // 调试输出分组结果
   
   return groups;
 };
