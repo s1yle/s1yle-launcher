@@ -8,6 +8,7 @@ interface SidebarProps {
 const Sidebar = ({ onMenuClick }: SidebarProps) => {
   // const navigate = useNavigate();
   const location = useLocation();
+  console.log(location);
   const groups = getSidebarGroups();
 
   const handleMenuClick = (path: string) => {
@@ -20,6 +21,12 @@ const Sidebar = ({ onMenuClick }: SidebarProps) => {
   const isActive = (path: string) => {
     return location.pathname === path;
   };
+
+  const hasChildren = () => {
+    console.log('Checking for children in current path:', location.pathname);
+    console.log('Path segments:', location.pathname.split('/')[1].trim() == "");
+    return location.pathname.split('/')[1].trim() != "";
+  }
 
   const renderGroup = (groupName: string, items: SidebarMenuItem[], index: number) => {
     const groupTitle = {
@@ -35,6 +42,29 @@ const Sidebar = ({ onMenuClick }: SidebarProps) => {
         </div>
         <div className="space-y-1">
           {items.map((item) => (
+            
+            ( hasChildren() && (item.children && item.children.length > 0) ) ? (
+              <div>
+                {item.children.map((child) => (
+                  <button
+                    key={child.id}
+                    onClick={() => handleMenuClick(child.path)}
+                    className={`
+                      w-full flex items-center gap-3 px-4 py-3 mb-2 rounded-lg transition-all
+                      ${isActive(child.path) 
+                        ? 'bg-white/20 text-white font-semibold' 
+                        : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                      }
+                    `}
+                  >
+                    <span className="text-lg">{child.icon}</span>
+                    <span className="text-left">{child.title}</span>
+                  </button>
+                ))}
+              </div>
+            ) :
+
+            (
             <button
               key={item.id}
               onClick={() => handleMenuClick(item.path)}
@@ -49,6 +79,7 @@ const Sidebar = ({ onMenuClick }: SidebarProps) => {
               <span className="text-lg">{item.icon}</span>
               <span className="text-left">{item.title}</span>
             </button>
+            )
           ))}
         </div>
       </div>
@@ -67,6 +98,7 @@ const Sidebar = ({ onMenuClick }: SidebarProps) => {
 
       <div className="flex-1 overflow-y-auto p-4">
         {/* 账户分组 */}
+
         {renderGroup('account', groups.account, 0)}
         
         {/* 游戏分组 */}

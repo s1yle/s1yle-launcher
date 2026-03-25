@@ -144,7 +144,7 @@ export interface SidebarMenuItem {
   icon: string;
   path: string;
   group: 'account' | 'game' | 'common';
-  sub?: SidebarMenuItem[]; // 可选的子菜单项
+  children?: SidebarMenuItem[]; // 可选的子菜单项
 }
 
 export const sidebarMenuItems: SidebarMenuItem[] = [
@@ -155,7 +155,7 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
     icon: '👤',
     path: '/account',
     group: 'account',
-    sub: [
+    children: [
       {
         id: 'microsoft-account',
         title: '微软账户',
@@ -193,7 +193,7 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
     icon: '⬇️',
     path: '/download',
     group: 'game',
-    sub: [
+    children: [
       {
         id: 'download-game',
         title: '游戏下载',
