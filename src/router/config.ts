@@ -1,7 +1,14 @@
+
 // Header配置类型
 export interface HeaderConfig {
   type: 'main' | 'sub';
   title: string;
+}
+
+export enum RoutePosition {
+  TOP = 'top',  // 默认项，贴近顶部显示
+  BOTTOM = 'bottom',
+  HIDDEN = 'hidden'
 }
 
 // 路由配置接口
@@ -9,6 +16,8 @@ export interface RouteConfig {
   path: string;
   componentName: string;
   header: HeaderConfig;
+  position?: RoutePosition;
+  sub?: RouteConfig[]; // 可选的子路由
 }
 
 // 路由配置表
@@ -27,7 +36,25 @@ export const routes: RouteConfig[] = [
     header: {
       type: 'sub',
       title: '账户列表'
-    }
+    },
+    sub:[
+      {
+        path: '/account/microsoft',
+        componentName: 'MicrosoftAccount',
+        header: {
+          type: 'sub',
+          title: '微软账户'
+        }
+      },
+      {
+        path: '/account/offline',
+        componentName: 'OfflineAccount',
+        header: {
+          type: 'sub',
+          title: '离线账户'
+        }
+      },
+    ]
   },
   {
     path: '/instance-manage',
@@ -51,7 +78,25 @@ export const routes: RouteConfig[] = [
     header: {
       type: 'sub',
       title: '下载'
-    }
+    },
+    sub:[
+      {
+        path: '/download/game',
+        componentName: 'DownloadGame',
+        header: {
+          type: 'sub',
+          title: '游戏'
+        }
+      },
+      {
+        path: '/download/modpack',
+        componentName: 'DownloadModpack',
+        header: {
+          type: 'sub',
+          title: '整合包'
+        }
+      },
+    ]
   },
   {
     path: '/settings',
@@ -94,6 +139,7 @@ export interface SidebarMenuItem {
   icon: string;
   path: string;
   group: 'account' | 'game' | 'common';
+  sub?: SidebarMenuItem[]; // 可选的子菜单项
 }
 
 export const sidebarMenuItems: SidebarMenuItem[] = [
@@ -103,7 +149,23 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
     title: '账户列表',
     icon: '👤',
     path: '/account',
-    group: 'account'
+    group: 'account',
+    sub: [
+      {
+        id: 'microsoft-account',
+        title: '微软账户',
+        icon: '🪟',
+        path: '/account/microsoft',
+        group: 'account'
+      },
+      {
+        id: 'offline-account',
+        title: '离线账户',
+        icon: '👤',
+        path: '/account/offline',
+        group: 'account'
+      }
+    ]
   },
   // 游戏分组
   {
@@ -125,7 +187,23 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
     title: '下载',
     icon: '⬇️',
     path: '/download',
-    group: 'game'
+    group: 'game',
+    sub: [
+      {
+        id: 'download-game',
+        title: '游戏下载',
+        icon: '🎮',
+        path: '/download/game',
+        group: 'game'
+      },
+      {
+        id: 'download-modpack',
+        title: '整合包下载',
+        icon: '📦',
+        path: '/download/modpack',
+        group: 'game'
+      }
+    ]
   },
   // 通用分组
   {
