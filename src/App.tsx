@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
-import Sidebar from './components/Sidebar';
+import SmartSidebar from './components/SmartSidebar';
 import { AnimatePresence, motion } from 'framer-motion';
 import { routes } from './router/config';
 import { logger } from './helper/logger';
@@ -92,7 +92,7 @@ const MainLayout = () => {
       />
       
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar onMenuClick={ handleMenuClick }/>
+        <SmartSidebar onMenuClick={ handleMenuClick } showAllGroups={true} />
         
         {/* 主内容区域 - 核心修改：背景元素移到内容容器内，跟随内容高度 */}
         <main 

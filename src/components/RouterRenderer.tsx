@@ -3,6 +3,7 @@ import { routes } from "../router/config";
 import {
     Home,
     AccountList,
+    AccountListWithSidebar,
     InstanceManage,
     InstanceList,
     Download,
@@ -16,6 +17,7 @@ import {
 const componentMap: Record<string, React.FC> = {
     Home,
     AccountList,
+    AccountListWithSidebar,
     InstanceManage,
     InstanceList,
     Download,
