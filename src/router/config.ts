@@ -254,7 +254,7 @@ export const getSidebarGroups = () => {
     groups[item.group].push(item);
   });
 
-  console.log('Sidebar groups:', groups); // 调试输出分组结果
+  // console.log('Sidebar groups:', groups); // 调试输出分组结果
   
   return groups;
 };

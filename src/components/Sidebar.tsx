@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { getSidebarGroups, SidebarMenuItem } from '../router/config';
 
@@ -6,27 +7,67 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ onMenuClick }: SidebarProps) => {
-  // const navigate = useNavigate();
   const location = useLocation();
-  console.log(location);
   const groups = getSidebarGroups();
+  
+  // 状态：当前展开的菜单项ID
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
 
-  const handleMenuClick = (path: string) => {
+  // 根据当前路径自动设置展开状态
+  useEffect(() => {
+    // 查找当前路径对应的父菜单项
+    const findParentItem = (): string | null => {
+      for (const groupKey in groups) {
+        const groupItems = groups[groupKey as keyof typeof groups];
+        for (const item of groupItems) {
+          // 检查是否是当前路径的直接父菜单
+          if (item.children) {
+            const childMatch = item.children.find(child => child.path === location.pathname);
+            if (childMatch) {
+              return item.id;
+            }
+          }
+          // 检查是否是当前路径本身（父菜单被点击）
+          if (item.path === location.pathname && item.children) {
+            return item.id;
+          }
+        }
+      }
+      return null;
+    };
+
+    const parentId = findParentItem();
+    setExpandedItemId(parentId);
+  }, [location.pathname, groups]);
+
+  const handleMenuClick = (path: string, group: string, itemId: string, hasChildren: boolean) => {
     if (path === location.pathname) return;
+    
+    // 如果有子菜单，切换展开状态
+    if (hasChildren) {
+      setExpandedItemId(prev => prev === itemId ? null : itemId);
+    }
+    
     if (onMenuClick) {
       onMenuClick(path);
     }
+    
+    console.log("当前组别：", group, "菜单项ID：", itemId);
   };
 
   const isActive = (path: string) => {
     return location.pathname === path;
   };
 
-  const hasChildren = () => {
-    console.log('Checking for children in current path:', location.pathname);
-    console.log('Path segments:', location.pathname.split('/')[1].trim() == "");
-    return location.pathname.split('/')[1].trim() != "";
-  }
+  // 检查菜单项是否应该展开
+  const isExpanded = (itemId: string) => {
+    return expandedItemId === itemId;
+  };
+
+  // 检查菜单项是否有子菜单
+  const hasChildrenItems = (item: SidebarMenuItem): boolean => {
+    return !!(item.children && item.children.length > 0);
+  };
 
   const renderGroup = (groupName: string, items: SidebarMenuItem[], index: number) => {
     const groupTitle = {
@@ -41,46 +82,55 @@ const Sidebar = ({ onMenuClick }: SidebarProps) => {
           {groupTitle}
         </div>
         <div className="space-y-1">
-          {items.map((item) => (
+          {items.map((item) => {
+            const hasChildren = hasChildrenItems(item);
             
-            ( hasChildren() && (item.children && item.children.length > 0) ) ? (
-              <div>
-                {item.children.map((child) => (
-                  <button
-                    key={child.id}
-                    onClick={() => handleMenuClick(child.path)}
-                    className={`
-                      w-full flex items-center gap-3 px-4 py-3 mb-2 rounded-lg transition-all
-                      ${isActive(child.path) 
-                        ? 'bg-white/20 text-white font-semibold' 
-                        : 'text-gray-300 hover:bg-white/10 hover:text-white'
-                      }
-                    `}
-                  >
-                    <span className="text-lg">{child.icon}</span>
-                    <span className="text-left">{child.title}</span>
-                  </button>
-                ))}
-              </div>
-            ) :
+            return (
+              <div key={item.id}>
+                {/* 父菜单项 */}
+                <button
+                  onClick={() => handleMenuClick(item.path, item.group, item.id, hasChildren)}
+                  className={`
+                    w-full flex items-center gap-3 px-4 py-3 mb-2 rounded-lg transition-all
+                    ${isActive(item.path) 
+                      ? 'bg-white/20 text-white font-semibold' 
+                      : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                    }
+                  `}
+                >
+                  <span className="text-lg">{item.icon}</span>
+                  <span className="text-left flex-1">{item.title}</span>
+                  {hasChildren && (
+                    <span className="text-xs">
+                      {isExpanded(item.id) ? '▲' : '▼'}
+                    </span>
+                  )}
+                </button>
 
-            (
-            <button
-              key={item.id}
-              onClick={() => handleMenuClick(item.path)}
-              className={`
-                w-full flex items-center gap-3 px-4 py-3 mb-2 rounded-lg transition-all
-                ${isActive(item.path) 
-                  ? 'bg-white/20 text-white font-semibold' 
-                  : 'text-gray-300 hover:bg-white/10 hover:text-white'
-                }
-              `}
-            >
-              <span className="text-lg">{item.icon}</span>
-              <span className="text-left">{item.title}</span>
-            </button>
-            )
-          ))}
+                {/* 子菜单项 - 只在展开时显示 */}
+                {hasChildren && isExpanded(item.id) && (
+                  <div className="ml-4 pl-2 border-l border-white/10">
+                    {item.children!.map((child) => (
+                      <button
+                        key={child.id}
+                        onClick={() => handleMenuClick(child.path, child.group, child.id, false)}
+                        className={`
+                          w-full flex items-center gap-3 px-4 py-2 mb-1 rounded-lg transition-all
+                          ${isActive(child.path) 
+                            ? 'bg-white/15 text-white font-medium' 
+                            : 'text-gray-400 hover:bg-white/5 hover:text-gray-300'
+                          }
+                        `}
+                      >
+                        <span className="text-sm">{child.icon}</span>
+                        <span className="text-left text-sm">{child.title}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     );

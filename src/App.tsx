@@ -1,20 +1,9 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, Outlet, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import { AnimatePresence, motion } from 'framer-motion';
 import { routes } from './router/config';
-import {
-  Home,
-  AccountList,
-  InstanceManage,
-  InstanceList,
-  Download,
-  Settings,
-  Multiplayer,
-  Feedback,
-  Hint
-} from './pages';
 import { logger } from './helper/logger';
 import RouterRenderer from './components/RouterRenderer';
 
@@ -23,19 +12,6 @@ const BACKGROUND_IMAGE_URL = './src/assets/img/bg-1.png';
 // const BACKGROUND_IMAGE_URL = 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
 
 const EXIT_DUR = 0.2;
-
-// 组件映射
-const componentMap: Record<string, React.FC> = {
-  Home,
-  AccountList,
-  InstanceManage,
-  InstanceList,
-  Download,
-  Settings,
-  Multiplayer,
-  Feedback,
-  Hint
-};
 
 // 主布局组件
 const MainLayout = () => {
@@ -110,7 +86,10 @@ const MainLayout = () => {
     <div className="h-screen flex flex-col overflow-hidden dpi-transition"
       onContextMenu={handleContextMenu}>
 
-      <Header type={currentRoute.header.type} title={currentRoute.header.title} />
+      <Header 
+        type={currentRoute.header.type === 'main' ? 'main' : 'sub'} 
+        title={currentRoute.header.title} 
+      />
       
       <div className="flex flex-1 overflow-hidden">
         <Sidebar onMenuClick={ handleMenuClick }/>
