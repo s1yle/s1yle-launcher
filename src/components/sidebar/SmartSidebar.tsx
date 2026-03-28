@@ -1,9 +1,9 @@
 import { useLocation } from 'react-router-dom';
 import { getSidebarGroups, SidebarMenuItem, routes } from '../../router/config';
-import BaseSidebarLayout from './BaseSidebarLayout';
-import AccountSidebarContent from './AccountSidebarContent';
-import GameSidebarContent from './GameSidebarContent';
-import CommonSidebarContent from './CommonSidebarContent';
+import BaseSidebarLayout from './layouts/BaseSidebarLayout';
+import AccountSidebarContent from './content/AccountSidebarContent';
+import GameSidebarContent from './content/GameSidebarContent';
+import CommonSidebarContent from './content/CommonSidebarContent';
 
 interface SmartSidebarProps {
   onMenuClick?: (path: string) => void;

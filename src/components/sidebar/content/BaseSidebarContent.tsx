@@ -2,7 +2,7 @@
 // 基础侧边栏内容组件，包含公共的渲染和交互逻辑
 // 通过 props 控制渲染行为，子组件可以继承或组合使用
 
-import { SidebarMenuItem } from '../../router/config';
+import { SidebarMenuItem } from '../../../router/config';
 
 export interface BaseSidebarContentProps {
   items: SidebarMenuItem[];
