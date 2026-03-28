@@ -45,14 +45,14 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
     return pagesWithOwnSidebar.includes(location.pathname);
   };
 
-  const handleMenuClick = (path: string, group: string, itemId: string) => {
+  const handleMenuClick = (path: string, group: string, itemId: string, hasChildren: boolean) => {
     if (path === location.pathname) return;
     
     if (onMenuClick) {
       onMenuClick(path);
     }
     
-    console.log("当前组别：", group, "菜单项ID：", itemId);
+    console.log("当前组别：", group, "菜单项ID：", itemId, "有子菜单：", hasChildren);
   };
 
   const isActive = (path: string) => {
@@ -68,6 +68,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
 
   // 如果页面有自己的独立侧边栏，不显示全局侧边栏
   if (hasOwnSidebar()) {
+    console.log(`当前路径 ${location.pathname} 有自己的独立侧边栏，隐藏全局侧边栏`);
     return (
       <BaseSidebarLayout>
         <div className="text-center py-8">
@@ -77,6 +78,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
     );
   }
 
+  console.log(`当前路径 ${location.pathname} 使用全局侧边栏，显示组别：${currentGroup}`);
   return (
     <BaseSidebarLayout>
       {currentGroup === 'all' && (
