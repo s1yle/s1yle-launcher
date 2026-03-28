@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { getSidebarGroups, SidebarMenuItem } from '../router/config';
+import { getSidebarGroups, SidebarMenuItem } from '../../router/config';
 
 interface SidebarProps {
   onMenuClick?: (path: string) => void;
@@ -100,11 +100,11 @@ const Sidebar = ({ onMenuClick }: SidebarProps) => {
                 >
                   <span className="text-lg">{item.icon}</span>
                   <span className="text-left flex-1">{item.title}</span>
-                  {hasChildren && (
+                  {/* {hasChildren && (
                     <span className="text-xs">
                       {isExpanded(item.id) ? '▲' : '▼'}
                     </span>
-                  )}
+                  )} */}
                 </button>
 
                 {/* 子菜单项 - 只在展开时显示 */}

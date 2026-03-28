@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
-import SmartSidebar from './components/SmartSidebar';
+import SmartSidebar from './components/sidebar/SmartSidebar';
 import { AnimatePresence, motion } from 'framer-motion';
 import { routes } from './router/config';
 import { logger } from './helper/logger';

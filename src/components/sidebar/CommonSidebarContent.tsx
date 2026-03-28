@@ -1,4 +1,4 @@
-import { SidebarMenuItem } from '../router/config';
+import { SidebarMenuItem } from '../../router/config';
 
 interface CommonSidebarContentProps {
   items: SidebarMenuItem[];

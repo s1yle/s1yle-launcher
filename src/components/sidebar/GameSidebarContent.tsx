@@ -1,4 +1,4 @@
-import { SidebarMenuItem } from '../router/config';
+import { SidebarMenuItem } from '../../router/config';
 
 interface GameSidebarContentProps {
   items: SidebarMenuItem[];
@@ -54,11 +54,6 @@ const GameSidebarContent = ({
               >
                 <span className="text-lg">{item.icon}</span>
                 <span className="text-left flex-1">{item.title}</span>
-                {hasChildren && (
-                  <span className="text-xs">
-                    {expandedCheck(item.id) ? '▲' : '▼'}
-                  </span>
-                )}
               </button>
 
               {/* 子菜单项 - 只在展开时显示 */}

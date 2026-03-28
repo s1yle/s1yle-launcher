@@ -1,10 +1,9 @@
-import { SidebarMenuItem } from '../router/config';
+import { SidebarMenuItem } from '../../router/config';
 
 interface AccountSidebarContentProps {
   items: SidebarMenuItem[];
   onMenuClick?: (path: string, group: string, itemId: string, hasChildren: boolean) => void;
   isActive?: (path: string) => boolean;
-  isExpanded?: (itemId: string) => boolean;
   hasChildrenItems?: (item: SidebarMenuItem) => boolean;
 }
 
@@ -12,16 +11,13 @@ const AccountSidebarContent = ({
   items, 
   onMenuClick, 
   isActive, 
-  isExpanded, 
   hasChildrenItems 
 }: AccountSidebarContentProps) => {
   
   const defaultIsActive = (_path: string) => false;
-  const defaultIsExpanded = (_itemId: string) => false;
   const defaultHasChildrenItems = (item: SidebarMenuItem) => !!(item.children && item.children.length > 0);
   
   const activeCheck = isActive || defaultIsActive;
-  const expandedCheck = isExpanded || defaultIsExpanded;
   const childrenCheck = hasChildrenItems || defaultHasChildrenItems;
   
   const handleClick = (path: string, group: string, itemId: string, hasChildren: boolean) => {
@@ -55,34 +51,8 @@ const AccountSidebarContent = ({
               >
                 <span className="text-lg">{item.icon}</span>
                 <span className="text-left flex-1">{item.title}</span>
-                {hasChildren && (
-                  <span className="text-xs">
-                    {expandedCheck(item.id) ? '▲' : '▼'}
-                  </span>
-                )}
-              </button>
 
-              {/* 子菜单项 - 只在展开时显示 */}
-              {hasChildren && expandedCheck(item.id) && item.children && (
-                <div className="ml-4 pl-2 border-l border-white/10">
-                  {item.children.map((child) => (
-                    <button
-                      key={child.id}
-                      onClick={() => handleClick(child.path, child.group, child.id, false)}
-                      className={`
-                        w-full flex items-center gap-3 px-4 py-2 mb-1 rounded-lg transition-all
-                        ${activeCheck(child.path) 
-                          ? 'bg-white/15 text-white font-medium' 
-                          : 'text-gray-400 hover:bg-white/5 hover:text-gray-300'
-                        }
-                      `}
-                    >
-                      <span className="text-sm">{child.icon}</span>
-                      <span className="text-left text-sm">{child.title}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
+              </button>
             </div>
           );
         })}
