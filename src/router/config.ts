@@ -42,7 +42,7 @@ export const routes: RouteConfig[] = [
       type: SidebarType.MAIN,
       title: 'Hello Minecraft! Launcher'
     },
-    sidebarGroup: 'none'
+    sidebarGroup: SidebarGroup.NONE
   },
   {
     path: '/account',
@@ -51,7 +51,7 @@ export const routes: RouteConfig[] = [
       type: SidebarType.SUB,
       title: '账户列表'
     },
-    sidebarGroup: 'account',
+    sidebarGroup: SidebarGroup.ACCOUNT,
     children:[
       {
         path: '/account/microsoft',
@@ -60,7 +60,7 @@ export const routes: RouteConfig[] = [
           type: SidebarType.SECONDARY,
           title: '微软账户'
         },
-        sidebarGroup: 'account'
+        sidebarGroup: SidebarGroup.ACCOUNT
       },
       {
         path: '/account/offline',
@@ -69,7 +69,7 @@ export const routes: RouteConfig[] = [
           type: SidebarType.SECONDARY,
           title: '离线账户'
         },
-        sidebarGroup: 'account'
+        sidebarGroup: SidebarGroup.ACCOUNT
       },
     ]
   },
@@ -80,7 +80,7 @@ export const routes: RouteConfig[] = [
       type: SidebarType.SUB,
       title: '实例管理'
     },
-    sidebarGroup: 'game'
+    sidebarGroup: SidebarGroup.GAME
   },
   {
     path: '/instance-list',
@@ -89,7 +89,7 @@ export const routes: RouteConfig[] = [
       type: SidebarType.SUB,
       title: '实例列表'
     },
-    sidebarGroup: 'game'
+    sidebarGroup: SidebarGroup.GAME
   },
   {
     path: '/download',
@@ -98,7 +98,7 @@ export const routes: RouteConfig[] = [
       type: SidebarType.SUB,
       title: '下载'
     },
-    sidebarGroup: 'game',
+    sidebarGroup: SidebarGroup.GAME,
     children:[
       {
         path: '/download/game',
@@ -107,7 +107,7 @@ export const routes: RouteConfig[] = [
           type: SidebarType.SECONDARY,
           title: '游戏'
         },
-        sidebarGroup: 'game'
+        sidebarGroup: SidebarGroup.GAME
       },
       {
         path: '/download/modpack',
@@ -116,7 +116,7 @@ export const routes: RouteConfig[] = [
           type: SidebarType.SECONDARY,
           title: '整合包'
         },
-        sidebarGroup: 'game'
+        sidebarGroup: SidebarGroup.GAME
       },
     ]
   },
@@ -127,7 +127,7 @@ export const routes: RouteConfig[] = [
       type: SidebarType.SUB,
       title: '设置'
     },
-    sidebarGroup: 'common'
+    sidebarGroup: SidebarGroup.COMMON
   },
   {
     path: '/multiplayer',
@@ -136,7 +136,7 @@ export const routes: RouteConfig[] = [
       type: SidebarType.SUB,
       title: '多人联机'
     },
-    sidebarGroup: 'common'
+    sidebarGroup: SidebarGroup.COMMON
   },
   {
     path: '/feedback',
@@ -145,7 +145,7 @@ export const routes: RouteConfig[] = [
       type: SidebarType.SUB,
       title: '反馈与群组'
     },
-    sidebarGroup: 'common'
+    sidebarGroup: SidebarGroup.COMMON
   },
   {
     path: '/hint',
@@ -154,7 +154,7 @@ export const routes: RouteConfig[] = [
       type: SidebarType.SUB,
       title: '启动器说明'
     },
-    sidebarGroup: 'common'
+    sidebarGroup: SidebarGroup.COMMON
   },
 ];
 

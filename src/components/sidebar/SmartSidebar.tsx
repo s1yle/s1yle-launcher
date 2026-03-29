@@ -5,6 +5,7 @@ import AccountSidebarContent from './content/AccountSidebarContent';
 import GameSidebarContent from './content/GameSidebarContent';
 import CommonSidebarContent from './content/CommonSidebarContent';
 import BaseChildrenContent from './content/BaseChildrenContent';
+import { logger } from '../../helper/logger';
 
 interface SmartSidebarProps {
   onMenuClick?: (path: string) => void;
@@ -38,18 +39,23 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
 
   // 检查当前页面是否有自己的独立侧边栏
   const hasOwnSidebar = (): boolean => {
-    // 页面有自己的独立侧边栏的路径列表
+    // 页面有自己的独立侧边栏的路径列表（支持前缀匹配）
     const pagesWithOwnSidebar = [
       '/account',  // AccountList页面现在有自己的独立侧边栏
       '/download' // Download页面现在有自己的独立侧边栏
     ];
     
-    return pagesWithOwnSidebar.includes(location.pathname);
+    // 检查当前路径是否以独立侧边栏路径开头
+    const hasOwn = pagesWithOwnSidebar.some(path => location.pathname.startsWith(path));
+    console.log(`hasOwnSidebar检查: path=${location.pathname}, pages=${JSON.stringify(pagesWithOwnSidebar)}, result=${hasOwn}`);
+    return hasOwn;
   };
 
   let currentMenu;
 
   const handleMenuClick = (path: string, group: string, itemId: string, hasChildren: boolean) => {
+    logger.info(`菜单点击: path=${path}, group=${group}, itemId=${itemId}, hasChildren=${hasChildren}`);
+
     if (path === location.pathname) return;
     
     if (onMenuClick) {
@@ -74,27 +80,40 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
   if (hasOwnSidebar()) {
     console.log(`当前路径 ${location.pathname} 有自己的独立侧边栏，隐藏全局侧边栏`);
     
-    // 查找当前路径对应的菜单项
-    const findMenuItemByPath = (path: string): SidebarMenuItem | undefined => {
-      const findInItems = (items: SidebarMenuItem[]): SidebarMenuItem | undefined => {
+    // 查找当前路径对应的菜单项和父菜单项
+    const findMenuItemsByPath = (path: string): { current: SidebarMenuItem | undefined, parent: SidebarMenuItem | undefined } => {
+      let foundParent: SidebarMenuItem | undefined = undefined;
+      
+      const findInItems = (items: SidebarMenuItem[], parent?: SidebarMenuItem): SidebarMenuItem | undefined => {
         for (const item of items) {
           if (item.path === path) {
+            foundParent = parent;
             return item;
           }
           if (item.children) {
-            const found = findInItems(item.children);
+            const found = findInItems(item.children, item);
             if (found) return found;
           }
         }
         return undefined;
       };
-      return findInItems(sidebarMenuItems);
+      
+      const current = findInItems(sidebarMenuItems);
+      return { current, parent: foundParent };
     };
     
-    const currentMenuItem = findMenuItemByPath(location.pathname);
-    const childrenItems = currentMenuItem?.children || [];
+    const { current: currentMenuItem, parent: parentMenuItem } = findMenuItemsByPath(location.pathname);
+    
+    // 获取子菜单项：如果当前菜单项有children则使用，否则使用父菜单项的children
+    let childrenItems: SidebarMenuItem[] = [];
+    if (currentMenuItem?.children && currentMenuItem.children.length > 0) {
+      childrenItems = currentMenuItem.children;
+    } else if (parentMenuItem?.children && parentMenuItem.children.length > 0) {
+      childrenItems = parentMenuItem.children;
+    }
     
     console.log(`当前菜单项:`, currentMenuItem);
+    console.log(`父菜单项:`, parentMenuItem);
     console.log(`子菜单项:`, childrenItems);
     
     return (
@@ -106,6 +125,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
             onMenuClick={handleMenuClick}
             isActive={isActive}
             hasChildrenItems={hasChildrenItems}
+            groupTitle='游戏下载'
           />
         </div>
       </BaseSidebarLayout>

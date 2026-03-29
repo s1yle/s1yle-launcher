@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, useLocation, Outlet, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, useLocation, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
 import SmartSidebar from './components/sidebar/SmartSidebar';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -16,7 +16,22 @@ const EXIT_DUR = 0.2;
 // 主布局组件
 const MainLayout = () => {
   const location = useLocation();
-  const currentRoute = routes.find(route => route.path === location.pathname) || routes[0];
+  
+  // 递归查找当前路径对应的路由（支持嵌套路由）
+  const findRouteByPath = (path: string, routeList: typeof routes): typeof routes[0] | undefined => {
+    for (const route of routeList) {
+      if (route.path === path) {
+        return route;
+      }
+      if (route.children) {
+        const found = findRouteByPath(path, route.children);
+        if (found) return found;
+      }
+    }
+    return undefined;
+  };
+  
+  const currentRoute = findRouteByPath(location.pathname, routes) || routes[0];
   const navigate = useNavigate();
   
   // 1. 核心状态：我们显示给用户看的“页面钥匙”，而不是真实的 location.pathname
@@ -27,21 +42,32 @@ const MainLayout = () => {
   const [isSideContainerActive, setIsSideContainerActive] = useState(false);
 
   const handleMenuClick = (targetPath: string) => {
+    console.log(`App.tsx handleMenuClick: targetPath=${targetPath}, currentPath=${location.pathname}, isAnimating=${isAnimating}`);
+    
     // 如果正在动画中，或者点的是当前页，直接忽略
-    if (isAnimating || targetPath === location.pathname) return;
+    if (isAnimating || targetPath === location.pathname) {
+      console.log(`App.tsx: 忽略点击，原因: ${isAnimating ? '动画中' : '已是当前页面'}`);
+      return;
+    }
 
     // 上锁，禁止重复点击
     setIsAnimating(true);
+    console.log(`App.tsx: 开始导航到 ${targetPath}`);
 
-
-    // 等待退场动画时间
+    // 立即更新displayKey用于动画
     setDisplayKey(targetPath);
+    
+    // 使用更简单的导航逻辑
     setTimeout(() => {
+      console.log(`App.tsx: 执行navigate(${targetPath})`);
       navigate(targetPath);
+      
+      // 动画结束后解锁
       setTimeout(() => {
+        console.log(`App.tsx: 导航完成，解锁动画状态`);
         setIsAnimating(false);
       }, EXIT_DUR * 1000 + 50);
-    }, EXIT_DUR * 1000); // 这里的 250 要和下面 exit 的 duration 对应
+    }, EXIT_DUR * 1000);
   };
 
   // 页面加载后自动清除模糊效果
@@ -140,7 +166,6 @@ const MainLayout = () => {
                 </div>
 
             </div>
-            <Outlet />
 
           </motion.div>
         </AnimatePresence>

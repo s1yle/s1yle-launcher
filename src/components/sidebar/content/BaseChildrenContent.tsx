@@ -27,6 +27,7 @@ const BaseChildrenContent = ({
     const childrenCheck = hasChildrenItems || defaultHasChildrenItems;
 
     const handleClick = (path: string, group: string, itemId: string, hasChildren: boolean) => {
+        console.log(`BaseChildrenContent handleClick: path=${path}, group=${group}, itemId=${itemId}, hasChildren=${hasChildren}`);
         if (onMenuClick) {
             onMenuClick(path, group, itemId, hasChildren);
         }
