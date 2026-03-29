@@ -16,6 +16,13 @@ export enum RoutePosition {
   HIDDEN = 'hidden'
 }
 
+export enum SidebarGroup {
+  ACCOUNT = 'account',
+  GAME = 'game',
+  COMMON = 'common',
+  NONE = 'none'
+}
+
 // 路由配置接口
 export interface RouteConfig {
   path: string;
@@ -23,7 +30,7 @@ export interface RouteConfig {
   header: HeaderConfig;
   position?: RoutePosition;
   children?: RouteConfig[]; // 可选的子路由
-  sidebarGroup?: 'account' | 'game' | 'common' | 'none'; // 新增：指定侧边栏组
+  sidebarGroup?: SidebarGroup; // 新增：指定侧边栏组
 }
 
 // 路由配置表
@@ -157,7 +164,7 @@ export interface SidebarMenuItem {
   title: string;
   icon: string;
   path: string;
-  group: 'account' | 'game' | 'common';
+  group: SidebarGroup;
   children?: SidebarMenuItem[]; // 可选的子菜单项
 }
 
@@ -168,21 +175,21 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
     title: '账户列表',
     icon: '👤',
     path: '/account',
-    group: 'account',
+    group: SidebarGroup.ACCOUNT,
     children: [
       {
         id: 'microsoft-account',
         title: '微软账户',
         icon: '🪟',
         path: '/account/microsoft',
-        group: 'account'
+        group: SidebarGroup.ACCOUNT
       },
       {
         id: 'offline-account',
         title: '离线账户',
         icon: '👤',
         path: '/account/offline',
-        group: 'account'
+        group: SidebarGroup.ACCOUNT
       }
     ]
   },
@@ -192,35 +199,35 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
     title: '实例管理',
     icon: '📁',
     path: '/instance-manage',
-    group: 'game'
+    group: SidebarGroup.GAME
   },
   {
     id: 'instance-list',
     title: '实例列表',
     icon: '📋',
     path: '/instance-list',
-    group: 'game'
+    group: SidebarGroup.GAME
   },
   {
     id: 'download',
     title: '下载',
     icon: '⬇️',
     path: '/download',
-    group: 'game',
+    group: SidebarGroup.GAME,
     children: [
       {
         id: 'download-game',
         title: '游戏下载',
         icon: '🎮',
         path: '/download/game',
-        group: 'game'
+        group: SidebarGroup.GAME
       },
       {
         id: 'download-modpack',
         title: '整合包下载',
         icon: '📦',
         path: '/download/modpack',
-        group: 'game'
+        group: SidebarGroup.GAME
       }
     ]
   },
@@ -230,28 +237,28 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
     title: '设置',
     icon: '⚙️',
     path: '/settings',
-    group: 'common'
+    group: SidebarGroup.COMMON
   },
   {
     id: 'multiplayer',
     title: '多人联机',
     icon: '🌐',
     path: '/multiplayer',
-    group: 'common'
+    group: SidebarGroup.COMMON
   },
   {
     id: 'feedback',
     title: '反馈与群组',
     icon: '💬',
     path: '/feedback',
-    group: 'common'
+    group: SidebarGroup.COMMON
   },
   {
     id: 'hint',
     title: '启动器说明',
     icon: '❕',
     path: '/hint',
-    group: 'common'
+    group: SidebarGroup.COMMON
   },
 
 ];
@@ -259,9 +266,10 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
 // 获取侧边栏分组
 export const getSidebarGroups = () => {
   const groups = {
-    account: [] as SidebarMenuItem[],
-    game: [] as SidebarMenuItem[],
-    common: [] as SidebarMenuItem[]
+    [SidebarGroup.ACCOUNT]: [] as SidebarMenuItem[],
+    [SidebarGroup.GAME]: [] as SidebarMenuItem[],
+    [SidebarGroup.COMMON]: [] as SidebarMenuItem[],
+    [SidebarGroup.NONE]: [] as SidebarMenuItem[]
   };
   
   sidebarMenuItems.forEach(item => {

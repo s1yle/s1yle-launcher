@@ -1,9 +1,10 @@
 import { useLocation } from 'react-router-dom';
-import { getSidebarGroups, SidebarMenuItem, routes } from '../../router/config';
+import { getSidebarGroups, SidebarMenuItem, routes, sidebarMenuItems } from '../../router/config';
 import BaseSidebarLayout from './layouts/BaseSidebarLayout';
 import AccountSidebarContent from './content/AccountSidebarContent';
 import GameSidebarContent from './content/GameSidebarContent';
 import CommonSidebarContent from './content/CommonSidebarContent';
+import BaseChildrenContent from './content/BaseChildrenContent';
 
 interface SmartSidebarProps {
   onMenuClick?: (path: string) => void;
@@ -39,11 +40,14 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
   const hasOwnSidebar = (): boolean => {
     // 页面有自己的独立侧边栏的路径列表
     const pagesWithOwnSidebar = [
-      '/account'  // AccountList页面现在有自己的独立侧边栏
+      '/account',  // AccountList页面现在有自己的独立侧边栏
+      '/download' // Download页面现在有自己的独立侧边栏
     ];
     
     return pagesWithOwnSidebar.includes(location.pathname);
   };
+
+  let currentMenu;
 
   const handleMenuClick = (path: string, group: string, itemId: string, hasChildren: boolean) => {
     if (path === location.pathname) return;
@@ -51,7 +55,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
     if (onMenuClick) {
       onMenuClick(path);
     }
-    
+    currentMenu = itemId;    
     console.log("当前组别：", group, "菜单项ID：", itemId, "有子菜单：", hasChildren);
   };
 
@@ -69,10 +73,40 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
   // 如果页面有自己的独立侧边栏，不显示全局侧边栏
   if (hasOwnSidebar()) {
     console.log(`当前路径 ${location.pathname} 有自己的独立侧边栏，隐藏全局侧边栏`);
+    
+    // 查找当前路径对应的菜单项
+    const findMenuItemByPath = (path: string): SidebarMenuItem | undefined => {
+      const findInItems = (items: SidebarMenuItem[]): SidebarMenuItem | undefined => {
+        for (const item of items) {
+          if (item.path === path) {
+            return item;
+          }
+          if (item.children) {
+            const found = findInItems(item.children);
+            if (found) return found;
+          }
+        }
+        return undefined;
+      };
+      return findInItems(sidebarMenuItems);
+    };
+    
+    const currentMenuItem = findMenuItemByPath(location.pathname);
+    const childrenItems = currentMenuItem?.children || [];
+    
+    console.log(`当前菜单项:`, currentMenuItem);
+    console.log(`子菜单项:`, childrenItems);
+    
     return (
       <BaseSidebarLayout>
-        <div className="text-center py-8">
-          <p className="text-gray-400">页面使用独立侧边栏</p>
+        <div className="py-8">
+          <BaseChildrenContent 
+            items={childrenItems}
+            currentMenu={currentMenu}
+            onMenuClick={handleMenuClick}
+            isActive={isActive}
+            hasChildrenItems={hasChildrenItems}
+          />
         </div>
       </BaseSidebarLayout>
     );
