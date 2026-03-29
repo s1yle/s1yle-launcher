@@ -420,3 +420,119 @@ export const invokeLogger = async (
     throw new Error(e instanceof Error ? e.message : "调用 [invokeLogger] 失败");
   }
 };
+
+// ======================== 下载相关类型定义 ========================
+
+export interface GameVersion {
+  id: string;
+  name: string;
+  type_: string;
+  release_time: string;
+  url: string;
+}
+
+export interface LatestVersion {
+  release: string;
+  snapshot: string;
+}
+
+export interface VersionManifest {
+  latest: LatestVersion;
+  versions: GameVersion[];
+}
+
+export interface DownloadTask {
+  id: string;
+  url: string;
+  path: string;
+  filename: string;
+  total_size: number;
+  downloaded_size: number;
+  status: string;
+}
+
+export interface DownloadProgress {
+  task_id: string;
+  downloaded: number;
+  total: number;
+  speed: number;
+  status: string;
+}
+
+// ======================== 下载相关函数 ========================
+
+export const getVersionManifest = async (
+  options?: InvokeOptions
+): Promise<VersionManifest> => {
+  logger.info('获取游戏版本列表');
+  return await invokeRustFunction("get_version_manifest", {}, options);
+};
+
+export const getVersionDetail = async (
+  versionId: string,
+  options?: InvokeOptions
+): Promise<any> => {
+  logger.info('获取版本详情', { versionId });
+  return await invokeRustFunction("get_version_detail", { versionId }, options);
+};
+
+export const downloadFile = async (
+  url: string,
+  filename: string,
+  options?: InvokeOptions
+): Promise<DownloadProgress> => {
+  logger.info('开始下载文件', { url, filename });
+  return await invokeRustFunction("download_file", { url, filename }, options);
+};
+
+export const getDownloadTasks = async (
+  options?: InvokeOptions
+): Promise<DownloadTask[]> => {
+  logger.info('获取下载任务列表');
+  return await invokeRustFunction("get_download_tasks", {}, options);
+};
+
+export const getDownloadTask = async (
+  taskId: string,
+  options?: InvokeOptions
+): Promise<DownloadTask | null> => {
+  logger.info('获取下载任务', { taskId });
+  return await invokeRustFunction("get_download_task", { taskId }, options);
+};
+
+export const cancelDownload = async (
+  taskId: string,
+  options?: InvokeOptions
+): Promise<string> => {
+  logger.info('取消下载任务', { taskId });
+  return await invokeRustFunction("cancel_download", { taskId }, options);
+};
+
+export const clearCompletedTasks = async (
+  options?: InvokeOptions
+): Promise<string> => {
+  logger.info('清理已完成任务');
+  return await invokeRustFunction("clear_completed_tasks", {}, options);
+};
+
+export const getGameVersions = async (
+  options?: InvokeOptions
+): Promise<string[]> => {
+  logger.info('获取已安装游戏版本');
+  return await invokeRustFunction("get_game_versions", {}, options);
+};
+
+export const getDownloadBasePath = async (
+  options?: InvokeOptions
+): Promise<string> => {
+  logger.info('获取下载目录路径');
+  return await invokeRustFunction("get_download_base_path", {}, options);
+};
+
+export const setDownloadBasePath = async (
+  path: string,
+  options?: InvokeOptions
+): Promise<string> => {
+  logger.info('设置下载目录路径', { path });
+  return await invokeRustFunction("set_download_base_path", { path }, options);
+};

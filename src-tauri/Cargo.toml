@@ -29,12 +29,19 @@ tracing = "0.1.44"
 tracing-subscriber = { version="0.3.22", features = ["env-filter", "time"] }
 tracing-appender = "0.2.4"
 directories = "6.0.0"
+dirs-next = "2.0"
 
 [dependencies.uuid]
 version = "1.21.0"
-# Lets you generate random UUIDs
-features = [
-    "v8",
-    "v4",
-    "v3"
-]
+features = ["v8", "v4", "v3"]
+
+[dependencies.reqwest]
+version = "0.12"
+features = ["json", "stream"]
+
+[dependencies.tokio]
+version = "1"
+features = ["full"]
+
+[dependencies.md5]
+version = "0.7"

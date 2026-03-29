@@ -2,11 +2,13 @@
 
 mod account;
 mod config;
+mod download;
 mod json;
 mod launch;
 mod window;
 use std::fs;
 use std::sync::Mutex;
+use std::path::PathBuf;
 
 pub use crate::account::{add_account, get_account_list, get_current_account, delete_account, set_current_account, init_account_manager, save_accounts_to_disk, load_accounts_from_disk, initialize_account_system};
 pub use crate::config::{get_config, init_config, DEV};
@@ -23,6 +25,19 @@ pub use crate::launch::{
 pub use crate::window::{
     close_window,
     tauri_close_window
+};
+pub use crate::download::{
+    get_version_manifest,
+    get_version_detail,
+    download_file,
+    get_download_tasks,
+    get_download_task,
+    cancel_download,
+    clear_completed_tasks,
+    get_game_versions,
+    get_download_base_path,
+    set_download_base_path,
+    DownloadManager,
 };
 use once_cell::sync::Lazy;
 use tauri::Manager;
@@ -195,8 +210,17 @@ fn log_frontend(level: String, message: String) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let download_base_path = dirs_next::data_local_dir()
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join("art")
+        .join("s1yle")
+        .join("minecraft");
+
+    let download_manager = DownloadManager::new(download_base_path);
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .manage(download_manager)
 
         .setup(|app| {
             init_logging(app)?;
@@ -220,7 +244,17 @@ pub fn run() {
             log_frontend,
             save_accounts_to_disk,
             load_accounts_from_disk,
-            initialize_account_system
+            initialize_account_system,
+            get_version_manifest,
+            get_version_detail,
+            download_file,
+            get_download_tasks,
+            get_download_task,
+            cancel_download,
+            clear_completed_tasks,
+            get_game_versions,
+            get_download_base_path,
+            set_download_base_path
         ])
 
         .run(tauri::generate_context!())
