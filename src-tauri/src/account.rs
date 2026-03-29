@@ -1,22 +1,17 @@
-use tauri::command;
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
-use once_cell::sync::OnceCell;
-use std::{
-    sync::{Mutex},
-    collections::HashMap,
-    path::PathBuf,
-    fs,
-};
-use chrono::{Local};
+use chrono::Local;
 use directories::ProjectDirs;
+use once_cell::sync::OnceCell;
+use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, fs, path::PathBuf, sync::Mutex};
+use tauri::command;
+use uuid::Uuid;
 
 use crate::log_info;
 
 // ======================== 配置常量 ========================
 const CONFIG_QUALIFIER: &str = "art";
 const CONFIG_ORGANIZATION: &str = "s1yle"; // 替换为你的工作室/组织名
-const CONFIG_APPLICATION: &str = "mc_launcher";   // 替换为你的应用名
+const CONFIG_APPLICATION: &str = "mc_launcher"; // 替换为你的应用名
 const CONFIG_FILENAME: &str = "accounts.json";
 
 // ======================== 类型定义 ========================
@@ -70,27 +65,25 @@ static ACCOUNT_MANAGER: OnceCell<Mutex<AccountManager>> = OnceCell::new();
 fn get_config_path() -> Result<PathBuf, String> {
     let proj_dirs = ProjectDirs::from(CONFIG_QUALIFIER, CONFIG_ORGANIZATION, CONFIG_APPLICATION)
         .ok_or("无法确定系统应用数据目录")?;
-    
+
     // 确保目录存在
     let config_dir = proj_dirs.data_dir();
-    fs::create_dir_all(config_dir)
-        .map_err(|e| format!("创建配置目录失败: {}", e))?;
-    
+    fs::create_dir_all(config_dir).map_err(|e| format!("创建配置目录失败: {}", e))?;
+
     Ok(config_dir.join(CONFIG_FILENAME))
 }
 
 /// 从磁盘加载账户数据（启动时调用一次）
 pub fn load_accounts_from_disk_internal() -> Result<(), String> {
     let path = get_config_path()?;
-    
+
     if !path.exists() {
         println!("ℹ️ 配置文件不存在，将使用空初始状态");
         return Ok(());
     }
 
-    let content = fs::read_to_string(&path)
-        .map_err(|e| format!("读取配置文件失败: {}", e))?;
-    
+    let content = fs::read_to_string(&path).map_err(|e| format!("读取配置文件失败: {}", e))?;
+
     let loaded_manager: AccountManager = serde_json::from_str(&content)
         .map_err(|e| format!("解析配置文件失败 (JSON格式错误): {}", e))?;
 
@@ -115,11 +108,10 @@ fn save_accounts_to_disk_internal() -> Result<(), String> {
         .lock()
         .map_err(|e| format!("锁获取失败: {}", e))?;
 
-    let json_str = serde_json::to_string_pretty(&*manager)
-        .map_err(|e| format!("序列化数据失败: {}", e))?;
+    let json_str =
+        serde_json::to_string_pretty(&*manager).map_err(|e| format!("序列化数据失败: {}", e))?;
 
-    fs::write(&path, json_str)
-        .map_err(|e| format!("写入配置文件失败: {}", e))?;
+    fs::write(&path, json_str).map_err(|e| format!("写入配置文件失败: {}", e))?;
 
     log_info!("账号配置文件保存成功，存放路径：{}", path.to_string_lossy());
 
@@ -139,7 +131,8 @@ impl Account {
         let uuid = match &account_type {
             AccountType::Microsoft => Uuid::new_v4().to_string(),
             AccountType::Offline => {
-                const MC_OFFLINE_NAMESPACE: Uuid = Uuid::from_u128(0x00000000000000000000000000000000);
+                const MC_OFFLINE_NAMESPACE: Uuid =
+                    Uuid::from_u128(0x00000000000000000000000000000000);
                 let input = format!("OfflinePlayer:{}", name);
                 Uuid::new_v3(&MC_OFFLINE_NAMESPACE, input.as_bytes()).to_string()
             }
@@ -186,14 +179,15 @@ pub fn add_account_to_manager(account: Account) -> Result<(), String> {
     }
 
     manager.accounts.insert(uuid, account);
-    
+
     // 释放锁后再保存（避免死锁，虽然这里作用域结束自动释放，但这是个好习惯）
-    drop(manager); 
+    drop(manager);
     save_accounts_to_disk_internal()?; // 修改后自动保存
 
     Ok(())
 }
 
+#[allow(dead_code)]
 pub fn set_current_account_internal(uuid: &str) -> Result<(), String> {
     let mut manager = ACCOUNT_MANAGER
         .get()
@@ -206,7 +200,7 @@ pub fn set_current_account_internal(uuid: &str) -> Result<(), String> {
     }
 
     manager.current_uuid = Some(uuid.to_string());
-    
+
     if let Some(account) = manager.accounts.get_mut(uuid) {
         account.update_last_login();
     }
@@ -286,7 +280,8 @@ pub fn get_current_account() -> Result<Option<AccountInfo>, String> {
         .lock()
         .map_err(|e| format!("获取账户锁失败: {}", e))?;
 
-    Ok(manager.current_uuid
+    Ok(manager
+        .current_uuid
         .as_ref()
         .and_then(|uuid| manager.accounts.get(uuid))
         .map(|a| a.info.clone()))
@@ -327,7 +322,7 @@ pub fn set_current_account(uuid: String) -> Result<String, String> {
     }
 
     manager.current_uuid = Some(uuid.clone());
-    
+
     if let Some(account) = manager.accounts.get_mut(&uuid) {
         account.update_last_login();
     }

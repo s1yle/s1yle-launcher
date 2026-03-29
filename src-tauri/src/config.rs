@@ -1,17 +1,20 @@
+use crate::account;
+use crate::json::{write_json_to_file, JsonValue};
 use std::{collections::HashMap, fs};
 use tauri::is_dev;
-use crate::json::{JsonValue, read_json_from_file, write_json_to_file};
-use crate::account;
 
-pub const CONFIG_PATH:&str=".slauncher/slauncher.json";
-pub const DEV:bool = is_dev();
+pub const CONFIG_PATH: &str = ".slauncher/slauncher.json";
+pub const DEV: bool = is_dev();
 
 pub fn init_config() {
     // 写配置文件默认值
     let config_path: &str = CONFIG_PATH;
 
-    let mut config:HashMap<String, JsonValue> = HashMap::new();
-    config.insert("username".to_string(), JsonValue::String("steve".to_string()));
+    let mut config: HashMap<String, JsonValue> = HashMap::new();
+    config.insert(
+        "username".to_string(),
+        JsonValue::String("steve".to_string()),
+    );
 
     let config_value = JsonValue::Object(config);
 
@@ -28,6 +31,7 @@ pub fn init_config() {
     }
 }
 
+#[allow(dead_code)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Config {
     pub config_path: String,

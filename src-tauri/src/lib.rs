@@ -140,15 +140,17 @@ pub fn init_logging(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> 
 }
 
 
+#[allow(dead_code)]
 enum LogLevel {
     Info,
     Warn,
     Debug,
-    Error
+    Error,
 }
 
+#[allow(dead_code)]
 struct Logger {
-    level: LogLevel
+    level: LogLevel,
 }
 
 impl Logger {
@@ -161,30 +163,27 @@ impl Logger {
         match level {
             LogLevel::Debug => tracing::debug!("[Internal] {}", msg),
             LogLevel::Info => tracing::info!("[Internal] {}", msg),
-            LogLevel::Warn=> tracing::warn!("[Internal] {}", msg),
+            LogLevel::Warn => tracing::warn!("[Internal] {}", msg),
             LogLevel::Error => tracing::error!("[Internal] {}", msg),
-            _ => tracing::info!("[Internal] [Unknown] {}", msg),
         }
     }
 }
 
+#[allow(dead_code)]
 static GLOBAL_LOGGER: Lazy<Mutex<Logger>> = Lazy::new(|| {
-    Mutex::new(Logger::new(LogLevel::Info)) // 默认级别为 Info
+    Mutex::new(Logger::new(LogLevel::Info))
 });
 
 #[macro_export]
 macro_rules! log_internal {
     ($level:expr, $($arg:tt)*) => ({
         if let Ok(logger) = $crate::GLOBAL_LOGGER.lock() {
-            // 利用 format! 把模板转成 String
             let msg = format!($($arg)*);
-            // 调用真正的实例方法
             logger.log_internal($level, msg);
         }
     })
 }
 
-// 为了方便调用，我们也可以给每个级别单独定义宏
 #[macro_export]
 macro_rules! log_info {
     ($($arg:tt)*) => ($crate::log_internal!($crate::LogLevel::Info, $($arg)*));

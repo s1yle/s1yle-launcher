@@ -51,8 +51,6 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
     return hasOwn;
   };
 
-  let currentMenu;
-
   const handleMenuClick = (path: string, group: string, itemId: string, hasChildren: boolean) => {
     logger.info(`菜单点击: path=${path}, group=${group}, itemId=${itemId}, hasChildren=${hasChildren}`);
 
@@ -61,7 +59,6 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
     if (onMenuClick) {
       onMenuClick(path);
     }
-    currentMenu = itemId;    
     console.log("当前组别：", group, "菜单项ID：", itemId, "有子菜单：", hasChildren);
   };
 
@@ -121,7 +118,6 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
         <div className="py-8">
           <BaseChildrenContent 
             items={childrenItems}
-            currentMenu={currentMenu}
             onMenuClick={handleMenuClick}
             isActive={isActive}
             hasChildrenItems={hasChildrenItems}

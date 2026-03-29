@@ -2,7 +2,6 @@ import { SidebarMenuItem } from '../../../router/config';
 
 export interface BaseChildrenContentProps {
     items: SidebarMenuItem[];
-    currentMenu?: string;
     onMenuClick?: (path: string, group: string, itemId: string, hasChildren: boolean) => void;
     isActive?: (path: string) => boolean;
     hasChildrenItems?: (item: SidebarMenuItem) => boolean;
@@ -11,7 +10,6 @@ export interface BaseChildrenContentProps {
 
 const BaseChildrenContent = ({
     items,
-    currentMenu,
     onMenuClick,
     isActive,
     hasChildrenItems,

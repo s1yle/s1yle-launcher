@@ -1,11 +1,7 @@
 import PageWithSidebar from '../components/sidebar/PageWithSidebar';
 import Download from './Download';
 
-interface AccountListWithSidebarProps {
-  onMenuClick?: (path: string, group: string, itemId: string, hasChildren: boolean) => void;
-}
-
-const DownloadWithSidebar = ({ onMenuClick }: AccountListWithSidebarProps) => {
+const DownloadWithSidebar = () => {
 
   return (
     <PageWithSidebar

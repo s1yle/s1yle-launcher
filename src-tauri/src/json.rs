@@ -3,6 +3,7 @@ use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
 use std::path::Path;
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq)]
 pub enum JsonValue {
     Object(HashMap<String, JsonValue>),
@@ -13,11 +14,13 @@ pub enum JsonValue {
     Null,
 }
 
+#[allow(dead_code)]
 struct JsonParser {
     chars: Vec<char>,
     index: usize,
 }
 
+#[allow(dead_code)]
 impl JsonParser {
     fn new(input: &str) -> Self {
         JsonParser {
@@ -199,6 +202,7 @@ impl JsonParser {
 }
 
 impl JsonValue {
+    #[allow(dead_code)]
     pub fn parse(input: &str) -> Result<Self, String> {
         let mut parser = JsonParser::new(input);
         let value = parser.parse_value()?;
@@ -214,7 +218,11 @@ impl JsonValue {
             JsonValue::Object(obj) => {
                 let mut items = Vec::new();
                 for (key, value) in obj {
-                    items.push(format!("\"{}\":{}", escape_string(key), value.to_json_string()));
+                    items.push(format!(
+                        "\"{}\":{}",
+                        escape_string(key),
+                        value.to_json_string()
+                    ));
                 }
                 format!("{{{}}}", items.join(","))
             }
@@ -245,10 +253,12 @@ fn escape_string(s: &str) -> String {
     result
 }
 
+#[allow(dead_code)]
 pub fn read_json_from_file<P: AsRef<Path>>(path: P) -> Result<JsonValue, String> {
     let mut file = File::open(path).map_err(|e| format!("打开文件失败：{}", e))?;
     let mut content = String::new();
-    file.read_to_string(&mut content).map_err(|e| format!("读取文件失败：{}", e))?;
+    file.read_to_string(&mut content)
+        .map_err(|e| format!("读取文件失败：{}", e))?;
     JsonValue::parse(&content)
 }
 
@@ -260,6 +270,7 @@ pub fn write_json_to_file<P: AsRef<Path>>(path: P, value: &JsonValue) -> Result<
         .open(path)
         .map_err(|e| format!("创建/打开文件失败：{}", e))?;
     let json_str = value.to_json_string();
-    file.write_all(json_str.as_bytes()).map_err(|e| format!("写入文件失败：{}", e))?;
+    file.write_all(json_str.as_bytes())
+        .map_err(|e| format!("写入文件失败：{}", e))?;
     Ok(())
 }
