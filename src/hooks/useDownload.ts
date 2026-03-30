@@ -7,11 +7,30 @@ import {
   cancelDownload,
   clearCompletedTasks,
   getDownloadBasePath,
+  getVersionDownloadManifest,
+  deployVersionFiles,
+  isVersionDeployed,
+  getFabricVersions,
+  buildFabricLaunchConfig,
   VersionManifest,
   GameVersion,
   DownloadTask,
+  FileDownload,
+  ModLoaderVersionList,
+  ModLoaderInfo,
 } from '../helper/rustInvoke';
 import { logger } from '../helper/logger';
+
+export interface DownloadItemState {
+  id: string;
+  filename: string;
+  url: string;
+  downloaded: number;
+  total: number;
+  status: 'pending' | 'downloading' | 'completed' | 'error';
+  error?: string;
+  sha1?: string;
+}
 
 export const useDownload = () => {
   const [manifest, setManifest] = useState<VersionManifest | null>(null);
@@ -20,6 +39,8 @@ export const useDownload = () => {
   const [downloadPath, setDownloadPath] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [downloadQueue, setDownloadQueue] = useState<DownloadItemState[]>([]);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const loadManifest = useCallback(async () => {
     setLoading(true);
@@ -114,6 +135,104 @@ export const useDownload = () => {
     }
   }, [loadDownloadTasks]);
 
+  const checkVersionDeployed = useCallback(async (versionId: string): Promise<boolean> => {
+    try {
+      return await isVersionDeployed(versionId);
+    } catch (e) {
+      logger.error('检查版本部署状态失败', e);
+      return false;
+    }
+  }, []);
+
+  const getVersionDownloadList = useCallback(async (versionId: string): Promise<FileDownload[]> => {
+    try {
+      const manifest = await getVersionDownloadManifest(versionId);
+      const files: FileDownload[] = [];
+      
+      if (manifest.client_jar) {
+        files.push(manifest.client_jar);
+      }
+      files.push(...manifest.libraries);
+      files.push(...manifest.assets);
+      
+      return files;
+    } catch (e) {
+      logger.error('获取版本下载列表失败', e);
+      throw e;
+    }
+  }, []);
+
+  const getFabricLoaderVersions = useCallback(async (mcVersion: string): Promise<ModLoaderVersionList> => {
+    try {
+      return await getFabricVersions(mcVersion);
+    } catch (e) {
+      logger.error('获取 Fabric 版本列表失败', e);
+      throw e;
+    }
+  }, []);
+
+  const buildFabricConfig = useCallback(async (
+    mcVersion: string,
+    loaderVersion: string,
+    gameDir: string,
+    assetsDir: string,
+    username: string,
+    uuid: string
+  ): Promise<ModLoaderInfo> => {
+    try {
+      return await buildFabricLaunchConfig(
+        mcVersion,
+        loaderVersion,
+        gameDir,
+        assetsDir,
+        username,
+        uuid
+      );
+    } catch (e) {
+      logger.error('构建 Fabric 配置失败', e);
+      throw e;
+    }
+  }, []);
+
+  const startDownloadQueue = useCallback(async (items: DownloadItemState[]) => {
+    setDownloadQueue(items);
+    setIsDownloading(true);
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      
+      setDownloadQueue(prev => prev.map((d, idx) => 
+        idx === i ? { ...d, status: 'downloading' } : d
+      ));
+
+      try {
+        const result = await downloadFile(item.url, item.filename, item.sha1);
+        
+        setDownloadQueue(prev => prev.map((d, idx) => 
+          idx === i ? { ...d, status: 'completed', downloaded: result.total } : d
+        ));
+      } catch (e) {
+        const errorMsg = e instanceof Error ? e.message : '下载失败';
+        setDownloadQueue(prev => prev.map((d, idx) => 
+          idx === i ? { ...d, status: 'error', error: errorMsg } : d
+        ));
+      }
+    }
+
+    setIsDownloading(false);
+  }, []);
+
+  const deployVersion = useCallback(async (versionId: string) => {
+    try {
+      await deployVersionFiles(versionId);
+      logger.info('版本部署成功', versionId);
+      await loadInstalledVersions();
+    } catch (e) {
+      logger.error('版本部署失败', e);
+      throw e;
+    }
+  }, [loadInstalledVersions]);
+
   useEffect(() => {
     refreshAll();
   }, [refreshAll]);
@@ -125,6 +244,8 @@ export const useDownload = () => {
     downloadPath,
     loading,
     error,
+    downloadQueue,
+    isDownloading,
     refreshAll,
     downloadVersion,
     cancelTask,
@@ -132,6 +253,12 @@ export const useDownload = () => {
     loadManifest,
     loadInstalledVersions,
     loadDownloadTasks,
+    checkVersionDeployed,
+    getVersionDownloadList,
+    getFabricLoaderVersions,
+    buildFabricConfig,
+    startDownloadQueue,
+    deployVersion,
   };
 };
 

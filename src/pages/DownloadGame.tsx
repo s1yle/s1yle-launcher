@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
-import { useDownload, formatFileSize, formatDate, getVersionTypeLabel, getVersionTypeColor } from '../hooks/useDownload';
-import { GameVersion, DownloadTask } from '../helper/rustInvoke';
+import { useDownload, formatDate, getVersionTypeLabel, getVersionTypeColor } from '../hooks/useDownload';
+import { GameVersion } from '../helper/rustInvoke';
+import { ProgressBar, DownloadItem, useNotification } from '../components/common';
 
 type TabType = 'browse' | 'downloading' | 'installed';
 type FilterType = 'all' | 'release' | 'snapshot' | 'old';
@@ -13,23 +14,37 @@ const DownloadGame: React.FC = () => {
     downloadPath,
     loading,
     error,
+    downloadQueue,
+    isDownloading,
     downloadVersion,
     cancelTask,
     clearCompleted,
+    loadInstalledVersions,
+    deployVersion,
   } = useDownload();
+
+  const { success, error: notifyError, info } = useNotification();
 
   const [activeTab, setActiveTab] = useState<TabType>('browse');
   const [filter, setFilter] = useState<FilterType>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [downloadingVersions, setDownloadingVersions] = useState<Set<string>>(new Set());
   const [downloadErrors, setDownloadErrors] = useState<Record<string, string>>({});
+  
+  const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
+  const [deployProgress, setDeployProgress] = useState(0);
+  const [isDeploying, setIsDeploying] = useState(false);
 
   const filteredVersions = useCallback(() => {
     if (!manifest) return [];
     let versions = manifest.versions;
 
     if (filter !== 'all') {
-      versions = versions.filter(v => v.type_ === filter);
+      if (filter === 'old') {
+        versions = versions.filter(v => v.type_ === 'old_beta' || v.type_ === 'old_alpha');
+      } else {
+        versions = versions.filter(v => v.type_ === filter);
+      }
     }
 
     if (searchQuery.trim()) {
@@ -47,7 +62,7 @@ const DownloadGame: React.FC = () => {
     return installedVersions.includes(versionId);
   }, [installedVersions]);
 
-  const isDownloading = useCallback((versionId: string) => {
+  const isDownloadingVersion = useCallback((versionId: string) => {
     return downloadingVersions.has(versionId);
   }, [downloadingVersions]);
 
@@ -56,12 +71,17 @@ const DownloadGame: React.FC = () => {
     setDownloadErrors(prev => ({ ...prev, [version.id]: '' }));
 
     try {
+      info('开始下载', `正在下载 ${version.id}...`);
       await downloadVersion(version);
+      success('下载完成', `${version.id} 下载成功`);
+      setSelectedVersion(version.id);
     } catch (e) {
+      const msg = e instanceof Error ? e.message : '下载失败';
       setDownloadErrors(prev => ({
         ...prev,
-        [version.id]: e instanceof Error ? e.message : '下载失败'
+        [version.id]: msg
       }));
+      notifyError('下载失败', msg);
     } finally {
       setDownloadingVersions(prev => {
         const next = new Set(prev);
@@ -71,11 +91,34 @@ const DownloadGame: React.FC = () => {
     }
   };
 
-  const handleCancel = async (task: DownloadTask) => {
+  const handleDeploy = async (versionId: string) => {
+    setIsDeploying(true);
+    setDeployProgress(0);
+    
+    try {
+      setDeployProgress(30);
+      info('开始部署', `正在部署 ${versionId}...`);
+      
+      setDeployProgress(70);
+      await deployVersion(versionId);
+      
+      setDeployProgress(100);
+      success('部署完成', `${versionId} 部署成功`);
+      await loadInstalledVersions();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '部署失败';
+      notifyError('部署失败', msg);
+    } finally {
+      setIsDeploying(false);
+      setDeployProgress(0);
+    }
+  };
+
+  const handleCancel = async (task: { id: string }) => {
     try {
       await cancelTask(task.id);
     } catch (e) {
-      console.error('取消失败:', e);
+      notifyError('取消失败', '无法取消下载任务');
     }
   };
 
@@ -83,7 +126,7 @@ const DownloadGame: React.FC = () => {
     try {
       await clearCompleted();
     } catch (e) {
-      console.error('清理失败:', e);
+      notifyError('清理失败', '无法清理已完成任务');
     }
   };
 
@@ -102,13 +145,11 @@ const DownloadGame: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full">
-      {/* 标题区域 */}
       <div className="p-6 border-b border-white/10">
         <h1 className="text-2xl font-bold text-white mb-2">游戏下载</h1>
         <p className="text-gray-400 text-sm">下载并管理 Minecraft 游戏版本</p>
       </div>
 
-      {/* 标签页切换 */}
       <div className="flex gap-1 px-6 pt-4">
         {tabs.map(tab => (
           <button
@@ -130,19 +171,15 @@ const DownloadGame: React.FC = () => {
         ))}
       </div>
 
-      {/* 错误提示 */}
       {error && (
         <div className="mx-6 mt-4 p-4 bg-red-500/20 border border-red-500/30 rounded-lg">
           <p className="text-red-300 text-sm">{error}</p>
         </div>
       )}
 
-      {/* 内容区域 */}
       <div className="flex-1 overflow-auto p-6">
-        {/* 浏览版本 */}
         {activeTab === 'browse' && (
           <div className="space-y-4">
-            {/* 搜索和筛选 */}
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
                 <input
@@ -170,7 +207,6 @@ const DownloadGame: React.FC = () => {
               </div>
             </div>
 
-            {/* 最新版本提示 */}
             {manifest?.latest && (
               <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
                 <p className="text-indigo-300 text-sm">
@@ -182,7 +218,6 @@ const DownloadGame: React.FC = () => {
               </div>
             )}
 
-            {/* 版本列表 */}
             {loading && !manifest ? (
               <div className="flex items-center justify-center py-20">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
@@ -195,9 +230,14 @@ const DownloadGame: React.FC = () => {
                     key={version.id}
                     version={version}
                     installed={isInstalled(version.id)}
-                    downloading={isDownloading(version.id)}
+                    downloading={isDownloadingVersion(version.id)}
                     error={downloadErrors[version.id]}
+                    selected={selectedVersion === version.id}
+                    onSelect={() => setSelectedVersion(version.id)}
                     onDownload={() => handleDownload(version)}
+                    onDeploy={() => handleDeploy(version.id)}
+                    isDeploying={isDeploying && selectedVersion === version.id}
+                    deployProgress={deployProgress}
                   />
                 ))}
               </div>
@@ -205,41 +245,77 @@ const DownloadGame: React.FC = () => {
           </div>
         )}
 
-        {/* 下载中 */}
         {activeTab === 'downloading' && (
           <div className="space-y-4">
-            {downloadTasks.length === 0 ? (
-              <div className="text-center py-20">
-                <p className="text-gray-500">暂无下载任务</p>
-              </div>
-            ) : (
+            {downloadQueue.length > 0 ? (
               <>
                 <div className="flex justify-between items-center">
                   <p className="text-gray-400 text-sm">
-                    共 {downloadTasks.length} 个任务
+                    下载队列: {downloadQueue.filter(d => d.status === 'completed').length} / {downloadQueue.length}
                   </p>
-                  <button
-                    onClick={handleClearCompleted}
-                    className="px-3 py-1 text-sm bg-white/5 hover:bg-white/10 border border-white/10 rounded transition-colors"
-                  >
-                    清理已完成
-                  </button>
+                  {isDownloading && (
+                    <span className="text-blue-400 text-sm">下载中...</span>
+                  )}
                 </div>
+                <ProgressBar
+                  progress={(downloadQueue.filter(d => d.status === 'completed').length / downloadQueue.length) * 100}
+                  status={isDownloading ? 'active' : 'completed'}
+                  label="总体进度"
+                  size="md"
+                />
                 <div className="grid gap-3">
-                  {downloadTasks.map(task => (
-                    <DownloadTaskCard
-                      key={task.id}
-                      task={task}
-                      onCancel={() => handleCancel(task)}
+                  {downloadQueue.map(item => (
+                    <DownloadItem
+                      key={item.id}
+                      filename={item.filename}
+                      downloaded={item.downloaded}
+                      total={item.total}
+                      status={item.status}
+                      error={item.error}
+                      onRetry={() => {}}
                     />
                   ))}
                 </div>
+              </>
+            ) : (
+              <>
+                {downloadTasks.length === 0 ? (
+                  <div className="text-center py-20">
+                    <p className="text-gray-500">暂无下载任务</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex justify-between items-center">
+                      <p className="text-gray-400 text-sm">
+                        共 {downloadTasks.length} 个任务
+                      </p>
+                      <button
+                        onClick={handleClearCompleted}
+                        className="px-3 py-1 text-sm bg-white/5 hover:bg-white/10 border border-white/10 rounded transition-colors"
+                      >
+                        清理已完成
+                      </button>
+                    </div>
+                    <div className="grid gap-3">
+                      {downloadTasks.map(task => (
+                        <DownloadItem
+                          key={task.id}
+                          filename={task.filename}
+                          downloaded={task.downloaded_size}
+                          total={task.total_size}
+                          status={task.status === 'completed' ? 'completed' : task.status === 'downloading' ? 'downloading' : 'pending'}
+                          onCancel={() => handleCancel(task)}
+                          showCancel={task.status === 'downloading'}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
               </>
             )}
           </div>
         )}
 
-        {/* 已安装 */}
         {activeTab === 'installed' && (
           <div className="space-y-4">
             {installedVersions.length === 0 ? (
@@ -256,7 +332,11 @@ const DownloadGame: React.FC = () => {
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
-                        <span className="text-green-400 text-lg">✓</span>
+                        <span className="text-green-400 text-lg">
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </span>
                       </div>
                       <div>
                         <p className="text-white font-medium">{version}</p>
@@ -274,7 +354,6 @@ const DownloadGame: React.FC = () => {
         )}
       </div>
 
-      {/* 下载目录 */}
       <div className="px-6 py-3 border-t border-white/10 bg-black/20">
         <p className="text-gray-500 text-xs">
           下载目录: <span className="font-mono">{downloadPath}</span>
@@ -289,7 +368,12 @@ interface VersionCardProps {
   installed: boolean;
   downloading: boolean;
   error?: string;
+  selected: boolean;
+  onSelect: () => void;
   onDownload: () => void;
+  onDeploy: () => void;
+  isDeploying: boolean;
+  deployProgress: number;
 }
 
 const VersionCard: React.FC<VersionCardProps> = ({
@@ -297,14 +381,28 @@ const VersionCard: React.FC<VersionCardProps> = ({
   installed,
   downloading,
   error,
+  selected,
+  onSelect,
   onDownload,
+  onDeploy,
+  isDeploying,
+  deployProgress,
 }) => {
   return (
-    <div className="p-4 bg-white/5 border border-white/10 rounded-lg hover:border-white/20 transition-all">
+    <div 
+      className={`p-4 bg-white/5 border rounded-lg transition-all cursor-pointer ${
+        selected ? 'border-indigo-500/50' : 'border-white/10 hover:border-white/20'
+      }`}
+      onClick={onSelect}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-indigo-500/20 rounded-lg flex items-center justify-center">
-            <span className="text-indigo-400 text-xl">🎮</span>
+            <span className="text-indigo-400 text-xl">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
+              </svg>
+            </span>
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -323,20 +421,39 @@ const VersionCard: React.FC<VersionCardProps> = ({
             </p>
           </div>
         </div>
-        <div>
+        <div className="flex items-center gap-2">
           {installed ? (
-            <button className="px-4 py-2 bg-green-600/50 text-white text-sm rounded-lg cursor-not-allowed">
-              已安装
-            </button>
+            <div className="text-right">
+              {isDeploying ? (
+                <div className="w-32">
+                  <ProgressBar
+                    progress={deployProgress}
+                    status="active"
+                    showPercentage
+                    size="sm"
+                  />
+                </div>
+              ) : (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onDeploy(); }}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors"
+                >
+                  部署
+                </button>
+              )}
+            </div>
           ) : downloading ? (
             <button className="px-4 py-2 bg-gray-600 text-white text-sm rounded-lg">
-              下载中...
+              <span className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                下载中
+              </span>
             </button>
           ) : error ? (
             <div className="text-right">
               <p className="text-red-400 text-xs mb-1">{error}</p>
               <button
-                onClick={onDownload}
+                onClick={(e) => { e.stopPropagation(); onDownload(); }}
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition-colors"
               >
                 重试
@@ -344,7 +461,7 @@ const VersionCard: React.FC<VersionCardProps> = ({
             </div>
           ) : (
             <button
-              onClick={onDownload}
+              onClick={(e) => { e.stopPropagation(); onDownload(); }}
               className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition-colors"
             >
               下载
@@ -352,60 +469,6 @@ const VersionCard: React.FC<VersionCardProps> = ({
           )}
         </div>
       </div>
-    </div>
-  );
-};
-
-interface DownloadTaskCardProps {
-  task: DownloadTask;
-  onCancel: () => void;
-}
-
-const DownloadTaskCard: React.FC<DownloadTaskCardProps> = ({ task, onCancel }) => {
-  const progress = task.total_size > 0
-    ? (task.downloaded_size / task.total_size) * 100
-    : 0;
-
-  return (
-    <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-            task.status === 'completed' ? 'bg-green-500/20' : 'bg-blue-500/20'
-          }`}>
-            <span className={task.status === 'completed' ? 'text-green-400' : 'text-blue-400'}>
-              {task.status === 'completed' ? '✓' : '↓'}
-            </span>
-          </div>
-          <div>
-            <p className="text-white font-medium">{task.filename}</p>
-            <p className="text-gray-500 text-sm">
-              {formatFileSize(task.downloaded_size)} / {formatFileSize(task.total_size)}
-            </p>
-          </div>
-        </div>
-        {task.status === 'downloading' ? (
-          <button
-            onClick={onCancel}
-            className="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-sm rounded border border-red-500/30 transition-colors"
-          >
-            取消
-          </button>
-        ) : (
-          <span className="px-3 py-1.5 bg-green-500/20 text-green-400 text-sm rounded border border-green-500/30">
-            完成
-          </span>
-        )}
-      </div>
-      <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-        <div
-          className={`h-full transition-all ${
-            task.status === 'completed' ? 'bg-green-500' : 'bg-blue-500'
-          }`}
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-      <p className="text-gray-500 text-xs mt-2 text-right">{progress.toFixed(1)}%</p>
     </div>
   );
 };

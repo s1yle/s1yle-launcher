@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import NotificationProvider from "./components/common/NotificationProvider";
 import { invokeAccInit } from "./helper/rustInvoke";
 import { logger } from "./helper/logger";
 
@@ -38,6 +39,8 @@ document.querySelector('body')?.addEventListener('touchstart', function(event) {
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <App />
+    <NotificationProvider>
+      <App />
+    </NotificationProvider>
   </React.StrictMode>,
 );
