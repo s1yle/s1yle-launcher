@@ -479,10 +479,11 @@ export const getVersionDetail = async (
 export const downloadFile = async (
   url: string,
   filename: string,
+  sha1?: string,
   options?: InvokeOptions
 ): Promise<DownloadProgress> => {
-  logger.info('开始下载文件', { url, filename });
-  return await invokeRustFunction("download_file", { url, filename }, options);
+  logger.info('开始下载文件', { url, filename, sha1 });
+  return await invokeRustFunction("download_file", { url, filename, sha1 }, options);
 };
 
 export const getDownloadTasks = async (

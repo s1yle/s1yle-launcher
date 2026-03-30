@@ -2,13 +2,16 @@
 
 use crate::log_info;
 
+use async_fetcher::Fetcher;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fs::{self, File};
-use std::io::Write;
+use std::fs;
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::sync::Mutex;
+use std::time::Duration;
 use tauri::State;
+use tokio::sync::mpsc;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameVersion {
@@ -57,14 +60,27 @@ pub struct DownloadProgress {
 pub struct DownloadManager {
     pub tasks: Mutex<HashMap<String, DownloadTask>>,
     pub base_path: PathBuf,
+    pub fetcher: Arc<Fetcher<()>>,
 }
 
 impl DownloadManager {
     pub fn new(base_path: PathBuf) -> Self {
         fs::create_dir_all(&base_path).ok();
+        
+        let (events_tx, _events_rx) = mpsc::unbounded_channel();
+        
+        let fetcher: Arc<Fetcher<()>> = Fetcher::default()
+            .connections_per_file(4)
+            .max_part_size(4 * 1024 * 1024)
+            .events(events_tx)
+            .retries(3)
+            .timeout(Duration::from_secs(30))
+            .build();
+
         Self {
             tasks: Mutex::new(HashMap::new()),
             base_path,
+            fetcher,
         }
     }
 
@@ -140,6 +156,7 @@ pub async fn get_version_detail(version_id: String) -> Result<serde_json::Value,
 pub async fn download_file(
     url: String,
     filename: String,
+    sha1: Option<String>,
     download_manager: State<'_, DownloadManager>,
 ) -> Result<DownloadProgress, String> {
     log_info!("开始下载文件: {} -> {}", url, filename);
@@ -147,56 +164,64 @@ pub async fn download_file(
     let task_id = format!("{:x}", md5::compute(&url));
     let save_path = download_manager.base_path.join(&filename);
 
-    let client = reqwest::Client::new();
-    let response = client
-        .get(&url)
-        .send()
-        .await
-        .map_err(|e| format!("下载请求失败: {}", e))?;
-
-    let total_size = response.content_length().unwrap_or(0);
+    let existing_size = if save_path.exists() {
+        fs::metadata(&save_path).map(|m| m.len()).unwrap_or(0)
+    } else {
+        0
+    };
 
     let task = DownloadTask {
         id: task_id.clone(),
         url: url.clone(),
         path: save_path.to_string_lossy().to_string(),
         filename: filename.clone(),
-        total_size,
-        downloaded_size: 0,
+        total_size: 0,
+        downloaded_size: existing_size,
         status: "downloading".to_string(),
     };
-
     download_manager.add_task(task);
 
-    let mut file = File::create(&save_path)
-        .map_err(|e| format!("创建文件失败: {}", e))?;
+    let fetcher = download_manager.fetcher.clone();
 
-    let bytes = response
-        .bytes()
-        .await
-        .map_err(|e| format!("读取下载数据失败: {}", e))?;
+    match fetcher.request(
+        std::sync::Arc::new([url.clone().into_boxed_str()]),
+        std::sync::Arc::from(std::path::PathBuf::from(&save_path)),
+        std::sync::Arc::new(()),
+    ).await {
+        Ok(_) => {
+            let downloaded = fs::metadata(&save_path)
+                .map(|m| m.len())
+                .unwrap_or(0);
+            
+            if let Some(t) = download_manager.get_task(&task_id) {
+                let mut updated = t;
+                updated.status = "completed".to_string();
+                updated.downloaded_size = downloaded;
+                updated.total_size = downloaded;
+                download_manager.update_task(updated);
+            }
 
-    file.write_all(&bytes)
-        .map_err(|e| format!("写入文件失败: {}", e))?;
-
-    let downloaded = bytes.len() as u64;
-
-    if let Some(task) = download_manager.get_task(&task_id) {
-        let mut updated_task = task;
-        updated_task.status = "completed".to_string();
-        updated_task.downloaded_size = downloaded;
-        download_manager.update_task(updated_task);
+            log_info!("文件下载完成: {}", filename);
+            
+            Ok(DownloadProgress {
+                task_id,
+                downloaded,
+                total: downloaded,
+                speed: 0.0,
+                status: "completed".to_string(),
+            })
+        }
+        Err(e) => {
+            if let Some(t) = download_manager.get_task(&task_id) {
+                let mut updated = t;
+                updated.status = "failed".to_string();
+                download_manager.update_task(updated);
+            }
+            
+            log_info!("文件下载失败: {}", filename);
+            Err(format!("下载失败: {}", e))
+        }
     }
-
-    log_info!("文件下载完成: {}", filename);
-
-    Ok(DownloadProgress {
-        task_id,
-        downloaded,
-        total: total_size,
-        speed: 0.0,
-        status: "completed".to_string(),
-    })
 }
 
 #[tauri::command]
