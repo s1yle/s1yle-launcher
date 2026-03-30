@@ -5,6 +5,7 @@ mod config;
 mod download;
 mod json;
 mod launch;
+mod modloader;
 mod window;
 use std::fs;
 use std::sync::Mutex;
@@ -29,6 +30,7 @@ pub use crate::window::{
 pub use crate::download::{
     get_version_manifest,
     get_version_detail,
+    get_version_download_manifest,
     download_file,
     get_download_tasks,
     get_download_task,
@@ -37,7 +39,25 @@ pub use crate::download::{
     get_game_versions,
     get_download_base_path,
     set_download_base_path,
+    deploy_version_files,
+    is_version_deployed,
     DownloadManager,
+    FileDownload,
+    VersionDownloadManifest,
+};
+pub use crate::modloader::{
+    get_fabric_versions,
+    get_fabric_version_detail,
+    build_fabric_launch_config,
+    get_forge_versions,
+    build_forge_launch_config,
+    get_installed_mod_loaders,
+    ModLoaderType,
+    ModLoaderInfo,
+    ModLoaderVersionList,
+    ModLoaderVersionItem,
+    LibraryInfo,
+    ModLoaderManager,
 };
 use once_cell::sync::Lazy;
 use tauri::Manager;
@@ -215,11 +235,13 @@ pub fn run() {
         .join("s1yle")
         .join("minecraft");
 
-    let download_manager = DownloadManager::new(download_base_path);
+    let download_manager = DownloadManager::new(download_base_path.clone());
+    let mod_loader_manager = ModLoaderManager::new(download_base_path.clone());
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(download_manager)
+        .manage(mod_loader_manager)
 
         .setup(|app| {
             init_logging(app)?;
@@ -246,6 +268,7 @@ pub fn run() {
             initialize_account_system,
             get_version_manifest,
             get_version_detail,
+            get_version_download_manifest,
             download_file,
             get_download_tasks,
             get_download_task,
@@ -253,7 +276,15 @@ pub fn run() {
             clear_completed_tasks,
             get_game_versions,
             get_download_base_path,
-            set_download_base_path
+            set_download_base_path,
+            deploy_version_files,
+            is_version_deployed,
+            get_fabric_versions,
+            get_fabric_version_detail,
+            build_fabric_launch_config,
+            get_forge_versions,
+            build_forge_launch_config,
+            get_installed_mod_loaders
         ])
 
         .run(tauri::generate_context!())

@@ -459,6 +459,22 @@ export interface DownloadProgress {
   status: string;
 }
 
+export interface FileDownload {
+  url: string;
+  sha1: string | null;
+  size: number;
+  path: string;
+}
+
+export interface VersionDownloadManifest {
+  version_id: string;
+  client_jar: FileDownload | null;
+  libraries: FileDownload[];
+  assets: FileDownload[];
+  natives: FileDownload[];
+  asset_index: FileDownload | null;
+}
+
 // ======================== 下载相关函数 ========================
 
 export const getVersionManifest = async (
@@ -476,14 +492,23 @@ export const getVersionDetail = async (
   return await invokeRustFunction("get_version_detail", { versionId }, options);
 };
 
+export const getVersionDownloadManifest = async (
+  versionId: string,
+  options?: InvokeOptions
+): Promise<VersionDownloadManifest> => {
+  logger.info('获取版本下载清单', { versionId });
+  return await invokeRustFunction("get_version_download_manifest", { versionId }, options);
+};
+
 export const downloadFile = async (
   url: string,
   filename: string,
   sha1?: string,
+  skipVerify?: boolean,
   options?: InvokeOptions
 ): Promise<DownloadProgress> => {
-  logger.info('开始下载文件', { url, filename, sha1 });
-  return await invokeRustFunction("download_file", { url, filename, sha1 }, options);
+  logger.info('开始下载文件', { url, filename, sha1, skipVerify });
+  return await invokeRustFunction("download_file", { url, filename, sha1, skip_verify: skipVerify }, options);
 };
 
 export const getDownloadTasks = async (
@@ -536,4 +561,167 @@ export const setDownloadBasePath = async (
 ): Promise<string> => {
   logger.info('设置下载目录路径', { path });
   return await invokeRustFunction("set_download_base_path", { path }, options);
+};
+
+export const deployVersionFiles = async (
+  versionId: string,
+  options?: InvokeOptions
+): Promise<string> => {
+  logger.info('部署版本文件', { versionId });
+  return await invokeRustFunction("deploy_version_files", { versionId }, options);
+};
+
+export const isVersionDeployed = async (
+  versionId: string,
+  options?: InvokeOptions
+): Promise<boolean> => {
+  logger.info('检查版本是否已部署', { versionId });
+  return await invokeRustFunction("is_version_deployed", { versionId }, options);
+};
+
+// ======================== 模组加载器相关类型定义 ========================
+
+export enum ModLoaderType {
+  Vanilla = "Vanilla",
+  Fabric = "Fabric",
+  Forge = "Forge",
+  NeoForge = "NeoForge",
+}
+
+export interface LibraryInfo {
+  name: string;
+  url: string;
+  sha1: string | null;
+  size: number;
+  path: string;
+}
+
+export interface ModLoaderInfo {
+  version_id: string;
+  mod_loader_type: ModLoaderType;
+  minecraft_version: string;
+  loader_version: string | null;
+  main_class: string;
+  libraries: LibraryInfo[];
+  client_jar_required: boolean;
+}
+
+export interface ModLoaderVersionItem {
+  version: string;
+  stable: boolean;
+  url: string | null;
+  sha1: string | null;
+}
+
+export interface ModLoaderVersionList {
+  mod_loader_type: ModLoaderType;
+  minecraft_version: string;
+  versions: ModLoaderVersionItem[];
+}
+
+export interface FabricVersionDetail {
+  id: string;
+  inherits_from: string | null;
+  jar: string | null;
+  main_class: {
+    client: string;
+  };
+  arguments: {
+    game: any[];
+    jvm: any[];
+  };
+  libraries: Array<{
+    name: string;
+    url: string | null;
+    sha1: string | null;
+    size: number | null;
+    path: string | null;
+  }>;
+}
+
+// ======================== 模组加载器相关函数 ========================
+
+export const getFabricVersions = async (
+  mcVersion: string,
+  options?: InvokeOptions
+): Promise<ModLoaderVersionList> => {
+  logger.info('获取 Fabric 版本列表', { mcVersion });
+  return await invokeRustFunction("get_fabric_versions", { mcVersion }, options);
+};
+
+export const getFabricVersionDetail = async (
+  mcVersion: string,
+  loaderVersion: string,
+  options?: InvokeOptions
+): Promise<FabricVersionDetail> => {
+  logger.info('获取 Fabric 版本详情', { mcVersion, loaderVersion });
+  return await invokeRustFunction("get_fabric_version_detail", { mcVersion, loaderVersion }, options);
+};
+
+export const buildFabricLaunchConfig = async (
+  mcVersion: string,
+  loaderVersion: string,
+  gameDir: string,
+  assetsDir: string,
+  username: string,
+  uuid: string,
+  accessToken?: string,
+  javaPath?: string,
+  memoryMb?: number,
+  options?: InvokeOptions
+): Promise<ModLoaderInfo> => {
+  logger.info('构建 Fabric 启动配置', { mcVersion, loaderVersion });
+  return await invokeRustFunction("build_fabric_launch_config", {
+    mc_version: mcVersion,
+    loader_version: loaderVersion,
+    game_dir: gameDir,
+    assets_dir: assetsDir,
+    username,
+    uuid,
+    access_token: accessToken,
+    java_path: javaPath,
+    memory_mb: memoryMb,
+  }, options);
+};
+
+export const getForgeVersions = async (
+  mcVersion: string,
+  options?: InvokeOptions
+): Promise<ModLoaderVersionList> => {
+  logger.info('获取 Forge 版本列表', { mcVersion });
+  return await invokeRustFunction("get_forge_versions", { mcVersion }, options);
+};
+
+export const buildForgeLaunchConfig = async (
+  mcVersion: string,
+  forgeVersion: string,
+  gameDir: string,
+  assetsDir: string,
+  username: string,
+  uuid: string,
+  accessToken?: string,
+  javaPath?: string,
+  memoryMb?: number,
+  options?: InvokeOptions
+): Promise<ModLoaderInfo> => {
+  logger.info('构建 Forge 启动配置', { mcVersion, forgeVersion });
+  return await invokeRustFunction("build_forge_launch_config", {
+    mc_version: mcVersion,
+    forge_version: forgeVersion,
+    game_dir: gameDir,
+    assets_dir: assetsDir,
+    username,
+    uuid,
+    access_token: accessToken,
+    java_path: javaPath,
+    memory_mb: memoryMb,
+  }, options);
+};
+
+export const getInstalledModLoaders = async (
+  versionId: string,
+  options?: InvokeOptions
+): Promise<ModLoaderType[]> => {
+  logger.info('获取已安装的模组加载器', { versionId });
+  return await invokeRustFunction("get_installed_mod_loaders", { versionId }, options);
 };
