@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
-import { useDownload, formatDate, getVersionTypeLabel, getVersionTypeColor } from '../hooks/useDownload';
+import { useDownload } from '../hooks/useDownload';
 import { GameVersion } from '../helper/rustInvoke';
-import { ProgressBar, DownloadItem, useNotification } from '../components/common';
+import { ProgressBar, DownloadItem, StatusBadge, useNotification } from '../components/common';
+import { formatDate } from '../utils/format';
 
 type TabType = 'browse' | 'downloading' | 'installed';
 type FilterType = 'all' | 'release' | 'snapshot' | 'old';
@@ -407,9 +408,7 @@ const VersionCard: React.FC<VersionCardProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-white font-medium">{version.id}</h3>
-              <span className={`px-2 py-0.5 text-xs rounded border ${getVersionTypeColor(version.type_)}`}>
-                {getVersionTypeLabel(version.type_)}
-              </span>
+              <StatusBadge type={version.type_} />
               {installed && (
                 <span className="px-2 py-0.5 text-xs rounded bg-green-500/20 text-green-400 border border-green-500/30">
                   已安装

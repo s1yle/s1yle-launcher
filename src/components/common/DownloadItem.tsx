@@ -1,6 +1,6 @@
 import React from 'react';
 import { ProgressBar } from '../common';
-import { formatFileSize } from '../../hooks/useDownload';
+import { formatFileSize } from '../../utils/format';
 
 export interface DownloadItemProps {
   filename: string;
