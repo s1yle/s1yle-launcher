@@ -526,7 +526,12 @@ pub async fn download_file(
     log_info!("开始下载文件: {} -> {}", url, filename);
 
     let task_id = format!("{:x}", md5::compute(&url));
-    let save_path = download_manager.base_path.join(&filename);
+    let save_path = download_manager.base_path.join("temp").join(&filename);
+
+    if let Some(parent) = save_path.parent() {
+        fs::create_dir_all(parent)
+            .map_err(|e| format!("创建目录失败: {}", e))?;
+    }
 
     let existing_size = if save_path.exists() {
         fs::metadata(&save_path).map(|m| m.len()).unwrap_or(0)
