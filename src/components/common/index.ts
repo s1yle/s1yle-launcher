@@ -10,6 +10,8 @@ export type { DownloadItemProps } from './DownloadItem';
 export { default as StatusBadge } from './StatusBadge';
 export type { StatusBadgeProps } from './StatusBadge';
 
+export { default as VersionCard } from './VersionCard';
+export type { VersionCardProps } from './VersionCard';
 
 export {
   NotificationProvider,
