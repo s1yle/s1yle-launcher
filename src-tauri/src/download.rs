@@ -433,17 +433,22 @@ async fn parse_version_downloads(version_json: &serde_json::Value) -> Result<Ver
         if !url.is_empty() {
             match fetch_asset_objects(url).await {
                 Ok(asset_objects) => {
-                    for (hash, obj) in asset_objects {
-                        let virtual_path = if version_json["assets"].as_str() == Some("pre-1.6") || version_json["assets"].is_null() || version_json["assets"].as_str().is_none() {
-                            format!("virtual/legacy/{}", hash)
+                    let is_legacy = version_json["assets"].as_str() == Some("pre-1.6")
+                        || version_json["assets"].is_null()
+                        || version_json["assets"].as_str().is_none();
+                    
+                    for (virtual_path, obj) in asset_objects {
+                        let hash = &obj.hash;
+                        let path = if is_legacy {
+                            format!("virtual/legacy/{}", virtual_path)
                         } else {
-                            format!("objects/{}", hash)
+                            format!("objects/{}/{}", &hash[..2], hash)
                         };
                         assets.push(FileDownload {
                             url: format!("https://resources.download.minecraft.net/{}/{}", &hash[..2], hash),
                             sha1: Some(hash.clone()),
                             size: obj.size,
-                            path: virtual_path,
+                            path,
                         });
                     }
                 }

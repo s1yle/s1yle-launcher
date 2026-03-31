@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   getVersionManifest,
   getGameVersions,
@@ -21,6 +21,20 @@ import {
 } from '../helper/rustInvoke';
 import { logger } from '../helper/logger';
 
+const CONCURRENT_LIMIT = 16;
+
+export interface CategoryProgress {
+  category: string;
+  label: string;
+  total: number;
+  completed: number;
+  failed: number;
+  downloading: number;
+  totalBytes: number;
+  downloadedBytes: number;
+  error?: string;
+}
+
 export interface DownloadItemState {
   id: string;
   filename: string;
@@ -32,6 +46,16 @@ export interface DownloadItemState {
   sha1?: string;
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+  client_jar: '客户端',
+  libraries: '依赖库',
+  asset_index: '资源索引',
+  assets: '资源文件',
+  natives: '原生库',
+};
+
+const CATEGORY_ORDER = ['client_jar', 'libraries', 'asset_index', 'assets', 'natives'];
+
 export const useDownload = () => {
   const [manifest, setManifest] = useState<VersionManifest | null>(null);
   const [installedVersions, setInstalledVersions] = useState<string[]>([]);
@@ -40,7 +64,10 @@ export const useDownload = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [downloadQueue, setDownloadQueue] = useState<DownloadItemState[]>([]);
+  const [categoryProgress, setCategoryProgress] = useState<CategoryProgress[]>([]);
   const [isDownloading, setIsDownloading] = useState(false);
+  const abortRef = useRef(false);
+  const categoryMapRef = useRef<Map<string, CategoryProgress>>(new Map());
 
   const loadManifest = useCallback(async () => {
     setLoading(true);
@@ -95,10 +122,59 @@ export const useDownload = () => {
     ]);
   }, [loadManifest, loadInstalledVersions, loadDownloadTasks, loadDownloadPath]);
 
+  const initCategoryMap = useCallback((files: { file: FileDownload; category: string }[]) => {
+    const map = new Map<string, CategoryProgress>();
+    for (const { category, file } of files) {
+      if (!map.has(category)) {
+        map.set(category, {
+          category,
+          label: CATEGORY_LABELS[category] ?? category,
+          total: 0,
+          completed: 0,
+          failed: 0,
+          downloading: 0,
+          totalBytes: 0,
+          downloadedBytes: 0,
+        });
+      }
+      const entry = map.get(category)!;
+      entry.total++;
+      entry.totalBytes += file.size;
+    }
+    categoryMapRef.current = map;
+    setCategoryProgress(CATEGORY_ORDER
+      .filter(c => map.has(c))
+      .map(c => ({ ...map.get(c)! }))
+      .concat([...map.values()].filter(e => !CATEGORY_ORDER.includes(e.category)).map(e => ({ ...e }))));
+  }, []);
+
+  const updateCategoryFromItem = useCallback((item: DownloadItemState) => {
+    const cat = item.filename.split('/')[0];
+    const entry = categoryMapRef.current.get(cat);
+    if (!entry) return;
+    if (item.status === 'completed') {
+      entry.completed++;
+      entry.downloadedBytes += item.downloaded;
+      entry.downloading = Math.max(0, entry.downloading - 1);
+    } else if (item.status === 'error') {
+      entry.failed++;
+      entry.downloading = Math.max(0, entry.downloading - 1);
+      if (item.error && !entry.error) entry.error = item.error;
+    } else if (item.status === 'downloading') {
+      entry.downloading++;
+    }
+    setCategoryProgress(CATEGORY_ORDER
+      .filter(c => categoryMapRef.current.has(c))
+      .map(c => ({ ...categoryMapRef.current.get(c)! }))
+      .concat([...categoryMapRef.current.values()].filter(e => !CATEGORY_ORDER.includes(e.category)).map(e => ({ ...e }))));
+  }, []);
+
   const downloadVersion = useCallback(async (version: GameVersion) => {
     setError(null);
     setIsDownloading(true);
+    abortRef.current = false;
     setDownloadQueue([]);
+    setCategoryProgress([]);
     try {
       const manifest = await getVersionDownloadManifest(version.id);
 
@@ -133,28 +209,49 @@ export const useDownload = () => {
         sha1: file.sha1 ?? undefined,
       }));
       setDownloadQueue(queueItems);
+      initCategoryMap(files);
 
-      for (let i = 0; i < files.length; i++) {
-        const { file } = files[i];
-
-        setDownloadQueue(prev => prev.map((d, idx) =>
-          idx === i ? { ...d, status: 'downloading' } : d
-        ));
-
+      const downloadOne = async (index: number): Promise<void> => {
+        const { file } = files[index];
         try {
+          setDownloadQueue(prev => {
+            const next = [...prev];
+            next[index] = { ...next[index], status: 'downloading' };
+            return next;
+          });
+
           const result = await downloadFile(file.url, file.path, file.sha1 ?? undefined, undefined, file.size);
 
-          setDownloadQueue(prev => prev.map((d, idx) =>
-            idx === i ? { ...d, status: 'completed', downloaded: result.total } : d
-          ));
+          setDownloadQueue(prev => {
+            const next = [...prev];
+            next[index] = { ...next[index], status: 'completed', downloaded: result.total };
+            return next;
+          });
+          updateCategoryFromItem({ ...queueItems[index], status: 'completed', downloaded: result.total });
         } catch (e) {
           const errorMsg = e instanceof Error ? e.message : '下载失败';
-          setDownloadQueue(prev => prev.map((d, idx) =>
-            idx === i ? { ...d, status: 'error', error: errorMsg } : d
-          ));
-          setError(`文件下载失败: ${file.path} - ${errorMsg}`);
-          logger.error('版本下载失败', { versionId: version.id, file: file.path, error: errorMsg });
-          throw e;
+          setDownloadQueue(prev => {
+            const next = [...prev];
+            next[index] = { ...next[index], status: 'error', error: errorMsg };
+            return next;
+          });
+          updateCategoryFromItem({ ...queueItems[index], status: 'error', error: errorMsg });
+          throw new Error(`${file.path}: ${errorMsg}`);
+        }
+      };
+
+      for (let i = 0; i < files.length; i += CONCURRENT_LIMIT) {
+        if (abortRef.current) break;
+        const results = await Promise.allSettled(
+          Array.from({ length: Math.min(CONCURRENT_LIMIT, files.length - i) }, (_, j) => downloadOne(i + j))
+        );
+
+        const firstError = results.find(r => r.status === 'rejected') as PromiseRejectedResult | undefined;
+        if (firstError) {
+          const errorMsg = firstError.reason instanceof Error ? firstError.reason.message : String(firstError.reason);
+          setError(errorMsg);
+          logger.error('版本下载失败', { versionId: version.id, error: errorMsg });
+          throw new Error(errorMsg);
         }
       }
 
@@ -172,7 +269,11 @@ export const useDownload = () => {
     } finally {
       setIsDownloading(false);
     }
-  }, [loadInstalledVersions, loadDownloadTasks]);
+  }, [loadInstalledVersions, loadDownloadTasks, initCategoryMap, updateCategoryFromItem]);
+
+  const cancelDownloadVersion = useCallback(() => {
+    abortRef.current = true;
+  }, []);
 
   const cancelTask = useCallback(async (taskId: string) => {
     try {
@@ -306,9 +407,11 @@ export const useDownload = () => {
     loading,
     error,
     downloadQueue,
+    categoryProgress,
     isDownloading,
     refreshAll,
     downloadVersion,
+    cancelDownloadVersion,
     cancelTask,
     clearCompleted,
     loadManifest,

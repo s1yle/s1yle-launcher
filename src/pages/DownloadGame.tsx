@@ -14,9 +14,10 @@ const DownloadGame: React.FC = () => {
     downloadPath,
     loading,
     error,
-    downloadQueue,
+    categoryProgress,
     isDownloading,
     downloadVersion,
+    cancelDownloadVersion,
     cancelTask,
     clearCompleted,
     loadInstalledVersions,
@@ -247,33 +248,48 @@ const DownloadGame: React.FC = () => {
 
         {activeTab === 'downloading' && (
           <div className="space-y-4">
-            {downloadQueue.length > 0 ? (
+            {categoryProgress.length > 0 ? (
               <>
                 <div className="flex justify-between items-center">
                   <p className="text-gray-400 text-sm">
-                    下载队列: {downloadQueue.filter(d => d.status === 'completed').length} / {downloadQueue.length}
+                    下载进度
                   </p>
                   {isDownloading && (
-                    <span className="text-blue-400 text-sm">下载中...</span>
+                    <button
+                      onClick={() => cancelDownloadVersion()}
+                      className="px-3 py-1 text-sm bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-300 rounded transition-colors"
+                    >
+                      取消
+                    </button>
                   )}
                 </div>
                 <ProgressBar
-                  progress={(downloadQueue.filter(d => d.status === 'completed').length / downloadQueue.length) * 100}
+                  progress={categoryProgress.reduce((sum, c) => sum + c.completed, 0) / categoryProgress.reduce((sum, c) => sum + c.total, 0) * 100}
                   status={isDownloading ? 'active' : 'completed'}
                   label="总体进度"
                   size="md"
                 />
                 <div className="grid gap-3">
-                  {downloadQueue.map(item => (
-                    <DownloadItem
-                      key={item.id}
-                      filename={item.filename}
-                      downloaded={item.downloaded}
-                      total={item.total}
-                      status={item.status}
-                      error={item.error}
-                      onRetry={() => {}}
-                    />
+                  {categoryProgress.map(cat => (
+                    <div key={cat.category} className="p-3 bg-white/5 border border-white/10 rounded-lg">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-white text-sm font-medium">{cat.label}</span>
+                        <span className="text-gray-400 text-xs">
+                          {cat.completed} / {cat.total}
+                          {cat.failed > 0 && (
+                            <span className="text-red-400 ml-2">{cat.failed} 失败</span>
+                          )}
+                        </span>
+                      </div>
+                      <ProgressBar
+                        progress={cat.total > 0 ? (cat.completed / cat.total) * 100 : 0}
+                        status={cat.failed > 0 ? 'error' : cat.completed === cat.total ? 'completed' : 'active'}
+                        size="sm"
+                      />
+                      {cat.error && (
+                        <p className="text-red-400 text-xs mt-1">{cat.error}</p>
+                      )}
+                    </div>
                   ))}
                 </div>
               </>
