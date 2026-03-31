@@ -96,7 +96,6 @@ export const useDownload = () => {
   }, [loadManifest, loadInstalledVersions, loadDownloadTasks, loadDownloadPath]);
 
   const downloadVersion = useCallback(async (version: GameVersion) => {
-    setLoading(true);
     setError(null);
     setIsDownloading(true);
     setDownloadQueue([]);
@@ -135,7 +134,6 @@ export const useDownload = () => {
       }));
       setDownloadQueue(queueItems);
 
-      let completedCount = 0;
       for (let i = 0; i < files.length; i++) {
         const { file } = files[i];
 
@@ -144,12 +142,11 @@ export const useDownload = () => {
         ));
 
         try {
-          const result = await downloadFile(file.url, file.path, file.sha1 ?? undefined);
+          const result = await downloadFile(file.url, file.path, file.sha1 ?? undefined, undefined, file.size);
 
           setDownloadQueue(prev => prev.map((d, idx) =>
             idx === i ? { ...d, status: 'completed', downloaded: result.total } : d
           ));
-          completedCount++;
         } catch (e) {
           const errorMsg = e instanceof Error ? e.message : '下载失败';
           setDownloadQueue(prev => prev.map((d, idx) =>
@@ -173,7 +170,6 @@ export const useDownload = () => {
       logger.error('版本下载失败', { versionId: version.id, error: msg });
       throw e;
     } finally {
-      setLoading(false);
       setIsDownloading(false);
     }
   }, [loadInstalledVersions, loadDownloadTasks]);
@@ -271,7 +267,7 @@ export const useDownload = () => {
       ));
 
       try {
-        const result = await downloadFile(item.url, item.filename, item.sha1);
+        const result = await downloadFile(item.url, item.filename, item.sha1, undefined, item.total);
         
         setDownloadQueue(prev => prev.map((d, idx) => 
           idx === i ? { ...d, status: 'completed', downloaded: result.total } : d

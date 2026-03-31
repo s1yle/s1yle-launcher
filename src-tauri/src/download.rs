@@ -268,8 +268,9 @@ fn get_native_classifier(library: &Library) -> Option<(String, String)> {
 
 pub struct DownloadManager {
     pub tasks: Mutex<HashMap<String, DownloadTask>>,
-    pub base_path: PathBuf,
+    pub base_path: Mutex<PathBuf>,
     pub fetcher: Arc<Fetcher<()>>,
+    pub manifest_cache: Mutex<HashMap<String, VersionDownloadManifest>>,
 }
 
 impl DownloadManager {
@@ -288,8 +289,9 @@ impl DownloadManager {
 
         Self {
             tasks: Mutex::new(HashMap::new()),
-            base_path,
+            base_path: Mutex::new(base_path),
             fetcher,
+            manifest_cache: Mutex::new(HashMap::new()),
         }
     }
 
@@ -438,7 +440,7 @@ async fn parse_version_downloads(version_json: &serde_json::Value) -> Result<Ver
                             format!("objects/{}", hash)
                         };
                         assets.push(FileDownload {
-                            url: format!("https://resources.download.minecraft.net/{}", &hash[..2]),
+                            url: format!("https://resources.download.minecraft.net/{}/{}", &hash[..2], hash),
                             sha1: Some(hash.clone()),
                             size: obj.size,
                             path: virtual_path,
@@ -499,11 +501,27 @@ async fn fetch_asset_objects(url: &str) -> Result<HashMap<String, AssetObject>, 
 }
 
 #[tauri::command]
-pub async fn get_version_download_manifest(version_id: String) -> Result<VersionDownloadManifest, String> {
+pub async fn get_version_download_manifest(
+    version_id: String,
+    download_manager: State<'_, DownloadManager>,
+) -> Result<VersionDownloadManifest, String> {
     log_info!("正在获取版本下载清单: {}", version_id);
 
-    let version_json = get_version_detail(version_id).await?;
+    {
+        let cache = download_manager.manifest_cache.lock().unwrap();
+        if let Some(cached) = cache.get(&version_id) {
+            log_info!("使用缓存的版本下载清单: {}", version_id);
+            return Ok(cached.clone());
+        }
+    }
+
+    let version_json = get_version_detail(version_id.clone()).await?;
     let manifest = parse_version_downloads(&version_json).await?;
+
+    {
+        let mut cache = download_manager.manifest_cache.lock().unwrap();
+        cache.insert(version_id.clone(), manifest.clone());
+    }
 
     log_info!(
         "下载清单解析完成: {} 个库, {} 个原生库, {} 个资源",
@@ -521,12 +539,13 @@ pub async fn download_file(
     filename: String,
     sha1: Option<String>,
     skip_verify: Option<bool>,
+    total_size: Option<u64>,
     download_manager: State<'_, DownloadManager>,
 ) -> Result<DownloadProgress, String> {
     log_info!("开始下载文件: {} -> {}", url, filename);
 
     let task_id = format!("{:x}", md5::compute(&url));
-    let save_path = download_manager.base_path.join("temp").join(&filename);
+    let save_path = download_manager.base_path.lock().unwrap().join("temp").join(&filename);
 
     if let Some(parent) = save_path.parent() {
         fs::create_dir_all(parent)
@@ -539,12 +558,39 @@ pub async fn download_file(
         0
     };
 
+    let expected_total = total_size.unwrap_or(0);
+
+    let should_verify = skip_verify.unwrap_or(false) == false;
+    if should_verify && save_path.exists() {
+        if let Some(ref expected_sha1) = sha1 {
+            if let Ok(true) = verify_file_sha1(&save_path, expected_sha1) {
+                log_info!("文件已存在且校验通过，跳过下载: {}", filename);
+                if let Some(t) = download_manager.get_task(&task_id) {
+                    let mut updated = t;
+                    updated.status = "completed".to_string();
+                    updated.downloaded_size = existing_size;
+                    updated.total_size = existing_size;
+                    download_manager.update_task(updated);
+                }
+                return Ok(DownloadProgress {
+                    task_id,
+                    downloaded: existing_size,
+                    total: existing_size,
+                    speed: 0.0,
+                    status: "completed".to_string(),
+                });
+            } else {
+                log_info!("文件 SHA1 不匹配，将重新下载: {}", filename);
+            }
+        }
+    }
+
     let task = DownloadTask {
         id: task_id.clone(),
         url: url.clone(),
         path: save_path.to_string_lossy().to_string(),
         filename: filename.clone(),
-        total_size: 0,
+        total_size: expected_total,
         downloaded_size: existing_size,
         status: "downloading".to_string(),
     };
@@ -562,7 +608,6 @@ pub async fn download_file(
                 .map(|m| m.len())
                 .unwrap_or(0);
             
-            let should_verify = skip_verify.unwrap_or(false) == false;
             if should_verify {
                 if let Some(ref expected_sha1) = sha1 {
                     match verify_file_sha1(&save_path, expected_sha1) {
@@ -579,7 +624,13 @@ pub async fn download_file(
                             return Err(format!("SHA1 校验失败: {}", filename));
                         }
                         Err(e) => {
-                            log_info!("SHA1 校验出错: {}", e);
+                            fs::remove_file(&save_path).ok();
+                            if let Some(t) = download_manager.get_task(&task_id) {
+                                let mut updated = t;
+                                updated.status = "failed".to_string();
+                                download_manager.update_task(updated);
+                            }
+                            return Err(format!("SHA1 校验出错: {} - {}", filename, e));
                         }
                     }
                 }
@@ -664,7 +715,7 @@ pub fn clear_completed_tasks(download_manager: State<'_, DownloadManager>) -> Re
 
 #[tauri::command]
 pub fn get_game_versions(download_manager: State<'_, DownloadManager>) -> Result<Vec<String>, String> {
-    let game_dir = &download_manager.base_path;
+    let game_dir = download_manager.base_path.lock().unwrap().clone();
     let versions_dir = game_dir.join("versions");
 
     if !versions_dir.exists() {
@@ -684,17 +735,20 @@ pub fn get_game_versions(download_manager: State<'_, DownloadManager>) -> Result
 
 #[tauri::command]
 pub fn get_download_base_path(download_manager: State<'_, DownloadManager>) -> String {
-    download_manager.base_path.to_string_lossy().to_string()
+    download_manager.base_path.lock().unwrap().to_string_lossy().to_string()
 }
 
 #[tauri::command]
 pub fn set_download_base_path(
     path: String,
-    _download_manager: State<'_, DownloadManager>,
+    download_manager: State<'_, DownloadManager>,
 ) -> Result<String, String> {
     let new_path = PathBuf::from(&path);
     fs::create_dir_all(&new_path)
         .map_err(|e| format!("创建目录失败: {}", e))?;
+
+    let mut base_path = download_manager.base_path.lock().unwrap();
+    *base_path = new_path;
 
     log_info!("下载目录已更改为: {}", path);
     Ok(format!("下载目录已更改为: {}", path))
@@ -740,8 +794,17 @@ pub async fn deploy_version_files(
 ) -> Result<String, String> {
     log_info!("开始部署版本文件: {}", version_id);
     
-    let manifest = get_version_download_manifest(version_id.clone()).await?;
-    let base_path = &download_manager.base_path;
+    let manifest = get_version_download_manifest(version_id.clone(), download_manager.clone()).await?;
+    deploy_manifest(&manifest, version_id, &download_manager).await
+}
+
+async fn deploy_manifest(
+    manifest: &VersionDownloadManifest,
+    version_id: String,
+    download_manager: &State<'_, DownloadManager>,
+) -> Result<String, String> {
+    let base_path = download_manager.base_path.lock().unwrap().clone();
+    let base_path = &base_path;
     
     let mut deployed = 0;
     
@@ -865,7 +928,7 @@ pub fn is_version_deployed(
     version_id: String,
     download_manager: State<'_, DownloadManager>,
 ) -> bool {
-    let base_path = &download_manager.base_path;
+    let base_path = download_manager.base_path.lock().unwrap();
     let version_jar = base_path.join("versions").join(&version_id).join(format!("{}.jar", version_id));
     version_jar.exists()
 }

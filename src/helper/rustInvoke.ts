@@ -505,10 +505,11 @@ export const downloadFile = async (
   filename: string,
   sha1?: string,
   skipVerify?: boolean,
+  totalSize?: number,
   options?: InvokeOptions
 ): Promise<DownloadProgress> => {
-  logger.info('开始下载文件', { url, filename, sha1, skipVerify });
-  return await invokeRustFunction("download_file", { url, filename, sha1, skip_verify: skipVerify }, options);
+  logger.info('开始下载文件', { url, filename, sha1, skipVerify, totalSize });
+  return await invokeRustFunction("download_file", { url, filename, sha1, skip_verify: skipVerify, total_size: totalSize }, options);
 };
 
 export const getDownloadTasks = async (
