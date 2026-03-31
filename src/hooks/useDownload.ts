@@ -98,20 +98,85 @@ export const useDownload = () => {
   const downloadVersion = useCallback(async (version: GameVersion) => {
     setLoading(true);
     setError(null);
+    setIsDownloading(true);
+    setDownloadQueue([]);
     try {
-      const progress = await downloadFile(version.url, `${version.id}.json`);
-      logger.info('版本下载成功', version.id);
+      const manifest = await getVersionDownloadManifest(version.id);
+
+      const files: { file: FileDownload; category: string }[] = [];
+      if (manifest.client_jar) {
+        files.push({ file: manifest.client_jar, category: 'client_jar' });
+      }
+      for (const lib of manifest.libraries) {
+        files.push({ file: lib, category: 'libraries' });
+      }
+      if (manifest.asset_index) {
+        files.push({ file: manifest.asset_index, category: 'asset_index' });
+      }
+      for (const asset of manifest.assets) {
+        files.push({ file: asset, category: 'assets' });
+      }
+      for (const native of manifest.natives) {
+        files.push({ file: native, category: 'natives' });
+      }
+
+      if (files.length === 0) {
+        throw new Error('下载清单为空');
+      }
+
+      const queueItems: DownloadItemState[] = files.map(({ file }, index) => ({
+        id: `${version.id}-${index}`,
+        filename: file.path,
+        url: file.url,
+        downloaded: 0,
+        total: file.size,
+        status: 'pending',
+        sha1: file.sha1 ?? undefined,
+      }));
+      setDownloadQueue(queueItems);
+
+      let completedCount = 0;
+      for (let i = 0; i < files.length; i++) {
+        const { file } = files[i];
+
+        setDownloadQueue(prev => prev.map((d, idx) =>
+          idx === i ? { ...d, status: 'downloading' } : d
+        ));
+
+        try {
+          const result = await downloadFile(file.url, file.path, file.sha1 ?? undefined);
+
+          setDownloadQueue(prev => prev.map((d, idx) =>
+            idx === i ? { ...d, status: 'completed', downloaded: result.total } : d
+          ));
+          completedCount++;
+        } catch (e) {
+          const errorMsg = e instanceof Error ? e.message : '下载失败';
+          setDownloadQueue(prev => prev.map((d, idx) =>
+            idx === i ? { ...d, status: 'error', error: errorMsg } : d
+          ));
+          setError(`文件下载失败: ${file.path} - ${errorMsg}`);
+          logger.error('版本下载失败', { versionId: version.id, file: file.path, error: errorMsg });
+          throw e;
+        }
+      }
+
+      await deployVersionFiles(version.id);
+      logger.info('版本下载并部署成功', version.id);
+      await loadInstalledVersions();
       await loadDownloadTasks();
-      return progress;
     } catch (e) {
       const msg = e instanceof Error ? e.message : '下载失败';
-      setError(msg);
-      logger.error('版本下载失败', msg);
+      if (!error) {
+        setError(msg);
+      }
+      logger.error('版本下载失败', { versionId: version.id, error: msg });
       throw e;
     } finally {
       setLoading(false);
+      setIsDownloading(false);
     }
-  }, [loadDownloadTasks]);
+  }, [loadInstalledVersions, loadDownloadTasks]);
 
   const cancelTask = useCallback(async (taskId: string) => {
     try {

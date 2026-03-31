@@ -47,7 +47,7 @@ const VersionCard: React.FC<VersionCardProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-white font-medium">{version.id}</h3>
-              <StatusBadge type={version.type_} />
+              {/* <StatusBadge type={version.type_} /> */}
               {installed && (
                 <span className="px-2 py-0.5 text-xs rounded bg-green-500/20 text-green-400 border border-green-500/30">
                   已安装
