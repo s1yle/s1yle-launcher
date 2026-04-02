@@ -1,153 +1,365 @@
-const InstanceList = () => {
+import { useState, useEffect, useRef } from 'react';
+import { useInstances } from '../hooks/useInstances';
+import { openFolder } from '../helper/rustInvoke';
+import { InstanceCard, EmptyState, useNotification } from '../components/common';
+
+type ViewMode = 'grid' | 'list';
+
+const InstanceList: React.FC = () => {
+  const {
+    instances,
+    selectedInstance,
+    loading,
+    error,
+    instancesPath,
+    selectInstance,
+    removeInstance,
+    renameInstanceById,
+    duplicateInstance,
+    refresh,
+  } = useInstances();
+
+  const { success, error: notifyError, info } = useNotification();
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
+  const [duplicateTargetId, setDuplicateTargetId] = useState<string | null>(null);
+  const [duplicateName, setDuplicateName] = useState('');
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const filteredInstances = instances.filter((instance) => {
+    if (!debouncedSearch) return true;
+    const query = debouncedSearch.toLowerCase();
+    return (
+      instance.name.toLowerCase().includes(query) ||
+      instance.version.toLowerCase().includes(query) ||
+      instance.loader_type.toString().toLowerCase().includes(query)
+    );
+  });
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`确定要删除实例 "${name}" 吗？`)) return;
+    try {
+      await removeInstance(id, false);
+      success('删除成功', `实例 "${name}" 已删除`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '删除失败';
+      notifyError('删除失败', msg);
+    }
+  };
+
+  const handleRename = async (id: string) => {
+    const instance = instances.find((i) => i.id === id);
+    if (!editingName.trim() || editingName === instance?.name) {
+      setEditingId(null);
+      return;
+    }
+    try {
+      await renameInstanceById(id, editingName);
+      success('重命名成功', `实例已更名为 "${editingName}"`);
+      setEditingId(null);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '重命名失败';
+      notifyError('重命名失败', msg);
+    }
+  };
+
+  const handleLaunch = (id: string) => {
+    info('启动', `正在启动实例 ${id}...`);
+  };
+
+  const handleOpenFolder = async (path: string) => {
+    try {
+      await openFolder(path);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '打开目录失败';
+      notifyError('打开目录失败', msg);
+    }
+  };
+
+  const handleOpenConfigFolder = async (path: string) => {
+    try {
+      await openFolder(path);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '打开目录失败';
+      notifyError('打开目录失败', msg);
+    }
+  };
+
+  const handleDuplicate = (id: string) => {
+    const instance = instances.find((i) => i.id === id);
+    if (instance) {
+      setDuplicateTargetId(id);
+      setDuplicateName(`${instance.name} - 副本`);
+      setShowDuplicateModal(true);
+    }
+  };
+
+  const handleConfirmDuplicate = async () => {
+    if (!duplicateTargetId || !duplicateName.trim()) return;
+    try {
+      await duplicateInstance(duplicateTargetId, duplicateName);
+      success('复制成功', `实例已复制为 "${duplicateName}"`);
+      setShowDuplicateModal(false);
+      setDuplicateTargetId(null);
+      setDuplicateName('');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '复制失败';
+      notifyError('复制失败', msg);
+    }
+  };
+
+  const handleExport = (_id: string) => {
+    info('导出', '导出整合包功能尚未集成');
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setEditingId(null);
+        setShowDuplicateModal(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] p-8">
-      <div className="max-w-6xl w-full">
-        <h1 className="text-4xl font-bold text-white mb-6 text-center">实例列表</h1>
-        <p className="text-lg text-gray-300 text-center mb-8">
-          查看和管理所有Minecraft游戏实例
-        </p>
-        
-        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8 border border-white/20">
-          {/* 实例列表表格 */}
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-white/20">
-                  <th className="text-left py-3 px-4 text-white font-medium">实例名称</th>
-                  <th className="text-left py-3 px-4 text-white font-medium">游戏版本</th>
-                  <th className="text-left py-3 px-4 text-white font-medium">模组加载器</th>
-                  <th className="text-left py-3 px-4 text-white font-medium">最后运行</th>
-                  <th className="text-left py-3 px-4 text-white font-medium">状态</th>
-                  <th className="text-left py-3 px-4 text-white font-medium">操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-white/10 hover:bg-white/5">
-                  <td className="py-4 px-4">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center mr-3">
-                        <span className="text-white">⛏️</span>
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-white">生存服务器</h3>
-                        <p className="text-sm text-gray-400">/games/survival</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-4 px-4 text-gray-300">1.20.4</td>
-                  <td className="py-4 px-4">
-                    <span className="px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full text-sm">
-                      Fabric
-                    </span>
-                  </td>
-                  <td className="py-4 px-4 text-gray-300">2024-01-15</td>
-                  <td className="py-4 px-4">
-                    <span className="px-3 py-1 bg-green-500/20 text-green-300 rounded-full text-sm">
-                      正常
-                    </span>
-                  </td>
-                  <td className="py-4 px-4">
-                    <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors mr-2">
-                      启动
-                    </button>
-                    <button className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
-                      管理
-                    </button>
-                  </td>
-                </tr>
-
-                <tr className="border-b border-white/10 hover:bg-white/5">
-                  <td className="py-4 px-4">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 rounded-lg bg-green-600 flex items-center justify-center mr-3">
-                        <span className="text-white">🎨</span>
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-white">创造模式测试</h3>
-                        <p className="text-sm text-gray-400">/games/creative</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-4 px-4 text-gray-300">1.19.4</td>
-                  <td className="py-4 px-4">
-                    <span className="px-3 py-1 bg-orange-500/20 text-orange-300 rounded-full text-sm">
-                      Forge
-                    </span>
-                  </td>
-                  <td className="py-4 px-4 text-gray-300">2024-01-10</td>
-                  <td className="py-4 px-4">
-                    <span className="px-3 py-1 bg-green-500/20 text-green-300 rounded-full text-sm">
-                      正常
-                    </span>
-                  </td>
-                  <td className="py-4 px-4">
-                    <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors mr-2">
-                      启动
-                    </button>
-                    <button className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
-                      管理
-                    </button>
-                  </td>
-                </tr>
-
-                <tr className="border-b border-white/10 hover:bg-white/5">
-                  <td className="py-4 px-4">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 rounded-lg bg-purple-600 flex items-center justify-center mr-3">
-                        <span className="text-white">🧩</span>
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-white">模组整合包</h3>
-                        <p className="text-sm text-gray-400">/games/modpack</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-4 px-4 text-gray-300">1.18.2</td>
-                  <td className="py-4 px-4">
-                    <span className="px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-sm">
-                      Quilt
-                    </span>
-                  </td>
-                  <td className="py-4 px-4 text-gray-300">2024-01-05</td>
-                  <td className="py-4 px-4">
-                    <span className="px-3 py-1 bg-yellow-500/20 text-yellow-300 rounded-full text-sm">
-                      需要更新
-                    </span>
-                  </td>
-                  <td className="py-4 px-4">
-                    <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors mr-2">
-                      更新
-                    </button>
-                    <button className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
-                      管理
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="p-6 border-b border-white/10">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-2xl font-bold text-white">实例列表</h1>
+            <p className="text-gray-400 text-sm">查看和管理所有 Minecraft 游戏实例</p>
           </div>
-
-          {/* 批量操作 */}
-          <div className="mt-8 flex justify-between items-center">
-            <div>
-              <h3 className="text-lg font-bold text-white mb-2">批量操作</h3>
-              <p className="text-gray-300 text-sm">选择多个实例进行操作</p>
-            </div>
-            <div className="flex gap-3">
-              <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                批量启动
+          <div className="flex items-center gap-2">
+            {/* View mode toggle */}
+            <div className="flex items-center bg-white/5 border border-white/10 rounded-lg overflow-hidden">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`px-3 py-1.5 text-sm transition-colors ${
+                  viewMode === 'grid'
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-gray-400 hover:text-white hover:bg-white/10'
+                }`}
+                title="网格视图"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
               </button>
-              <button className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
-                批量更新
-              </button>
-              <button className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
-                批量删除
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-3 py-1.5 text-sm transition-colors ${
+                  viewMode === 'list'
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-gray-400 hover:text-white hover:bg-white/10'
+                }`}
+                title="列表视图"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
               </button>
             </div>
+            {/* Refresh button */}
+            <button
+              onClick={refresh}
+              className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+              title="刷新"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
           </div>
+        </div>
 
+        {/* Search bar */}
+        <div className="flex items-center gap-4">
+          <div className="flex-1 relative max-w-md">
+            <svg className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="搜索实例 (支持名称、版本、加载器)..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-indigo-500 transition-colors"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => { setSearchQuery(''); searchInputRef.current?.focus(); }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+          <span className="text-gray-400 text-sm whitespace-nowrap">
+            {filteredInstances.length} / {instances.length} 个实例
+          </span>
         </div>
       </div>
+
+      {/* Error state */}
+      {error && (
+        <div className="mx-6 mt-4 p-4 bg-red-500/20 border border-red-500/30 rounded-lg">
+          <div className="flex items-center gap-2">
+            <span className="text-red-400">⚠️</span>
+            <p className="text-red-300 text-sm">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="flex-1 overflow-auto p-6">
+        {loading && instances.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+            <span className="mt-3 text-gray-400">正在扫描实例...</span>
+          </div>
+        ) : filteredInstances.length === 0 ? (
+          <EmptyState
+            icon={searchQuery ? 'search' : 'folder'}
+            title={searchQuery ? '未找到匹配的实例' : '暂无实例'}
+            description={searchQuery ? '尝试调整搜索关键词' : '下载或创建新实例来开始游戏'}
+          />
+        ) : viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filteredInstances.map((instance) => (
+              <div key={instance.id} className="relative">
+                {editingId === instance.id ? (
+                  <div className="p-4 bg-white/10 border border-indigo-500/50 rounded-lg">
+                    <input
+                      type="text"
+                      value={editingName}
+                      onChange={(e) => setEditingName(e.target.value)}
+                      onBlur={() => handleRename(instance.id)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleRename(instance.id)}
+                      autoFocus
+                      className="w-full px-2 py-1 bg-white/10 border border-white/20 rounded text-white text-sm focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                ) : (
+                  <InstanceCard
+                    instance={instance}
+                    selected={selectedInstance?.id === instance.id}
+                    onSelect={() => selectInstance(instance.id)}
+                    onLaunch={() => handleLaunch(instance.id)}
+                    onRename={() => { setEditingId(instance.id); setEditingName(instance.name); }}
+                    onDuplicate={() => handleDuplicate(instance.id)}
+                    onDelete={() => handleDelete(instance.id, instance.name)}
+                    onOpenFolder={() => handleOpenFolder(instance.path)}
+                    onOpenConfigFolder={() => handleOpenConfigFolder(instance.path)}
+                    onExport={() => handleExport(instance.id)}
+                    showPath
+                    viewMode="grid"
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="border border-white/10 rounded-lg overflow-hidden">
+            {/* Table header */}
+            <div className="flex items-center px-4 py-3 bg-white/5 border-b border-white/10 text-gray-400 text-sm font-medium">
+              <div className="w-10 mr-3"></div>
+              <div className="flex-1">实例名称</div>
+              <div className="w-24 mx-4">游戏版本</div>
+              <div className="w-28 mx-4">模组加载器</div>
+              <div className="w-24 mx-4">最后运行</div>
+              <div className="w-20 text-center">操作</div>
+            </div>
+            {/* Table body */}
+            {filteredInstances.map((instance) => (
+              <InstanceCard
+                key={instance.id}
+                instance={instance}
+                selected={selectedInstance?.id === instance.id}
+                onSelect={() => selectInstance(instance.id)}
+                onLaunch={() => handleLaunch(instance.id)}
+                onRename={() => { setEditingId(instance.id); setEditingName(instance.name); }}
+                onDuplicate={() => handleDuplicate(instance.id)}
+                onDelete={() => handleDelete(instance.id, instance.name)}
+                onOpenFolder={() => handleOpenFolder(instance.path)}
+                onOpenConfigFolder={() => handleOpenConfigFolder(instance.path)}
+                onExport={() => handleExport(instance.id)}
+                viewMode="list"
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="px-6 py-3 border-t border-white/10 bg-black/20">
+        <div className="flex items-center justify-between">
+          <p className="text-gray-500 text-xs">
+            实例目录: <span className="font-mono">{instancesPath}</span>
+          </p>
+          <div className="flex items-center gap-4 text-xs text-gray-500">
+            <span>双击启动</span>
+            <span>右键菜单</span>
+            <span>ESC 取消</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Duplicate modal */}
+      {showDuplicateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-gray-900 border border-white/20 rounded-xl p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold text-white mb-4">复制实例</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="text-gray-300 text-sm mb-1 block">新实例名称</label>
+                <input
+                  type="text"
+                  value={duplicateName}
+                  onChange={(e) => setDuplicateName(e.target.value)}
+                  placeholder="输入新实例名称..."
+                  autoFocus
+                  onKeyDown={(e) => e.key === 'Enter' && handleConfirmDuplicate()}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => { setShowDuplicateModal(false); setDuplicateTargetId(null); }}
+                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleConfirmDuplicate}
+                disabled={!duplicateName.trim()}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50"
+              >
+                复制
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useDownload } from '../hooks/useDownload';
-import { GameVersion } from '../helper/rustInvoke';
+import { GameVersion, openFolder } from '../helper/rustInvoke';
 import { ProgressBar, DownloadItem, VersionCard, useNotification } from '../components/common';
 
 type TabType = 'browse' | 'downloading' | 'installed';
@@ -128,6 +128,16 @@ const DownloadGame: React.FC = () => {
       await clearCompleted();
     } catch (e) {
       notifyError('清理失败', '无法清理已完成任务');
+    }
+  };
+
+  const handleOpenDownloadFolder = async () => {
+    if (!downloadPath) return;
+    try {
+      await openFolder(downloadPath);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '打开目录失败';
+      notifyError('打开目录失败', msg);
     }
   };
 
@@ -370,10 +380,22 @@ const DownloadGame: React.FC = () => {
         )}
       </div>
 
-      <div className="px-6 py-3 border-t border-white/10 bg-black/20">
+      <div className="px-6 py-3 border-t border-white/10 bg-black/20 flex items-center justify-between">
         <p className="text-gray-500 text-xs">
           下载目录: <span className="font-mono">{downloadPath}</span>
         </p>
+        {downloadPath && (
+          <button
+            onClick={handleOpenDownloadFolder}
+            className="text-gray-500 hover:text-indigo-400 text-xs transition-colors flex items-center gap-1"
+            title="打开下载目录"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+            打开
+          </button>
+        )}
       </div>
     </div>
   );

@@ -150,8 +150,8 @@ const MainLayout = () => {
             transition={{ duration: EXIT_DUR, ease: "easeOut" }}
           >
         
-            {/* 页面内容（在背景之上）- 移除h-full，改为min-h-full适配内容 */}
-            <div className={`relative z-10 min-h-full rounded-lg shadow-lg transition-all duration-300
+            {/* 页面内容（在背景之上）- 使用 h-full 确保高度约束传递给子组件 */}
+            <div className={`relative z-10 h-full rounded-lg shadow-lg transition-all duration-300
                   ${isSideContainerActive ? 'sideContainer' : ''}`}>
 
                 {/* 备用容器标签 */}

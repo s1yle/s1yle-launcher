@@ -726,3 +726,113 @@ export const getInstalledModLoaders = async (
   logger.info('获取已安装的模组加载器', { versionId });
   return await invokeRustFunction("get_installed_mod_loaders", { versionId }, options);
 };
+
+// ======================== 实例管理相关类型定义 ========================
+
+export interface GameInstance {
+  id: string;
+  name: string;
+  version: string;
+  loader_type: ModLoaderType;
+  loader_version: string | null;
+  path: string;
+  icon_path: string | null;
+  last_played: number | null;
+  created_at: number;
+  enabled: boolean;
+}
+
+export interface InstanceFormData {
+  name: string;
+  version: string;
+  loader_type: ModLoaderType;
+  loader_version?: string;
+  icon_path?: string;
+}
+
+// ======================== 实例管理相关函数 ========================
+
+export const scanInstances = async (
+  options?: InvokeOptions
+): Promise<GameInstance[]> => {
+  logger.info('扫描实例列表');
+  return await invokeRustFunction("scan_instances", {}, options);
+};
+
+export const getInstance = async (
+  id: string,
+  options?: InvokeOptions
+): Promise<GameInstance | null> => {
+  logger.info('获取实例详情', { id });
+  return await invokeRustFunction("get_instance", { id }, options);
+};
+
+export const createInstance = async (
+  name: string,
+  version: string,
+  loaderType: ModLoaderType,
+  loaderVersion?: string,
+  iconPath?: string,
+  options?: InvokeOptions
+): Promise<GameInstance> => {
+  logger.info('创建实例', { name, version, loaderType });
+  return await invokeRustFunction("create_instance", {
+    name,
+    version,
+    loader_type: loaderType,
+    loader_version: loaderVersion,
+    icon_path: iconPath,
+  }, options);
+};
+
+export const deleteInstance = async (
+  id: string,
+  deleteFiles: boolean = false,
+  options?: InvokeOptions
+): Promise<void> => {
+  logger.info('删除实例', { id, deleteFiles });
+  return await invokeRustFunction("delete_instance", { id, delete_files: deleteFiles }, options);
+};
+
+export const copyInstance = async (
+  id: string,
+  newName: string,
+  options?: InvokeOptions
+): Promise<GameInstance> => {
+  logger.info('复制实例', { id, newName });
+  return await invokeRustFunction("copy_instance", { id, new_name: newName }, options);
+};
+
+export const renameInstance = async (
+  id: string,
+  newName: string,
+  options?: InvokeOptions
+): Promise<GameInstance> => {
+  logger.info('重命名实例', { id, newName });
+  return await invokeRustFunction("rename_instance", { id, new_name: newName }, options);
+};
+
+export const updateInstance = async (
+  id: string,
+  name?: string,
+  enabled?: boolean,
+  options?: InvokeOptions
+): Promise<GameInstance> => {
+  logger.info('更新实例', { id, name, enabled });
+  return await invokeRustFunction("update_instance", { id, name, enabled }, options);
+};
+
+export const getInstancesPath = async (
+  options?: InvokeOptions
+): Promise<string> => {
+  logger.info('获取实例目录路径');
+  return await invokeRustFunction("get_instances_path", {}, options);
+};
+
+export const openFolder = async (
+  path: string,
+  options?: InvokeOptions
+): Promise<string> => {
+  logger.info('打开文件夹', { path });
+  return await invokeRustFunction("open_folder", { path }, options);
+};

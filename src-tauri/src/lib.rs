@@ -3,6 +3,7 @@
 mod account;
 mod config;
 mod download;
+mod instance;
 mod json;
 mod launch;
 mod modloader;
@@ -58,6 +59,18 @@ pub use crate::modloader::{
     ModLoaderVersionItem,
     LibraryInfo,
     ModLoaderManager,
+};
+pub use crate::instance::{
+    scan_instances,
+    get_instance,
+    create_instance,
+    delete_instance,
+    copy_instance,
+    rename_instance,
+    update_instance,
+    get_instances_path,
+    GameInstance,
+    InstanceManager,
 };
 use once_cell::sync::Lazy;
 use tauri::Manager;
@@ -226,6 +239,14 @@ fn log_frontend(level: String, message: String) {
     }
 }
 
+#[tauri::command]
+fn open_folder(path: String) -> Result<String, String> {
+    tracing::info!("打开文件夹: {}", path);
+    tauri_plugin_opener::open_path(&path, None::<&str>)
+        .map_err(|e| format!("打开文件夹失败: {}", e))?;
+    Ok(path)
+}
+
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -237,11 +258,13 @@ pub fn run() {
 
     let download_manager = DownloadManager::new(download_base_path.clone());
     let mod_loader_manager = ModLoaderManager::new(download_base_path.clone());
+    let instance_manager = InstanceManager::new(download_base_path.clone());
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(download_manager)
         .manage(mod_loader_manager)
+        .manage(instance_manager)
 
         .setup(|app| {
             init_logging(app)?;
@@ -284,7 +307,16 @@ pub fn run() {
             build_fabric_launch_config,
             get_forge_versions,
             build_forge_launch_config,
-            get_installed_mod_loaders
+            get_installed_mod_loaders,
+            scan_instances,
+            get_instance,
+            create_instance,
+            delete_instance,
+            copy_instance,
+            rename_instance,
+            update_instance,
+            get_instances_path,
+            open_folder
         ])
 
         .run(tauri::generate_context!())

@@ -13,6 +13,12 @@ export type { StatusBadgeProps } from './StatusBadge';
 export { default as VersionCard } from './VersionCard';
 export type { VersionCardProps } from './VersionCard';
 
+export { default as InstanceCard } from './InstanceCard';
+export type { InstanceCardProps } from './InstanceCard';
+
+export { default as EmptyState } from './EmptyState';
+export type { EmptyStateProps } from './EmptyState';
+
 export {
   NotificationProvider,
   useNotification,
