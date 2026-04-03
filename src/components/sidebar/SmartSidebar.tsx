@@ -1,6 +1,6 @@
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { getSidebarGroups, routes, SidebarGroup, type SidebarMenuItem, findRouteByPath } from '../../router/config';
+import { getSidebarGroups, routes, SidebarGroup, sidebarMenuItems, type SidebarMenuItem, findRouteByPath } from '../../router/config';
 import BaseSidebarLayout from './layouts/BaseSidebarLayout';
 import AccountSidebarContent from './content/AccountSidebarContent';
 import GameSidebarContent from './content/GameSidebarContent';
@@ -31,11 +31,6 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
     if (location.pathname.startsWith('/account')) return 'account';
     if (location.pathname.startsWith('/download') || location.pathname.startsWith('/instance')) return 'game';
     return 'none';
-  };
-
-  const hasOwnSidebar = (): boolean => {
-    const pagesWithOwnSidebar = ['/account', '/download', '/instance-list'];
-    return pagesWithOwnSidebar.some(path => location.pathname.startsWith(path));
   };
 
   const handleItemClick = (item: SidebarMenuItem) => {
@@ -74,20 +69,18 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
 
   const currentGroup = getCurrentSidebarGroup();
 
-  // Build dynamic instance-list sidebar items
-  const buildInstanceSidebarItems = (): SidebarMenuItem[] => {
-    const folderItems: SidebarMenuItem[] = knownFolders.map(folder => ({
-      id: folder.id,
-      type: 'route' as const,
-      title: folder.name,
-      titleI18nKey: `instances.folder.${folder.id}`,
-      icon: <FolderTree className="w-4 h-4" />,
-      path: '/instance-list',
-      group: SidebarGroup.GAME,
-    }));
-
-    return [
-      ...folderItems,
+  // Instance list: dynamic sidebar with known folders
+  if (location.pathname.startsWith('/instance-list')) {
+    const instanceItems: SidebarMenuItem[] = [
+      ...knownFolders.map(folder => ({
+        id: folder.id,
+        type: 'route' as const,
+        title: folder.name,
+        titleI18nKey: `instances.folder.${folder.id}`,
+        icon: <FolderTree className="w-4 h-4" />,
+        path: '/instance-list',
+        group: SidebarGroup.GAME,
+      })),
       {
         id: 'add-game-folder',
         type: 'action' as const,
@@ -154,10 +147,6 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
         group: SidebarGroup.GAME,
       },
     ];
-  };
-
-  if (hasOwnSidebar()) {
-    const instanceItems = buildInstanceSidebarItems();
 
     return (
       <BaseSidebarLayout>
@@ -171,11 +160,59 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
                 setSelectedFolder(item.id);
               }
             }}
-            isActive={(path) => location.pathname === path}
+            isActive={() => false}
             isParentActive={() => false}
             hasChildrenItems={() => false}
             groupTitle={t('instances.title', '实例列表')}
             groupTitleI18nKey="instances.title"
+          />
+        </div>
+      </BaseSidebarLayout>
+    );
+  }
+
+  // Account/Download: show their children items
+  const pagesWithOwnSidebar = ['/account', '/download'];
+  if (pagesWithOwnSidebar.some(path => location.pathname.startsWith(path))) {
+    const findMenuItemsByPath = (path: string): { current: SidebarMenuItem | undefined, parent: SidebarMenuItem | undefined } => {
+      let foundParent: SidebarMenuItem | undefined = undefined;
+      const findInItems = (items: SidebarMenuItem[], parent?: SidebarMenuItem): SidebarMenuItem | undefined => {
+        for (const item of items) {
+          if (item.path === path) {
+            foundParent = parent;
+            return item;
+          }
+          if (item.children) {
+            const found = findInItems(item.children, item);
+            if (found) return found;
+          }
+        }
+        return undefined;
+      };
+      const current = findInItems(sidebarMenuItems);
+      return { current, parent: foundParent };
+    };
+
+    const { current: currentMenuItem, parent: parentMenuItem } = findMenuItemsByPath(location.pathname);
+
+    let childrenItems: SidebarMenuItem[] = [];
+    if (currentMenuItem?.children && currentMenuItem.children.length > 0) {
+      childrenItems = currentMenuItem.children;
+    } else if (parentMenuItem?.children && parentMenuItem.children.length > 0) {
+      childrenItems = parentMenuItem.children;
+    }
+
+    return (
+      <BaseSidebarLayout>
+        <div className="py-8">
+          <BaseChildrenContent
+            items={childrenItems}
+            onMenuClick={handleItemClick}
+            isActive={isActive}
+            isParentActive={isParentOfActive}
+            hasChildrenItems={hasChildrenItems}
+            groupTitle={currentMenuItem?.title || parentMenuItem?.title || ''}
+            groupTitleI18nKey={currentMenuItem?.titleI18nKey || parentMenuItem?.titleI18nKey}
           />
         </div>
       </BaseSidebarLayout>
