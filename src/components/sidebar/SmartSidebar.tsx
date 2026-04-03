@@ -1,15 +1,14 @@
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { getSidebarGroups, routes, SidebarGroup, sidebarMenuItems, type SidebarMenuItem, findRouteByPath } from '../../router/config';
+import { getSidebarGroups, routes, sidebarMenuItems, type SidebarMenuItem, findRouteByPath } from '../../router/config';
 import BaseSidebarLayout from './layouts/BaseSidebarLayout';
 import AccountSidebarContent from './content/AccountSidebarContent';
 import GameSidebarContent from './content/GameSidebarContent';
 import CommonSidebarContent from './content/CommonSidebarContent';
 import BaseChildrenContent from './content/BaseChildrenContent';
+import { findMatchingSidebar } from '../../sidebar/registry';
 import { logger } from '../../helper/logger';
 import { openUrl } from '../../helper/rustInvoke';
-import { useInstanceStore } from '../../stores/instanceStore';
-import { FolderTree, FolderPlus, Download, Package, RefreshCw } from 'lucide-react';
 
 interface SmartSidebarProps {
   onMenuClick?: (path: string) => void;
@@ -20,7 +19,6 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
   const location = useLocation();
   const { t } = useTranslation();
   const groups = getSidebarGroups();
-  const { knownFolders, setSelectedFolder, setSelectedSidebarItem, selectedSidebarItemId, refresh, refreshKnownFolders } = useInstanceStore();
 
   const getCurrentSidebarGroup = (): 'account' | 'game' | 'common' | 'none' | 'all' => {
     if (showAllGroups) return 'all';
@@ -69,107 +67,28 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
 
   const currentGroup = getCurrentSidebarGroup();
 
-  // Instance list: dynamic sidebar with known folders
-  if (location.pathname.startsWith('/instance-list')) {
-    const instanceItems: SidebarMenuItem[] = [
-      ...knownFolders.map(folder => ({
-        id: folder.id,
-        type: 'route' as const,
-        title: folder.name,
-        titleI18nKey: `instances.folder.${folder.id}`,
-        icon: <FolderTree className="w-4 h-4" />,
-        path: '/instance-list',
-        group: SidebarGroup.GAME,
-      })),
-      {
-        id: 'add-game-folder',
-        type: 'action' as const,
-        title: t('instances.addGameFolder', '添加游戏文件夹'),
-        titleI18nKey: 'instances.addGameFolder',
-        icon: <FolderPlus className="w-4 h-4" />,
-        path: '/instance-list',
-        group: SidebarGroup.GAME,
-        action: () => {
-          logger.info('添加游戏文件夹 - 待实现');
-        },
-      },
-      {
-        id: 'divider-instances',
-        type: 'divider' as const,
-        title: '',
-        titleI18nKey: '',
-        group: SidebarGroup.GAME,
-      },
-      {
-        id: 'install-new-game',
-        type: 'action' as const,
-        title: t('instances.installNewGame', '安装新游戏'),
-        titleI18nKey: 'instances.installNewGame',
-        icon: <Download className="w-4 h-4" />,
-        path: '/instance-list',
-        group: SidebarGroup.GAME,
-        action: () => {
-          logger.info('安装新游戏 - 待实现');
-        },
-      },
-      {
-        id: 'install-modpack',
-        type: 'action' as const,
-        title: t('instances.installModpack', '安装整合包'),
-        titleI18nKey: 'instances.installModpack',
-        icon: <Package className="w-4 h-4" />,
-        path: '/instance-list',
-        group: SidebarGroup.GAME,
-        action: () => {
-          logger.info('安装整合包 - 待实现');
-        },
-      },
-      {
-        id: 'refresh-instances',
-        type: 'action' as const,
-        title: t('instances.refresh', '刷新'),
-        titleI18nKey: 'instances.refresh',
-        icon: <RefreshCw className="w-4 h-4" />,
-        path: '/instance-list',
-        group: SidebarGroup.GAME,
-        action: () => {
-          refresh();
-          refreshKnownFolders();
-        },
-      },
-    ];
-
-    const handleInstanceItemClick = (item: SidebarMenuItem) => {
-      setSelectedSidebarItem(item.id);
-
-      if (item.type === 'action') {
-        item.action?.();
-      } else if (item.id && knownFolders.find(f => f.id === item.id)) {
-        setSelectedFolder(item.id);
-      } else if (item.type === 'route' && item.path && item.path !== location.pathname) {
-        if (onMenuClick) onMenuClick(item.path);
-      }
-    };
-
+  // Check registry for custom sidebar configs
+  const customSidebar = findMatchingSidebar(location.pathname);
+  if (customSidebar) {
     return (
       <BaseSidebarLayout>
         <div className="py-8">
           <BaseChildrenContent
-            items={instanceItems}
-            onMenuClick={handleInstanceItemClick}
-            isActive={() => false}
-            isItemActive={(id) => selectedSidebarItemId === id}
-            isParentActive={() => false}
-            hasChildrenItems={() => false}
-            groupTitle={t('instances.title', '实例列表')}
-            groupTitleI18nKey="instances.title"
+            items={customSidebar.items()}
+            onMenuClick={customSidebar.onItemClick}
+            isActive={customSidebar.isActive || (() => false)}
+            isItemActive={customSidebar.isActive}
+            isParentActive={customSidebar.isParentActive || (() => false)}
+            hasChildrenItems={customSidebar.hasChildrenItems || (() => false)}
+            groupTitle={customSidebar.groupTitle}
+            groupTitleI18nKey={customSidebar.groupTitleI18nKey}
           />
         </div>
       </BaseSidebarLayout>
     );
   }
 
-  // Account/Download: show their children items
+  // Account/Download/GameSettings: show their children items
   const pagesWithOwnSidebar = ['/account', '/download', '/game-settings'];
   if (pagesWithOwnSidebar.some(path => location.pathname.startsWith(path))) {
     const findMenuItemsByPath = (path: string): { current: SidebarMenuItem | undefined, parent: SidebarMenuItem | undefined } => {

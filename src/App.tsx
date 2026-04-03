@@ -3,6 +3,7 @@ import { BrowserRouter as Router, useLocation, useNavigate } from 'react-router-
 import { AnimatePresence, motion } from 'framer-motion';
 import Header from './components/Header';
 import SmartSidebar from './components/sidebar/SmartSidebar';
+import './sidebar/instanceListSidebar.tsx';
 import { routes, findRouteByPath } from './router/config';
 import { useNavStore } from './stores/navStore';
 import { useThemeStore } from './stores/themeStore';

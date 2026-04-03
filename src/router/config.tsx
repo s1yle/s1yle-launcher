@@ -107,20 +107,21 @@ export const routes: RouteConfig[] = [
     header: { type: SidebarType.SUB, title: '下载', titleI18nKey: 'sidebar.download' },
     sidebarGroup: SidebarGroup.GAME,
     parentPath: '/',
+    autoNavigateToFirstChild: true,
     children: [
       {
         path: '/download/game',
         componentName: 'DownloadGame',
         header: { type: SidebarType.SECONDARY, title: '游戏', titleI18nKey: 'sidebar.downloadGame' },
         sidebarGroup: SidebarGroup.GAME,
-        parentPath: '/download'
+        parentPath: '/'
       },
       {
         path: '/download/modpack',
         componentName: 'DownloadModpack',
         header: { type: SidebarType.SECONDARY, title: '整合包', titleI18nKey: 'sidebar.downloadModpack' },
         sidebarGroup: SidebarGroup.GAME,
-        parentPath: '/download'
+        parentPath: '/'
       },
     ]
   },
