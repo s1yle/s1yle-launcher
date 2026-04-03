@@ -89,11 +89,11 @@ const AlertPopup: React.FC<AlertPopupProps> = ({
   const typeConfig = getTypeConfig();
 
   const confirmTypeClasses = {
-    primary: 'bg-info hover:bg-info text-white',
-    success: 'bg-success hover:bg-success text-white',
-    warning: 'bg-warning hover:bg-warning text-white',
-    error: 'bg-error hover:bg-error text-white',
-    info: 'bg-text-tertiary hover:bg-surface-hover text-white',
+    primary: 'bg-info hover:bg-info text-text-primary',
+    success: 'bg-success hover:bg-success text-text-primary',
+    warning: 'bg-warning hover:bg-warning text-text-primary',
+    error: 'bg-error hover:bg-error text-text-primary',
+    info: 'bg-info hover:bg-info text-text-primary',
   };
 
   return (
@@ -126,7 +126,7 @@ const AlertPopup: React.FC<AlertPopupProps> = ({
             {typeConfig.icon}
           </div>
         )}
-        <div className="text-white text-center">
+        <div className="text-text-primary text-center">
           {typeof message === 'string' ? <p className="text-lg">{message}</p> : message}
         </div>
         {autoClose > 0 && (

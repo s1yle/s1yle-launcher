@@ -2,8 +2,6 @@ import { create } from 'zustand';
 
 export type ThemeMode = 'dark' | 'light' | 'system';
 export type AccentColor = 'indigo' | 'blue' | 'green' | 'purple' | 'red' | 'orange' | 'pink';
-export type BlurIntensity = 'none' | 'low' | 'medium' | 'high';
-export type Density = 'compact' | 'normal' | 'spacious';
 
 export interface ThemePreset {
   id: string;
@@ -13,7 +11,6 @@ export interface ThemePreset {
   descriptionI18nKey: string;
   mode: ThemeMode;
   accentColor: AccentColor;
-  blurIntensity: BlurIntensity;
   previewColors: { bg: string; surface: string; accent: string; text: string };
 }
 
@@ -26,7 +23,6 @@ export const themePresets: ThemePreset[] = [
     descriptionI18nKey: 'theme.preset.darkDesc',
     mode: 'dark',
     accentColor: 'indigo',
-    blurIntensity: 'medium',
     previewColors: { bg: '#1a1a1a', surface: 'rgba(255,255,255,0.05)', accent: '#6366f1', text: '#ffffff' },
   },
   {
@@ -37,7 +33,6 @@ export const themePresets: ThemePreset[] = [
     descriptionI18nKey: 'theme.preset.lightDesc',
     mode: 'light',
     accentColor: 'indigo',
-    blurIntensity: 'medium',
     previewColors: { bg: '#f5f5f5', surface: 'rgba(0,0,0,0.03)', accent: '#6366f1', text: '#1a1a1a' },
   },
 ];
@@ -52,26 +47,25 @@ export const accentColors: Record<AccentColor, { name: string; nameI18nKey: stri
   pink: { name: '粉色', nameI18nKey: 'theme.accent.pink', hex: '#ec4899' },
 };
 
-export const blurValues: Record<BlurIntensity, string> = {
-  none: '0px',
-  low: '4px',
-  medium: '8px',
-  high: '16px',
+const accentMap: Record<AccentColor, { primary: string; hover: string; active: string; bg: string }> = {
+  indigo: { primary: 'var(--accent-indigo)', hover: 'var(--accent-indigo-hover)', active: 'var(--accent-indigo-active)', bg: 'var(--accent-indigo-bg)' },
+  blue: { primary: 'var(--accent-blue)', hover: 'var(--accent-blue-hover)', active: 'var(--accent-blue-active)', bg: 'var(--accent-blue-bg)' },
+  green: { primary: 'var(--accent-green)', hover: 'var(--accent-green-hover)', active: 'var(--accent-green-active)', bg: 'var(--accent-green-bg)' },
+  purple: { primary: 'var(--accent-purple)', hover: 'var(--accent-purple-hover)', active: 'var(--accent-purple-active)', bg: 'var(--accent-purple-bg)' },
+  red: { primary: 'var(--accent-red)', hover: 'var(--accent-red-hover)', active: 'var(--accent-red-active)', bg: 'var(--accent-red-bg)' },
+  orange: { primary: 'var(--accent-orange)', hover: 'var(--accent-orange-hover)', active: 'var(--accent-orange-active)', bg: 'var(--accent-orange-bg)' },
+  pink: { primary: 'var(--accent-pink)', hover: 'var(--accent-pink-hover)', active: 'var(--accent-pink-active)', bg: 'var(--accent-pink-bg)' },
 };
 
 interface ThemeConfig {
   mode: ThemeMode;
   accentColor: AccentColor;
-  blurIntensity: BlurIntensity;
-  density: Density;
   activeTheme: 'dark' | 'light';
 }
 
 interface ThemeState extends ThemeConfig {
   setMode: (mode: ThemeMode) => void;
   setAccentColor: (color: AccentColor) => void;
-  setBlurIntensity: (intensity: BlurIntensity) => void;
-  setDensity: (density: Density) => void;
   applyPreset: (preset: ThemePreset) => void;
   init: () => void;
 }
@@ -81,8 +75,6 @@ const STORAGE_KEY = 's1yle-theme-config';
 export const useThemeStore = create<ThemeState>((set, get) => ({
   mode: 'dark',
   accentColor: 'indigo',
-  blurIntensity: 'medium',
-  density: 'normal',
   activeTheme: 'dark',
 
   setMode: (mode: ThemeMode) => {
@@ -90,26 +82,14 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
       ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
       : mode;
     set({ mode, activeTheme: actualTheme });
-    applyToDom(actualTheme, get().accentColor, get().blurIntensity, get().density);
+    applyToDom(actualTheme, get().accentColor);
     saveConfig({ ...get(), mode, activeTheme: actualTheme });
   },
 
   setAccentColor: (accentColor: AccentColor) => {
     set({ accentColor });
-    applyToDom(get().activeTheme, accentColor, get().blurIntensity, get().density);
+    applyToDom(get().activeTheme, accentColor);
     saveConfig({ ...get(), accentColor });
-  },
-
-  setBlurIntensity: (blurIntensity: BlurIntensity) => {
-    set({ blurIntensity });
-    applyToDom(get().activeTheme, get().accentColor, blurIntensity, get().density);
-    saveConfig({ ...get(), blurIntensity });
-  },
-
-  setDensity: (density: Density) => {
-    set({ density });
-    applyToDom(get().activeTheme, get().accentColor, get().blurIntensity, density);
-    saveConfig({ ...get(), density });
   },
 
   applyPreset: (preset: ThemePreset) => {
@@ -119,12 +99,10 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     const config: ThemeConfig = {
       mode: preset.mode,
       accentColor: preset.accentColor,
-      blurIntensity: preset.blurIntensity,
-      density: 'normal',
       activeTheme: actualTheme,
     };
     set(config);
-    applyToDom(actualTheme, preset.accentColor, preset.blurIntensity, 'normal');
+    applyToDom(actualTheme, preset.accentColor);
     saveConfig(config);
   },
 
@@ -137,12 +115,12 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
           ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
           : config.mode;
         set({ ...config, activeTheme: actualTheme });
-        applyToDom(actualTheme, config.accentColor, config.blurIntensity, config.density);
+        applyToDom(actualTheme, config.accentColor);
       } else {
-        applyToDom('dark', 'indigo', 'medium', 'normal');
+        applyToDom('dark', 'indigo');
       }
     } catch {
-      applyToDom('dark', 'indigo', 'medium', 'normal');
+      applyToDom('dark', 'indigo');
     }
 
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
@@ -150,26 +128,22 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
       if (mode === 'system') {
         const theme = e.matches ? 'dark' : 'light';
         set({ activeTheme: theme });
-        applyToDom(theme, get().accentColor, get().blurIntensity, get().density);
+        applyToDom(theme, get().accentColor);
       }
     });
   },
 }));
 
-function applyToDom(theme: 'dark' | 'light', _accentColor: AccentColor, blurIntensity: BlurIntensity, density: Density) {
+function applyToDom(theme: 'dark' | 'light', accentColor: AccentColor) {
   const root = document.documentElement;
-
   root.classList.toggle('theme-dark', theme === 'dark');
   root.classList.toggle('theme-light', theme === 'light');
 
-  root.style.setProperty('--blur-value', blurValues[blurIntensity]);
-
-  const densityValues: Record<Density, { scale: string }> = {
-    compact: { scale: '0.95' },
-    normal: { scale: '1' },
-    spacious: { scale: '1.05' },
-  };
-  root.style.setProperty('--density-scale', densityValues[density].scale);
+  const colors = accentMap[accentColor];
+  root.style.setProperty('--color-primary', colors.primary);
+  root.style.setProperty('--color-primary-hover', colors.hover);
+  root.style.setProperty('--color-primary-active', colors.active);
+  root.style.setProperty('--color-primary-bg', colors.bg);
 }
 
 function saveConfig(config: ThemeConfig) {

@@ -170,7 +170,7 @@ const Popup: React.FC<PopupProps> = ({
               {(title || showCloseButton) && (
                 <div className="flex items-center justify-between p-6 border-b border-border">
                   {title && (
-                    <div className="text-2xl font-bold text-white">
+                    <div className="text-2xl font-bold text-text-primary">
                       {typeof title === 'string' ? <h2>{title}</h2> : title}
                     </div>
                   )}

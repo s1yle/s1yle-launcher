@@ -8,6 +8,7 @@ import { useThemeStore } from "./stores/themeStore";
 
 import './styles/themes/dark.css';
 import './styles/themes/accents.css';
+import './styles/themes/background.css';
 import './styles/themes/light.css';
 
 async function initApp() {

@@ -42,14 +42,14 @@ const Header = ({ type, title }: HeaderProps) => {
 
   return (
     <header
-      className="bg-primary text-white h-16 flex items-center justify-between px-6"
+      className="bg-primary text-text-primary h-16 flex items-center justify-between px-6"
       data-tauri-drag-region
     >
       <div className="flex items-center gap-4" data-tauri-drag-region>
         {type === 'main' ? (
           <>
             <div className="w-10 h-10 bg-warning rounded-lg flex items-center justify-center">
-              <span className="font-bold text-white text-lg">MC</span>
+              <span className="font-bold text-text-primary text-lg">MC</span>
             </div>
             <h1 className="text-xl font-bold" data-tauri-drag-region>{title}</h1>
           </>

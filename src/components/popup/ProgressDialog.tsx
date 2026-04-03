@@ -102,7 +102,7 @@ const ProgressDialog = ({
         {isFinished && onConfirm && (
           <button
             onClick={onConfirm}
-            className="mt-2 px-6 py-2 rounded-lg text-sm text-white bg-primary hover:bg-primary-hover transition-colors"
+            className="mt-2 px-6 py-2 rounded-lg text-sm text-text-primary bg-primary hover:bg-primary-hover transition-colors"
           >
             {status === 'completed' ? confirmText : '关闭'}
           </button>

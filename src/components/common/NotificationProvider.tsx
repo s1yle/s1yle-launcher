@@ -167,7 +167,7 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ notification, onR
 
   return (
     <div
-      className={`${config.bg} backdrop-blur-sm text-white rounded-lg shadow-lg p-4 min-w-[300px] max-w-[400px]`}
+      className={`${config.bg} backdrop-blur-sm text-text-primary rounded-lg shadow-lg p-4 min-w-[300px] max-w-[400px]`}
       role="alert"
     >
       <div className="flex items-start gap-3">

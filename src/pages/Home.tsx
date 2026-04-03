@@ -8,7 +8,7 @@ const Home = () => {
       <div className="max-w-4xl w-full space-y-8">
         {/* 标题区域 */}
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-white mb-4">MC启动器首页</h1>
+          <h1 className="text-4xl font-bold text-text-primary mb-4">MC启动器首页</h1>
           <p className="text-lg text-text-secondary">请在启动器说明中查看详细说明！</p>
         </div>
       </div>

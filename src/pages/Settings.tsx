@@ -1,30 +1,15 @@
 import { useTranslation } from 'react-i18next';
-import { useThemeStore, themePresets, type BlurIntensity, type Density } from '../stores/themeStore';
+import { useThemeStore, themePresets } from '../stores/themeStore';
 import ThemePreview, { AccentColorPicker } from '../components/common/ThemePreview';
-
 
 const Settings = () => {
   const { t } = useTranslation();
   const {
     mode,
-    accentColor, setAccentColor,
-    blurIntensity, setBlurIntensity,
-    density, setDensity,
+    accentColor,
+    setAccentColor,
     applyPreset,
   } = useThemeStore();
-
-  const blurOptions: { value: BlurIntensity; label: string }[] = [
-    { value: 'none', label: t('theme.blur.none') },
-    { value: 'low', label: t('theme.blur.low') },
-    { value: 'medium', label: t('theme.blur.medium') },
-    { value: 'high', label: t('theme.blur.high') },
-  ];
-
-  const densityOptions: { value: Density; label: string }[] = [
-    { value: 'compact', label: t('theme.density.compact') },
-    { value: 'normal', label: t('theme.density.normal') },
-    { value: 'spacious', label: t('theme.density.spacious') },
-  ];
 
   const languageOptions = [
     { value: 'zh-CN', label: '简体中文' },
@@ -45,18 +30,15 @@ const Settings = () => {
             {/* 预设模板 */}
             <div className="mb-6">
               <h3 className="text-sm font-medium text-text-secondary mb-3">{t('theme.preset.title')}</h3>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 {themePresets.map((preset) => (
                   <ThemePreview
                     key={preset.id}
                     preset={preset}
-                    selected={mode === preset.mode && accentColor === preset.accentColor}
+                    selected={mode === preset.mode}
                     onSelect={() => applyPreset(preset)}
                   />
                 ))}
-                <div className="rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center h-full min-h-[140px] text-text-tertiary">
-                  <span className="text-sm">{t('theme.custom', '自定义')}</span>
-                </div>
               </div>
             </div>
 
@@ -64,46 +46,6 @@ const Settings = () => {
             <div className="mb-6">
               <h3 className="text-sm font-medium text-text-secondary mb-3">{t('theme.accent.title')}</h3>
               <AccentColorPicker selected={accentColor} onSelect={setAccentColor} />
-            </div>
-
-            {/* 模糊强度 */}
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-text-secondary mb-3">{t('theme.blur.title')}</h3>
-              <div className="flex gap-2">
-                {blurOptions.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => setBlurIntensity(opt.value)}
-                    className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-                      blurIntensity === opt.value
-                        ? 'bg-primary text-text-primary'
-                        : 'bg-surface text-text-secondary hover:bg-surface-hover'
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 界面密度 */}
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-text-secondary mb-3">{t('theme.density.title')}</h3>
-              <div className="flex gap-2">
-                {densityOptions.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => setDensity(opt.value)}
-                    className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-                      density === opt.value
-                        ? 'bg-primary text-text-primary'
-                        : 'bg-surface text-text-secondary hover:bg-surface-hover'
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
 

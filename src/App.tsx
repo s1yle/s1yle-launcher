@@ -11,7 +11,6 @@ import { logger } from './helper/logger';
 import RouterRenderer from './components/RouterRenderer';
 import './helper/i18n';
 
-const BACKGROUND_IMAGE_URL = './src/assets/img/bg-1.png';
 const PAGE_TRANSITION_DURATION = 0.35;
 
 const MainLayout = () => {
@@ -49,8 +48,8 @@ const MainLayout = () => {
       <div className="flex flex-1 overflow-hidden">
         <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} />
         <main
-          className="flex-1 overflow-auto relative"
-          style={{ background: `url(${BACKGROUND_IMAGE_URL}) no-repeat center center / cover`, backgroundAttachment: 'fixed' }}
+          className="flex-1 overflow-auto relative noise-bg gradient-bg"
+          style={{ background: 'var(--color-bg-primary)' }}
         >
           <AnimatePresence mode="sync">
             <motion.div

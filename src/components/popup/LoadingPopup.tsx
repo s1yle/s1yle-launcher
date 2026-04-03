@@ -123,7 +123,7 @@ const LoadingPopup: React.FC<LoadingPopupProps> = ({
               type="button"
               onClick={handleCancel}
               disabled={disableCancel}
-              className="px-6 py-2 bg-surface hover:bg-gray-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2 bg-surface hover:bg-surface-hover text-text-primary rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {cancelText}
             </button>
