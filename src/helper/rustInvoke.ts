@@ -842,3 +842,23 @@ export const openUrl = async (
 ): Promise<string> => {
   return await invokeRustFunction("open_url", { url }, options);
 };
+
+export interface KnownPath {
+  id: string;
+  name: string;
+  path: string;
+  is_default: boolean;
+}
+
+export const scanKnownMcPaths = async (
+  options?: InvokeOptions,
+): Promise<KnownPath[]> => {
+  return await invokeRustFunction("scan_known_mc_paths", {}, options);
+};
+
+export const addKnownPath = async (
+  path: string,
+  options?: InvokeOptions,
+): Promise<KnownPath> => {
+  return await invokeRustFunction("add_known_path", { path }, options);
+};

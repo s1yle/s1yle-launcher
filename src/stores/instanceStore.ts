@@ -6,20 +6,30 @@ import {
   copyInstance,
   renameInstance,
   updateInstance,
+  getInstancesPath,
+  scanKnownMcPaths,
+  addKnownPath,
 } from '../helper/rustInvoke';
-import type { GameInstance, ModLoaderType } from '../helper/rustInvoke';
+import type { GameInstance, KnownPath } from '../helper/rustInvoke';
+import { ModLoaderType } from '../helper/rustInvoke';
 
 interface InstanceState {
   instances: GameInstance[];
+  knownFolders: KnownPath[];
+  selectedFolderId: string | null;
   loading: boolean;
   error: string | null;
   searchQuery: string;
   viewMode: 'grid' | 'list';
+  instancesPath: string;
 
   init: () => Promise<void>;
   refresh: () => Promise<void>;
-  createNew: (name: string, version: string, loaderType: ModLoaderType, loaderVersion?: string, iconPath?: string) => Promise<void>;
-  remove: (id: string, deleteFiles?: boolean) => Promise<void>;
+  refreshKnownFolders: () => Promise<void>;
+  addKnownFolder: (path: string) => Promise<void>;
+  setSelectedFolder: (id: string | null) => void;
+  createNew: (name: string, version: string, loaderType?: ModLoaderType, loaderVersion?: string, iconPath?: string) => Promise<void>;
+  remove: (id: string) => Promise<void>;
   duplicate: (id: string, newName: string) => Promise<void>;
   rename: (id: string, newName: string) => Promise<void>;
   toggle: (id: string, enabled: boolean) => Promise<void>;
@@ -30,16 +40,28 @@ interface InstanceState {
 
 export const useInstanceStore = create<InstanceState>((set, get) => ({
   instances: [],
+  knownFolders: [],
+  selectedFolderId: null,
   loading: false,
   error: null,
   searchQuery: '',
   viewMode: 'grid',
+  instancesPath: '',
 
   init: async () => {
     set({ loading: true, error: null });
     try {
-      const instances = await scanInstances();
-      set({ instances });
+      const [instances, path, knownFolders] = await Promise.all([
+        scanInstances(),
+        getInstancesPath(),
+        scanKnownMcPaths(),
+      ]);
+      set({
+        instances,
+        instancesPath: path,
+        knownFolders,
+        selectedFolderId: knownFolders.find(f => f.is_default)?.id ?? knownFolders[0]?.id ?? null,
+      });
     } catch (e) {
       set({ error: e instanceof Error ? e.message : 'Failed to load instances' });
     } finally {
@@ -49,16 +71,45 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
 
   refresh: async () => {
     try {
-      const instances = await scanInstances();
-      set({ instances });
+      const [instances, path] = await Promise.all([
+        scanInstances(),
+        getInstancesPath(),
+      ]);
+      set({ instances, instancesPath: path });
     } catch {
       // keep existing
     }
   },
 
-  createNew: async (name: string, version: string, loaderType: ModLoaderType, loaderVersion?: string, iconPath?: string) => {
+  refreshKnownFolders: async () => {
     try {
-      await createInstance(name, version, loaderType, loaderVersion, iconPath);
+      const knownFolders = await scanKnownMcPaths();
+      set({ knownFolders });
+    } catch {
+      // keep existing
+    }
+  },
+
+  addKnownFolder: async (path: string) => {
+    try {
+      const folder = await addKnownPath(path);
+      set(prev => ({
+        knownFolders: [...prev.knownFolders, folder],
+        selectedFolderId: folder.id,
+      }));
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : 'Failed to add folder' });
+      throw e;
+    }
+  },
+
+  setSelectedFolder: (id: string | null) => {
+    set({ selectedFolderId: id });
+  },
+
+  createNew: async (name: string, version: string, loaderType?: ModLoaderType, loaderVersion?: string, iconPath?: string) => {
+    try {
+      await createInstance(name, version, loaderType || ModLoaderType.Vanilla, loaderVersion, iconPath);
       await get().refresh();
     } catch (e) {
       set({ error: e instanceof Error ? e.message : 'Failed to create instance' });
@@ -66,9 +117,9 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
     }
   },
 
-  remove: async (id: string, deleteFiles = false) => {
+  remove: async (id: string) => {
     try {
-      await deleteInstance(id, deleteFiles);
+      await deleteInstance(id, true);
       await get().refresh();
     } catch (e) {
       set({ error: e instanceof Error ? e.message : 'Failed to delete instance' });
@@ -114,11 +165,25 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
   },
 
   getFilteredInstances: () => {
-    const { instances, searchQuery } = get();
-    if (!searchQuery) return instances;
-    const q = searchQuery.toLowerCase();
-    return instances.filter(
-      (i) => i.name.toLowerCase().includes(q) || i.version.toLowerCase().includes(q),
-    );
+    const { instances, searchQuery, selectedFolderId, knownFolders } = get();
+    let filtered = instances;
+
+    // Filter by selected folder
+    if (selectedFolderId) {
+      const folder = knownFolders.find(f => f.id === selectedFolderId);
+      if (folder) {
+        filtered = instances.filter(i => i.path.startsWith(folder.path));
+      }
+    }
+
+    // Filter by search query
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (i) => i.name.toLowerCase().includes(q) || i.version.toLowerCase().includes(q),
+      );
+    }
+
+    return filtered;
   },
 }));

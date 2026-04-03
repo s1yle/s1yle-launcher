@@ -69,6 +69,8 @@ pub use crate::instance::{
     rename_instance,
     update_instance,
     get_instances_path,
+            scan_known_mc_paths,
+            add_known_path,
     GameInstance,
     InstanceManager,
 };
@@ -324,6 +326,8 @@ pub fn run() {
             rename_instance,
             update_instance,
             get_instances_path,
+            scan_known_mc_paths,
+            add_known_path,
             open_url,
             open_folder
         ])

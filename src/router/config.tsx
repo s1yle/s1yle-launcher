@@ -13,6 +13,9 @@ import {
   Monitor,
   Rocket,
   ExternalLink,
+  FolderTree,
+  FolderPlus,
+  RefreshCw,
 } from 'lucide-react';
 import { type ReactNode } from 'react';
 
@@ -234,7 +237,70 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
         titleI18nKey: 'sidebar.instanceList',
         icon: <List className="w-4 h-4" />,
         path: '/instance-list',
-        group: SidebarGroup.GAME
+        group: SidebarGroup.GAME,
+        children: [
+          {
+            id: 'game-folders',
+            type: 'route',
+            title: '游戏文件夹',
+            titleI18nKey: 'instances.gameFolders',
+            icon: <FolderTree className="w-4 h-4" />,
+            path: '/instance-list',
+            group: SidebarGroup.GAME
+          },
+          {
+            id: 'add-game-folder',
+            type: 'action',
+            title: '添加游戏文件夹',
+            titleI18nKey: 'instances.addGameFolder',
+            icon: <FolderPlus className="w-4 h-4" />,
+            path: '/instance-list',
+            group: SidebarGroup.GAME
+          },
+          {
+            id: 'divider-instances',
+            type: 'divider',
+            title: '',
+            titleI18nKey: '',
+            group: SidebarGroup.GAME
+          },
+          {
+            id: 'install-new-game',
+            type: 'action',
+            title: '安装新游戏',
+            titleI18nKey: 'instances.installNewGame',
+            icon: <Download className="w-4 h-4" />,
+            path: '/instance-list',
+            group: SidebarGroup.GAME
+          },
+          {
+            id: 'install-modpack',
+            type: 'action',
+            title: '安装整合包',
+            titleI18nKey: 'instances.installModpack',
+            icon: <Package className="w-4 h-4" />,
+            path: '/instance-list',
+            group: SidebarGroup.GAME
+          },
+          {
+            id: 'refresh-instances',
+            type: 'action',
+            title: '刷新',
+            titleI18nKey: 'instances.refresh',
+            icon: <RefreshCw className="w-4 h-4" />,
+            path: '/instance-list',
+            group: SidebarGroup.GAME
+          },
+          {
+            id: 'global-game-settings',
+            type: 'route',
+            title: '全局游戏设置',
+            titleI18nKey: 'instances.globalSettings',
+            icon: <Settings className="w-4 h-4" />,
+            path: '/instance-list',
+            group: SidebarGroup.GAME
+          }
+        ]
       },
       {
         id: 'download',
