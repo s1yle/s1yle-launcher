@@ -1,6 +1,5 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
 import { type SidebarMenuItem } from '../../../router/config';
 
@@ -11,7 +10,6 @@ export interface BaseSidebarContentProps {
   hasChildrenItems?: (item: SidebarMenuItem) => boolean;
   groupTitle?: string;
   groupTitleI18nKey?: string;
-  showChildren?: boolean;
 }
 
 const BaseSidebarContent = ({
@@ -21,12 +19,8 @@ const BaseSidebarContent = ({
   hasChildrenItems,
   groupTitle,
   groupTitleI18nKey,
-  showChildren = true,
 }: BaseSidebarContentProps) => {
   const { t } = useTranslation();
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(
-    new Set(items.filter(item => item.children?.length).map(item => item.id))
-  );
 
   const defaultIsActive = (_path: string) => false;
   const defaultHasChildrenItems = (item: SidebarMenuItem) => !!(item.children && item.children.length > 0);
@@ -35,23 +29,13 @@ const BaseSidebarContent = ({
   const childrenCheck = hasChildrenItems || defaultHasChildrenItems;
 
   const handleClick = (path: string, group: string, itemId: string, hasChildren: boolean) => {
-    if (hasChildren) {
-      setExpandedItems(prev => {
-        const next = new Set(prev);
-        if (next.has(itemId)) next.delete(itemId);
-        else next.add(itemId);
-        return next;
-      });
-    }
     if (onMenuClick) {
       onMenuClick(path, group, itemId, hasChildren);
     }
   };
 
-
   const renderMenuItem = (item: SidebarMenuItem, level: number = 0, index: number = 0) => {
     const hasChildren = childrenCheck(item);
-    const isExpanded = expandedItems.has(item.id);
     const active = activeCheck(item.path);
 
     return (
@@ -86,32 +70,10 @@ const BaseSidebarContent = ({
           <span className="text-sm text-left flex-1 truncate">
             {t(item.titleI18nKey, item.title)}
           </span>
-          {hasChildren && showChildren && (
-            <motion.div
-              animate={{ rotate: isExpanded ? 90 : 0 }}
-              transition={{ duration: 0.2 }}
-              className="flex-shrink-0"
-            >
-              <ChevronRight className="w-3.5 h-3.5 text-[var(--color-text-tertiary)]" />
-            </motion.div>
+          {hasChildren && (
+            <ChevronRight className="w-3.5 h-3.5 text-[var(--color-text-tertiary)] flex-shrink-0" />
           )}
         </motion.button>
-
-        <AnimatePresence>
-          {hasChildren && isExpanded && item.children && showChildren && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-              className="overflow-hidden"
-            >
-              <div className="space-y-0.5 mt-0.5">
-                {item.children.map((child, childIndex) => renderMenuItem(child, level + 1, index + childIndex + 1))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </motion.div>
     );
   };
