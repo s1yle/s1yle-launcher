@@ -63,7 +63,7 @@ const MainLayout = () => {
                 ease: [0.25, 0.1, 0.25, 1],
               }}
             >
-              <div className="relative z-10 h-full rounded-lg shadow-lg">
+              <div className="relative z-10 ">
                 <div className="p-8">
                   <RouterRenderer />
                 </div>

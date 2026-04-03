@@ -55,7 +55,7 @@ const Settings = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-text-primary font-medium">{t('settings.language')}</label>
-                <select className="w-full p-3 bg-surface border border-border rounded-lg text-text-primary">
+                <select className="w-full p-3 bg-surface-active border border-border rounded-lg text-text-primary">
                   {languageOptions.map((lang) => (
                     <option key={lang.value} value={lang.value}>{lang.label}</option>
                   ))}
@@ -67,7 +67,7 @@ const Settings = () => {
                 <input
                   type="text"
                   placeholder={t('settings.javaPathPlaceholder', '自动检测')}
-                  className="w-full p-3 bg-surface border border-border rounded-lg text-text-primary placeholder-text-tertiary"
+                  className="w-full p-3 bg-surface-active border border-border rounded-lg text-text-primary placeholder-text-tertiary"
                 />
               </div>
 
@@ -112,7 +112,7 @@ const Settings = () => {
 
               <div className="space-y-2">
                 <label className="text-text-primary font-medium">{t('settings.windowSize')}</label>
-                <select className="w-full p-3 bg-surface border border-border rounded-lg text-text-primary">
+                <select className="w-full p-3 bg-surface-active border border-border rounded-lg text-text-primary">
                   <option value="auto">{t('settings.autoFit', '自动适配')}</option>
                   <option value="800x600">800 × 600</option>
                   <option value="1024x768">1024 × 768</option>

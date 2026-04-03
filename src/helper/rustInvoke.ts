@@ -836,3 +836,9 @@ export const openFolder = async (
   logger.info('打开文件夹', { path });
   return await invokeRustFunction("open_folder", { path }, options);
 };
+export const openUrl = async (
+  url: string,
+  options?: InvokeOptions,
+): Promise<string> => {
+  return await invokeRustFunction("open_url", { url }, options);
+};

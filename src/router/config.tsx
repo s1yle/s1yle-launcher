@@ -305,7 +305,7 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
         title: 'Discord',
         titleI18nKey: 'sidebar.discord',
         icon: <ExternalLink className="w-4 h-4" />,
-        url: 'https://discord.gg/',
+        url: 'https://discord.gg/s1yle-launcher',
         group: SidebarGroup.COMMON
       },
       {

@@ -7,6 +7,7 @@ import GameSidebarContent from './content/GameSidebarContent';
 import CommonSidebarContent from './content/CommonSidebarContent';
 import BaseChildrenContent from './content/BaseChildrenContent';
 import { logger } from '../../helper/logger';
+import { openUrl } from '../../helper/rustInvoke';
 
 interface SmartSidebarProps {
   onMenuClick?: (path: string) => void;
@@ -54,7 +55,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
     } else if (item.type === 'action') {
       item.action?.();
     } else if (item.type === 'external' && item.url) {
-      window.open(item.url, '_blank', 'noopener,noreferrer');
+      openUrl(item.url);
     }
   };
 

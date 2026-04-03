@@ -1,11 +1,11 @@
-/* SVG noise texture overlay for main content area */
+/* Fixed noise texture overlay - covers viewport, doesn't scroll with content */
 .noise-bg {
   position: relative;
 }
 
 .noise-bg::before {
   content: '';
-  position: absolute;
+  position: fixed;
   inset: 0;
   opacity: 0.03;
   pointer-events: none;
@@ -16,17 +16,17 @@
 }
 
 .theme-light .noise-bg::before {
-  opacity: 0.02;
+  opacity: 0.015;
 }
 
-/* Subtle radial gradient overlay */
+/* Fixed radial gradient overlay */
 .gradient-bg {
   position: relative;
 }
 
 .gradient-bg::after {
   content: '';
-  position: absolute;
+  position: fixed;
   inset: 0;
   pointer-events: none;
   background: radial-gradient(ellipse at 20% 50%, var(--color-primary-bg) 0%, transparent 50%),

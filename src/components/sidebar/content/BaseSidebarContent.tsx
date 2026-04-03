@@ -1,3 +1,4 @@
+import { openUrl } from '../../../helper/rustInvoke';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -47,7 +48,7 @@ const BaseSidebarContent = ({
     } else if (item.type === 'action' && item.action) {
       item.action();
     } else if (item.type === 'external' && item.url) {
-      window.open(item.url, '_blank', 'noopener,noreferrer');
+      openUrl(item.url);
     }
   };
 

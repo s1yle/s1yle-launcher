@@ -240,6 +240,14 @@ fn log_frontend(level: String, message: String) {
 }
 
 #[tauri::command]
+fn open_url(url: String) -> Result<String, String> {
+    tracing::info!("打开链接: {}", url);
+    tauri_plugin_opener::open_url(&url, None::<String>)
+        .map_err(|e| format!("打开链接失败: {}", e))?;
+    Ok(url)
+}
+
+#[tauri::command]
 fn open_folder(path: String) -> Result<String, String> {
     tracing::info!("打开文件夹: {}", path);
     tauri_plugin_opener::open_path(&path, None::<&str>)
@@ -316,6 +324,7 @@ pub fn run() {
             rename_instance,
             update_instance,
             get_instances_path,
+            open_url,
             open_folder
         ])
 
