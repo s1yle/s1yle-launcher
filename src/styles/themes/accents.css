@@ -1,0 +1,74 @@
+:root,
+.theme-dark {
+  --accent-indigo: #6366f1;
+  --accent-indigo-hover: #818cf8;
+  --accent-indigo-active: #4f46e5;
+  --accent-indigo-bg: rgba(99, 102, 241, 0.2);
+
+  --accent-blue: #3b82f6;
+  --accent-blue-hover: #60a5fa;
+  --accent-blue-active: #2563eb;
+  --accent-blue-bg: rgba(59, 130, 246, 0.2);
+
+  --accent-green: #22c55e;
+  --accent-green-hover: #4ade80;
+  --accent-green-active: #16a34a;
+  --accent-green-bg: rgba(34, 197, 94, 0.2);
+
+  --accent-purple: #a855f7;
+  --accent-purple-hover: #c084fc;
+  --accent-purple-active: #9333ea;
+  --accent-purple-bg: rgba(168, 85, 247, 0.2);
+
+  --accent-red: #ef4444;
+  --accent-red-hover: #f87171;
+  --accent-red-active: #dc2626;
+  --accent-red-bg: rgba(239, 68, 68, 0.2);
+
+  --accent-orange: #f97316;
+  --accent-orange-hover: #fb923c;
+  --accent-orange-active: #ea580c;
+  --accent-orange-bg: rgba(249, 115, 22, 0.2);
+
+  --accent-pink: #ec4899;
+  --accent-pink-hover: #f472b6;
+  --accent-pink-active: #db2777;
+  --accent-pink-bg: rgba(236, 72, 153, 0.2);
+}
+
+.theme-light {
+  --accent-indigo: #6366f1;
+  --accent-indigo-hover: #4f46e5;
+  --accent-indigo-active: #4338ca;
+  --accent-indigo-bg: rgba(99, 102, 241, 0.1);
+
+  --accent-blue: #3b82f6;
+  --accent-blue-hover: #2563eb;
+  --accent-blue-active: #1d4ed8;
+  --accent-blue-bg: rgba(59, 130, 246, 0.1);
+
+  --accent-green: #16a34a;
+  --accent-green-hover: #15803d;
+  --accent-green-active: #166534;
+  --accent-green-bg: rgba(22, 163, 74, 0.1);
+
+  --accent-purple: #a855f7;
+  --accent-purple-hover: #9333ea;
+  --accent-purple-active: #7e22ce;
+  --accent-purple-bg: rgba(168, 85, 247, 0.1);
+
+  --accent-red: #dc2626;
+  --accent-red-hover: #b91c1c;
+  --accent-red-active: #991b1b;
+  --accent-red-bg: rgba(220, 38, 38, 0.1);
+
+  --accent-orange: #ea580c;
+  --accent-orange-hover: #c2410c;
+  --accent-orange-active: #9a3412;
+  --accent-orange-bg: rgba(234, 88, 12, 0.1);
+
+  --accent-pink: #db2777;
+  --accent-pink-hover: #be185d;
+  --accent-pink-active: #9d174d;
+  --accent-pink-bg: rgba(219, 39, 119, 0.1);
+}

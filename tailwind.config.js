@@ -63,6 +63,12 @@ export default {
         toggle: {
           track: 'var(--color-toggle-track)',
         },
+        accent: {
+          DEFAULT: 'var(--color-primary)',
+          hover: 'var(--color-primary-hover)',
+          active: 'var(--color-primary-active)',
+          bg: 'var(--color-primary-bg)',
+        },
       },
       keyframes: {
         fadeIn: {

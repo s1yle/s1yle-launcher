@@ -11,10 +11,10 @@
   --color-text-secondary: rgba(0, 0, 0, 0.7);
   --color-text-tertiary: rgba(0, 0, 0, 0.4);
   --color-text-disabled: rgba(0, 0, 0, 0.3);
-  --color-primary: #6366f1;
-  --color-primary-hover: #4f46e5;
-  --color-primary-active: #4338ca;
-  --color-primary-bg: rgba(99, 102, 241, 0.1);
+  --color-primary: var(--accent-indigo, #6366f1);
+  --color-primary-hover: var(--accent-indigo-hover, #4f46e5);
+  --color-primary-active: var(--accent-indigo-active, #4338ca);
+  --color-primary-bg: var(--accent-indigo-bg, rgba(99, 102, 241, 0.1));
   --color-success: #16a34a;
   --color-success-bg: rgba(22, 163, 74, 0.1);
   --color-warning: #ca8a04;
@@ -24,10 +24,15 @@
   --color-info: #2563eb;
   --color-info-bg: rgba(37, 99, 235, 0.1);
   --color-overlay: rgba(0, 0, 0, 0.4);
-  --color-backdrop-blur: blur(8px);
+  --color-backdrop-blur: var(--blur-value, 8px);
   --color-context-bg: rgba(255, 255, 255, 0.95);
   --color-context-border: rgba(0, 0, 0, 0.1);
   --color-context-hover: rgba(0, 0, 0, 0.05);
   --color-progress-track: rgba(0, 0, 0, 0.1);
   --color-toggle-track: rgba(0, 0, 0, 0.2);
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 0.75rem;
+  --spacing-lg: 1rem;
+  --spacing-xl: 1.25rem;
 }

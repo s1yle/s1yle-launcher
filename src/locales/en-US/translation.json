@@ -256,5 +256,41 @@
     "releaseDate": "Release Date",
     "installed": "Installed",
     "notInstalled": "Not Installed"
+  },
+  "theme": {
+    "title": "Theme Settings",
+    "preset": {
+      "title": "Presets",
+      "dark": "Dark Night",
+      "darkDesc": "Dark background with indigo accent",
+      "light": "Dawn Light",
+      "lightDesc": "Light background with indigo accent"
+    },
+    "accent": {
+      "title": "Accent Color",
+      "indigo": "Indigo",
+      "blue": "Blue",
+      "green": "Green",
+      "purple": "Purple",
+      "red": "Red",
+      "orange": "Orange",
+      "pink": "Pink"
+    },
+    "blur": {
+      "title": "Blur Intensity",
+      "none": "None",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    },
+    "density": {
+      "title": "Interface Density",
+      "compact": "Compact",
+      "normal": "Normal",
+      "spacious": "Spacious"
+    },
+    "preview": {
+      "title": "Preview"
+    }
   }
 }
