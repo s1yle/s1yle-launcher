@@ -140,21 +140,21 @@ const InstanceList: React.FC = () => {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-6 border-b border-white/10">
+      <div className="p-6 border-b border-border">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-white">实例列表</h1>
-            <p className="text-gray-400 text-sm">查看和管理所有 Minecraft 游戏实例</p>
+            <h1 className="text-2xl font-bold text-text-primary">实例列表</h1>
+            <p className="text-text-tertiary text-sm">查看和管理所有 Minecraft 游戏实例</p>
           </div>
           <div className="flex items-center gap-2">
             {/* View mode toggle */}
-            <div className="flex items-center bg-white/5 border border-white/10 rounded-lg overflow-hidden">
+            <div className="flex items-center bg-surface border border-border rounded-lg overflow-hidden">
               <button
                 onClick={() => setViewMode('grid')}
                 className={`px-3 py-1.5 text-sm transition-colors ${
                   viewMode === 'grid'
-                    ? 'bg-indigo-600 text-white'
-                    : 'text-gray-400 hover:text-white hover:bg-white/10'
+                    ? 'bg-primary text-text-primary'
+                    : 'text-text-tertiary hover:text-text-primary hover:bg-surface-hover'
                 }`}
                 title="网格视图"
               >
@@ -166,8 +166,8 @@ const InstanceList: React.FC = () => {
                 onClick={() => setViewMode('list')}
                 className={`px-3 py-1.5 text-sm transition-colors ${
                   viewMode === 'list'
-                    ? 'bg-indigo-600 text-white'
-                    : 'text-gray-400 hover:text-white hover:bg-white/10'
+                    ? 'bg-primary text-text-primary'
+                    : 'text-text-tertiary hover:text-text-primary hover:bg-surface-hover'
                 }`}
                 title="列表视图"
               >
@@ -179,7 +179,7 @@ const InstanceList: React.FC = () => {
             {/* Refresh button */}
             <button
               onClick={refresh}
-              className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+              className="p-2 text-text-tertiary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors"
               title="刷新"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -192,7 +192,7 @@ const InstanceList: React.FC = () => {
         {/* Search bar */}
         <div className="flex items-center gap-4">
           <div className="flex-1 relative max-w-md">
-            <svg className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
@@ -201,12 +201,12 @@ const InstanceList: React.FC = () => {
               placeholder="搜索实例 (支持名称、版本、加载器)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-indigo-500 transition-colors"
+              className="w-full pl-10 pr-4 py-2 bg-surface border border-border rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:border-primary transition-colors"
             />
             {searchQuery && (
               <button
                 onClick={() => { setSearchQuery(''); searchInputRef.current?.focus(); }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-primary"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -214,7 +214,7 @@ const InstanceList: React.FC = () => {
               </button>
             )}
           </div>
-          <span className="text-gray-400 text-sm whitespace-nowrap">
+          <span className="text-text-tertiary text-sm whitespace-nowrap">
             {filteredInstances.length} / {instances.length} 个实例
           </span>
         </div>
@@ -222,7 +222,7 @@ const InstanceList: React.FC = () => {
 
       {/* Error state */}
       {error && (
-        <div className="mx-6 mt-4 p-4 bg-red-500/20 border border-red-500/30 rounded-lg">
+        <div className="mx-6 mt-4 p-4 bg-error-bg border border-red-500/30 rounded-lg">
           <div className="flex items-center gap-2">
             <span className="text-red-400">⚠️</span>
             <p className="text-red-300 text-sm">{error}</p>
@@ -235,7 +235,7 @@ const InstanceList: React.FC = () => {
         {loading && instances.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-            <span className="mt-3 text-gray-400">正在扫描实例...</span>
+            <span className="mt-3 text-text-tertiary">正在扫描实例...</span>
           </div>
         ) : filteredInstances.length === 0 ? (
           <EmptyState
@@ -248,7 +248,7 @@ const InstanceList: React.FC = () => {
             {filteredInstances.map((instance) => (
               <div key={instance.id} className="relative">
                 {editingId === instance.id ? (
-                  <div className="p-4 bg-white/10 border border-indigo-500/50 rounded-lg">
+                  <div className="p-4 bg-surface border border-primary rounded-lg">
                     <input
                       type="text"
                       value={editingName}
@@ -256,7 +256,7 @@ const InstanceList: React.FC = () => {
                       onBlur={() => handleRename(instance.id)}
                       onKeyDown={(e) => e.key === 'Enter' && handleRename(instance.id)}
                       autoFocus
-                      className="w-full px-2 py-1 bg-white/10 border border-white/20 rounded text-white text-sm focus:outline-none focus:border-indigo-500"
+                      className="w-full px-2 py-1 bg-surface border border-border-hover rounded text-text-primary text-sm focus:outline-none focus:border-primary"
                     />
                   </div>
                 ) : (
@@ -279,9 +279,9 @@ const InstanceList: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="border border-white/10 rounded-lg overflow-hidden">
+          <div className="border border-border rounded-lg overflow-hidden">
             {/* Table header */}
-            <div className="flex items-center px-4 py-3 bg-white/5 border-b border-white/10 text-gray-400 text-sm font-medium">
+            <div className="flex items-center px-4 py-3 bg-surface border-b border-border text-text-tertiary text-sm font-medium">
               <div className="w-10 mr-3"></div>
               <div className="flex-1">实例名称</div>
               <div className="w-24 mx-4">游戏版本</div>
@@ -311,7 +311,7 @@ const InstanceList: React.FC = () => {
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-3 border-t border-white/10 bg-black/20">
+      <div className="px-6 py-3 border-t border-border bg-surface">
         <div className="flex items-center justify-between">
           <p className="text-gray-500 text-xs">
             实例目录: <span className="font-mono">{instancesPath}</span>
@@ -326,12 +326,12 @@ const InstanceList: React.FC = () => {
 
       {/* Duplicate modal */}
       {showDuplicateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-900 border border-white/20 rounded-xl p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold text-white mb-4">复制实例</h2>
+        <div className="fixed inset-0 bg-overlay flex items-center justify-center z-50">
+          <div className="bg-context-bg border border-border-hover rounded-xl p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold text-text-primary mb-4">复制实例</h2>
             <div className="space-y-4">
               <div>
-                <label className="text-gray-300 text-sm mb-1 block">新实例名称</label>
+                <label className="text-text-secondary text-sm mb-1 block">新实例名称</label>
                 <input
                   type="text"
                   value={duplicateName}
@@ -339,21 +339,21 @@ const InstanceList: React.FC = () => {
                   placeholder="输入新实例名称..."
                   autoFocus
                   onKeyDown={(e) => e.key === 'Enter' && handleConfirmDuplicate()}
-                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-indigo-500"
+                  className="w-full px-4 py-2 bg-surface border border-border-hover rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:border-primary"
                 />
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => { setShowDuplicateModal(false); setDuplicateTargetId(null); }}
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+                className="px-4 py-2 bg-surface hover:bg-surface-hover text-text-primary rounded-lg transition-colors"
               >
                 取消
               </button>
               <button
                 onClick={handleConfirmDuplicate}
                 disabled={!duplicateName.trim()}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                className="px-4 py-2 bg-primary hover:bg-primary-hover text-text-primary rounded-lg transition-colors disabled:opacity-50"
               >
                 复制
               </button>

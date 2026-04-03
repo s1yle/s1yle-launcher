@@ -59,7 +59,9 @@
       "account": "账户",
       "game": "游戏",
       "common": "通用"
-    }
+    },
+    "launchGame": "启动游戏",
+    "discord": "Discord"
   },
   "home": {
     "title": "S1yle Launcher",

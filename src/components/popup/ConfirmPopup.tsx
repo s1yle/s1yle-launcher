@@ -61,15 +61,15 @@ const ConfirmPopup: React.FC<ConfirmPopupProps> = ({
   };
 
   const confirmTypeClasses = {
-    primary: 'bg-blue-600 hover:bg-blue-700 text-white',
-    danger: 'bg-red-600 hover:bg-red-700 text-white',
-    success: 'bg-green-600 hover:bg-green-700 text-white',
-    warning: 'bg-yellow-600 hover:bg-yellow-700 text-white',
+    primary: 'bg-info hover:bg-info text-text-primary',
+    danger: 'bg-error hover:bg-error text-text-primary',
+    success: 'bg-success hover:bg-success text-text-primary',
+    warning: 'bg-warning hover:bg-warning text-text-primary',
   };
 
   const cancelTypeClasses = {
-    default: 'bg-white/10 hover:bg-white/20 text-white',
-    outline: 'bg-transparent border border-white/20 text-white/70 hover:bg-white/10',
+    default: 'bg-surface hover:bg-surface-hover text-text-primary',
+    outline: 'bg-transparent border border-white/20 text-text-secondary hover:bg-surface',
   };
 
   const icons = {
@@ -77,7 +77,7 @@ const ConfirmPopup: React.FC<ConfirmPopupProps> = ({
     error: <CircleX className="w-10 h-10 text-red-400" />,
     info: <Info className="w-10 h-10 text-blue-400" />,
     success: <CheckCircle className="w-10 h-10 text-green-400" />,
-    question: <CircleHelp className="w-10 h-10 text-white/40" />,
+    question: <CircleHelp className="w-10 h-10 text-text-tertiary" />,
   };
 
   return (
@@ -118,7 +118,7 @@ const ConfirmPopup: React.FC<ConfirmPopupProps> = ({
             {icons[iconType]}
           </div>
         )}
-        <div className="text-white text-center">
+        <div className="text-text-primary text-center">
           {typeof message === 'string' ? <p className="text-lg">{message}</p> : message}
         </div>
       </div>

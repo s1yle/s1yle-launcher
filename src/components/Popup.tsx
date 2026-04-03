@@ -139,7 +139,7 @@ const Popup: React.FC<PopupProps> = ({
         <>
           <motion.div
             key="popup-backdrop"
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-49"
+            className="fixed inset-0 bg-overlay backdrop-blur-sm z-49"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -156,7 +156,7 @@ const Popup: React.FC<PopupProps> = ({
           >
             <motion.div
               key="popup-content"
-              className={`bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 w-full ${sizeClasses[size]} pointer-events-auto ${className}`}
+              className={`bg-surface backdrop-blur-sm rounded-xl border border-border-hover w-full ${sizeClasses[size]} pointer-events-auto ${className}`}
               style={{ paddingLeft: '10px', paddingRight: '10px' }}
               initial={variant.initial}
               animate={variant.animate}
@@ -168,7 +168,7 @@ const Popup: React.FC<PopupProps> = ({
               onClick={(e) => e.stopPropagation()}
             >
               {(title || showCloseButton) && (
-                <div className="flex items-center justify-between p-6 border-b border-white/10">
+                <div className="flex items-center justify-between p-6 border-b border-border">
                   {title && (
                     <div className="text-2xl font-bold text-white">
                       {typeof title === 'string' ? <h2>{title}</h2> : title}
@@ -177,7 +177,7 @@ const Popup: React.FC<PopupProps> = ({
                   {showCloseButton && (
                     <button
                       onClick={onClose}
-                      className="text-white/60 hover:text-white text-2xl font-bold leading-none p-2 transition-colors"
+                      className="text-text-secondary hover:text-text-primary text-2xl font-bold leading-none p-2 transition-colors"
                       aria-label="关闭弹窗"
                     >
                       ×
@@ -191,7 +191,7 @@ const Popup: React.FC<PopupProps> = ({
               </div>
 
               {footer && (
-                <div className="p-6 border-t border-white/10">
+                <div className="p-6 border-t border-border">
                   {footer}
                 </div>
               )}

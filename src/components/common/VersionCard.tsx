@@ -33,27 +33,27 @@ const VersionCard: React.FC<VersionCardProps> = ({
 }) => {
   return (
     <div
-      className={`p-4 bg-white/5 border rounded-lg transition-all cursor-pointer ${
-        selected ? 'border-indigo-500/50' : 'border-white/10 hover:border-white/20'
+      className={`p-4 bg-surface border rounded-lg transition-all cursor-pointer ${
+        selected ? 'border-primary' : 'border-border hover:border-border-hover'
       }`}
       onClick={onSelect}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-indigo-500/20 rounded-lg flex items-center justify-center">
-            <Package className="w-6 h-6 text-indigo-400" />
+          <div className="w-12 h-12 bg-primary-bg rounded-lg flex items-center justify-center">
+            <Package className="w-6 h-6 text-primary" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-white font-medium">{version.id}</h3>
+              <h3 className="text-text-primary font-medium">{version.id}</h3>
               <StatusBadge type={version.type_} />
               {installed && (
-                <span className="px-2 py-0.5 text-xs rounded bg-green-500/20 text-green-400 border border-green-500/30">
+                <span className="px-2 py-0.5 text-xs rounded bg-success-bg text-success border border-success">
                   已安装
                 </span>
               )}
             </div>
-            <p className="text-white/40 text-sm mt-1">
+            <p className="text-text-tertiary text-sm mt-1">
               发布于 {formatDate(version.release_time)}
             </p>
           </div>
@@ -68,25 +68,25 @@ const VersionCard: React.FC<VersionCardProps> = ({
               ) : (
                 <button
                   onClick={(e) => { e.stopPropagation(); onDeploy(); }}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors"
+                  className="px-4 py-2 bg-success hover:bg-success text-text-primary text-sm rounded-lg transition-colors"
                 >
                   部署
                 </button>
               )}
             </div>
           ) : downloading ? (
-            <button className="px-4 py-2 bg-white/10 text-white text-sm rounded-lg">
+            <button className="px-4 py-2 bg-surface text-text-primary text-sm rounded-lg">
               <span className="flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin text-white" />
+                <Loader2 className="w-4 h-4 animate-spin text-text-primary" />
                 下载中
               </span>
             </button>
           ) : error ? (
             <div className="text-right">
-              <p className="text-red-400 text-xs mb-1">{error}</p>
+              <p className="text-error text-xs mb-1">{error}</p>
               <button
                 onClick={(e) => { e.stopPropagation(); onDownload(); }}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition-colors"
+                className="px-4 py-2 bg-primary hover:bg-primary-hover text-text-primary text-sm rounded-lg transition-colors"
               >
                 重试
               </button>
@@ -94,7 +94,7 @@ const VersionCard: React.FC<VersionCardProps> = ({
           ) : (
             <button
               onClick={(e) => { e.stopPropagation(); onDownload(); }}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition-colors"
+              className="px-4 py-2 bg-primary hover:bg-primary-hover text-text-primary text-sm rounded-lg transition-colors"
             >
               下载
             </button>

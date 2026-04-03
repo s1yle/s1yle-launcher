@@ -62,21 +62,21 @@ const TabBar = ({
                 sizeClasses[size],
                 tab.disabled && 'opacity-50 cursor-not-allowed',
                 activeKey === tab.key
-                  ? 'bg-white/10 text-white font-medium'
-                  : 'text-white/60 hover:text-white hover:bg-white/5',
+                  ? 'bg-surface-active text-text-primary font-medium'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-surface',
               )}
             >
               {tab.icon && <span className="w-5 h-5 flex-shrink-0">{tab.icon}</span>}
               <span className="flex-1">{tab.label}</span>
               {tab.badge !== undefined && (
-                <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-xs">
+                <span className="px-2 py-0.5 rounded-full bg-primary-bg text-primary text-xs">
                   {tab.badge}
                 </span>
               )}
               {activeKey === tab.key && (
                 <motion.div
                   layoutId="activeTabIndicator-v"
-                  className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-indigo-500"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-primary"
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 />
               )}
@@ -102,11 +102,11 @@ const TabBar = ({
 
   return (
     <div className={cn('flex flex-col', className)}>
-      <div className="relative flex gap-1 p-1 rounded-lg bg-white/5 border border-white/10">
+      <div className="relative flex gap-1 p-1 rounded-lg bg-surface border border-border">
         {activeKey && (
           <motion.div
             layoutId="activeTabIndicator-h"
-            className="absolute top-1 bottom-1 rounded-md bg-white/10"
+            className="absolute top-1 bottom-1 rounded-md bg-surface-active"
             transition={{ type: 'spring', stiffness: 500, damping: 30 }}
           />
         )}
@@ -119,13 +119,13 @@ const TabBar = ({
               'relative z-10 flex items-center gap-2 rounded-md transition-colors duration-200',
               sizeClasses[size],
               tab.disabled && 'opacity-50 cursor-not-allowed',
-              activeKey === tab.key ? 'text-white font-medium' : 'text-white/60 hover:text-white',
+              activeKey === tab.key ? 'text-text-primary font-medium' : 'text-text-secondary hover:text-text-primary',
             )}
           >
             {tab.icon && <span className="w-4 h-4 flex-shrink-0">{tab.icon}</span>}
             <span>{tab.label}</span>
             {tab.badge !== undefined && (
-              <span className="px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-xs">
+              <span className="px-1.5 py-0.5 rounded-full bg-primary-bg text-primary text-xs">
                 {tab.badge}
               </span>
             )}

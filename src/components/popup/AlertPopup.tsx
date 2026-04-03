@@ -89,11 +89,11 @@ const AlertPopup: React.FC<AlertPopupProps> = ({
   const typeConfig = getTypeConfig();
 
   const confirmTypeClasses = {
-    primary: 'bg-blue-600 hover:bg-blue-700 text-white',
-    success: 'bg-green-600 hover:bg-green-700 text-white',
-    warning: 'bg-yellow-600 hover:bg-yellow-700 text-white',
-    error: 'bg-red-600 hover:bg-red-700 text-white',
-    info: 'bg-gray-600 hover:bg-gray-700 text-white',
+    primary: 'bg-info hover:bg-info text-white',
+    success: 'bg-success hover:bg-success text-white',
+    warning: 'bg-warning hover:bg-warning text-white',
+    error: 'bg-error hover:bg-error text-white',
+    info: 'bg-text-tertiary hover:bg-surface-hover text-white',
   };
 
   return (
@@ -130,7 +130,7 @@ const AlertPopup: React.FC<AlertPopupProps> = ({
           {typeof message === 'string' ? <p className="text-lg">{message}</p> : message}
         </div>
         {autoClose > 0 && (
-          <div className="text-white/40 text-sm text-center">
+          <div className="text-text-tertiary text-sm text-center">
             {Math.ceil(autoClose / 1000)}秒后自动关闭
           </div>
         )}

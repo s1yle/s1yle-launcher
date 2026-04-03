@@ -50,10 +50,10 @@ const ListItem = ({
   };
 
   const tagColors = {
-    default: 'bg-white/10 text-white/60',
-    warning: 'bg-yellow-500/20 text-yellow-300',
-    success: 'bg-green-500/20 text-green-300',
-    error: 'bg-red-500/20 text-red-300',
+    default: 'bg-surface-active text-text-secondary',
+    warning: 'bg-warning-bg text-warning',
+    success: 'bg-success-bg text-success',
+    error: 'bg-error-bg text-error',
   };
 
   return (
@@ -64,15 +64,15 @@ const ListItem = ({
         sizeClasses[size],
         disabled && 'opacity-50 cursor-not-allowed',
         selected
-          ? 'bg-white/10 text-white'
-          : 'text-white/70 hover:bg-white/5 hover:text-white',
+          ? 'bg-surface-active text-text-primary'
+          : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary',
         className,
       )}
       onClick={disabled ? undefined : onClick}
       onContextMenu={onContextMenu}
     >
       {icon && (
-        <span className={cn('flex-shrink-0 text-white/60', iconSizeClasses[size])}>
+        <span className={cn('flex-shrink-0 text-text-secondary', iconSizeClasses[size])}>
           {icon}
         </span>
       )}
@@ -87,7 +87,7 @@ const ListItem = ({
           )}
         </div>
         {subtitle && (
-          <p className="text-xs text-white/40 mt-0.5 truncate">{subtitle}</p>
+          <p className="text-xs text-text-tertiary mt-0.5 truncate">{subtitle}</p>
         )}
       </div>
 
@@ -96,7 +96,7 @@ const ListItem = ({
       )}
 
       {showChevron && (
-        <ChevronRight className="w-4 h-4 text-white/30 flex-shrink-0" />
+        <ChevronRight className="w-4 h-4 text-text-tertiary flex-shrink-0" />
       )}
     </motion.div>
   );

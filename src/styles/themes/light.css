@@ -25,4 +25,9 @@
   --color-info-bg: rgba(37, 99, 235, 0.1);
   --color-overlay: rgba(0, 0, 0, 0.4);
   --color-backdrop-blur: blur(8px);
+  --color-context-bg: rgba(255, 255, 255, 0.95);
+  --color-context-border: rgba(0, 0, 0, 0.1);
+  --color-context-hover: rgba(0, 0, 0, 0.05);
+  --color-progress-track: rgba(0, 0, 0, 0.1);
+  --color-toggle-track: rgba(0, 0, 0, 0.2);
 }

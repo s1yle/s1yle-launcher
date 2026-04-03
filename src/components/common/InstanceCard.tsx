@@ -63,13 +63,13 @@ const InstanceCard: React.FC<InstanceCardProps> = ({
   const getLoaderColor = (type: ModLoaderType): string => {
     switch (type) {
       case ModLoaderType.Fabric:
-        return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+        return 'bg-info-bg text-info border-info';
       case ModLoaderType.Forge:
-        return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
+        return 'bg-warning-bg text-warning border-warning';
       case ModLoaderType.NeoForge:
-        return 'bg-red-500/20 text-red-400 border-red-500/30';
+        return 'bg-error-bg text-error border-error';
       default:
-        return 'bg-green-500/20 text-green-400 border-green-500/30';
+        return 'bg-success-bg text-success border-success';
     }
   };
 
@@ -126,8 +126,8 @@ const InstanceCard: React.FC<InstanceCardProps> = ({
   if (viewMode === 'list') {
     return (
       <div
-        className={`flex items-center px-4 py-3 border-b border-white/10 transition-all cursor-pointer ${
-          selected ? 'bg-indigo-500/10' : isHovered ? 'bg-white/5' : ''
+        className={`flex items-center px-4 py-3 border-b border-border transition-all cursor-pointer ${
+          selected ? 'bg-primary-bg' : isHovered ? 'bg-surface' : ''
         } ${!instance.enabled ? 'opacity-60' : ''}`}
         onClick={onSelect}
         onDoubleClick={handleDoubleClick}
@@ -135,20 +135,20 @@ const InstanceCard: React.FC<InstanceCardProps> = ({
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <div className="w-10 h-10 bg-indigo-500/20 rounded-lg flex items-center justify-center flex-shrink-0 mr-3">
-          <Gamepad2 className="w-5 h-5 text-indigo-400" />
+        <div className="w-10 h-10 bg-primary-bg rounded-lg flex items-center justify-center flex-shrink-0 mr-3">
+          <Gamepad2 className="w-5 h-5 text-primary" />
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="text-white font-medium truncate">{instance.name}</h3>
+            <h3 className="text-text-primary font-medium truncate">{instance.name}</h3>
             {isRunning && (
-              <span className="px-2 py-0.5 text-xs rounded bg-green-500/20 text-green-400 border border-green-500/30 animate-pulse">
+              <span className="px-2 py-0.5 text-xs rounded bg-success-bg text-success border border-success animate-pulse">
                 运行中
               </span>
             )}
             {!instance.enabled && (
-              <span className="px-2 py-0.5 text-xs rounded bg-red-500/20 text-red-400 border border-red-500/30">
+              <span className="px-2 py-0.5 text-xs rounded bg-error-bg text-error border border-error">
                 已损坏
               </span>
             )}
@@ -156,7 +156,7 @@ const InstanceCard: React.FC<InstanceCardProps> = ({
         </div>
 
         <div className="flex items-center gap-4 mx-4">
-          <span className="text-white/60 text-sm">{instance.version}</span>
+          <span className="text-text-secondary text-sm">{instance.version}</span>
           <span className={`px-2 py-0.5 text-xs rounded border ${getLoaderColor(instance.loader_type)}`}>
             {getLoaderLabel(instance.loader_type)}
             {instance.loader_version && ` ${instance.loader_version}`}
@@ -165,15 +165,15 @@ const InstanceCard: React.FC<InstanceCardProps> = ({
 
         <div className="flex items-center gap-2">
           {instance.last_played && (
-            <span className="text-white/40 text-xs">{formatTimestamp(instance.last_played)}</span>
+            <span className="text-text-tertiary text-xs">{formatTimestamp(instance.last_played)}</span>
           )}
           <button
             onClick={(e) => { e.stopPropagation(); onLaunch?.(); }}
             disabled={isRunning || !instance.enabled}
             className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
               isRunning || !instance.enabled
-                ? 'bg-white/10 text-white/30 cursor-not-allowed'
-                : 'bg-green-600 hover:bg-green-700 text-white'
+                ? 'bg-surface text-text-disabled cursor-not-allowed'
+                : 'bg-success hover:bg-success text-text-primary'
             }`}
           >
             {isRunning ? '运行中' : '启动'}
@@ -181,7 +181,7 @@ const InstanceCard: React.FC<InstanceCardProps> = ({
         </div>
 
         {showContextMenu && (
-          <div ref={contextMenuRef} className="fixed z-50 bg-gray-800 border border-white/20 rounded-lg shadow-xl py-1 min-w-[180px]">
+          <div ref={contextMenuRef} className="fixed z-50 bg-context-bg border border-context-border rounded-lg shadow-xl py-1 min-w-[180px]">
             <ContextMenuItem icon={<Rocket className="w-4 h-4" />} label="启动游戏" action={() => handleContextAction('launch')} />
             <ContextMenuItem icon={<Settings className="w-4 h-4" />} label="管理" action={() => handleContextAction('edit')} />
             <ContextMenuDivider />
@@ -200,10 +200,10 @@ const InstanceCard: React.FC<InstanceCardProps> = ({
 
   return (
     <div
-      className={`p-4 bg-white/5 border rounded-lg transition-all cursor-pointer group ${
+      className={`p-4 bg-surface border rounded-lg transition-all cursor-pointer group ${
         selected
-          ? 'border-indigo-500/50 bg-indigo-500/5 shadow-lg shadow-indigo-500/10'
-          : 'border-white/10 hover:border-white/30 hover:bg-white/8'
+          ? 'border-primary bg-primary-bg shadow-lg shadow-primary/10'
+          : 'border-border hover:border-border-hover hover:bg-surface-hover-hover'
       } ${!instance.enabled ? 'opacity-60' : ''}`}
       onClick={onSelect}
       onDoubleClick={handleDoubleClick}
@@ -212,27 +212,27 @@ const InstanceCard: React.FC<InstanceCardProps> = ({
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="flex items-start gap-3">
-        <div className="w-12 h-12 bg-indigo-500/20 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-500/30 transition-colors">
-          <Gamepad2 className="w-6 h-6 text-indigo-400" />
+        <div className="w-12 h-12 bg-primary-bg rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-500/30 transition-colors">
+          <Gamepad2 className="w-6 h-6 text-primary" />
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-white font-medium truncate">{instance.name}</h3>
+            <h3 className="text-text-primary font-medium truncate">{instance.name}</h3>
             {isRunning && (
-              <span className="px-2 py-0.5 text-xs rounded bg-green-500/20 text-green-400 border border-green-500/30 animate-pulse">
+              <span className="px-2 py-0.5 text-xs rounded bg-success-bg text-success border border-success animate-pulse">
                 运行中
               </span>
             )}
             {!instance.enabled && (
-              <span className="px-2 py-0.5 text-xs rounded bg-red-500/20 text-red-400 border border-red-500/30">
+              <span className="px-2 py-0.5 text-xs rounded bg-error-bg text-error border border-error">
                 已损坏
               </span>
             )}
           </div>
 
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-white/60">{instance.version}</span>
+            <span className="text-text-secondary">{instance.version}</span>
             <span className={`px-2 py-0.5 text-xs rounded border ${getLoaderColor(instance.loader_type)}`}>
               {getLoaderLabel(instance.loader_type)}
               {instance.loader_version && ` ${instance.loader_version}`}
@@ -240,27 +240,27 @@ const InstanceCard: React.FC<InstanceCardProps> = ({
           </div>
 
           {showPath && (
-            <p className="text-white/40 text-xs mt-1 font-mono truncate" title={instance.path}>
+            <p className="text-text-tertiary text-xs mt-1 font-mono truncate" title={instance.path}>
               {getInstanceFolderName(instance.path)}
             </p>
           )}
 
           {instance.last_played && !showPath && (
-            <p className="text-white/40 text-xs mt-1">
+            <p className="text-text-tertiary text-xs mt-1">
               最后运行: {formatTimestamp(instance.last_played)}
             </p>
           )}
         </div>
       </div>
 
-      <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/10">
+      <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
         <button
           onClick={(e) => { e.stopPropagation(); onLaunch?.(); }}
           disabled={isRunning || !instance.enabled}
           className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
             isRunning || !instance.enabled
-              ? 'bg-white/10 text-white/30 cursor-not-allowed'
-              : 'bg-green-600 hover:bg-green-700 text-white'
+              ? 'bg-surface text-text-disabled cursor-not-allowed'
+              : 'bg-success hover:bg-success text-text-primary'
           }`}
         >
           {isRunning ? '运行中' : '启动'}
@@ -269,21 +269,21 @@ const InstanceCard: React.FC<InstanceCardProps> = ({
         <div className="flex items-center gap-1">
           <button
             onClick={(e) => { e.stopPropagation(); onEdit?.(); }}
-            className="p-1.5 text-white/40 hover:text-white hover:bg-white/10 rounded transition-colors"
+            className="p-1.5 text-text-tertiary hover:text-text-primary hover:bg-surface-hover rounded transition-colors"
             title="编辑"
           >
             <Pencil className="w-4 h-4" />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onOpenFolder?.(); }}
-            className="p-1.5 text-white/40 hover:text-white hover:bg-white/10 rounded transition-colors"
+            className="p-1.5 text-text-tertiary hover:text-text-primary hover:bg-surface-hover rounded transition-colors"
             title="打开目录"
           >
             <FolderOpen className="w-4 h-4" />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); setShowContextMenu(true); }}
-            className="p-1.5 text-white/40 hover:text-white hover:bg-white/10 rounded transition-colors"
+            className="p-1.5 text-text-tertiary hover:text-text-primary hover:bg-surface-hover rounded transition-colors"
             title="更多操作"
           >
             <MoreVertical className="w-4 h-4" />
@@ -292,7 +292,7 @@ const InstanceCard: React.FC<InstanceCardProps> = ({
       </div>
 
       {showContextMenu && (
-        <div ref={contextMenuRef} className="absolute right-0 top-full mt-1 z-50 bg-gray-800 border border-white/20 rounded-lg shadow-xl py-1 min-w-[180px]">
+        <div ref={contextMenuRef} className="absolute right-0 top-full mt-1 z-50 bg-context-bg border border-context-border rounded-lg shadow-xl py-1 min-w-[180px]">
           <ContextMenuItem icon={<Rocket className="w-4 h-4" />} label="启动游戏" action={() => handleContextAction('launch')} />
           <ContextMenuItem icon={<Settings className="w-4 h-4" />} label="管理" action={() => handleContextAction('edit')} />
           <ContextMenuDivider />
@@ -319,8 +319,8 @@ const ContextMenuItem: React.FC<{
     onClick={action}
     className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 transition-colors ${
       danger
-        ? 'text-red-400 hover:bg-red-500/10'
-        : 'text-white/70 hover:bg-white/10'
+        ? 'text-error hover:bg-error-bg'
+        : 'text-text-secondary hover:bg-surface-hover'
     }`}
   >
     <span className="w-4 h-4 flex-shrink-0">{icon}</span>
@@ -329,7 +329,7 @@ const ContextMenuItem: React.FC<{
 );
 
 const ContextMenuDivider = () => (
-  <div className="my-1 border-t border-white/10" />
+  <div className="my-1 border-t border-border" />
 );
 
 export default InstanceCard;

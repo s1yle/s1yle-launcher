@@ -29,14 +29,14 @@ const CircularProgress: React.FC<CircularProgressProps> = ({
 
   const statusVariant = variant || (status === 'completed' ? 'success' : status === 'error' ? 'error' : 'default');
 
-  const colorClasses = {
-    default: '#3b82f6',
-    success: '#22c55e',
-    warning: '#f59e0b',
-    error: '#ef4444',
+  const colorVars = {
+    default: 'var(--color-primary)',
+    success: 'var(--color-success)',
+    warning: 'var(--color-warning)',
+    error: 'var(--color-error)',
   };
 
-  const color = colorClasses[statusVariant];
+  const color = colorVars[statusVariant];
 
   const renderCenter = () => {
     if (showPercentage) {
@@ -46,8 +46,9 @@ const CircularProgress: React.FC<CircularProgressProps> = ({
           y="50%"
           textAnchor="middle"
           dy="0.3em"
-          className="fill-white text-xs font-medium"
+          fill="var(--color-text-primary)"
           style={{ fontSize: size * 0.2 }}
+          className="font-medium"
         >
           {Math.round(clampedProgress)}%
         </text>
@@ -63,10 +64,9 @@ const CircularProgress: React.FC<CircularProgressProps> = ({
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="currentColor"
+          stroke="var(--color-progress-track)"
           strokeWidth={strokeWidth}
           fill="none"
-          className="text-gray-700"
         />
         <circle
           cx={size / 2}
@@ -83,7 +83,7 @@ const CircularProgress: React.FC<CircularProgressProps> = ({
       </svg>
       {label ? (
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-white text-xs font-medium">{label}</span>
+          <span className="text-text-primary text-xs font-medium">{label}</span>
         </div>
       ) : (
         renderCenter()

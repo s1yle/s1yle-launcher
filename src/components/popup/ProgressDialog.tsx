@@ -50,7 +50,7 @@ const ProgressDialog = ({
   const isFinished = status === 'completed' || status === 'error';
 
   const statusIcon = {
-    idle: <Loader2 className="w-8 h-8 text-white/40 animate-spin" />,
+    idle: <Loader2 className="w-8 h-8 text-text-tertiary animate-spin" />,
     active: <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />,
     completed: <CheckCircle className="w-8 h-8 text-green-400" />,
     error: <CircleX className="w-8 h-8 text-red-400" />,
@@ -72,7 +72,7 @@ const ProgressDialog = ({
         </div>
 
         {message && (
-          <p className="text-sm text-white/80 text-center">{message}</p>
+          <p className="text-sm text-text-secondary text-center">{message}</p>
         )}
 
         {showProgressBar && (
@@ -87,13 +87,13 @@ const ProgressDialog = ({
         )}
 
         {detail && (
-          <p className="text-xs text-white/40 text-center break-all">{detail}</p>
+          <p className="text-xs text-text-tertiary text-center break-all">{detail}</p>
         )}
 
         {!isFinished && onCancel && (
           <button
             onClick={onCancel}
-            className="mt-2 px-6 py-2 rounded-lg text-sm text-white/70 bg-white/5 hover:bg-white/10 transition-colors"
+            className="mt-2 px-6 py-2 rounded-lg text-sm text-text-secondary bg-surface hover:bg-surface-hover transition-colors"
           >
             {cancelText}
           </button>
@@ -102,7 +102,7 @@ const ProgressDialog = ({
         {isFinished && onConfirm && (
           <button
             onClick={onConfirm}
-            className="mt-2 px-6 py-2 rounded-lg text-sm text-white bg-indigo-600 hover:bg-indigo-500 transition-colors"
+            className="mt-2 px-6 py-2 rounded-lg text-sm text-white bg-primary hover:bg-primary-hover transition-colors"
           >
             {status === 'completed' ? confirmText : '关闭'}
           </button>

@@ -6,6 +6,64 @@ export default {
   ],
   theme: {
     extend: {
+      colors: {
+        bg: {
+          primary: 'var(--color-bg-primary)',
+          secondary: 'var(--color-bg-secondary)',
+          tertiary: 'var(--color-bg-tertiary)',
+        },
+        surface: {
+          DEFAULT: 'var(--color-surface)',
+          hover: 'var(--color-surface-hover)',
+          active: 'var(--color-surface-active)',
+        },
+        border: {
+          DEFAULT: 'var(--color-border)',
+          hover: 'var(--color-border-hover)',
+        },
+        text: {
+          primary: 'var(--color-text-primary)',
+          secondary: 'var(--color-text-secondary)',
+          tertiary: 'var(--color-text-tertiary)',
+          disabled: 'var(--color-text-disabled)',
+        },
+        primary: {
+          DEFAULT: 'var(--color-primary)',
+          hover: 'var(--color-primary-hover)',
+          active: 'var(--color-primary-active)',
+          bg: 'var(--color-primary-bg)',
+        },
+        success: {
+          DEFAULT: 'var(--color-success)',
+          bg: 'var(--color-success-bg)',
+        },
+        warning: {
+          DEFAULT: 'var(--color-warning)',
+          bg: 'var(--color-warning-bg)',
+        },
+        error: {
+          DEFAULT: 'var(--color-error)',
+          bg: 'var(--color-error-bg)',
+        },
+        info: {
+          DEFAULT: 'var(--color-info)',
+          bg: 'var(--color-info-bg)',
+        },
+        overlay: {
+          DEFAULT: 'var(--color-overlay)',
+        },
+        context: {
+          bg: 'var(--color-context-bg)',
+          border: 'var(--color-context-border)',
+          hover: 'var(--color-context-hover)',
+        },
+        progress: {
+          track: 'var(--color-progress-track)',
+        },
+        toggle: {
+          track: 'var(--color-toggle-track)',
+        },
+      },
       keyframes: {
         fadeIn: {
           '0%': { opacity: '0' },

@@ -59,7 +59,9 @@
       "account": "Account",
       "game": "Game",
       "common": "Common"
-    }
+    },
+    "launchGame": "Launch Game",
+    "discord": "Discord"
   },
   "home": {
     "title": "S1yle Launcher",

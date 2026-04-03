@@ -42,13 +42,13 @@ const Header = ({ type, title }: HeaderProps) => {
 
   return (
     <header
-      className="bg-indigo-500 text-white h-16 flex items-center justify-between px-6"
+      className="bg-primary text-white h-16 flex items-center justify-between px-6"
       data-tauri-drag-region
     >
       <div className="flex items-center gap-4" data-tauri-drag-region>
         {type === 'main' ? (
           <>
-            <div className="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-warning rounded-lg flex items-center justify-center">
               <span className="font-bold text-white text-lg">MC</span>
             </div>
             <h1 className="text-xl font-bold" data-tauri-drag-region>{title}</h1>
@@ -57,7 +57,7 @@ const Header = ({ type, title }: HeaderProps) => {
           <>
             <motion.button
               onClick={handleBack}
-              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+              className="p-2 hover:bg-surface-hover rounded-lg transition-colors"
               title={t('header.backToParent', '返回上级')}
               whileHover={{ scale: 1.1, x: -2 }}
               whileTap={{ scale: 0.95 }}
@@ -73,14 +73,14 @@ const Header = ({ type, title }: HeaderProps) => {
       <div className="flex items-center gap-2">
         <button
           onClick={handleMinimize}
-          className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+          className="p-2 hover:bg-surface-hover rounded-lg transition-colors"
           title={t('common.minimize', '最小化')}
         >
           <Minus className="w-5 h-5" />
         </button>
         <button
           onClick={handleClose}
-          className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+          className="p-2 hover:bg-surface-hover rounded-lg transition-colors"
           title={t('common.close', '关闭')}
         >
           <X className="w-5 h-5" />

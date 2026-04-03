@@ -157,10 +157,10 @@ interface NotificationToastProps {
 
 const NotificationToast: React.FC<NotificationToastProps> = ({ notification, onRemove }) => {
   const typeConfig = {
-    success: { bg: 'bg-green-500/90', icon: <Check className="w-5 h-5" /> },
-    error: { bg: 'bg-red-500/90', icon: <X className="w-5 h-5" /> },
-    warning: { bg: 'bg-yellow-500/90', icon: <AlertTriangle className="w-5 h-5" /> },
-    info: { bg: 'bg-blue-500/90', icon: <Info className="w-5 h-5" /> },
+    success: { bg: 'bg-success text-text-primary', icon: <Check className="w-5 h-5" /> },
+    error: { bg: 'bg-error text-text-primary', icon: <X className="w-5 h-5" /> },
+    warning: { bg: 'bg-warning text-text-primary', icon: <AlertTriangle className="w-5 h-5" /> },
+    info: { bg: 'bg-info text-text-primary', icon: <Info className="w-5 h-5" /> },
   };
 
   const config = typeConfig[notification.type || 'info'];
@@ -174,11 +174,11 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ notification, onR
         <div className="flex-shrink-0">{config.icon}</div>
         <div className="flex-1 min-w-0">
           <p className="font-medium">{notification.title}</p>
-          {notification.message && <p className="mt-1 text-sm text-white/80">{notification.message}</p>}
+          {notification.message && <p className="mt-1 text-sm text-text-secondary">{notification.message}</p>}
         </div>
         <button
           onClick={() => onRemove(notification.id)}
-          className="flex-shrink-0 text-white/80 hover:text-white transition-colors"
+          className="flex-shrink-0 text-text-secondary hover:text-text-primary transition-colors"
           aria-label="关闭"
         >
           <X className="w-4 h-4" />

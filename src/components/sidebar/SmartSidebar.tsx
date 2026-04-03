@@ -181,7 +181,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
 
       {currentGroup === 'none' && (
         <div className="text-center py-8">
-          <p className="text-white/40 text-sm">{t('sidebar.noSidebar', '当前页面无侧边栏')}</p>
+          <p className="text-text-tertiary text-sm">{t('sidebar.noSidebar', '当前页面无侧边栏')}</p>
         </div>
       )}
     </BaseSidebarLayout>

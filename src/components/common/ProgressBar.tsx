@@ -43,10 +43,10 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
 
   const sizeClasses = { sm: 'h-1', md: 'h-2', lg: 'h-3' };
   const variantClasses = {
-    default: 'bg-blue-500',
-    success: 'bg-green-500',
-    warning: 'bg-yellow-500',
-    error: 'bg-red-500',
+    default: 'bg-primary',
+    success: 'bg-success',
+    warning: 'bg-warning',
+    error: 'bg-error',
   };
   const iconSizeClasses = { sm: 'w-3 h-3', md: 'w-4 h-4', lg: 'w-5 h-5' };
 
@@ -76,20 +76,20 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
         <div className="flex items-center justify-between mb-1.5">
           <div className="flex items-center gap-2">
             {showIcon && renderIcon()}
-            {label && <span className="text-sm text-white/70">{label}</span>}
+            {label && <span className="text-sm text-text-secondary">{label}</span>}
           </div>
           {displayValue && (
-            <span className="text-sm text-white/40 font-medium">{displayValue}</span>
+            <span className="text-sm text-text-tertiary font-medium">{displayValue}</span>
           )}
         </div>
       )}
-      <div className={`w-full bg-white/10 rounded-full overflow-hidden ${sizeClasses[size]}`}>
+      <div className={`w-full bg-progress-track rounded-full overflow-hidden ${sizeClasses[size]}`}>
         <div
           className={`${variantClasses[statusVariant]} ${sizeClasses[size]} rounded-full transition-all duration-300 ease-out ${barClassName}`}
           style={{ width: `${clampedProgress}%` }}
         />
       </div>
-      {sublabel && <div className="mt-1 text-xs text-white/30">{sublabel}</div>}
+      {sublabel && <div className="mt-1 text-xs text-text-disabled">{sublabel}</div>}
     </div>
   );
 };

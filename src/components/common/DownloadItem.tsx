@@ -43,42 +43,42 @@ const DownloadItem: React.FC<DownloadItemProps> = ({
   };
 
   const iconConfig = {
-    completed: { icon: <Check className="w-5 h-5 text-green-400" />, bg: 'bg-green-500/20' },
-    error: { icon: <X className="w-5 h-5 text-red-400" />, bg: 'bg-red-500/20' },
-    downloading: { icon: <Download className="w-5 h-5 text-blue-400 animate-pulse" />, bg: 'bg-blue-500/20' },
-    pending: { icon: <Clock className="w-5 h-5 text-white/40" />, bg: 'bg-white/10' },
+    completed: { icon: <Check className="w-5 h-5 text-green-400" />, bg: 'bg-success-bg' },
+    error: { icon: <X className="w-5 h-5 text-error" />, bg: 'bg-error-bg' },
+    downloading: { icon: <Download className="w-5 h-5 text-info animate-pulse" />, bg: 'bg-info-bg' },
+    pending: { icon: <Clock className="w-5 h-5 text-text-tertiary" />, bg: 'bg-surface' },
   };
 
   const { icon, bg } = iconConfig[status];
 
   return (
-    <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
+    <div className="p-4 bg-surface border border-border rounded-lg">
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${bg}`}>
             {icon}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-white font-medium truncate" title={filename}>
+            <p className="text-text-primary font-medium truncate" title={filename}>
               {filename}
             </p>
-            {sublabel && <p className="text-white/40 text-sm truncate">{sublabel}</p>}
+            {sublabel && <p className="text-text-tertiary text-sm truncate">{sublabel}</p>}
           </div>
         </div>
 
         <div className="flex items-center gap-2 ml-4 flex-shrink-0">
           {status === 'downloading' && showCancel && onCancel && (
-            <button onClick={onCancel} className="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-sm rounded border border-red-500/30 transition-colors">
+            <button onClick={onCancel} className="px-3 py-1.5 bg-error-bg hover:bg-red-500/30 text-error text-sm rounded border border-red-500/30 transition-colors">
               取消
             </button>
           )}
           {status === 'error' && onRetry && (
-            <button onClick={onRetry} className="px-3 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 text-sm rounded border border-indigo-500/30 transition-colors">
+            <button onClick={onRetry} className="px-3 py-1.5 bg-primary-bg hover:bg-indigo-500/30 text-primary text-sm rounded border border-indigo-500/30 transition-colors">
               重试
             </button>
           )}
           {status === 'completed' && (
-            <span className="px-3 py-1.5 bg-green-500/20 text-green-400 text-sm rounded border border-green-500/30">
+            <span className="px-3 py-1.5 bg-success-bg text-green-400 text-sm rounded border border-green-500/30">
               完成
             </span>
           )}
@@ -89,7 +89,7 @@ const DownloadItem: React.FC<DownloadItemProps> = ({
         <ProgressBar progress={progress} status={getStatus()} formatValue={formatValue} size="sm" showIcon={false} />
       )}
 
-      {error && <p className="mt-2 text-red-400 text-xs">{error}</p>}
+      {error && <p className="mt-2 text-error text-xs">{error}</p>}
     </div>
   );
 };

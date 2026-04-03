@@ -99,15 +99,15 @@ const InstanceManage: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-6 border-b border-white/10">
+      <div className="p-6 border-b border-border">
         <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-2xl font-bold text-white">实例管理</h1>
-            <p className="text-gray-400 text-sm">创建、编辑和管理 Minecraft 游戏实例</p>
+            <h1 className="text-2xl font-bold text-text-primary">实例管理</h1>
+            <p className="text-text-tertiary text-sm">创建、编辑和管理 Minecraft 游戏实例</p>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-primary hover:bg-primary-hover text-text-primary rounded-lg transition-colors flex items-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -118,7 +118,7 @@ const InstanceManage: React.FC = () => {
 
         <div className="flex items-center gap-4 mt-4">
           <div className="flex-1 relative">
-            <svg className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
@@ -126,17 +126,17 @@ const InstanceManage: React.FC = () => {
               placeholder="搜索实例..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-indigo-500"
+              className="w-full pl-10 pr-4 py-2 bg-surface border border-border rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:border-primary"
             />
           </div>
-          <span className="text-gray-400 text-sm">
+          <span className="text-text-tertiary text-sm">
             共 {instances.length} 个实例
           </span>
         </div>
       </div>
 
       {error && (
-        <div className="mx-6 mt-4 p-4 bg-red-500/20 border border-red-500/30 rounded-lg">
+        <div className="mx-6 mt-4 p-4 bg-error-bg border border-red-500/30 rounded-lg">
           <p className="text-red-300 text-sm">{error}</p>
         </div>
       )}
@@ -145,7 +145,7 @@ const InstanceManage: React.FC = () => {
         {loading && instances.length === 0 ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-            <span className="ml-3 text-gray-400">加载中...</span>
+            <span className="ml-3 text-text-tertiary">加载中...</span>
           </div>
         ) : filteredInstances.length === 0 ? (
           <EmptyState
@@ -162,7 +162,7 @@ const InstanceManage: React.FC = () => {
             {filteredInstances.map((instance) => (
               <div key={instance.id} className="relative">
                 {editingId === instance.id ? (
-                  <div className="p-4 bg-white/10 border border-indigo-500/50 rounded-lg">
+                  <div className="p-4 bg-surface border border-primary rounded-lg">
                     <input
                       type="text"
                       value={editingName}
@@ -170,7 +170,7 @@ const InstanceManage: React.FC = () => {
                       onBlur={() => handleRename(instance.id)}
                       onKeyDown={(e) => e.key === 'Enter' && handleRename(instance.id)}
                       autoFocus
-                      className="w-full px-2 py-1 bg-white/10 border border-white/20 rounded text-white text-sm focus:outline-none"
+                      className="w-full px-2 py-1 bg-surface border border-border-hover rounded text-text-primary text-sm focus:outline-none"
                     />
                   </div>
                 ) : (
@@ -190,7 +190,7 @@ const InstanceManage: React.FC = () => {
         )}
       </div>
 
-      <div className="px-6 py-3 border-t border-white/10 bg-black/20">
+      <div className="px-6 py-3 border-t border-border bg-surface">
         <p className="text-gray-500 text-xs">
           实例目录: <span className="font-mono">{instancesPath}</span>
         </p>
@@ -198,27 +198,27 @@ const InstanceManage: React.FC = () => {
 
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-900 border border-white/20 rounded-xl p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold text-white mb-4">创建新实例</h2>
+          <div className="bg-context-bg border border-border-hover rounded-xl p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold text-text-primary mb-4">创建新实例</h2>
 
             <div className="space-y-4">
               <div>
-                <label className="text-gray-300 text-sm mb-1 block">实例名称</label>
+                <label className="text-text-secondary text-sm mb-1 block">实例名称</label>
                 <input
                   type="text"
                   value={newInstanceName}
                   onChange={(e) => setNewInstanceName(e.target.value)}
                   placeholder="例如：生存服务器"
-                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-indigo-500"
+                  className="w-full px-4 py-2 bg-surface border border-border-hover rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:border-primary"
                 />
               </div>
 
               <div>
-                <label className="text-gray-300 text-sm mb-1 block">游戏版本</label>
+                <label className="text-text-secondary text-sm mb-1 block">游戏版本</label>
                 <select
                   value={newInstanceVersion}
                   onChange={(e) => setNewInstanceVersion(e.target.value)}
-                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-indigo-500"
+                  className="w-full px-4 py-2 bg-surface border border-border-hover rounded-lg text-text-primary focus:outline-none focus:border-primary"
                 >
                   <option value="1.20.4">1.20.4</option>
                   <option value="1.20.1">1.20.1</option>
@@ -230,11 +230,11 @@ const InstanceManage: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-gray-300 text-sm mb-1 block">模组加载器</label>
+                <label className="text-text-secondary text-sm mb-1 block">模组加载器</label>
                 <select
                   value={newInstanceLoader}
                   onChange={(e) => setNewInstanceLoader(e.target.value as ModLoaderType)}
-                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-indigo-500"
+                  className="w-full px-4 py-2 bg-surface border border-border-hover rounded-lg text-text-primary focus:outline-none focus:border-primary"
                 >
                   <option value={ModLoaderType.Vanilla}>Vanilla (纯净版)</option>
                   <option value={ModLoaderType.Fabric}>Fabric</option>
@@ -247,14 +247,14 @@ const InstanceManage: React.FC = () => {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+                className="px-4 py-2 bg-surface hover:bg-surface-hover text-text-primary rounded-lg transition-colors"
               >
                 取消
               </button>
               <button
                 onClick={handleCreate}
                 disabled={isCreating || !newInstanceName.trim()}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                className="px-4 py-2 bg-primary hover:bg-primary-hover text-text-primary rounded-lg transition-colors disabled:opacity-50"
               >
                 {isCreating ? '创建中...' : '创建'}
               </button>

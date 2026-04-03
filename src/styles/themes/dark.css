@@ -17,15 +17,20 @@
   --color-primary-active: #4f46e5;
   --color-primary-bg: rgba(99, 102, 241, 0.2);
   --color-success: #22c55e;
-  --color-success-bg: rgba(34, 197, 94, 0.2);
+  --color-success-bg: rgba(34, 197, 94, 0.15);
   --color-warning: #eab308;
-  --color-warning-bg: rgba(234, 179, 8, 0.2);
+  --color-warning-bg: rgba(234, 179, 8, 0.15);
   --color-error: #ef4444;
-  --color-error-bg: rgba(239, 68, 68, 0.2);
+  --color-error-bg: rgba(239, 68, 68, 0.15);
   --color-info: #3b82f6;
-  --color-info-bg: rgba(59, 130, 246, 0.2);
+  --color-info-bg: rgba(59, 130, 246, 0.15);
   --color-overlay: rgba(0, 0, 0, 0.6);
   --color-backdrop-blur: blur(8px);
+  --color-context-bg: rgba(30, 30, 30, 0.95);
+  --color-context-border: rgba(255, 255, 255, 0.1);
+  --color-context-hover: rgba(255, 255, 255, 0.08);
+  --color-progress-track: rgba(255, 255, 255, 0.1);
+  --color-toggle-track: rgba(255, 255, 255, 0.2);
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
@@ -34,4 +39,7 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
+  --transition-fast: 150ms ease;
+  --transition-normal: 300ms ease;
+  --transition-slow: 500ms ease;
 }
