@@ -34,10 +34,27 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
     return pagesWithOwnSidebar.some(path => location.pathname.startsWith(path));
   };
 
-  const handleMenuClick = (path: string, _group: string, _itemId: string, _hasChildren: boolean) => {
+  const handleMenuClick = (path: string, _group: string, itemId: string, hasChildren: boolean) => {
     logger.info(`菜单点击: path=${path}`);
     if (path === location.pathname) return;
+
+    if (hasChildren) {
+      const item = sidebarMenuItems.find(i => i.id === itemId);
+      if (item?.children && item.children.length > 0) {
+        const firstChildPath = item.children[0].path;
+        if (firstChildPath !== location.pathname) {
+          if (onMenuClick) onMenuClick(firstChildPath);
+        }
+      }
+      return;
+    }
+
     if (onMenuClick) onMenuClick(path);
+  };
+
+  const isParentOfActive = (itemPath: string): boolean => {
+    if (!itemPath || itemPath === location.pathname) return false;
+    return location.pathname.startsWith(itemPath + '/');
   };
 
   const isActive = (path: string) => location.pathname === path;
@@ -101,6 +118,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
             items={groups.account}
             onMenuClick={handleMenuClick}
             isActive={isActive}
+            isParentActive={isParentOfActive}
             hasChildrenItems={hasChildrenItems}
           />
           <div className="mt-8">
@@ -108,6 +126,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
               items={groups.game}
               onMenuClick={handleMenuClick}
               isActive={isActive}
+              isParentActive={isParentOfActive}
               hasChildrenItems={hasChildrenItems}
             />
           </div>
@@ -116,6 +135,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
               items={groups.common}
               onMenuClick={handleMenuClick}
               isActive={isActive}
+              isParentActive={isParentOfActive}
               hasChildrenItems={hasChildrenItems}
             />
           </div>
@@ -127,6 +147,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
           items={groups.account}
           onMenuClick={handleMenuClick}
           isActive={isActive}
+          isParentActive={isParentOfActive}
           hasChildrenItems={hasChildrenItems}
         />
       )}
@@ -136,6 +157,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
           items={groups.game}
           onMenuClick={handleMenuClick}
           isActive={isActive}
+          isParentActive={isParentOfActive}
           hasChildrenItems={hasChildrenItems}
         />
       )}
@@ -145,6 +167,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
           items={groups.common}
           onMenuClick={handleMenuClick}
           isActive={isActive}
+          isParentActive={isParentOfActive}
           hasChildrenItems={hasChildrenItems}
         />
       )}

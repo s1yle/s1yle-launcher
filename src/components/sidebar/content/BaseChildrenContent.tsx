@@ -7,6 +7,7 @@ export interface BaseChildrenContentProps {
   items: SidebarMenuItem[];
   onMenuClick?: (path: string, group: string, itemId: string, hasChildren: boolean) => void;
   isActive?: (path: string) => boolean;
+  isParentActive?: (path: string) => boolean;
   hasChildrenItems?: (item: SidebarMenuItem) => boolean;
   groupTitle?: string;
   groupTitleI18nKey?: string;
@@ -16,6 +17,7 @@ const BaseChildrenContent = ({
   items,
   onMenuClick,
   isActive,
+  isParentActive,
   hasChildrenItems,
   groupTitle,
   groupTitleI18nKey,
@@ -23,9 +25,11 @@ const BaseChildrenContent = ({
   const { t } = useTranslation();
 
   const defaultIsActive = (_path: string) => false;
+  const defaultIsParentActive = (_path: string) => false;
   const defaultHasChildrenItems = (item: SidebarMenuItem) => !!(item.children && item.children.length > 0);
 
   const activeCheck = isActive || defaultIsActive;
+  const parentActiveCheck = isParentActive || defaultIsParentActive;
   const childrenCheck = hasChildrenItems || defaultHasChildrenItems;
 
   const handleClick = (path: string, group: string, itemId: string, hasChildren: boolean) => {
@@ -37,6 +41,7 @@ const BaseChildrenContent = ({
   const renderMenuItem = (item: SidebarMenuItem, level: number = 0, index: number = 0) => {
     const hasChildren = childrenCheck(item);
     const active = activeCheck(item.path);
+    const parentActive = !active && parentActiveCheck(item.path);
 
     return (
       <motion.div
@@ -54,7 +59,9 @@ const BaseChildrenContent = ({
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--color-bg-secondary)]
             ${active
               ? 'bg-[var(--color-surface-active)] text-[var(--color-text-primary)] font-semibold border-l-[var(--color-primary)]'
-              : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] border-l-transparent'
+              : parentActive
+                ? 'bg-[var(--color-surface)] text-[var(--color-text-primary)] border-l-[var(--color-primary)] border-l-opacity-50'
+                : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] border-l-transparent'
             }
           `}
           whileTap={{ scale: 0.97 }}
