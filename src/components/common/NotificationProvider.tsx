@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Check, X, AlertTriangle, Info } from 'lucide-react';
 
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';
 
@@ -53,16 +55,12 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   const removeNotification = useCallback((id: string) => {
     setNotifications((prev) => {
       const notification = prev.find((n) => n.id === id);
-      if (notification?.onClose) {
-        notification.onClose();
-      }
+      if (notification?.onClose) notification.onClose();
       return prev.filter((n) => n.id !== id);
     });
   }, []);
 
-  const clearAll = useCallback(() => {
-    setNotifications([]);
-  }, []);
+  const clearAll = useCallback(() => { setNotifications([]); }, []);
 
   const addNotification = useCallback(
     (options: NotificationOptions): string => {
@@ -83,9 +81,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       });
 
       if (!notification.persistent && notification.duration && notification.duration > 0) {
-        setTimeout(() => {
-          removeNotification(id);
-        }, notification.duration);
+        setTimeout(() => { removeNotification(id); }, notification.duration);
       }
 
       return id;
@@ -128,10 +124,27 @@ const NotificationContainer: React.FC<NotificationContainerProps> = ({ notificat
   if (notifications.length === 0) return null;
 
   return createPortal(
-    <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-none">
-      {notifications.map((notification) => (
-        <NotificationToast key={notification.id} notification={notification} onRemove={onRemove} />
-      ))}
+    <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-none max-h-[calc(100vh-2rem)] overflow-hidden">
+      <AnimatePresence mode="popLayout">
+        {notifications.map((notification) => (
+          <motion.div
+            key={notification.id}
+            layout
+            initial={{ opacity: 0, x: 100, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 100, scale: 0.9 }}
+            transition={{
+              type: 'spring',
+              stiffness: 500,
+              damping: 30,
+              mass: 0.8,
+            }}
+            className="pointer-events-auto"
+          >
+            <NotificationToast notification={notification} onRemove={onRemove} />
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>,
     document.body
   );
@@ -144,63 +157,31 @@ interface NotificationToastProps {
 
 const NotificationToast: React.FC<NotificationToastProps> = ({ notification, onRemove }) => {
   const typeConfig = {
-    success: {
-      bg: 'bg-green-500/90',
-      icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-        </svg>
-      ),
-    },
-    error: {
-      bg: 'bg-red-500/90',
-      icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      ),
-    },
-    warning: {
-      bg: 'bg-yellow-500/90',
-      icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-      ),
-    },
-    info: {
-      bg: 'bg-blue-500/90',
-      icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-    },
+    success: { bg: 'bg-success text-text-primary', icon: <Check className="w-5 h-5" /> },
+    error: { bg: 'bg-error text-text-primary', icon: <X className="w-5 h-5" /> },
+    warning: { bg: 'bg-warning text-text-primary', icon: <AlertTriangle className="w-5 h-5" /> },
+    info: { bg: 'bg-info text-text-primary', icon: <Info className="w-5 h-5" /> },
   };
 
   const config = typeConfig[notification.type || 'info'];
 
   return (
     <div
-      className={`${config.bg} backdrop-blur-sm text-white rounded-lg shadow-lg p-4 min-w-[300px] max-w-[400px] pointer-events-auto animate-slideInRight`}
+      className={`${config.bg} backdrop-blur-sm text-text-primary rounded-lg shadow-lg p-4 min-w-[300px] max-w-[400px]`}
       role="alert"
     >
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0">{config.icon}</div>
         <div className="flex-1 min-w-0">
           <p className="font-medium">{notification.title}</p>
-          {notification.message && (
-            <p className="mt-1 text-sm text-white/80">{notification.message}</p>
-          )}
+          {notification.message && <p className="mt-1 text-sm text-text-secondary">{notification.message}</p>}
         </div>
         <button
           onClick={() => onRemove(notification.id)}
-          className="flex-shrink-0 text-white/80 hover:text-white transition-colors"
+          className="flex-shrink-0 text-text-secondary hover:text-text-primary transition-colors"
           aria-label="关闭"
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <X className="w-4 h-4" />
         </button>
       </div>
     </div>

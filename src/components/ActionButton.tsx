@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 import { launchInstance, stopInstance, getLaunchStatus, LaunchStatus } from '../helper/rustInvoke';
 
 interface ActionButtonProps {
@@ -32,7 +33,7 @@ const ActionButton = ({ onClick }: ActionButtonProps) => {
         return {
           text: '启动游戏',
           subtext: 'Vault Hunters Official Pack',
-          bgColor: 'bg-indigo-500 hover:bg-indigo-600',
+          bgColor: 'bg-primary hover:bg-primary-hover',
           loading: false,
           action: handleLaunch
         };
@@ -40,7 +41,7 @@ const ActionButton = ({ onClick }: ActionButtonProps) => {
         return {
           text: '启动中...',
           subtext: '正在启动Minecraft',
-          bgColor: 'bg-yellow-500 hover:bg-yellow-600',
+          bgColor: 'bg-warning hover:bg-yellow-600',
           loading: true,
           action: () => {} // 启动中不可点击
         };
@@ -48,7 +49,7 @@ const ActionButton = ({ onClick }: ActionButtonProps) => {
         return {
           text: '游戏运行中',
           subtext: '点击停止游戏',
-          bgColor: 'bg-green-500 hover:bg-green-600',
+          bgColor: 'bg-success hover:bg-success',
           loading: false,
           action: handleStop
         };
@@ -56,7 +57,7 @@ const ActionButton = ({ onClick }: ActionButtonProps) => {
         return {
           text: '已停止',
           subtext: '点击重新启动',
-          bgColor: 'bg-gray-500 hover:bg-gray-600',
+          bgColor: 'bg-surface hover:bg-gray-600',
           loading: false,
           action: handleLaunch
         };
@@ -64,7 +65,7 @@ const ActionButton = ({ onClick }: ActionButtonProps) => {
         return {
           text: '启动失败',
           subtext: '点击重试',
-          bgColor: 'bg-red-500 hover:bg-red-600',
+          bgColor: 'bg-error hover:bg-error',
           loading: false,
           action: handleLaunch
         };
@@ -72,7 +73,7 @@ const ActionButton = ({ onClick }: ActionButtonProps) => {
         return {
           text: '启动游戏',
           subtext: 'Vault Hunters Official Pack',
-          bgColor: 'bg-indigo-500 hover:bg-indigo-600',
+          bgColor: 'bg-primary hover:bg-primary-hover',
           loading: false,
           action: handleLaunch
         };
@@ -132,7 +133,7 @@ const ActionButton = ({ onClick }: ActionButtonProps) => {
   return (
     <div className="fixed bottom-6 right-6 flex flex-col items-end space-y-2">
       {message && (
-        <div className="bg-gray-800/90 text-white px-4 py-2 rounded-lg shadow-lg max-w-xs text-sm">
+        <div className="bg-context-bg text-text-primary px-4 py-2 rounded-lg shadow-lg max-w-xs text-sm">
           {message}
         </div>
       )}
@@ -140,11 +141,11 @@ const ActionButton = ({ onClick }: ActionButtonProps) => {
       <button
         onClick={buttonInfo.action}
         disabled={isDisabled}
-        className={`${buttonInfo.bgColor} text-white px-8 py-4 rounded-xl shadow-lg transition-all hover:shadow-xl active:scale-95 flex flex-col items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed`}
+        className={`${buttonInfo.bgColor} text-text-primary px-8 py-4 rounded-xl shadow-lg transition-all hover:shadow-xl active:scale-95 flex flex-col items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed`}
       >
         {buttonInfo.loading ? (
           <div className="flex items-center space-x-2">
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+            <Loader2 className="w-5 h-5 animate-spin" />
             <span className="text-lg font-bold">{buttonInfo.text}</span>
           </div>
         ) : (
@@ -156,12 +157,12 @@ const ActionButton = ({ onClick }: ActionButtonProps) => {
       </button>
       
       {/* 状态指示器 */}
-      <div className="flex items-center space-x-2 text-xs text-gray-300">
+      <div className="flex items-center space-x-2 text-xs text-text-secondary">
         <div className={`w-2 h-2 rounded-full ${
-          status === LaunchStatus.Running ? 'bg-green-500 animate-pulse' :
-          status === LaunchStatus.Launching ? 'bg-yellow-500' :
-          status === LaunchStatus.Crashed ? 'bg-red-500' :
-          'bg-gray-500'
+          status === LaunchStatus.Running ? 'bg-success animate-pulse' :
+          status === LaunchStatus.Launching ? 'bg-warning' :
+          status === LaunchStatus.Crashed ? 'bg-error' :
+          'bg-surface'
         }`}></div>
         <span>状态: {status}</span>
       </div>

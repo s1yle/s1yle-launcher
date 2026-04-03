@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { Loader2 } from 'lucide-react';
 import { useDownload } from '../hooks/useDownload';
 import { GameVersion, openFolder } from '../helper/rustInvoke';
 import { ProgressBar, DownloadItem, VersionCard, useNotification } from '../components/common';
@@ -156,9 +157,9 @@ const DownloadGame: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-6 border-b border-white/10">
-        <h1 className="text-2xl font-bold text-white mb-2">游戏下载</h1>
-        <p className="text-gray-400 text-sm">下载并管理 Minecraft 游戏版本</p>
+      <div className="p-6 border-b border-border">
+        <h1 className="text-2xl font-bold text-text-primary mb-2">游戏下载</h1>
+        <p className="text-text-tertiary text-sm">下载并管理 Minecraft 游戏版本</p>
       </div>
 
       <div className="flex gap-1 px-6 pt-4">
@@ -168,13 +169,13 @@ const DownloadGame: React.FC = () => {
             onClick={() => setActiveTab(tab.id)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               activeTab === tab.id
-                ? 'bg-indigo-600 text-white'
-                : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
+                ? 'bg-primary text-text-primary'
+                : 'bg-surface text-text-tertiary hover:bg-surface-hover hover:text-text-primary'
             }`}
           >
             {tab.label}
             {tab.count !== undefined && tab.count > 0 && (
-              <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-white/20">
+              <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-surface-active">
                 {tab.count}
               </span>
             )}
@@ -183,7 +184,7 @@ const DownloadGame: React.FC = () => {
       </div>
 
       {error && (
-        <div className="mx-6 mt-4 p-4 bg-red-500/20 border border-red-500/30 rounded-lg">
+        <div className="mx-6 mt-4 p-4 bg-error-bg border border-red-500/30 rounded-lg">
           <p className="text-red-300 text-sm">{error}</p>
         </div>
       )}
@@ -198,7 +199,7 @@ const DownloadGame: React.FC = () => {
                   placeholder="搜索版本..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+                  className="w-full px-4 py-2 bg-surface border border-border rounded-lg text-text-primary placeholder-gray-500 focus:outline-none focus:border-indigo-500"
                 />
               </div>
               <div className="flex gap-2">
@@ -208,8 +209,8 @@ const DownloadGame: React.FC = () => {
                     onClick={() => setFilter(f.id)}
                     className={`px-4 py-2 rounded-lg text-sm transition-all ${
                       filter === f.id
-                        ? 'bg-indigo-600/30 text-indigo-300 border border-indigo-500/50'
-                        : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'
+                        ? 'bg-primary/30 text-indigo-300 border border-indigo-500/50'
+                        : 'bg-surface text-text-tertiary border border-border hover:bg-surface-hover'
                     }`}
                   >
                     {f.label}
@@ -219,7 +220,7 @@ const DownloadGame: React.FC = () => {
             </div>
 
             {manifest?.latest && (
-              <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
+              <div className="p-4 bg-primary-bg border border-indigo-500/20 rounded-lg">
                 <p className="text-indigo-300 text-sm">
                   最新正式版: <span className="font-mono font-bold">{manifest.latest.release}</span>
                   {manifest.latest.snapshot !== manifest.latest.release && (
@@ -231,8 +232,8 @@ const DownloadGame: React.FC = () => {
 
             {loading && !manifest ? (
               <div className="flex items-center justify-center py-20">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
-                <span className="ml-3 text-gray-400">加载中...</span>
+                <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+                <span className="ml-3 text-text-tertiary">加载中...</span>
               </div>
             ) : (
               <div className="grid gap-3">
@@ -261,13 +262,13 @@ const DownloadGame: React.FC = () => {
             {categoryProgress.length > 0 ? (
               <>
                 <div className="flex justify-between items-center">
-                  <p className="text-gray-400 text-sm">
+                  <p className="text-text-tertiary text-sm">
                     下载进度
                   </p>
                   {isDownloading && (
                     <button
                       onClick={() => cancelDownloadVersion()}
-                      className="px-3 py-1 text-sm bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-300 rounded transition-colors"
+                      className="px-3 py-1 text-sm bg-error-bg hover:bg-red-500/30 border border-red-500/30 text-red-300 rounded transition-colors"
                     >
                       取消
                     </button>
@@ -281,10 +282,10 @@ const DownloadGame: React.FC = () => {
                 />
                 <div className="grid gap-3">
                   {categoryProgress.map(cat => (
-                    <div key={cat.category} className="p-3 bg-white/5 border border-white/10 rounded-lg">
+                    <div key={cat.category} className="p-3 bg-surface border border-border rounded-lg">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-white text-sm font-medium">{cat.label}</span>
-                        <span className="text-gray-400 text-xs">
+                        <span className="text-text-primary text-sm font-medium">{cat.label}</span>
+                        <span className="text-text-tertiary text-xs">
                           {cat.completed} / {cat.total}
                           {cat.failed > 0 && (
                             <span className="text-red-400 ml-2">{cat.failed} 失败</span>
@@ -312,12 +313,12 @@ const DownloadGame: React.FC = () => {
                 ) : (
                   <>
                     <div className="flex justify-between items-center">
-                      <p className="text-gray-400 text-sm">
+                      <p className="text-text-tertiary text-sm">
                         共 {downloadTasks.length} 个任务
                       </p>
                       <button
                         onClick={handleClearCompleted}
-                        className="px-3 py-1 text-sm bg-white/5 hover:bg-white/10 border border-white/10 rounded transition-colors"
+                        className="px-3 py-1 text-sm bg-surface hover:bg-surface-hover border border-border rounded transition-colors"
                       >
                         清理已完成
                       </button>
@@ -354,7 +355,7 @@ const DownloadGame: React.FC = () => {
                 {installedVersions.map(version => (
                   <div
                     key={version}
-                    className="p-4 bg-white/5 border border-white/10 rounded-lg flex items-center justify-between"
+                    className="p-4 bg-surface border border-border rounded-lg flex items-center justify-between"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
@@ -365,11 +366,11 @@ const DownloadGame: React.FC = () => {
                         </span>
                       </div>
                       <div>
-                        <p className="text-white font-medium">{version}</p>
+                        <p className="text-text-primary font-medium">{version}</p>
                         <p className="text-gray-500 text-sm">已安装</p>
                       </div>
                     </div>
-                    <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition-colors">
+                    <button className="px-4 py-2 bg-primary hover:bg-primary-hover text-text-primary text-sm rounded-lg transition-colors">
                       启动
                     </button>
                   </div>
@@ -380,7 +381,7 @@ const DownloadGame: React.FC = () => {
         )}
       </div>
 
-      <div className="px-6 py-3 border-t border-white/10 bg-black/20 flex items-center justify-between">
+      <div className="px-6 py-3 border-t border-border bg-surface flex items-center justify-between">
         <p className="text-gray-500 text-xs">
           下载目录: <span className="font-mono">{downloadPath}</span>
         </p>

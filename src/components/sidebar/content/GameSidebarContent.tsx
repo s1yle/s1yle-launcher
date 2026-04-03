@@ -1,25 +1,7 @@
-import BaseSidebarContent, { BaseSidebarContentProps } from './BaseSidebarContent';
+import BaseSidebarContent, { type BaseSidebarContentProps } from './BaseSidebarContent';
 
-interface GameSidebarContentProps extends Omit<BaseSidebarContentProps, 'groupTitle'> {
-  // 继承 BaseSidebarContentProps 但重写 groupTitle
-}
-
-const GameSidebarContent = ({ 
-  items, 
-  onMenuClick, 
-  isActive, 
-  hasChildrenItems,
-}: GameSidebarContentProps) => {
-  
-  return (
-    <BaseSidebarContent
-      items={items}
-      onMenuClick={onMenuClick}
-      isActive={isActive}
-      hasChildrenItems={hasChildrenItems}
-      groupTitle="游戏"
-    />
-  );
+const GameSidebarContent = (props: Omit<BaseSidebarContentProps, 'groupTitle' | 'groupTitleI18nKey'>) => {
+  return <BaseSidebarContent {...props} />;
 };
 
 export default GameSidebarContent;

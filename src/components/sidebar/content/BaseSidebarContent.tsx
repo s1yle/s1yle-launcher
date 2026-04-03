@@ -1,73 +1,177 @@
-// BaseSidebarContent.tsx
-// 基础侧边栏内容组件，包含公共的渲染和交互逻辑
-// 通过 props 控制渲染行为，子组件可以继承或组合使用
-
-import { SidebarMenuItem } from '../../../router/config';
+import { openUrl } from '../../../helper/rustInvoke';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronRight, ChevronDown } from 'lucide-react';
+import { type SidebarMenuItem } from '../../../router/config';
 
 export interface BaseSidebarContentProps {
   items: SidebarMenuItem[];
-  onMenuClick?: (path: string, group: string, itemId: string, hasChildren: boolean) => void;
+  onMenuClick?: (item: SidebarMenuItem) => void;
   isActive?: (path: string) => boolean;
+  isParentActive?: (path: string) => boolean;
   hasChildrenItems?: (item: SidebarMenuItem) => boolean;
-  groupTitle?: string;
 }
 
-const BaseSidebarContent = ({ 
-  items, 
-  onMenuClick, 
-  isActive, 
+const BaseSidebarContent = ({
+  items,
+  onMenuClick,
+  isActive,
+  isParentActive,
   hasChildrenItems,
-  groupTitle
 }: BaseSidebarContentProps) => {
+  const { t } = useTranslation();
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
+    new Set(items.filter(item => item.children?.length).map(item => item.id))
+  );
 
   const defaultIsActive = (_path: string) => false;
+  const defaultIsParentActive = (_path: string) => false;
   const defaultHasChildrenItems = (item: SidebarMenuItem) => !!(item.children && item.children.length > 0);
-  
+
   const activeCheck = isActive || defaultIsActive;
+  const parentActiveCheck = isParentActive || defaultIsParentActive;
   const childrenCheck = hasChildrenItems || defaultHasChildrenItems;
-  
-  const handleClick = (path: string, group: string, itemId: string, hasChildren: boolean) => {
-    if (onMenuClick) {
-      onMenuClick(path, group, itemId, hasChildren);
+
+  const toggleGroup = (id: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleItemClick = (item: SidebarMenuItem) => {
+    if (item.type === 'route' && item.path) {
+      if (onMenuClick) onMenuClick(item);
+    } else if (item.type === 'action' && item.action) {
+      item.action();
+    } else if (item.type === 'external' && item.url) {
+      openUrl(item.url);
     }
   };
 
-  const renderMenuItem = (item: SidebarMenuItem, level: number = 0) => {
-    const hasChildren = childrenCheck(item);
-    
-    return (
-      <div key={item.id}>
-        {/* 父菜单项 */}
-        <button
-          onClick={() => handleClick(item.path, item.group, item.id, hasChildren)}
-          className={`
-            w-full flex items-center gap-3 px-4 py-3 mb-2 rounded-lg transition-all
-            ${activeCheck(item.path) 
-              ? 'bg-white/20 text-white font-semibold' 
-              : 'text-gray-300 hover:bg-white/10 hover:text-white'
-            }
-            ${level > 0 ? 'ml-4 pl-2' : ''}
-          `}
-          style={{ paddingLeft: level > 0 ? `${level * 1}rem` : '1rem' }}
-        >
-          <span className="text-lg">{item.icon}</span>
-          <span className="text-left flex-1">{item.title}</span>
-        </button>
+  const renderItem = (item: SidebarMenuItem, level: number = 0, index: number = 0) => {
+    if (item.type === 'divider') {
+      return (
+        <div key={item.id} className="my-2 border-t border-[var(--color-border)]" />
+      );
+    }
 
-      </div>
+    if (item.type === 'header') {
+      const isExpanded = expandedGroups.has(item.id);
+      return (
+        <motion.div
+          key={item.id}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: index * 0.03, duration: 0.15 }}
+        >
+          <button
+            onClick={() => item.children?.length && toggleGroup(item.id)}
+            className="w-full flex items-center justify-between py-2 px-4 mb-1 text-sm font-semibold text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors"
+          >
+            <span>{t(item.titleI18nKey, item.title)}</span>
+            {item.children?.length && (
+              <motion.div animate={{ rotate: isExpanded ? 0 : -90 }} transition={{ duration: 0.2 }}>
+                <ChevronDown className="w-3.5 h-3.5" />
+              </motion.div>
+            )}
+          </button>
+          <AnimatePresence>
+            {isExpanded && item.children && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="space-y-0.5">
+                  {item.children.map((child, i) => renderItem(child, level + 1, index + i + 1))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      );
+    }
+
+    const hasChildren = childrenCheck(item);
+    const isExpanded = expandedGroups.has(item.id);
+    const active = item.type === 'route' && item.path ? activeCheck(item.path) : false;
+    const parentActive = !active && item.type === 'route' && item.path ? parentActiveCheck(item.path) : false;
+
+    return (
+      <motion.div
+        key={item.id}
+        initial={{ opacity: 0, x: -8 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: index * 0.03, duration: 0.15 }}
+        style={{ paddingLeft: level > 0 ? `${level * 0.75}rem` : undefined }}
+      >
+        <motion.button
+          onClick={() => handleItemClick(item)}
+          className={`
+            w-full flex items-center gap-3 py-2.5 rounded-lg
+            border-l-[3px] transition-colors duration-200
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--color-bg-secondary)]
+            ${active
+              ? 'bg-[var(--color-surface-active)] text-[var(--color-text-primary)] font-semibold border-l-[var(--color-primary)]'
+              : parentActive
+                ? 'bg-[var(--color-surface)] text-[var(--color-text-primary)] border-l-[var(--color-primary)] border-l-opacity-50'
+                : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] border-l-transparent'
+            }
+          `}
+          whileTap={{ scale: 0.97 }}
+          transition={{ duration: 0.1 }}
+        >
+          {item.icon && (
+            <motion.span
+              className="w-5 h-5 flex-shrink-0 flex items-center justify-center"
+              whileHover={{ scale: 1.15 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+            >
+              {item.icon}
+            </motion.span>
+          )}
+          <span className="text-sm text-left flex-1 truncate">
+            {t(item.titleI18nKey, item.title)}
+          </span>
+          {hasChildren && (
+            <motion.div
+              animate={{ rotate: isExpanded ? 90 : 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex-shrink-0"
+            >
+              <ChevronRight className="w-3.5 h-3.5 text-[var(--color-text-tertiary)]" />
+            </motion.div>
+          )}
+        </motion.button>
+
+        <AnimatePresence>
+          {hasChildren && isExpanded && item.children && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+              className="overflow-hidden"
+            >
+              <div className="space-y-0.5 mt-0.5">
+                {item.children.map((child, i) => renderItem(child, level + 1, index + i + 1))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
     );
   };
 
   return (
-    <div>
-      {groupTitle && (
-        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-4">
-          {groupTitle}
-        </div>
-      )}
-      <div className="space-y-1">
-        {items.map((item) => renderMenuItem(item))}
-      </div>
+    <div className="space-y-0.5">
+      {items.map((item, index) => renderItem(item, 0, index))}
     </div>
   );
 };

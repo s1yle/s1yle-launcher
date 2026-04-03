@@ -123,7 +123,7 @@ const LoadingPopup: React.FC<LoadingPopupProps> = ({
               type="button"
               onClick={handleCancel}
               disabled={disableCancel}
-              className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2 bg-surface hover:bg-surface-hover text-text-primary rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {cancelText}
             </button>
@@ -147,13 +147,13 @@ const LoadingPopup: React.FC<LoadingPopupProps> = ({
         {/* 进度条 */}
         {showProgress && (
           <div className="space-y-2">
-            <div className="w-full bg-gray-700/50 rounded-full h-2 overflow-hidden">
+            <div className="w-full bg-progress-track rounded-full h-2 overflow-hidden">
               <div 
-                className="bg-blue-500 h-full rounded-full transition-all duration-300"
+                className="bg-primary h-full rounded-full transition-all duration-300"
                 style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
               ></div>
             </div>
-            <div className="text-center text-gray-300 text-sm">
+            <div className="text-center text-text-secondary text-sm">
               {formattedProgressText}
             </div>
           </div>
@@ -161,14 +161,14 @@ const LoadingPopup: React.FC<LoadingPopupProps> = ({
 
         {/* 子标题 */}
         {showSubtitle && subtitle && (
-          <div className="text-center text-gray-400 text-sm">
+          <div className="text-center text-text-tertiary text-sm">
             {subtitle}
           </div>
         )}
 
         {/* 自动关闭倒计时 */}
         {autoClose > 0 && (
-          <div className="text-gray-400 text-sm text-center">
+          <div className="text-text-tertiary text-sm text-center">
             {Math.ceil(autoClose / 1000)}秒后自动关闭
           </div>
         )}

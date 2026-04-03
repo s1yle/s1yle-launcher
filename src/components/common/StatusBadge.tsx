@@ -1,5 +1,5 @@
 import React from 'react';
-import { getVersionTypeLabel, getVersionTypeBgColor } from '../../utils/format';
+import { getVersionTypeLabel, getVersionTypeColor, getVersionTypeBgColor } from '../../utils/format';
 
 export interface StatusBadgeProps {
   type: 'release' | 'snapshot' | 'old_beta' | 'old_alpha' | string;
@@ -29,19 +29,15 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
   };
 
   const displayLabel = label || getVersionTypeLabel(type);
-  const colorClass = getVersionTypeBgColor(type);
+  const colorClass = getVersionTypeColor(type);
+  const bgClass = getVersionTypeBgColor(type);
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded border font-medium ${sizeClasses[size]} ${className}`}
-      style={{
-        backgroundColor: `color-mix(in srgb, ${colorClass} 20%, transparent)`,
-        borderColor: `color-mix(in srgb, ${colorClass} 30%, transparent)`,
-        color: `color-mix(in srgb, ${colorClass} 100%, white)`,
-      }}
+      className={`inline-flex items-center gap-1 rounded border font-medium ${sizeClasses[size]} ${bgClass} ${colorClass} ${className}`}
     >
       {showDot && (
-        <span className={`${dotSizeClasses[size]} rounded-full ${colorClass}`} />
+        <span className={`${dotSizeClasses[size]} rounded-full bg-current`} />
       )}
       {displayLabel}
     </span>

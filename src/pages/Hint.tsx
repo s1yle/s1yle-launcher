@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 
 // 系统信息接口
@@ -47,18 +48,18 @@ const Hint = () => {
         <div className="max-w-4xl w-full space-y-8">
             {/* 标题区域 */}
             <div className="text-center">
-            <h1 className="text-4xl font-bold text-white mb-4">MC启动器说明</h1>
-            <p className="text-lg text-gray-300">欢迎使用MC启动器壳子，这是一个基于Tauri+React+TypeScript+Rust的基础框架</p>
+            <h1 className="text-4xl font-bold text-text-primary mb-4">MC启动器说明</h1>
+            <p className="text-lg text-text-secondary">欢迎使用MC启动器壳子，这是一个基于Tauri+React+TypeScript+Rust的基础框架</p>
             </div>
 
             {/* 后端通信测试区域 */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-            <h2 className="text-2xl font-bold text-white mb-4">前后端通信测试</h2>
+            <div className="bg-surface backdrop-blur-sm rounded-xl p-6 border border-border-hover">
+            <h2 className="text-2xl font-bold text-text-primary mb-4">前后端通信测试</h2>
             
             {loading && (
                 <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-                <span className="ml-3 text-white">正在与Rust后端通信...</span>
+                <Loader2 className="w-8 h-8 animate-spin text-text-primary" />
+                <span className="ml-3 text-text-primary">正在与Rust后端通信...</span>
                 </div>
             )}
 
@@ -72,21 +73,21 @@ const Hint = () => {
             {!loading && !error && (
                 <div className="space-y-4">
                 {/* 问候语结果 */}
-                <div className="bg-indigo-500/20 border border-indigo-500/30 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold text-white mb-2">greet命令结果</h3>
+                <div className="bg-primary-bg border border-indigo-500/30 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-text-primary mb-2">greet命令结果</h3>
                     <p className="text-gray-200 text-lg">{greeting}</p>
                 </div>
 
                 {/* 系统信息结果 */}
-                <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold text-white mb-2">get_system_info命令结果</h3>
+                <div className="bg-success-bg border border-green-500/30 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-text-primary mb-2">get_system_info命令结果</h3>
                     {systemInfo ? (
                     <div className="text-gray-200">
                         <p>系统类型: <span className="font-medium">{systemInfo.os}</span></p>
                         <p>系统架构: <span className="font-medium">{systemInfo.arch}</span></p>
                     </div>
                     ) : (
-                    <p className="text-gray-400">系统信息加载中...</p>
+                    <p className="text-text-tertiary">系统信息加载中...</p>
                     )}
                 </div>
                 </div>
@@ -97,7 +98,7 @@ const Hint = () => {
                 <button
                 onClick={testBackendCommunication}
                 disabled={loading}
-                className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-3 bg-primary hover:bg-primary-hover text-text-primary font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                 {loading ? '测试中...' : '重新测试通信'}
                 </button>
@@ -106,9 +107,9 @@ const Hint = () => {
 
             {/* 页面说明 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-                <h3 className="text-xl font-bold text-white mb-3">页面说明</h3>
-                <ul className="space-y-2 text-gray-300">
+            <div className="bg-surface backdrop-blur-sm rounded-xl p-6 border border-border">
+                <h3 className="text-xl font-bold text-text-primary mb-3">页面说明</h3>
+                <ul className="space-y-2 text-text-secondary">
                 <li>• 这是一个占位页面，用于展示MC启动器的基础框架</li>
                 <li>• 左侧侧边栏包含所有功能菜单</li>
                 <li>• 顶部Header会根据当前页面自动切换样式</li>
@@ -117,9 +118,9 @@ const Hint = () => {
                 </ul>
             </div>
 
-            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-                <h3 className="text-xl font-bold text-white mb-3">技术栈</h3>
-                <ul className="space-y-2 text-gray-300">
+            <div className="bg-surface backdrop-blur-sm rounded-xl p-6 border border-border">
+                <h3 className="text-xl font-bold text-text-primary mb-3">技术栈</h3>
+                <ul className="space-y-2 text-text-secondary">
                 <li>• 前端: React 19 + TypeScript + Tailwind CSS</li>
                 <li>• 路由: react-router-dom</li>
                 <li>• 后端: Rust (通过Tauri框架)</li>
@@ -131,12 +132,12 @@ const Hint = () => {
             </div>
 
             {/* 后续开发提示 */}
-            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-6">
-            <h3 className="text-xl font-bold text-white mb-3">后续开发提示</h3>
-            <p className="text-gray-300 mb-3">
+            <div className="bg-warning-bg border border-yellow-500/30 rounded-xl p-6">
+            <h3 className="text-xl font-bold text-text-primary mb-3">后续开发提示</h3>
+            <p className="text-text-secondary mb-3">
                 当前版本仅为壳子框架，不包含MC启动器的核心业务逻辑。后续可以在此基础上添加：
             </p>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-gray-300">
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-text-secondary">
                 <li>• 账户登录和管理系统</li>
                 <li>• Minecraft实例创建和管理</li>
                 <li>• 游戏版本下载和安装</li>
@@ -147,9 +148,9 @@ const Hint = () => {
             </div>
 
             {/* 账户列表功能说明 */}
-            <div className="bg-white/5 backdrop-blur-sm mt-9 pt-8 border border-white/20 rounded-xl p-6 ">
-                <h2 className="text-xl font-bold text-white mb-4">账户管理功能规划</h2>
-                <ul className="grid grid-cols-2 md:grid-cols-2 gap-3 text-gray-300">
+            <div className="bg-surface backdrop-blur-sm mt-9 pt-8 border border-border-hover rounded-xl p-6 ">
+                <h2 className="text-xl font-bold text-text-primary mb-4">账户管理功能规划</h2>
+                <ul className="grid grid-cols-2 md:grid-cols-2 gap-3 text-text-secondary">
                 <li>• Microsoft账户登录集成</li>
                 <li>• Mojang账户登录（旧版）</li>
                 <li>• 离线账户创建和管理</li>
@@ -161,9 +162,9 @@ const Hint = () => {
 
 
             {/* 实例管理功能说明 */}
-            <div className="mt-8 pt-8 border-t border-white/20">
-                <h3 className="text-xl font-bold text-white mb-4">实例管理功能规划</h3>
-                <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-300">
+            <div className="mt-8 pt-8 border-t border-border-hover">
+                <h3 className="text-xl font-bold text-text-primary mb-4">实例管理功能规划</h3>
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-text-secondary">
                 <li>• 创建自定义游戏实例</li>
                 <li>• 导入/导出实例配置</li>
                 <li>• 模组管理界面</li>
@@ -175,9 +176,9 @@ const Hint = () => {
 
 
             {/* 实例列表功能说明 */}
-            <div className="mt-8 pt-8 border-t border-white/20">
-                <h3 className="text-xl font-bold text-white mb-4">实例列表功能规划</h3>
-                <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-300">
+            <div className="mt-8 pt-8 border-t border-border-hover">
+                <h3 className="text-xl font-bold text-text-primary mb-4">实例列表功能规划</h3>
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-text-secondary">
                 <li>• 快速启动游戏实例</li>
                 <li>• 实例状态监控</li>
                 <li>• 批量操作支持</li>
@@ -187,9 +188,9 @@ const Hint = () => {
                 </ul>
             </div>
 
-            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-6">
-                <h3 className="text-xl font-bold text-white mb-3">下载管理功能规划</h3>
-                <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-300">
+            <div className="bg-warning-bg border border-yellow-500/30 rounded-lg p-6">
+                <h3 className="text-xl font-bold text-text-primary mb-3">下载管理功能规划</h3>
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-text-secondary">
                 <li>• 游戏版本下载和安装</li>
                 <li>• 模组库集成</li>
                 <li>• 资源包和材质包管理</li>

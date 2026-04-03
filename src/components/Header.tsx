@@ -1,7 +1,10 @@
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
+import { ArrowLeft, Minus, X } from 'lucide-react';
 import { closeWindow } from '../helper/rustInvoke';
+import { getParentPath } from '../router/config';
 
 interface HeaderProps {
   type: 'main' | 'sub';
@@ -9,9 +12,10 @@ interface HeaderProps {
 }
 
 const Header = ({ type, title }: HeaderProps) => {
+  const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
-  // 窗口控制函数
   const handleMinimize = async () => {
     try {
       const window = getCurrentWindow();
@@ -24,104 +28,62 @@ const Header = ({ type, title }: HeaderProps) => {
   const handleClose = async () => {
     try {
       const window = getCurrentWindow();
-      await closeWindow();  //调用rust
+      await closeWindow();
       await window.close();
     } catch (error) {
       console.error('关闭窗口失败:', error);
     }
   };
 
-  const handleBackToHome = () => {
-    navigate('/');
+  const handleBack = () => {
+    const parentPath = getParentPath(location.pathname);
+    navigate(parentPath);
   };
 
   return (
-    <header 
-      className="bg-indigo-500 text-white h-16 flex items-center justify-between px-6"
+    <header
+      className="bg-primary text-text-primary h-16 flex items-center justify-between px-6"
       data-tauri-drag-region
     >
-      {/* 左侧区域 */}
       <div className="flex items-center gap-4" data-tauri-drag-region>
         {type === 'main' ? (
-          // Main类型：Logo + 标题
           <>
-            <div className="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center">
-              <span className="font-bold text-white text-lg">MC</span>
+            <div className="w-10 h-10 bg-warning rounded-lg flex items-center justify-center">
+              <span className="font-bold text-text-primary text-lg">MC</span>
             </div>
             <h1 className="text-xl font-bold" data-tauri-drag-region>{title}</h1>
           </>
         ) : (
-          // Sub类型：返回箭头 + 标题
           <>
             <motion.button
-              onClick={handleBackToHome}
-              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-              title="返回首页"
-              whileHover={{ 
-                scale: 1.1,       // 悬停时轻微放大
-                x: -2             // 悬停时向左轻微偏移
-              }}
-              whileTap={{ scale: 0.95 }}  // 点击时轻微缩小
+              onClick={handleBack}
+              className="p-2 hover:bg-surface-hover rounded-lg transition-colors"
+              title={t('header.backToParent', '返回上级')}
+              whileHover={{ scale: 1.1, x: -2 }}
+              whileTap={{ scale: 0.95 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
             >
-              <motion.svg 
-                className="w-6 h-6" 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                />
-              </motion.svg>
+              <ArrowLeft className="w-6 h-6" />
             </motion.button>
             <h2 className="text-xl font-bold" data-tauri-drag-region>{title}</h2>
           </>
         )}
       </div>
 
-      {/* 右侧窗口控制按钮 */}
       <div className="flex items-center gap-2">
         <button
           onClick={handleMinimize}
-          className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-          title="最小化"
+          className="p-2 hover:bg-surface-hover rounded-lg transition-colors"
+          title={t('common.minimize', '最小化')}
         >
-          <svg 
-            className="w-5 h-5" 
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d="M20 12H4"
-            />
-          </svg>
+          <Minus className="w-5 h-5" />
         </button>
         <button
           onClick={handleClose}
-          className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-          title="关闭"
+          className="p-2 hover:bg-surface-hover rounded-lg transition-colors"
+          title={t('common.close', '关闭')}
         >
-          <svg 
-            className="w-5 h-5" 
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
+          <X className="w-5 h-5" />
         </button>
       </div>
     </header>

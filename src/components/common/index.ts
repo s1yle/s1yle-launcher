@@ -19,6 +19,15 @@ export type { InstanceCardProps } from './InstanceCard';
 export { default as EmptyState } from './EmptyState';
 export type { EmptyStateProps } from './EmptyState';
 
+export { default as TabBar } from './TabBar';
+export type { TabBarProps, TabItem } from './TabBar';
+
+export { default as SpinnerOverlay } from './SpinnerOverlay';
+export type { SpinnerOverlayProps } from './SpinnerOverlay';
+
+export { default as ListItem } from './ListItem';
+export type { ListItemProps } from './ListItem';
+
 export {
   NotificationProvider,
   useNotification,

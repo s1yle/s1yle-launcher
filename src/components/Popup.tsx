@@ -1,34 +1,24 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export interface PopupProps {
-  // 核心控制
   isOpen: boolean;
   onClose: () => void;
-  
-  // 内容配置
   title?: React.ReactNode;
   children?: React.ReactNode;
   footer?: React.ReactNode;
-  
-  // 行为控制
   showCloseButton?: boolean;
   closeOnEsc?: boolean;
   closeOnOverlayClick?: boolean;
   preventScroll?: boolean;
-  
-  // 样式定制
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
   position?: 'center' | 'top' | 'bottom';
   className?: string;
   overlayClassName?: string;
   contentClassName?: string;
-  
-  // 动画配置
   animation?: 'fade' | 'slide' | 'scale' | 'none';
   animationDuration?: number;
-  
-  // 无障碍
   ariaLabel?: string;
   ariaLabelledby?: string;
   ariaDescribedby?: string;
@@ -55,49 +45,49 @@ const Popup: React.FC<PopupProps> = ({
   ariaLabelledby,
   ariaDescribedby,
 }) => {
-  // ESC键关闭处理
+  const [shouldRender, setShouldRender] = useState(isOpen);
+
+  useEffect(() => {
+    if (isOpen) {
+      setShouldRender(true);
+    } else if (shouldRender) {
+      const timer = setTimeout(() => setShouldRender(false), animationDuration);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, shouldRender, animationDuration]);
+
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape' && closeOnEsc && isOpen) {
+    if (e.key === 'Escape' && closeOnEsc) {
       onClose();
     }
-  }, [closeOnEsc, isOpen, onClose]);
+  }, [closeOnEsc, onClose]);
 
-  // 点击遮罩层关闭处理
   const handleOverlayClick = useCallback((e: React.MouseEvent) => {
     if (closeOnOverlayClick && e.target === e.currentTarget) {
       onClose();
     }
   }, [closeOnOverlayClick, onClose]);
 
-  // 滚动锁定
   useEffect(() => {
-    if (isOpen && preventScroll) {
+    if (shouldRender && preventScroll) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
     }
-    
     return () => {
       document.body.style.overflow = '';
     };
-  }, [isOpen, preventScroll]);
+  }, [shouldRender, preventScroll]);
 
-  // ESC键监听
   useEffect(() => {
-    if (isOpen && closeOnEsc) {
+    if (shouldRender && closeOnEsc) {
       document.addEventListener('keydown', handleKeyDown);
       return () => {
         document.removeEventListener('keydown', handleKeyDown);
       };
     }
-  }, [isOpen, closeOnEsc, handleKeyDown]);
+  }, [shouldRender, closeOnEsc, handleKeyDown]);
 
-  // 如果没有打开，不渲染任何内容
-  if (!isOpen) {
-    return null;
-  }
-
-  // 尺寸映射
   const sizeClasses = {
     sm: 'max-w-md',
     md: 'max-w-lg',
@@ -106,95 +96,110 @@ const Popup: React.FC<PopupProps> = ({
     full: 'max-w-[90vw]',
   };
 
-  // 位置映射
   const positionClasses = {
-    center: 'item_mid_wunsure',
+    center: 'items-center justify-center',
     top: 'items-start justify-center pt-8',
     bottom: 'items-end justify-center pb-8',
   };
 
-  // 动画类
-  const animationClasses = {
-    fade: 'animate-fadeIn',
-    slide: 'animate-slideInUp',
-    scale: 'animate-scaleIn',
-    none: '',
+  const motionVariants = {
+    fade: {
+      initial: { opacity: 0 },
+      animate: { opacity: 1 },
+      exit: { opacity: 0 },
+    },
+    slide: {
+      initial: { opacity: 0, y: 20 },
+      animate: { opacity: 1, y: 0 },
+      exit: { opacity: 0, y: 20 },
+    },
+    scale: {
+      initial: { opacity: 0, scale: 0.95 },
+      animate: { opacity: 1, scale: 1 },
+      exit: { opacity: 0, scale: 0.95 },
+    },
+    none: {
+      initial: {},
+      animate: {},
+      exit: {},
+    },
   };
 
-  // ARIA属性
+  const variant = motionVariants[animation];
+  const durationSec = animationDuration / 1000;
+
   const ariaProps: React.HTMLAttributes<HTMLDivElement> = {};
   if (ariaLabel) ariaProps['aria-label'] = ariaLabel;
   if (ariaLabelledby) ariaProps['aria-labelledby'] = ariaLabelledby;
   if (ariaDescribedby) ariaProps['aria-describedby'] = ariaDescribedby;
 
   const popupContent = (
-    <>
-    
-    <div
-      className={`flex ${positionClasses[position]} z-50 ${overlayClassName} ${animationClasses[animation]}`}
-      style={{ animationDuration: `${animationDuration}ms`,
-               animation: isOpen ? animationClasses[animation] : '',
+    <AnimatePresence>
+      {shouldRender && (
+        <>
+          <motion.div
+            key="popup-backdrop"
+            className="fixed inset-0 bg-overlay backdrop-blur-sm z-49"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: durationSec * 0.8 }}
+            onClick={handleOverlayClick}
+          />
+
+          <div
+            className={`fixed inset-0 flex ${positionClasses[position]} z-50 pointer-events-none ${overlayClassName}`}
+            onClick={handleOverlayClick}
+            role="dialog"
+            aria-modal="true"
+            {...ariaProps}
+          >
+            <motion.div
+              key="popup-content"
+              className={`bg-surface backdrop-blur-sm rounded-xl border border-border-hover w-full ${sizeClasses[size]} pointer-events-auto ${className}`}
+              style={{ paddingLeft: '10px', paddingRight: '10px' }}
+              initial={variant.initial}
+              animate={variant.animate}
+              exit={variant.exit}
+              transition={{
+                duration: durationSec,
+                ease: [0.25, 0.1, 0.25, 1],
               }}
-      onClick={handleOverlayClick}
-      role="dialog"
-      aria-modal="true"
-      {...ariaProps}
-    >
+              onClick={(e) => e.stopPropagation()}
+            >
+              {(title || showCloseButton) && (
+                <div className="flex items-center justify-between p-6 border-b border-border">
+                  {title && (
+                    <div className="text-2xl font-bold text-text-primary">
+                      {typeof title === 'string' ? <h2>{title}</h2> : title}
+                    </div>
+                  )}
+                  {showCloseButton && (
+                    <button
+                      onClick={onClose}
+                      className="text-text-secondary hover:text-text-primary text-2xl font-bold leading-none p-2 transition-colors"
+                      aria-label="关闭弹窗"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              )}
 
-      <div
-        className={`bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 w-full ${sizeClasses[size]} ${className}`}
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          paddingLeft:'10px',
-          paddingRight:'10px'
-        }}
-      >
-        {/* 头部 */}
-        {(title || showCloseButton) && (
-          <div className="flex items-center justify-between p-6 border-b border-white/10">
-            {title && (
-              <div className="text-2xl font-bold text-white">
-                {typeof title === 'string' ? <h2>{title}</h2> : title}
+              <div className={`p-6 ${contentClassName}`}>
+                {children}
               </div>
-            )}
-            {showCloseButton && (
-              <button
-                onClick={onClose}
-                className="text-gray-300 hover:text-white text-2xl font-bold leading-none p-2 transition-colors"
-                aria-label="关闭弹窗"
-              >
-                ×
-              </button>
-            )}
+
+              {footer && (
+                <div className="p-6 border-t border-border">
+                  {footer}
+                </div>
+              )}
+            </motion.div>
           </div>
-        )}
-
-        {/* 内容区域 */}
-        <div className={`p-6 ${contentClassName}`}>
-          {children}
-        </div>
-
-        {/* 底部区域 */}
-        {footer && (
-          <div className="p-6 border-t border-white/10">
-            {footer}
-          </div>
-        )}
-      </div>
-    </div>
-
-    <div 
-      className='bg-black/50 backdrop-blur-sm'
-      style={{
-        position:'absolute',
-        top:'0',
-        left:'0',
-        width:'100%',
-        height:'100%',
-        zIndex: '49'  // 49 for the mask
-      }}></div>
-      
-    </>
+        </>
+      )}
+    </AnimatePresence>
   );
 
   return createPortal(popupContent, document.body);

@@ -1,25 +1,7 @@
-import BaseSidebarContent, { BaseSidebarContentProps } from './BaseSidebarContent';
+import BaseSidebarContent, { type BaseSidebarContentProps } from './BaseSidebarContent';
 
-interface AccountSidebarContentProps extends Omit<BaseSidebarContentProps, 'groupTitle'> {
-  // 继承 BaseSidebarContentProps 但重写 groupTitle
-}
-
-const AccountSidebarContent = ({ 
-  items, 
-  onMenuClick, 
-  isActive, 
-  hasChildrenItems,
-}: AccountSidebarContentProps) => {
-  
-  return (
-    <BaseSidebarContent
-      items={items}
-      onMenuClick={onMenuClick}
-      isActive={isActive}
-      hasChildrenItems={hasChildrenItems}
-      groupTitle="账户"
-    />
-  );
+const AccountSidebarContent = (props: Omit<BaseSidebarContentProps, 'groupTitle' | 'groupTitleI18nKey'>) => {
+  return <BaseSidebarContent {...props} />;
 };
 
 export default AccountSidebarContent;
