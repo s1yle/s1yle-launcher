@@ -1,4 +1,5 @@
 import {
+  UserMinus,
   User,
   Settings,
   Globe,
@@ -12,7 +13,6 @@ import {
   Monitor,
 } from 'lucide-react';
 import { type ReactNode } from 'react';
-
 export enum SidebarType {
   MAIN = 'main',
   SUB = 'sub',
@@ -163,7 +163,7 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
         id: 'offline-account',
         title: '离线账户',
         titleI18nKey: 'sidebar.offlineAccount',
-        icon: <User className="w-4 h-4" />,
+        icon: <UserMinus className="w-4 h-4" />,
         path: '/account/offline',
         group: SidebarGroup.ACCOUNT
       }

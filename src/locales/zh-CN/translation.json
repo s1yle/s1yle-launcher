@@ -53,7 +53,12 @@
     "settings": "设置",
     "multiplayer": "多人联机",
     "feedback": "反馈",
-    "hint": "启动器说明"
+    "hint": "启动器说明",
+    "group": {
+      "account": "账户",
+      "game": "游戏",
+      "common": "通用"
+    }
   },
   "home": {
     "title": "S1yle Launcher",

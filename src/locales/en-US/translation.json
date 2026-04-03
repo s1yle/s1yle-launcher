@@ -53,7 +53,12 @@
     "settings": "Settings",
     "multiplayer": "Multiplayer",
     "feedback": "Feedback",
-    "hint": "About Launcher"
+    "hint": "About Launcher",
+    "group": {
+      "account": "Account",
+      "game": "Game",
+      "common": "Common"
+    }
   },
   "home": {
     "title": "S1yle Launcher",

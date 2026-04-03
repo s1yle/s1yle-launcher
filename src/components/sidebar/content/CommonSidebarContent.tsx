@@ -1,23 +1,13 @@
-import BaseSidebarContent, { BaseSidebarContentProps } from './BaseSidebarContent';
+import BaseSidebarContent, { type BaseSidebarContentProps } from './BaseSidebarContent';
 
-interface CommonSidebarContentProps extends Omit<BaseSidebarContentProps, 'groupTitle'> {
-  // 继承 BaseSidebarContentProps 但重写 groupTitle
-}
+interface CommonSidebarContentProps extends Omit<BaseSidebarContentProps, 'groupTitle' | 'groupTitleI18nKey'> {}
 
-const CommonSidebarContent = ({ 
-  items, 
-  onMenuClick, 
-  isActive, 
-  hasChildrenItems,
-}: CommonSidebarContentProps) => {
-  
+const CommonSidebarContent = (props: CommonSidebarContentProps) => {
   return (
     <BaseSidebarContent
-      items={items}
-      onMenuClick={onMenuClick}
-      isActive={isActive}
-      hasChildrenItems={hasChildrenItems}
-      groupTitle="通用"
+      groupTitle="Common"
+      groupTitleI18nKey="sidebar.group.common"
+      {...props}
     />
   );
 };

@@ -28,6 +28,7 @@ export {
   BookOpen,
   Library,
   User,
+  UserMinus,
   Users,
   Settings,
   Shield,
