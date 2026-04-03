@@ -3,7 +3,7 @@ import { BrowserRouter as Router, useLocation, useNavigate } from 'react-router-
 import { AnimatePresence, motion } from 'framer-motion';
 import Header from './components/Header';
 import SmartSidebar from './components/sidebar/SmartSidebar';
-import { routes } from './router/config';
+import { routes, findRouteByPath } from './router/config';
 import { useNavStore } from './stores/navStore';
 import { useThemeStore } from './stores/themeStore';
 import { useAppStore } from './stores/appStore';
@@ -19,17 +19,6 @@ const MainLayout = () => {
   const navigate = useNavigate();
   const { setCurrentPath, setNavigating } = useNavStore();
   const animLockRef = useRef(false);
-
-  const findRouteByPath = (path: string, routeList: typeof routes): typeof routes[0] | undefined => {
-    for (const route of routeList) {
-      if (route.path === path) return route;
-      if (route.children) {
-        const found = findRouteByPath(path, route.children);
-        if (found) return found;
-      }
-    }
-    return undefined;
-  };
 
   const currentRoute = findRouteByPath(location.pathname, routes) || routes[0];
 

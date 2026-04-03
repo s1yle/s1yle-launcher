@@ -36,7 +36,8 @@
   },
   "header": {
     "title": "S1yle Launcher",
-    "backToHome": "返回主页"
+    "backToHome": "返回主页",
+    "backToParent": "返回上级"
   },
   "sidebar": {
     "account": "账号",

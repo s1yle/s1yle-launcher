@@ -13,6 +13,7 @@ import {
   Monitor,
 } from 'lucide-react';
 import { type ReactNode } from 'react';
+
 export enum SidebarType {
   MAIN = 'main',
   SUB = 'sub',
@@ -45,6 +46,8 @@ export interface RouteConfig {
   position?: RoutePosition;
   children?: RouteConfig[];
   sidebarGroup?: SidebarGroup;
+  parentPath?: string;
+  autoNavigateToFirstChild?: boolean;
 }
 
 export const routes: RouteConfig[] = [
@@ -59,18 +62,21 @@ export const routes: RouteConfig[] = [
     componentName: 'AccountListWithSidebar',
     header: { type: SidebarType.SUB, title: '账户列表', titleI18nKey: 'sidebar.accountList' },
     sidebarGroup: SidebarGroup.ACCOUNT,
+    parentPath: '/',
     children: [
       {
         path: '/account/microsoft',
         componentName: 'MicrosoftAccount',
         header: { type: SidebarType.SECONDARY, title: '微软账户', titleI18nKey: 'sidebar.microsoftAccount' },
-        sidebarGroup: SidebarGroup.ACCOUNT
+        sidebarGroup: SidebarGroup.ACCOUNT,
+        parentPath: '/account'
       },
       {
         path: '/account/offline',
         componentName: 'OfflineAccount',
         header: { type: SidebarType.SECONDARY, title: '离线账户', titleI18nKey: 'sidebar.offlineAccount' },
-        sidebarGroup: SidebarGroup.ACCOUNT
+        sidebarGroup: SidebarGroup.ACCOUNT,
+        parentPath: '/account'
       },
     ]
   },
@@ -78,31 +84,36 @@ export const routes: RouteConfig[] = [
     path: '/instance-manage',
     componentName: 'InstanceManage',
     header: { type: SidebarType.SUB, title: '实例管理', titleI18nKey: 'sidebar.instanceManage' },
-    sidebarGroup: SidebarGroup.GAME
+    sidebarGroup: SidebarGroup.GAME,
+    parentPath: '/'
   },
   {
     path: '/instance-list',
     componentName: 'InstanceList',
     header: { type: SidebarType.SUB, title: '实例列表', titleI18nKey: 'sidebar.instanceList' },
-    sidebarGroup: SidebarGroup.GAME
+    sidebarGroup: SidebarGroup.GAME,
+    parentPath: '/'
   },
   {
     path: '/download',
     componentName: 'Download',
     header: { type: SidebarType.SUB, title: '下载', titleI18nKey: 'sidebar.download' },
     sidebarGroup: SidebarGroup.GAME,
+    parentPath: '/',
     children: [
       {
         path: '/download/game',
         componentName: 'DownloadGame',
         header: { type: SidebarType.SECONDARY, title: '游戏', titleI18nKey: 'sidebar.downloadGame' },
-        sidebarGroup: SidebarGroup.GAME
+        sidebarGroup: SidebarGroup.GAME,
+        parentPath: '/download'
       },
       {
         path: '/download/modpack',
         componentName: 'DownloadModpack',
         header: { type: SidebarType.SECONDARY, title: '整合包', titleI18nKey: 'sidebar.downloadModpack' },
-        sidebarGroup: SidebarGroup.GAME
+        sidebarGroup: SidebarGroup.GAME,
+        parentPath: '/download'
       },
     ]
   },
@@ -110,25 +121,29 @@ export const routes: RouteConfig[] = [
     path: '/settings',
     componentName: 'Settings',
     header: { type: SidebarType.SUB, title: '设置', titleI18nKey: 'sidebar.settings' },
-    sidebarGroup: SidebarGroup.COMMON
+    sidebarGroup: SidebarGroup.COMMON,
+    parentPath: '/'
   },
   {
     path: '/multiplayer',
     componentName: 'Multiplayer',
     header: { type: SidebarType.SUB, title: '多人联机', titleI18nKey: 'sidebar.multiplayer' },
-    sidebarGroup: SidebarGroup.COMMON
+    sidebarGroup: SidebarGroup.COMMON,
+    parentPath: '/'
   },
   {
     path: '/feedback',
     componentName: 'Feedback',
     header: { type: SidebarType.SUB, title: '反馈与群组', titleI18nKey: 'sidebar.feedback' },
-    sidebarGroup: SidebarGroup.COMMON
+    sidebarGroup: SidebarGroup.COMMON,
+    parentPath: '/'
   },
   {
     path: '/hint',
     componentName: 'Hint',
     header: { type: SidebarType.SUB, title: '启动器说明', titleI18nKey: 'sidebar.hint' },
-    sidebarGroup: SidebarGroup.COMMON
+    sidebarGroup: SidebarGroup.COMMON,
+    parentPath: '/'
   },
 ];
 
@@ -258,4 +273,20 @@ export const getSidebarGroups = () => {
   });
 
   return groups;
+};
+
+export const findRouteByPath = (path: string, routeList: RouteConfig[]): RouteConfig | undefined => {
+  for (const route of routeList) {
+    if (route.path === path) return route;
+    if (route.children) {
+      const found = findRouteByPath(path, route.children);
+      if (found) return found;
+    }
+  }
+  return undefined;
+};
+
+export const getParentPath = (path: string): string => {
+  const route = findRouteByPath(path, routes);
+  return route?.parentPath || '/';
 };

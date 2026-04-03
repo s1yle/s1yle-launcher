@@ -34,19 +34,19 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
     return pagesWithOwnSidebar.some(path => location.pathname.startsWith(path));
   };
 
-  const handleMenuClick = (path: string, _group: string, itemId: string, hasChildren: boolean) => {
+  const handleMenuClick = (path: string, _group: string, _itemId: string, hasChildren: boolean) => {
     logger.info(`菜单点击: path=${path}`);
     if (path === location.pathname) return;
 
     if (hasChildren) {
-      const item = sidebarMenuItems.find(i => i.id === itemId);
-      if (item?.children && item.children.length > 0) {
-        const firstChildPath = item.children[0].path;
+      const route = routes.find(r => r.path === path);
+      if (route?.autoNavigateToFirstChild && route.children && route.children.length > 0) {
+        const firstChildPath = route.children[0].path;
         if (firstChildPath !== location.pathname) {
           if (onMenuClick) onMenuClick(firstChildPath);
         }
+        return;
       }
-      return;
     }
 
     if (onMenuClick) onMenuClick(path);

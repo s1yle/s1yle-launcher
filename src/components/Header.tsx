@@ -1,9 +1,10 @@
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Minus, X } from 'lucide-react';
 import { closeWindow } from '../helper/rustInvoke';
+import { getParentPath } from '../router/config';
 
 interface HeaderProps {
   type: 'main' | 'sub';
@@ -11,6 +12,7 @@ interface HeaderProps {
 }
 
 const Header = ({ type, title }: HeaderProps) => {
+  const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
 
@@ -33,8 +35,9 @@ const Header = ({ type, title }: HeaderProps) => {
     }
   };
 
-  const handleBackToHome = () => {
-    navigate('/');
+  const handleBack = () => {
+    const parentPath = getParentPath(location.pathname);
+    navigate(parentPath);
   };
 
   return (
@@ -53,9 +56,9 @@ const Header = ({ type, title }: HeaderProps) => {
         ) : (
           <>
             <motion.button
-              onClick={handleBackToHome}
+              onClick={handleBack}
               className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-              title={t('header.backToHome')}
+              title={t('header.backToParent', '返回上级')}
               whileHover={{ scale: 1.1, x: -2 }}
               whileTap={{ scale: 0.95 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}

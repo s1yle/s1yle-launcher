@@ -36,7 +36,8 @@
   },
   "header": {
     "title": "S1yle Launcher",
-    "backToHome": "Back to Home"
+    "backToHome": "Back to Home",
+    "backToParent": "Back to Parent"
   },
   "sidebar": {
     "account": "Account",
