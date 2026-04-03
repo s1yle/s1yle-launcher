@@ -13,10 +13,23 @@ import {
 import type { GameInstance, KnownPath } from '../helper/rustInvoke';
 import { ModLoaderType } from '../helper/rustInvoke';
 
+const STORAGE_KEY_FOLDER = 's1yle-selected-folder';
+
+function getSavedFolderId(): string | null {
+  try { return localStorage.getItem(STORAGE_KEY_FOLDER) || null; }
+  catch { return null; }
+}
+
+function saveFolderId(id: string | null) {
+  try { localStorage.setItem(STORAGE_KEY_FOLDER, id || ''); }
+  catch { /* storage not available */ }
+}
+
 interface InstanceState {
   instances: GameInstance[];
   knownFolders: KnownPath[];
   selectedFolderId: string | null;
+  selectedSidebarItemId: string | null;
   loading: boolean;
   error: string | null;
   searchQuery: string;
@@ -28,6 +41,7 @@ interface InstanceState {
   refreshKnownFolders: () => Promise<void>;
   addKnownFolder: (path: string) => Promise<void>;
   setSelectedFolder: (id: string | null) => void;
+  setSelectedSidebarItem: (id: string | null) => void;
   createNew: (name: string, version: string, loaderType?: ModLoaderType, loaderVersion?: string, iconPath?: string) => Promise<void>;
   remove: (id: string) => Promise<void>;
   duplicate: (id: string, newName: string) => Promise<void>;
@@ -42,6 +56,7 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
   instances: [],
   knownFolders: [],
   selectedFolderId: null,
+  selectedSidebarItemId: null,
   loading: false,
   error: null,
   searchQuery: '',
@@ -56,11 +71,17 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
         getInstancesPath(),
         scanKnownMcPaths(),
       ]);
+
+      const savedFolderId = getSavedFolderId();
+      const defaultFolderId = savedFolderId && knownFolders.find(f => f.id === savedFolderId)
+        ? savedFolderId
+        : knownFolders.find(f => f.is_default)?.id ?? knownFolders[0]?.id ?? null;
+
       set({
         instances,
         instancesPath: path,
         knownFolders,
-        selectedFolderId: knownFolders.find(f => f.is_default)?.id ?? knownFolders[0]?.id ?? null,
+        selectedFolderId: defaultFolderId,
       });
     } catch (e) {
       set({ error: e instanceof Error ? e.message : 'Failed to load instances' });
@@ -97,6 +118,7 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
         knownFolders: [...prev.knownFolders, folder],
         selectedFolderId: folder.id,
       }));
+      saveFolderId(folder.id);
     } catch (e) {
       set({ error: e instanceof Error ? e.message : 'Failed to add folder' });
       throw e;
@@ -105,6 +127,11 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
 
   setSelectedFolder: (id: string | null) => {
     set({ selectedFolderId: id });
+    saveFolderId(id);
+  },
+
+  setSelectedSidebarItem: (id: string | null) => {
+    set({ selectedSidebarItemId: id });
   },
 
   createNew: async (name: string, version: string, loaderType?: ModLoaderType, loaderVersion?: string, iconPath?: string) => {
@@ -168,7 +195,6 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
     const { instances, searchQuery, selectedFolderId, knownFolders } = get();
     let filtered = instances;
 
-    // Filter by selected folder
     if (selectedFolderId) {
       const folder = knownFolders.find(f => f.id === selectedFolderId);
       if (folder) {
@@ -176,7 +202,6 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
       }
     }
 
-    // Filter by search query
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(

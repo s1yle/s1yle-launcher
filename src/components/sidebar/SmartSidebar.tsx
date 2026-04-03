@@ -9,7 +9,7 @@ import BaseChildrenContent from './content/BaseChildrenContent';
 import { logger } from '../../helper/logger';
 import { openUrl } from '../../helper/rustInvoke';
 import { useInstanceStore } from '../../stores/instanceStore';
-import { FolderTree, FolderPlus, Download, Package, RefreshCw, Settings } from 'lucide-react';
+import { FolderTree, FolderPlus, Download, Package, RefreshCw } from 'lucide-react';
 
 interface SmartSidebarProps {
   onMenuClick?: (path: string) => void;
@@ -20,7 +20,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
   const location = useLocation();
   const { t } = useTranslation();
   const groups = getSidebarGroups();
-  const { knownFolders, setSelectedFolder, refresh, refreshKnownFolders } = useInstanceStore();
+  const { knownFolders, setSelectedFolder, setSelectedSidebarItem, selectedSidebarItemId, refresh, refreshKnownFolders } = useInstanceStore();
 
   const getCurrentSidebarGroup = (): 'account' | 'game' | 'common' | 'none' | 'all' => {
     if (showAllGroups) return 'all';
@@ -137,30 +137,28 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
           refreshKnownFolders();
         },
       },
-      {
-        id: 'global-game-settings',
-        type: 'route' as const,
-        title: t('instances.globalSettings', '全局游戏设置'),
-        titleI18nKey: 'instances.globalSettings',
-        icon: <Settings className="w-4 h-4" />,
-        path: '/instance-list',
-        group: SidebarGroup.GAME,
-      },
     ];
+
+    const handleInstanceItemClick = (item: SidebarMenuItem) => {
+      setSelectedSidebarItem(item.id);
+
+      if (item.type === 'action') {
+        item.action?.();
+      } else if (item.id && knownFolders.find(f => f.id === item.id)) {
+        setSelectedFolder(item.id);
+      } else if (item.type === 'route' && item.path && item.path !== location.pathname) {
+        if (onMenuClick) onMenuClick(item.path);
+      }
+    };
 
     return (
       <BaseSidebarLayout>
         <div className="py-8">
           <BaseChildrenContent
             items={instanceItems}
-            onMenuClick={(item) => {
-              if (item.type === 'action') {
-                item.action?.();
-              } else if (item.id && knownFolders.find(f => f.id === item.id)) {
-                setSelectedFolder(item.id);
-              }
-            }}
+            onMenuClick={handleInstanceItemClick}
             isActive={() => false}
+            isItemActive={(id) => selectedSidebarItemId === id}
             isParentActive={() => false}
             hasChildrenItems={() => false}
             groupTitle={t('instances.title', '实例列表')}
@@ -172,7 +170,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
   }
 
   // Account/Download: show their children items
-  const pagesWithOwnSidebar = ['/account', '/download'];
+  const pagesWithOwnSidebar = ['/account', '/download', '/game-settings'];
   if (pagesWithOwnSidebar.some(path => location.pathname.startsWith(path))) {
     const findMenuItemsByPath = (path: string): { current: SidebarMenuItem | undefined, parent: SidebarMenuItem | undefined } => {
       let foundParent: SidebarMenuItem | undefined = undefined;

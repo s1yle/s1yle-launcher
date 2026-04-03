@@ -10,6 +10,7 @@ export interface BaseChildrenContentProps {
   onMenuClick?: (item: SidebarMenuItem) => void;
   isActive?: (path: string) => boolean;
   isParentActive?: (path: string) => boolean;
+  isItemActive?: (id: string) => boolean;
   hasChildrenItems?: (item: SidebarMenuItem) => boolean;
   groupTitle?: string;
   groupTitleI18nKey?: string;
@@ -20,6 +21,7 @@ const BaseChildrenContent = ({
   onMenuClick,
   isActive,
   isParentActive,
+  isItemActive,
   hasChildrenItems,
   groupTitle,
   groupTitleI18nKey,
@@ -72,7 +74,8 @@ const BaseChildrenContent = ({
     const hasChildren = childrenCheck(item);
     const isExpanded = expandedItems.has(item.id);
     const active = item.type === 'route' && item.path ? activeCheck(item.path) : false;
-    const parentActive = !active && item.type === 'route' && item.path ? parentActiveCheck(item.path) : false;
+    const itemActive = isItemActive ? isItemActive(item.id) : false;
+    const parentActive = !active && !itemActive && item.type === 'route' && item.path ? parentActiveCheck(item.path) : false;
 
     return (
       <motion.div
@@ -91,7 +94,7 @@ const BaseChildrenContent = ({
             w-full flex items-center gap-3 py-2.5 rounded-lg
             border-l-[3px] transition-colors duration-200
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--color-bg-secondary)]
-            ${active
+            ${active || itemActive
               ? 'bg-[var(--color-surface-active)] text-[var(--color-text-primary)] font-semibold border-l-[var(--color-primary)]'
               : parentActive
                 ? 'bg-[var(--color-surface)] text-[var(--color-text-primary)] border-l-[var(--color-primary)] border-l-opacity-50'

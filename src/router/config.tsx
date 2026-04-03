@@ -125,6 +125,19 @@ export const routes: RouteConfig[] = [
     ]
   },
   {
+    path: '/game-settings',
+    componentName: 'GameSettings',
+    header: { type: SidebarType.SUB, title: '全局游戏设置', titleI18nKey: 'gameSettings.title' },
+    sidebarGroup: SidebarGroup.COMMON,
+    parentPath: '/',
+    children: [
+      { path: '/game-settings/java', componentName: 'GameSettingsJava', header: { type: SidebarType.SECONDARY, title: 'Java 管理', titleI18nKey: 'gameSettings.java' }, sidebarGroup: SidebarGroup.COMMON, parentPath: '/game-settings' },
+      { path: '/game-settings/general', componentName: 'GameSettingsGeneral', header: { type: SidebarType.SECONDARY, title: '通用', titleI18nKey: 'gameSettings.general' }, sidebarGroup: SidebarGroup.COMMON, parentPath: '/game-settings' },
+      { path: '/game-settings/appearance', componentName: 'GameSettingsAppearance', header: { type: SidebarType.SECONDARY, title: '外观', titleI18nKey: 'gameSettings.appearance' }, sidebarGroup: SidebarGroup.COMMON, parentPath: '/game-settings' },
+      { path: '/game-settings/download', componentName: 'GameSettingsDownload', header: { type: SidebarType.SECONDARY, title: '下载', titleI18nKey: 'gameSettings.download' }, sidebarGroup: SidebarGroup.COMMON, parentPath: '/game-settings' },
+    ]
+  },
+  {
     path: '/settings',
     componentName: 'Settings',
     header: { type: SidebarType.SUB, title: '设置', titleI18nKey: 'sidebar.settings' },
@@ -291,15 +304,6 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
             path: '/instance-list',
             group: SidebarGroup.GAME
           },
-          {
-            id: 'global-game-settings',
-            type: 'route',
-            title: '全局游戏设置',
-            titleI18nKey: 'instances.globalSettings',
-            icon: <Settings className="w-4 h-4" />,
-            path: '/instance-list',
-            group: SidebarGroup.GAME
-          }
         ]
       },
       {
@@ -340,6 +344,53 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
     titleI18nKey: 'sidebar.group.common',
     group: SidebarGroup.COMMON,
     children: [
+      {
+        id: 'game-settings',
+        type: 'route',
+        title: '全局游戏设置',
+        titleI18nKey: 'gameSettings.title',
+        icon: <Settings className="w-4 h-4" />,
+        path: '/game-settings',
+        group: SidebarGroup.COMMON,
+        children: [
+          {
+            id: 'gs-java',
+            type: 'route',
+            title: 'Java 管理',
+            titleI18nKey: 'gameSettings.java',
+            icon: <Settings className="w-4 h-4" />,
+            path: '/game-settings/java',
+            group: SidebarGroup.COMMON
+          },
+          {
+            id: 'gs-general',
+            type: 'route',
+            title: '通用',
+            titleI18nKey: 'gameSettings.general',
+            icon: <Settings className="w-4 h-4" />,
+            path: '/game-settings/general',
+            group: SidebarGroup.COMMON
+          },
+          {
+            id: 'gs-appearance',
+            type: 'route',
+            title: '外观',
+            titleI18nKey: 'gameSettings.appearance',
+            icon: <Settings className="w-4 h-4" />,
+            path: '/game-settings/appearance',
+            group: SidebarGroup.COMMON
+          },
+          {
+            id: 'gs-download',
+            type: 'route',
+            title: '下载',
+            titleI18nKey: 'gameSettings.download',
+            icon: <Settings className="w-4 h-4" />,
+            path: '/game-settings/download',
+            group: SidebarGroup.COMMON
+          }
+        ]
+      },
       {
         id: 'settings',
         type: 'route',

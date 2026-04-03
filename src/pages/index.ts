@@ -13,3 +13,8 @@ export { default as Settings } from './Settings';
 export { default as Multiplayer } from './Multiplayer';
 export { default as Feedback } from './Feedback';
 export { default as Hint } from './Hint'
+export { default as GameSettings } from './GameSettings';
+export { default as GameSettingsJava } from './GameSettingsJava';
+export { default as GameSettingsGeneral } from './GameSettingsGeneral';
+export { default as GameSettingsAppearance } from './GameSettingsAppearance';
+export { default as GameSettingsDownload } from './GameSettingsDownload';

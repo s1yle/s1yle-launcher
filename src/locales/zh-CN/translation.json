@@ -338,5 +338,26 @@
     "duplicateFailed": "复制失败",
     "export": "导出",
     "exportNotReady": "导出整合包功能尚未集成"
+  },
+  "gameSettings": {
+    "title": "全局游戏设置",
+    "subtitle": "配置所有游戏实例的默认参数",
+    "java": "Java 管理",
+    "javaPath": "Java 路径",
+    "javaPathPlaceholder": "自动检测",
+    "javaArgs": "JVM 参数",
+    "window": "窗口设置",
+    "windowSize": "窗口尺寸",
+    "autoFit": "自动适配",
+    "fullscreen": "全屏启动",
+    "reset": "恢复默认",
+    "save": "保存设置",
+    "javaDesc": "配置 Java 运行时路径和 JVM 参数",
+    "general": "通用",
+    "generalDesc": "配置通用游戏参数",
+    "appearance": "外观",
+    "appearanceDesc": "配置窗口外观和显示参数",
+    "download": "下载",
+    "downloadDesc": "配置下载源和并发参数"
   }
 }

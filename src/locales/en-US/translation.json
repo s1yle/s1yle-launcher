@@ -338,5 +338,26 @@
     "duplicateFailed": "Duplicate failed",
     "export": "Export",
     "exportNotReady": "Modpack export not yet integrated"
+  },
+  "gameSettings": {
+    "title": "Global Game Settings",
+    "subtitle": "Configure default parameters for all game instances",
+    "java": "Java Management",
+    "javaPath": "Java Path",
+    "javaPathPlaceholder": "Auto-detect",
+    "javaArgs": "JVM Arguments",
+    "window": "Window Settings",
+    "windowSize": "Window Size",
+    "autoFit": "Auto-fit",
+    "fullscreen": "Start in fullscreen",
+    "reset": "Reset to defaults",
+    "save": "Save settings",
+    "javaDesc": "Configure Java runtime path and JVM arguments",
+    "general": "General",
+    "generalDesc": "Configure general game parameters",
+    "appearance": "Appearance",
+    "appearanceDesc": "Configure window appearance and display settings",
+    "download": "Download",
+    "downloadDesc": "Configure download source and concurrency settings"
   }
 }

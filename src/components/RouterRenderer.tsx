@@ -15,7 +15,12 @@ import {
     Settings,
     Multiplayer,
     Feedback,
-    Hint
+    Hint,
+    GameSettings,
+    GameSettingsJava,
+    GameSettingsGeneral,
+    GameSettingsAppearance,
+    GameSettingsDownload
 } from '../pages';
 
 // 组件映射
@@ -33,7 +38,12 @@ const componentMap: Record<string, React.FC> = {
     Settings,
     Multiplayer,
     Feedback,
-    Hint
+    Hint,
+    GameSettings,
+    GameSettingsJava,
+    GameSettingsGeneral,
+    GameSettingsAppearance,
+    GameSettingsDownload
 };
 
 // 递归渲染所有路由（平级，不嵌套）
