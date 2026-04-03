@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Check, X, AlertTriangle, Info } from 'lucide-react';
 
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';
@@ -123,10 +124,27 @@ const NotificationContainer: React.FC<NotificationContainerProps> = ({ notificat
   if (notifications.length === 0) return null;
 
   return createPortal(
-    <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-none">
-      {notifications.map((notification) => (
-        <NotificationToast key={notification.id} notification={notification} onRemove={onRemove} />
-      ))}
+    <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-none max-h-[calc(100vh-2rem)] overflow-hidden">
+      <AnimatePresence mode="popLayout">
+        {notifications.map((notification) => (
+          <motion.div
+            key={notification.id}
+            layout
+            initial={{ opacity: 0, x: 100, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 100, scale: 0.9 }}
+            transition={{
+              type: 'spring',
+              stiffness: 500,
+              damping: 30,
+              mass: 0.8,
+            }}
+            className="pointer-events-auto"
+          >
+            <NotificationToast notification={notification} onRemove={onRemove} />
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>,
     document.body
   );
@@ -149,7 +167,7 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ notification, onR
 
   return (
     <div
-      className={`${config.bg} backdrop-blur-sm text-white rounded-lg shadow-lg p-4 min-w-[300px] max-w-[400px] pointer-events-auto animate-slideInRight`}
+      className={`${config.bg} backdrop-blur-sm text-white rounded-lg shadow-lg p-4 min-w-[300px] max-w-[400px]`}
       role="alert"
     >
       <div className="flex items-start gap-3">

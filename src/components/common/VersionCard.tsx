@@ -3,6 +3,7 @@ import { GameVersion } from '../../helper/rustInvoke';
 import ProgressBar from './ProgressBar';
 import StatusBadge from './StatusBadge';
 import { formatDate } from '../../utils/format';
+import { Loader2 } from 'lucide-react';
 import { Package } from 'lucide-react';
 
 export interface VersionCardProps {
@@ -76,7 +77,7 @@ const VersionCard: React.FC<VersionCardProps> = ({
           ) : downloading ? (
             <button className="px-4 py-2 bg-white/10 text-white text-sm rounded-lg">
               <span className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                <Loader2 className="w-4 h-4 animate-spin text-white" />
                 下载中
               </span>
             </button>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 import { launchInstance, stopInstance, getLaunchStatus, LaunchStatus } from '../helper/rustInvoke';
 
 interface ActionButtonProps {
@@ -144,7 +145,7 @@ const ActionButton = ({ onClick }: ActionButtonProps) => {
       >
         {buttonInfo.loading ? (
           <div className="flex items-center space-x-2">
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+            <Loader2 className="w-5 h-5 animate-spin" />
             <span className="text-lg font-bold">{buttonInfo.text}</span>
           </div>
         ) : (

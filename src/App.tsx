@@ -12,7 +12,7 @@ import RouterRenderer from './components/RouterRenderer';
 import './helper/i18n';
 
 const BACKGROUND_IMAGE_URL = './src/assets/img/bg-1.png';
-const EXIT_DUR = 0.25;
+const PAGE_TRANSITION_DURATION = 0.35;
 
 const MainLayout = () => {
   const location = useLocation();
@@ -42,7 +42,7 @@ const MainLayout = () => {
     setTimeout(() => {
       animLockRef.current = false;
       setNavigating(false);
-    }, EXIT_DUR * 1000 + 100);
+    }, PAGE_TRANSITION_DURATION * 1000 + 100);
   };
 
   useEffect(() => {
@@ -55,7 +55,7 @@ const MainLayout = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden dpi-transition" onContextMenu={handleContextMenu}>
+    <div className="h-screen flex flex-col overflow-hidden" onContextMenu={handleContextMenu}>
       <Header type={currentRoute.header.type === 'main' ? 'main' : 'sub'} title={currentRoute.header.title} />
       <div className="flex flex-1 overflow-hidden">
         <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} />
@@ -67,10 +67,13 @@ const MainLayout = () => {
             <motion.div
               key={location.pathname}
               className="absolute inset-0"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: EXIT_DUR, ease: "easeOut" }}
+              initial={{ opacity: 0, x: 30, scale: 0.98 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: -20, scale: 0.98 }}
+              transition={{
+                duration: PAGE_TRANSITION_DURATION,
+                ease: [0.25, 0.1, 0.25, 1],
+              }}
             >
               <div className="relative z-10 h-full rounded-lg shadow-lg">
                 <div className="p-8">

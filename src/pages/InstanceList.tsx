@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Loader2 } from 'lucide-react';
 import { useInstances } from '../hooks/useInstances';
 import { openFolder } from '../helper/rustInvoke';
 import { InstanceCard, EmptyState, useNotification } from '../components/common';
@@ -233,7 +234,7 @@ const InstanceList: React.FC = () => {
       <div className="flex-1 overflow-auto p-6">
         {loading && instances.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+            <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
             <span className="mt-3 text-gray-400">正在扫描实例...</span>
           </div>
         ) : filteredInstances.length === 0 ? (

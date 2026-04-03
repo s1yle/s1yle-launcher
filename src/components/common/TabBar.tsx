@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -58,7 +58,7 @@ const TabBar = ({
               onClick={() => handleTabClick(tab.key)}
               disabled={tab.disabled}
               className={cn(
-                'relative flex items-center gap-3 rounded-lg transition-all duration-200 text-left',
+                'relative flex items-center gap-3 rounded-lg transition-colors duration-200 text-left',
                 sizeClasses[size],
                 tab.disabled && 'opacity-50 cursor-not-allowed',
                 activeKey === tab.key
@@ -75,7 +75,7 @@ const TabBar = ({
               )}
               {activeKey === tab.key && (
                 <motion.div
-                  layoutId="activeTabIndicator"
+                  layoutId="activeTabIndicator-v"
                   className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-indigo-500"
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 />
@@ -83,8 +83,18 @@ const TabBar = ({
             </button>
           ))}
         </div>
-        <div className="flex-1">
-          {activeTab?.content}
+        <div className="flex-1 min-h-0">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeKey}
+              initial={{ opacity: 0, x: 8 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -8 }}
+              transition={{ duration: 0.15, ease: [0.25, 0.1, 0.25, 1] }}
+            >
+              {activeTab?.content}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     );
@@ -95,7 +105,7 @@ const TabBar = ({
       <div className="relative flex gap-1 p-1 rounded-lg bg-white/5 border border-white/10">
         {activeKey && (
           <motion.div
-            layoutId="activeTabIndicator"
+            layoutId="activeTabIndicator-h"
             className="absolute top-1 bottom-1 rounded-md bg-white/10"
             transition={{ type: 'spring', stiffness: 500, damping: 30 }}
           />
@@ -122,15 +132,18 @@ const TabBar = ({
           </button>
         ))}
       </div>
-      <div className="mt-4">
-        <motion.div
-          key={activeKey}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          {activeTab?.content}
-        </motion.div>
+      <div className="mt-4 min-h-0">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeKey}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+          >
+            {activeTab?.content}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );

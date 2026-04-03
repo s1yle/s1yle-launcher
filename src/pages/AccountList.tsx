@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Loader2 } from 'lucide-react';
 import Popup from "../components/Popup";
 import { 
   invokeAddAccount, 
@@ -205,7 +206,7 @@ const AccountList = ({ onClickAddAccount }: AccountListProps) => {
 
           {isLoadingAccounts ? (
             <div className="text-center py-8">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div>
+              <Loader2 className="w-8 h-8 animate-spin text-white" />
               <p className="text-gray-300 mt-2">加载中...</p>
             </div>
           ) : accounts.length === 0 ? (
