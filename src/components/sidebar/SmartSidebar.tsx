@@ -1,6 +1,6 @@
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { getSidebarGroups, routes, sidebarMenuItems, type SidebarMenuItem } from '../../router/config';
+import { getSidebarGroups, routes, sidebarMenuItems, type SidebarMenuItem, findRouteByPath } from '../../router/config';
 import BaseSidebarLayout from './layouts/BaseSidebarLayout';
 import AccountSidebarContent from './content/AccountSidebarContent';
 import GameSidebarContent from './content/GameSidebarContent';
@@ -15,6 +15,7 @@ interface SmartSidebarProps {
 
 const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps) => {
   const location = useLocation();
+  
   const { t } = useTranslation();
   const groups = getSidebarGroups();
 
@@ -34,12 +35,13 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
     return pagesWithOwnSidebar.some(path => location.pathname.startsWith(path));
   };
 
-  const handleMenuClick = (path: string, _group: string, _itemId: string, hasChildren: boolean) => {
-    logger.info(`菜单点击: path=${path}`);
-    if (path === location.pathname) return;
+  const handleItemClick = (item: SidebarMenuItem) => {
+    logger.info(`菜单点击: type=${item.type} path=${item.path}`);
 
-    if (hasChildren) {
-      const route = routes.find(r => r.path === path);
+    if (item.type === 'route' && item.path) {
+      if (item.path === location.pathname) return;
+
+      const route = findRouteByPath(item.path, routes);
       if (route?.autoNavigateToFirstChild && route.children && route.children.length > 0) {
         const firstChildPath = route.children[0].path;
         if (firstChildPath !== location.pathname) {
@@ -47,9 +49,13 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
         }
         return;
       }
-    }
 
-    if (onMenuClick) onMenuClick(path);
+      if (onMenuClick) onMenuClick(item.path);
+    } else if (item.type === 'action') {
+      item.action?.();
+    } else if (item.type === 'external' && item.url) {
+      window.open(item.url, '_blank', 'noopener,noreferrer');
+    }
   };
 
   const isParentOfActive = (itemPath: string): boolean => {
@@ -99,8 +105,9 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
         <div className="py-8">
           <BaseChildrenContent
             items={childrenItems}
-            onMenuClick={handleMenuClick}
+            onMenuClick={handleItemClick}
             isActive={isActive}
+            isParentActive={isParentOfActive}
             hasChildrenItems={hasChildrenItems}
             groupTitle={currentMenuItem?.title || parentMenuItem?.title || ''}
             groupTitleI18nKey={currentMenuItem?.titleI18nKey || parentMenuItem?.titleI18nKey}
@@ -116,7 +123,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
         <>
           <AccountSidebarContent
             items={groups.account}
-            onMenuClick={handleMenuClick}
+            onMenuClick={handleItemClick}
             isActive={isActive}
             isParentActive={isParentOfActive}
             hasChildrenItems={hasChildrenItems}
@@ -124,7 +131,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
           <div className="mt-8">
             <GameSidebarContent
               items={groups.game}
-              onMenuClick={handleMenuClick}
+              onMenuClick={handleItemClick}
               isActive={isActive}
               isParentActive={isParentOfActive}
               hasChildrenItems={hasChildrenItems}
@@ -133,7 +140,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
           <div className="mt-8">
             <CommonSidebarContent
               items={groups.common}
-              onMenuClick={handleMenuClick}
+              onMenuClick={handleItemClick}
               isActive={isActive}
               isParentActive={isParentOfActive}
               hasChildrenItems={hasChildrenItems}
@@ -145,7 +152,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
       {currentGroup === 'account' && (
         <AccountSidebarContent
           items={groups.account}
-          onMenuClick={handleMenuClick}
+          onMenuClick={handleItemClick}
           isActive={isActive}
           isParentActive={isParentOfActive}
           hasChildrenItems={hasChildrenItems}
@@ -155,7 +162,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
       {currentGroup === 'game' && (
         <GameSidebarContent
           items={groups.game}
-          onMenuClick={handleMenuClick}
+          onMenuClick={handleItemClick}
           isActive={isActive}
           isParentActive={isParentOfActive}
           hasChildrenItems={hasChildrenItems}
@@ -165,7 +172,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
       {currentGroup === 'common' && (
         <CommonSidebarContent
           items={groups.common}
-          onMenuClick={handleMenuClick}
+          onMenuClick={handleItemClick}
           isActive={isActive}
           isParentActive={isParentOfActive}
           hasChildrenItems={hasChildrenItems}

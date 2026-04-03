@@ -11,6 +11,8 @@ import {
   Gamepad2,
   Package,
   Monitor,
+  Rocket,
+  ExternalLink,
 } from 'lucide-react';
 import { type ReactNode } from 'react';
 
@@ -38,6 +40,8 @@ export enum SidebarGroup {
   COMMON = 'common',
   NONE = 'none'
 }
+
+export type SidebarItemType = 'route' | 'action' | 'external' | 'divider' | 'header';
 
 export interface RouteConfig {
   path: string;
@@ -149,10 +153,13 @@ export const routes: RouteConfig[] = [
 
 export interface SidebarMenuItem {
   id: string;
+  type: SidebarItemType;
   title: string;
   titleI18nKey: string;
-  icon: ReactNode;
-  path: string;
+  icon?: ReactNode;
+  path?: string;
+  url?: string;
+  action?: () => void;
   group: SidebarGroup;
   children?: SidebarMenuItem[];
 }
@@ -160,119 +167,182 @@ export interface SidebarMenuItem {
 export const sidebarMenuItems: SidebarMenuItem[] = [
   {
     id: 'account',
-    title: '账户列表',
-    titleI18nKey: 'sidebar.accountList',
-    icon: <User className="w-4 h-4" />,
-    path: '/account',
+    type: 'header',
+    title: 'Account',
+    titleI18nKey: 'sidebar.group.account',
     group: SidebarGroup.ACCOUNT,
     children: [
       {
-        id: 'microsoft-account',
-        title: '微软账户',
-        titleI18nKey: 'sidebar.microsoftAccount',
-        icon: <Monitor className="w-4 h-4" />,
-        path: '/account/microsoft',
-        group: SidebarGroup.ACCOUNT
-      },
-      {
-        id: 'offline-account',
-        title: '离线账户',
-        titleI18nKey: 'sidebar.offlineAccount',
-        icon: <UserMinus className="w-4 h-4" />,
-        path: '/account/offline',
-        group: SidebarGroup.ACCOUNT
+        id: 'account-list',
+        type: 'route',
+        title: '账户列表',
+        titleI18nKey: 'sidebar.accountList',
+        icon: <User className="w-4 h-4" />,
+        path: '/account',
+        group: SidebarGroup.ACCOUNT,
+        children: [
+          {
+            id: 'microsoft-account',
+            type: 'route',
+            title: '微软账户',
+            titleI18nKey: 'sidebar.microsoftAccount',
+            icon: <Monitor className="w-4 h-4" />,
+            path: '/account/microsoft',
+            group: SidebarGroup.ACCOUNT
+          },
+          {
+            id: 'offline-account',
+            type: 'route',
+            title: '离线账户',
+            titleI18nKey: 'sidebar.offlineAccount',
+            icon: <UserMinus className="w-4 h-4" />,
+            path: '/account/offline',
+            group: SidebarGroup.ACCOUNT
+          }
+        ]
       }
     ]
   },
   {
-    id: 'instance-manage',
-    title: '实例管理',
-    titleI18nKey: 'sidebar.instanceManage',
-    icon: <FolderOpen className="w-4 h-4" />,
-    path: '/instance-manage',
-    group: SidebarGroup.GAME
-  },
-  {
-    id: 'instance-list',
-    title: '实例列表',
-    titleI18nKey: 'sidebar.instanceList',
-    icon: <List className="w-4 h-4" />,
-    path: '/instance-list',
-    group: SidebarGroup.GAME
-  },
-  {
-    id: 'download',
-    title: '下载',
-    titleI18nKey: 'sidebar.download',
-    icon: <Download className="w-4 h-4" />,
-    path: '/download',
+    id: 'game',
+    type: 'header',
+    title: 'Game',
+    titleI18nKey: 'sidebar.group.game',
     group: SidebarGroup.GAME,
     children: [
       {
-        id: 'download-game',
-        title: '游戏下载',
-        titleI18nKey: 'sidebar.downloadGame',
-        icon: <Gamepad2 className="w-4 h-4" />,
-        path: '/download/game',
+        id: 'launch-game',
+        type: 'action',
+        title: '启动游戏',
+        titleI18nKey: 'sidebar.launchGame',
+        icon: <Rocket className="w-4 h-4" />,
         group: SidebarGroup.GAME
       },
       {
-        id: 'download-modpack',
-        title: '整合包下载',
-        titleI18nKey: 'sidebar.downloadModpack',
-        icon: <Package className="w-4 h-4" />,
-        path: '/download/modpack',
+        id: 'instance-manage',
+        type: 'route',
+        title: '实例管理',
+        titleI18nKey: 'sidebar.instanceManage',
+        icon: <FolderOpen className="w-4 h-4" />,
+        path: '/instance-manage',
         group: SidebarGroup.GAME
+      },
+      {
+        id: 'instance-list',
+        type: 'route',
+        title: '实例列表',
+        titleI18nKey: 'sidebar.instanceList',
+        icon: <List className="w-4 h-4" />,
+        path: '/instance-list',
+        group: SidebarGroup.GAME
+      },
+      {
+        id: 'download',
+        type: 'route',
+        title: '下载',
+        titleI18nKey: 'sidebar.download',
+        icon: <Download className="w-4 h-4" />,
+        path: '/download',
+        group: SidebarGroup.GAME,
+        children: [
+          {
+            id: 'download-game',
+            type: 'route',
+            title: '游戏下载',
+            titleI18nKey: 'sidebar.downloadGame',
+            icon: <Gamepad2 className="w-4 h-4" />,
+            path: '/download/game',
+            group: SidebarGroup.GAME
+          },
+          {
+            id: 'download-modpack',
+            type: 'route',
+            title: '整合包下载',
+            titleI18nKey: 'sidebar.downloadModpack',
+            icon: <Package className="w-4 h-4" />,
+            path: '/download/modpack',
+            group: SidebarGroup.GAME
+          }
+        ]
       }
     ]
   },
   {
-    id: 'settings',
-    title: '设置',
-    titleI18nKey: 'sidebar.settings',
-    icon: <Settings className="w-4 h-4" />,
-    path: '/settings',
-    group: SidebarGroup.COMMON
-  },
-  {
-    id: 'multiplayer',
-    title: '多人联机',
-    titleI18nKey: 'sidebar.multiplayer',
-    icon: <Globe className="w-4 h-4" />,
-    path: '/multiplayer',
-    group: SidebarGroup.COMMON
-  },
-  {
-    id: 'feedback',
-    title: '反馈与群组',
-    titleI18nKey: 'sidebar.feedback',
-    icon: <MessageCircle className="w-4 h-4" />,
-    path: '/feedback',
-    group: SidebarGroup.COMMON
-  },
-  {
-    id: 'hint',
-    title: '启动器说明',
-    titleI18nKey: 'sidebar.hint',
-    icon: <FileText className="w-4 h-4" />,
-    path: '/hint',
-    group: SidebarGroup.COMMON
+    id: 'common',
+    type: 'header',
+    title: 'Common',
+    titleI18nKey: 'sidebar.group.common',
+    group: SidebarGroup.COMMON,
+    children: [
+      {
+        id: 'settings',
+        type: 'route',
+        title: '设置',
+        titleI18nKey: 'sidebar.settings',
+        icon: <Settings className="w-4 h-4" />,
+        path: '/settings',
+        group: SidebarGroup.COMMON
+      },
+      {
+        id: 'multiplayer',
+        type: 'route',
+        title: '多人联机',
+        titleI18nKey: 'sidebar.multiplayer',
+        icon: <Globe className="w-4 h-4" />,
+        path: '/multiplayer',
+        group: SidebarGroup.COMMON
+      },
+      {
+        id: 'divider-1',
+        type: 'divider',
+        title: '',
+        titleI18nKey: '',
+        group: SidebarGroup.COMMON
+      },
+      {
+        id: 'discord',
+        type: 'external',
+        title: 'Discord',
+        titleI18nKey: 'sidebar.discord',
+        icon: <ExternalLink className="w-4 h-4" />,
+        url: 'https://discord.gg/',
+        group: SidebarGroup.COMMON
+      },
+      {
+        id: 'feedback',
+        type: 'route',
+        title: '反馈与群组',
+        titleI18nKey: 'sidebar.feedback',
+        icon: <MessageCircle className="w-4 h-4" />,
+        path: '/feedback',
+        group: SidebarGroup.COMMON
+      },
+      {
+        id: 'hint',
+        type: 'route',
+        title: '启动器说明',
+        titleI18nKey: 'sidebar.hint',
+        icon: <FileText className="w-4 h-4" />,
+        path: '/hint',
+        group: SidebarGroup.COMMON
+      }
+    ]
   },
 ];
 
-export const getSidebarGroups = () => {
-  const groups = {
-    [SidebarGroup.ACCOUNT]: [] as SidebarMenuItem[],
-    [SidebarGroup.GAME]: [] as SidebarMenuItem[],
-    [SidebarGroup.COMMON]: [] as SidebarMenuItem[],
-    [SidebarGroup.NONE]: [] as SidebarMenuItem[]
+export const getSidebarGroups = (): Record<SidebarGroup, SidebarMenuItem[]> => {
+  const groups: Record<string, SidebarMenuItem[]> = {
+    [SidebarGroup.ACCOUNT]: [],
+    [SidebarGroup.GAME]: [],
+    [SidebarGroup.COMMON]: [],
+    [SidebarGroup.NONE]: []
   };
 
   sidebarMenuItems.forEach(item => {
     groups[item.group].push(item);
   });
 
-  return groups;
+  return groups as Record<SidebarGroup, SidebarMenuItem[]>;
 };
 
 export const findRouteByPath = (path: string, routeList: RouteConfig[]): RouteConfig | undefined => {

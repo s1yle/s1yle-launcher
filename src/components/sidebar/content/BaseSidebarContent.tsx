@@ -1,16 +1,15 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
-import { ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronRight, ChevronDown } from 'lucide-react';
 import { type SidebarMenuItem } from '../../../router/config';
 
 export interface BaseSidebarContentProps {
   items: SidebarMenuItem[];
-  onMenuClick?: (path: string, group: string, itemId: string, hasChildren: boolean) => void;
+  onMenuClick?: (item: SidebarMenuItem) => void;
   isActive?: (path: string) => boolean;
   isParentActive?: (path: string) => boolean;
   hasChildrenItems?: (item: SidebarMenuItem) => boolean;
-  groupTitle?: string;
-  groupTitleI18nKey?: string;
 }
 
 const BaseSidebarContent = ({
@@ -19,10 +18,11 @@ const BaseSidebarContent = ({
   isActive,
   isParentActive,
   hasChildrenItems,
-  groupTitle,
-  groupTitleI18nKey,
 }: BaseSidebarContentProps) => {
   const { t } = useTranslation();
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
+    new Set(items.filter(item => item.children?.length).map(item => item.id))
+  );
 
   const defaultIsActive = (_path: string) => false;
   const defaultIsParentActive = (_path: string) => false;
@@ -32,16 +32,75 @@ const BaseSidebarContent = ({
   const parentActiveCheck = isParentActive || defaultIsParentActive;
   const childrenCheck = hasChildrenItems || defaultHasChildrenItems;
 
-  const handleClick = (path: string, group: string, itemId: string, hasChildren: boolean) => {
-    if (onMenuClick) {
-      onMenuClick(path, group, itemId, hasChildren);
+  const toggleGroup = (id: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleItemClick = (item: SidebarMenuItem) => {
+    if (item.type === 'route' && item.path) {
+      if (onMenuClick) onMenuClick(item);
+    } else if (item.type === 'action' && item.action) {
+      item.action();
+    } else if (item.type === 'external' && item.url) {
+      window.open(item.url, '_blank', 'noopener,noreferrer');
     }
   };
 
-  const renderMenuItem = (item: SidebarMenuItem, level: number = 0, index: number = 0) => {
+  const renderItem = (item: SidebarMenuItem, level: number = 0, index: number = 0) => {
+    if (item.type === 'divider') {
+      return (
+        <div key={item.id} className="my-2 border-t border-[var(--color-border)]" />
+      );
+    }
+
+    if (item.type === 'header') {
+      const isExpanded = expandedGroups.has(item.id);
+      return (
+        <motion.div
+          key={item.id}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: index * 0.03, duration: 0.15 }}
+        >
+          <button
+            onClick={() => item.children?.length && toggleGroup(item.id)}
+            className="w-full flex items-center justify-between py-2 px-4 mb-1 text-sm font-semibold text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors"
+          >
+            <span>{t(item.titleI18nKey, item.title)}</span>
+            {item.children?.length && (
+              <motion.div animate={{ rotate: isExpanded ? 0 : -90 }} transition={{ duration: 0.2 }}>
+                <ChevronDown className="w-3.5 h-3.5" />
+              </motion.div>
+            )}
+          </button>
+          <AnimatePresence>
+            {isExpanded && item.children && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="space-y-0.5">
+                  {item.children.map((child, i) => renderItem(child, level + 1, index + i + 1))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      );
+    }
+
     const hasChildren = childrenCheck(item);
-    const active = activeCheck(item.path);
-    const parentActive = !active && parentActiveCheck(item.path);
+    const isExpanded = expandedGroups.has(item.id);
+    const active = item.type === 'route' && item.path ? activeCheck(item.path) : false;
+    const parentActive = !active && item.type === 'route' && item.path ? parentActiveCheck(item.path) : false;
 
     return (
       <motion.div
@@ -52,7 +111,7 @@ const BaseSidebarContent = ({
         style={{ paddingLeft: level > 0 ? `${level * 0.75}rem` : undefined }}
       >
         <motion.button
-          onClick={() => handleClick(item.path, item.group, item.id, hasChildren)}
+          onClick={() => handleItemClick(item)}
           className={`
             w-full flex items-center gap-3 py-2.5 rounded-lg
             border-l-[3px] transition-colors duration-200
@@ -67,34 +126,51 @@ const BaseSidebarContent = ({
           whileTap={{ scale: 0.97 }}
           transition={{ duration: 0.1 }}
         >
-          <motion.span
-            className="w-5 h-5 flex-shrink-0 flex items-center justify-center"
-            whileHover={{ scale: 1.15 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-          >
-            {item.icon}
-          </motion.span>
+          {item.icon && (
+            <motion.span
+              className="w-5 h-5 flex-shrink-0 flex items-center justify-center"
+              whileHover={{ scale: 1.15 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+            >
+              {item.icon}
+            </motion.span>
+          )}
           <span className="text-sm text-left flex-1 truncate">
             {t(item.titleI18nKey, item.title)}
           </span>
           {hasChildren && (
-            <ChevronRight className="w-3.5 h-3.5 text-[var(--color-text-tertiary)] flex-shrink-0" />
+            <motion.div
+              animate={{ rotate: isExpanded ? 90 : 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex-shrink-0"
+            >
+              <ChevronRight className="w-3.5 h-3.5 text-[var(--color-text-tertiary)]" />
+            </motion.div>
           )}
         </motion.button>
+
+        <AnimatePresence>
+          {hasChildren && isExpanded && item.children && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+              className="overflow-hidden"
+            >
+              <div className="space-y-0.5 mt-0.5">
+                {item.children.map((child, i) => renderItem(child, level + 1, index + i + 1))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     );
   };
 
   return (
-    <div>
-      {groupTitle && (
-        <div className="text-sm font-semibold text-[var(--color-text-tertiary)] mb-3 px-4 pb-2 border-b border-[var(--color-border)]">
-          {groupTitleI18nKey ? t(groupTitleI18nKey, groupTitle) : groupTitle}
-        </div>
-      )}
-      <div className="space-y-0.5">
-        {items.map((item, index) => renderMenuItem(item, 0, index))}
-      </div>
+    <div className="space-y-0.5">
+      {items.map((item, index) => renderItem(item, 0, index))}
     </div>
   );
 };
