@@ -63,7 +63,7 @@ const MainLayout = () => {
           className="flex-1 overflow-auto relative"
           style={{ background: `url(${BACKGROUND_IMAGE_URL}) no-repeat center center / cover`, backgroundAttachment: 'fixed' }}
         >
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="sync">
             <motion.div
               key={location.pathname}
               className="absolute inset-0"
