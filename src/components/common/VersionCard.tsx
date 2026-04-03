@@ -3,6 +3,7 @@ import { GameVersion } from '../../helper/rustInvoke';
 import ProgressBar from './ProgressBar';
 import StatusBadge from './StatusBadge';
 import { formatDate } from '../../utils/format';
+import { Package } from 'lucide-react';
 
 export interface VersionCardProps {
   version: GameVersion;
@@ -39,11 +40,7 @@ const VersionCard: React.FC<VersionCardProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-indigo-500/20 rounded-lg flex items-center justify-center">
-            <span className="text-indigo-400 text-xl">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
-              </svg>
-            </span>
+            <Package className="w-6 h-6 text-indigo-400" />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -55,7 +52,7 @@ const VersionCard: React.FC<VersionCardProps> = ({
                 </span>
               )}
             </div>
-            <p className="text-gray-500 text-sm mt-1">
+            <p className="text-white/40 text-sm mt-1">
               发布于 {formatDate(version.release_time)}
             </p>
           </div>
@@ -65,12 +62,7 @@ const VersionCard: React.FC<VersionCardProps> = ({
             <div className="text-right">
               {isDeploying ? (
                 <div className="w-32">
-                  <ProgressBar
-                    progress={deployProgress}
-                    status="active"
-                    showPercentage
-                    size="sm"
-                  />
+                  <ProgressBar progress={deployProgress} status="active" showPercentage size="sm" />
                 </div>
               ) : (
                 <button
@@ -82,7 +74,7 @@ const VersionCard: React.FC<VersionCardProps> = ({
               )}
             </div>
           ) : downloading ? (
-            <button className="px-4 py-2 bg-gray-600 text-white text-sm rounded-lg">
+            <button className="px-4 py-2 bg-white/10 text-white text-sm rounded-lg">
               <span className="flex items-center gap-2">
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                 下载中
