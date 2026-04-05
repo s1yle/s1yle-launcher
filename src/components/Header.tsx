@@ -41,17 +41,18 @@ const Header = ({ type, title }: HeaderProps) => {
   };
 
   return (
-    <header
+    <header 
+      id='title-bar' 
       className="bg-primary text-text-primary h-16 flex items-center justify-between px-6"
-      data-tauri-drag-region
+      data-tauri-drag-region="true"
     >
-      <div className="flex items-center gap-4" data-tauri-drag-region>
+      <div className="flex items-center gap-4" data-tauri-drag-region="true">
         {type === 'main' ? (
           <>
             <div className="w-10 h-10 bg-warning rounded-lg flex items-center justify-center">
               <span className="font-bold text-text-primary text-lg">MC</span>
             </div>
-            <h1 className="text-xl font-bold" data-tauri-drag-region>{title}</h1>
+            <h1 className="text-xl font-bold">{title}</h1>
           </>
         ) : (
           <>
@@ -65,7 +66,7 @@ const Header = ({ type, title }: HeaderProps) => {
             >
               <ArrowLeft className="w-6 h-6" />
             </motion.button>
-            <h2 className="text-xl font-bold" data-tauri-drag-region>{title}</h2>
+            <h2 className="text-xl font-bold">{title}</h2>
           </>
         )}
       </div>

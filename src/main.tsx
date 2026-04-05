@@ -5,6 +5,7 @@ import NotificationProvider from "./components/common/NotificationProvider";
 import { invokeAccInit } from "./helper/rustInvoke";
 import { logger } from "./helper/logger";
 import { useThemeStore } from "./stores/themeStore";
+import { window } from "@tauri-apps/api";
 
 import './styles/themes/dark.css';
 import './styles/themes/accents.css';
@@ -39,6 +40,12 @@ document.addEventListener('touchstart', function(event) {
 document.querySelector('body')?.addEventListener('touchstart', function(event) {
   event.stopPropagation()
 })
+
+const titleBar = document.getElementById('title-bar');
+titleBar?.addEventListener('mousedown', async () => {
+  // 窗口拖曳事件
+  await window.getCurrentWindow().startDragging();
+});
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>

@@ -2,7 +2,7 @@
 
 use crate::log_info;
 
-use async_fetcher::Fetcher;
+// use async_fetcher::Fetcher;
 use serde::{Deserialize, Serialize};
 use sha1::{Digest, Sha1};
 use std::collections::HashMap;
@@ -269,7 +269,7 @@ fn get_native_classifier(library: &Library) -> Option<(String, String)> {
 pub struct DownloadManager {
     pub tasks: Mutex<HashMap<String, DownloadTask>>,
     pub base_path: Mutex<PathBuf>,
-    pub fetcher: Arc<Fetcher<()>>,
+    // pub fetcher: Arc<Fetcher<()>>,
     pub manifest_cache: Mutex<HashMap<String, VersionDownloadManifest>>,
 }
 
@@ -277,20 +277,20 @@ impl DownloadManager {
     pub fn new(base_path: PathBuf) -> Self {
         fs::create_dir_all(&base_path).ok();
         
-        let (events_tx, _events_rx) = mpsc::unbounded_channel();
+        // let (events_tx, _events_rx) = mpsc::unbounded_channel();
         
-        let fetcher: Arc<Fetcher<()>> = Fetcher::default()
-            .connections_per_file(4)
-            .max_part_size(4 * 1024 * 1024)
-            .events(events_tx)
-            .retries(3)
-            .timeout(Duration::from_secs(30))
-            .build();
+        // let fetcher: Arc<Fetcher<()>> = Fetcher::default()
+        //     .connections_per_file(4)
+        //     .max_part_size(4 * 1024 * 1024)
+        //     .events(events_tx)
+        //     .retries(3)
+        //     .timeout(Duration::from_secs(30))
+        //     .build();
 
         Self {
             tasks: Mutex::new(HashMap::new()),
             base_path: Mutex::new(base_path),
-            fetcher,
+            // fetcher,
             manifest_cache: Mutex::new(HashMap::new()),
         }
     }
@@ -538,139 +538,139 @@ pub async fn get_version_download_manifest(
     Ok(manifest)
 }
 
-#[tauri::command]
-pub async fn download_file(
-    url: String,
-    filename: String,
-    sha1: Option<String>,
-    skip_verify: Option<bool>,
-    total_size: Option<u64>,
-    download_manager: State<'_, DownloadManager>,
-) -> Result<DownloadProgress, String> {
-    log_info!("开始下载文件: {} -> {}", url, filename);
+// #[tauri::command]
+// pub async fn download_file(
+//     url: String,
+//     filename: String,
+//     sha1: Option<String>,
+//     skip_verify: Option<bool>,
+//     total_size: Option<u64>,
+//     download_manager: State<'_, DownloadManager>,
+// ) -> Result<DownloadProgress, String> {
+//     log_info!("开始下载文件: {} -> {}", url, filename);
 
-    let task_id = format!("{:x}", md5::compute(&url));
-    let save_path = download_manager.base_path.lock().unwrap().join("temp").join(&filename);
+//     let task_id = format!("{:x}", md5::compute(&url));
+//     let save_path = download_manager.base_path.lock().unwrap().join("temp").join(&filename);
 
-    if let Some(parent) = save_path.parent() {
-        fs::create_dir_all(parent)
-            .map_err(|e| format!("创建目录失败: {}", e))?;
-    }
+//     if let Some(parent) = save_path.parent() {
+//         fs::create_dir_all(parent)
+//             .map_err(|e| format!("创建目录失败: {}", e))?;
+//     }
 
-    let existing_size = if save_path.exists() {
-        fs::metadata(&save_path).map(|m| m.len()).unwrap_or(0)
-    } else {
-        0
-    };
+//     let existing_size = if save_path.exists() {
+//         fs::metadata(&save_path).map(|m| m.len()).unwrap_or(0)
+//     } else {
+//         0
+//     };
 
-    let expected_total = total_size.unwrap_or(0);
+//     let expected_total = total_size.unwrap_or(0);
 
-    let should_verify = skip_verify.unwrap_or(false) == false;
-    if should_verify && save_path.exists() {
-        if let Some(ref expected_sha1) = sha1 {
-            if let Ok(true) = verify_file_sha1(&save_path, expected_sha1) {
-                log_info!("文件已存在且校验通过，跳过下载: {}", filename);
-                if let Some(t) = download_manager.get_task(&task_id) {
-                    let mut updated = t;
-                    updated.status = "completed".to_string();
-                    updated.downloaded_size = existing_size;
-                    updated.total_size = existing_size;
-                    download_manager.update_task(updated);
-                }
-                return Ok(DownloadProgress {
-                    task_id,
-                    downloaded: existing_size,
-                    total: existing_size,
-                    speed: 0.0,
-                    status: "completed".to_string(),
-                });
-            } else {
-                log_info!("文件 SHA1 不匹配，将重新下载: {}", filename);
-            }
-        }
-    }
+//     let should_verify = skip_verify.unwrap_or(false) == false;
+//     if should_verify && save_path.exists() {
+//         if let Some(ref expected_sha1) = sha1 {
+//             if let Ok(true) = verify_file_sha1(&save_path, expected_sha1) {
+//                 log_info!("文件已存在且校验通过，跳过下载: {}", filename);
+//                 if let Some(t) = download_manager.get_task(&task_id) {
+//                     let mut updated = t;
+//                     updated.status = "completed".to_string();
+//                     updated.downloaded_size = existing_size;
+//                     updated.total_size = existing_size;
+//                     download_manager.update_task(updated);
+//                 }
+//                 return Ok(DownloadProgress {
+//                     task_id,
+//                     downloaded: existing_size,
+//                     total: existing_size,
+//                     speed: 0.0,
+//                     status: "completed".to_string(),
+//                 });
+//             } else {
+//                 log_info!("文件 SHA1 不匹配，将重新下载: {}", filename);
+//             }
+//         }
+//     }
 
-    let task = DownloadTask {
-        id: task_id.clone(),
-        url: url.clone(),
-        path: save_path.to_string_lossy().to_string(),
-        filename: filename.clone(),
-        total_size: expected_total,
-        downloaded_size: existing_size,
-        status: "downloading".to_string(),
-    };
-    download_manager.add_task(task);
+//     let task = DownloadTask {
+//         id: task_id.clone(),
+//         url: url.clone(),
+//         path: save_path.to_string_lossy().to_string(),
+//         filename: filename.clone(),
+//         total_size: expected_total,
+//         downloaded_size: existing_size,
+//         status: "downloading".to_string(),
+//     };
+//     download_manager.add_task(task);
 
-    let fetcher = download_manager.fetcher.clone();
+//     let fetcher = download_manager.fetcher.clone();
 
-    match fetcher.request(
-        std::sync::Arc::new([url.clone().into_boxed_str()]),
-        std::sync::Arc::from(std::path::PathBuf::from(&save_path)),
-        std::sync::Arc::new(()),
-    ).await {
-        Ok(_) => {
-            let downloaded = fs::metadata(&save_path)
-                .map(|m| m.len())
-                .unwrap_or(0);
+//     match fetcher.request(
+//         std::sync::Arc::new([url.clone().into_boxed_str()]),
+//         std::sync::Arc::from(std::path::PathBuf::from(&save_path)),
+//         std::sync::Arc::new(()),
+//     ).await {
+//         Ok(_) => {
+//             let downloaded = fs::metadata(&save_path)
+//                 .map(|m| m.len())
+//                 .unwrap_or(0);
             
-            if should_verify {
-                if let Some(ref expected_sha1) = sha1 {
-                    match verify_file_sha1(&save_path, expected_sha1) {
-                        Ok(true) => {
-                            log_info!("SHA1 校验通过: {}", filename);
-                        }
-                        Ok(false) => {
-                            fs::remove_file(&save_path).ok();
-                            if let Some(t) = download_manager.get_task(&task_id) {
-                                let mut updated = t;
-                                updated.status = "failed".to_string();
-                                download_manager.update_task(updated);
-                            }
-                            return Err(format!("SHA1 校验失败: {}", filename));
-                        }
-                        Err(e) => {
-                            fs::remove_file(&save_path).ok();
-                            if let Some(t) = download_manager.get_task(&task_id) {
-                                let mut updated = t;
-                                updated.status = "failed".to_string();
-                                download_manager.update_task(updated);
-                            }
-                            return Err(format!("SHA1 校验出错: {} - {}", filename, e));
-                        }
-                    }
-                }
-            }
+//             if should_verify {
+//                 if let Some(ref expected_sha1) = sha1 {
+//                     match verify_file_sha1(&save_path, expected_sha1) {
+//                         Ok(true) => {
+//                             log_info!("SHA1 校验通过: {}", filename);
+//                         }
+//                         Ok(false) => {
+//                             fs::remove_file(&save_path).ok();
+//                             if let Some(t) = download_manager.get_task(&task_id) {
+//                                 let mut updated = t;
+//                                 updated.status = "failed".to_string();
+//                                 download_manager.update_task(updated);
+//                             }
+//                             return Err(format!("SHA1 校验失败: {}", filename));
+//                         }
+//                         Err(e) => {
+//                             fs::remove_file(&save_path).ok();
+//                             if let Some(t) = download_manager.get_task(&task_id) {
+//                                 let mut updated = t;
+//                                 updated.status = "failed".to_string();
+//                                 download_manager.update_task(updated);
+//                             }
+//                             return Err(format!("SHA1 校验出错: {} - {}", filename, e));
+//                         }
+//                     }
+//                 }
+//             }
 
-            if let Some(t) = download_manager.get_task(&task_id) {
-                let mut updated = t;
-                updated.status = "completed".to_string();
-                updated.downloaded_size = downloaded;
-                updated.total_size = downloaded;
-                download_manager.update_task(updated);
-            }
+//             if let Some(t) = download_manager.get_task(&task_id) {
+//                 let mut updated = t;
+//                 updated.status = "completed".to_string();
+//                 updated.downloaded_size = downloaded;
+//                 updated.total_size = downloaded;
+//                 download_manager.update_task(updated);
+//             }
 
-            log_info!("文件下载完成: {}", filename);
+//             log_info!("文件下载完成: {}", filename);
             
-            Ok(DownloadProgress {
-                task_id,
-                downloaded,
-                total: downloaded,
-                speed: 0.0,
-                status: "completed".to_string(),
-            })
-        }
-        Err(e) => {
-            if let Some(t) = download_manager.get_task(&task_id) {
-                let mut updated = t;
-                updated.status = "failed".to_string();
-                download_manager.update_task(updated);
-            }
+//             Ok(DownloadProgress {
+//                 task_id,
+//                 downloaded,
+//                 total: downloaded,
+//                 speed: 0.0,
+//                 status: "completed".to_string(),
+//             })
+//         }
+//         Err(e) => {
+//             if let Some(t) = download_manager.get_task(&task_id) {
+//                 let mut updated = t;
+//                 updated.status = "failed".to_string();
+//                 download_manager.update_task(updated);
+//             }
             
-            log_info!("文件下载失败: {}", filename);
-            Err(format!("下载失败: {}", e))
-        }
-    }
-}
+//             log_info!("文件下载失败: {}", filename);
+//             Err(format!("下载失败: {}", e))
+//         }
+//     }
+// }
 
 #[tauri::command]
 pub fn get_download_tasks(download_manager: State<'_, DownloadManager>) -> Vec<DownloadTask> {
