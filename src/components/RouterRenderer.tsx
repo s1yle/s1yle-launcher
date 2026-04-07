@@ -83,7 +83,7 @@ const renderAllRoutes = (routeList: RouteConfig[]): React.ReactNode[] => {
 // 这个组件专门负责根据路由配置渲染对应的页面组件
 const RouterRenderer = () => {
     return (
-        <div className="h-full p-8 overflow-hidden">
+        <div className="h-full pl-3 pr-3 overflow-hidden router-renderer">
             <Routes>
                 {renderAllRoutes(routes)}
             </Routes>

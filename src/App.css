@@ -74,3 +74,32 @@ select {
 .dpi-transition-slow {
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+.scrollbar-custom {
+  scrollbar-width: auto;
+  scrollbar-color: rgba(99, 102, 241, 0.4) transparent;
+  padding: 10px;
+}
+
+.scrollbar-custom::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 4px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.4);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.7);
+}
+
+.scrollbar-custom::-webkit-scrollbar-corner {
+  background: transparent;
+}

@@ -58,13 +58,11 @@ function VirtualListInner<T>({
     <div
       ref={containerRef}
       onScroll={handleScroll}
-      className={className}
+      className={`${className || ''} scrollbar-custom pt-3`}
       style={{
         height,
         overflow: 'auto',
         position: 'relative',
-        scrollbarWidth: 'none',
-        msOverflowStyle: 'none',
         ...style,
       }}
     >

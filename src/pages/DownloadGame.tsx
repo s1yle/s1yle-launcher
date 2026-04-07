@@ -15,7 +15,7 @@ const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(
 
 type TabType = 'browse' | 'downloading' | 'installed';
 
-const ITEM_HEIGHT = 88;
+const ITEM_HEIGHT = 72;
 
 const DownloadGame: React.FC = () => {
   const { t } = useTranslation();
@@ -170,12 +170,12 @@ const DownloadGame: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      <div className="p-6 pb-4 border-b border-border flex-shrink-0">
+      <div className="p-4 pb-2 border-b border-border flex-shrink-0">
         <h1 className="text-2xl font-bold text-text-primary mb-2">{t('download.gameTitle')}</h1>
         <p className="text-text-tertiary text-sm">{t('download.gameDesc')}</p>
       </div>
 
-      <div className="flex gap-1 px-6 py-3 flex-shrink-0">
+      <div className="flex gap-1 px-4 py-2 flex-shrink-0">
         {tabs.map(tab => (
           <button
             key={tab.id}
@@ -203,10 +203,10 @@ const DownloadGame: React.FC = () => {
         </div>
       )}
 
-      <div className="flex-1 min-h-0 px-6 py-3 overflow-hidden">
+      <div className="flex-1 min-h-0 px-0 py-2 overflow-hidden">
         {activeTab === 'browse' && (
           <div className="h-full min-h-0 flex flex-col">
-            <div className="flex flex-col sm:flex-row gap-4 mb-4 flex-shrink-0">
+            <div className="flex flex-col sm:flex-row gap-3 mb-3 flex-shrink-0 px-4">
               <div className="flex-1">
                 <input
                   type="text"
@@ -229,7 +229,7 @@ const DownloadGame: React.FC = () => {
             </div>
 
             {manifest?.latest && (
-              <div className="p-3 rounded-lg mb-4 flex-shrink-0"
+              <div className="p-2 rounded-lg mb-2 flex-shrink-0 px-4"
                 style={{ backgroundColor: 'var(--color-primary-bg)', borderColor: 'var(--color-primary)', borderWidth: '1px', borderStyle: 'solid' }}
               >
                 <p className="text-sm" style={{ color: 'var(--color-primary)' }}>
@@ -270,7 +270,7 @@ const DownloadGame: React.FC = () => {
         {activeTab === 'downloading' && (
           <div className="h-full min-h-0 flex flex-col">
             {categoryProgress.length > 0 ? (
-              <div className="space-y-3 flex-1 overflow-y-auto pr-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <div className="space-y-3 flex-1 overflow-y-auto pr-2 scrollbar-custom">
                 <div className="flex justify-between items-center">
                   <p style={{ color: 'var(--color-text-tertiary)' }} className="text-sm">{t('download.downloadProgress')}</p>
                   {isDownloading && (
@@ -318,7 +318,7 @@ const DownloadGame: React.FC = () => {
                 description={t('download.noDownloadDesc')}
               />
             ) : (
-              <div className="space-y-3 flex-1 overflow-y-auto pr-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <div className="space-y-3 flex-1 overflow-y-auto pr-2 scrollbar-custom">
                 <div className="flex justify-between items-center">
                   <p style={{ color: 'var(--color-text-tertiary)' }} className="text-sm">
                     {t('download.totalTasks', { count: downloadTasks.length })}
@@ -356,7 +356,7 @@ const DownloadGame: React.FC = () => {
                 description={t('download.noInstalledDesc')}
               />
             ) : (
-              <div className="flex-1 overflow-y-auto space-y-2 pr-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <div className="flex-1 overflow-y-auto space-y-2 pr-2 scrollbar-custom">
                 {installedVersions.map(version => (
                   <div
                     key={version}
@@ -387,7 +387,7 @@ const DownloadGame: React.FC = () => {
         )}
       </div>
 
-      <div className="px-6 py-3 border-t border-border flex items-center justify-between flex-shrink-0" style={{ backgroundColor: 'var(--color-surface-solid)' }}>
+      <div className="px-4 py-2 border-t border-border flex items-center justify-between flex-shrink-0" style={{ backgroundColor: 'var(--color-surface-solid)' }}>
         <p style={{ color: 'var(--color-text-tertiary)' }} className="text-xs truncate">
           {t('download.downloadDir')}: <span className="font-mono">{downloadPath}</span>
         </p>

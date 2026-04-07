@@ -35,8 +35,8 @@ const VersionListItem: React.FC<VersionListItemProps> = ({
   return (
     <div
       className={cn(
-        'flex items-center gap-4 p-4 bg-surface border rounded-lg transition-all duration-200',
-        'hover:border-primary/50 hover:bg-surface-hover hover:shadow-lg hover:shadow-primary/5 hover:scale-[1.01]',
+        'flex items-center gap-3 p-3 bg-surface border rounded-lg transition-all duration-200',
+        'hover:border-primary/50 hover:bg-primary-bg hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-0.5',
         'active:scale-[0.99]',
         installed ? 'border-success/60' : 'border-border'
       )}
@@ -45,64 +45,64 @@ const VersionListItem: React.FC<VersionListItemProps> = ({
       }}
     >
       <div
-        className="w-10 h-10 bg-primary-bg rounded-lg flex items-center justify-center flex-shrink-0 cursor-pointer"
+        className="w-9 h-9 bg-primary-bg rounded-lg flex items-center justify-center flex-shrink-0 cursor-pointer"
         onClick={onClick}
       >
-        <Package className="w-5 h-5 text-primary" />
+        <Package className="w-4 h-4 text-primary" />
       </div>
 
       <div className="flex-1 min-w-0 cursor-pointer" onClick={onClick}>
         <div className="flex items-center gap-2">
-          <h3 className="text-text-primary font-medium truncate">{version.id}</h3>
+          <h3 className="text-text-primary font-medium text-sm truncate">{version.id}</h3>
           <StatusBadge type={version.type_} />
           {installed && (
-            <span className="px-2 py-0.5 text-xs rounded bg-success-bg text-success border border-success">
+            <span className="px-1.5 py-0.5 text-[10px] rounded bg-success-bg text-success border border-success">
               已安装
             </span>
           )}
         </div>
-        <p className="text-text-tertiary text-sm mt-0.5">
+        <p className="text-text-tertiary text-xs mt-0.5">
           {formatDate(version.release_time)}
         </p>
       </div>
 
       <button
         onClick={(e) => { e.stopPropagation(); onWikiClick(); }}
-        className="flex items-center gap-1 px-3 py-1.5 text-xs text-text-secondary hover:text-primary transition-colors rounded hover:bg-surface-hover flex-shrink-0"
+        className="flex items-center gap-1 px-2 py-1 text-[10px] text-text-secondary hover:text-primary transition-colors rounded hover:bg-surface-hover flex-shrink-0"
         title="Minecraft Wiki"
       >
-        <ExternalLink className="w-3.5 h-3.5" />
+        <ExternalLink className="w-3 h-3" />
         <span className="hidden sm:inline">Wiki</span>
       </button>
 
       <div className="flex items-center gap-2 flex-shrink-0">
         {installed ? (
           <div className="flex items-center gap-2">
-            <CheckCircle className="w-5 h-5 text-success" />
+            <CheckCircle className="w-4 h-4 text-success" />
           </div>
         ) : downloading ? (
           <button
             onClick={(e) => { e.stopPropagation(); onDownload?.(); }}
-            className="px-3 py-1.5 text-xs rounded bg-surface-active text-text-secondary flex items-center gap-1.5"
+            className="px-2 py-1 text-[10px] rounded bg-surface-active text-text-secondary flex items-center gap-1"
           >
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <Loader2 className="w-3 h-3 animate-spin" />
             下载中
           </button>
         ) : isDeploying ? (
-          <div className="w-20 text-xs text-text-tertiary">
+          <div className="w-16 text-[10px] text-text-tertiary">
             部署中 {deployProgress ?? 0}%
           </div>
         ) : onDownload ? (
           <button
             onClick={(e) => { e.stopPropagation(); onDownload(); }}
-            className="px-3 py-1.5 text-xs rounded bg-primary hover:bg-primary-hover text-text-primary transition-colors"
+            className="px-2 py-1 text-[10px] rounded bg-primary hover:bg-primary-hover text-text-primary transition-colors"
           >
             下载
           </button>
         ) : onDeploy ? (
           <button
             onClick={(e) => { e.stopPropagation(); onDeploy(); }}
-            className="px-3 py-1.5 text-xs rounded bg-success hover:bg-success text-text-primary transition-colors"
+            className="px-2 py-1 text-[10px] rounded bg-success hover:bg-success text-text-primary transition-colors"
           >
             部署
           </button>
