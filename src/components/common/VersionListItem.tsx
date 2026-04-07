@@ -35,10 +35,14 @@ const VersionListItem: React.FC<VersionListItemProps> = ({
   return (
     <div
       className={cn(
-        'flex items-center gap-4 p-4 bg-surface border rounded-lg transition-all',
-        'hover:border-border-hover',
-        installed && 'border-success'
+        'flex items-center gap-4 p-4 bg-surface border rounded-lg transition-all duration-200',
+        'hover:border-primary/50 hover:bg-surface-hover hover:shadow-lg hover:shadow-primary/5 hover:scale-[1.01]',
+        'active:scale-[0.99]',
+        installed ? 'border-success/60' : 'border-border'
       )}
+      style={{
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+      }}
     >
       <div
         className="w-10 h-10 bg-primary-bg rounded-lg flex items-center justify-center flex-shrink-0 cursor-pointer"

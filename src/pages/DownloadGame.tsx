@@ -15,7 +15,7 @@ const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(
 
 type TabType = 'browse' | 'downloading' | 'installed';
 
-const ITEM_HEIGHT = 80;
+const ITEM_HEIGHT = 88;
 
 const DownloadGame: React.FC = () => {
   const { t } = useTranslation();
@@ -203,7 +203,7 @@ const DownloadGame: React.FC = () => {
         </div>
       )}
 
-      <div className="flex-1 min-h-0 px-6 py-2 overflow-hidden">
+      <div className="flex-1 min-h-0 px-6 py-3 overflow-hidden">
         {activeTab === 'browse' && (
           <div className="h-full min-h-0 flex flex-col">
             <div className="flex flex-col sm:flex-row gap-4 mb-4 flex-shrink-0">

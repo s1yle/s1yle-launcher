@@ -948,6 +948,33 @@ export const openUrl = async (
   return await invokeRustFunction("open_url", { url }, options);
 };
 
+export interface WindowPosition {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  maximized: boolean;
+}
+
+export const saveWindowPosition = async (
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  maximized: boolean,
+  options?: InvokeOptions
+): Promise<void> => {
+  logger.info('保存窗口位置', { x, y, width, height, maximized });
+  await invokeRustFunction("save_window_position", { x, y, width, height, maximized }, options);
+};
+
+export const loadWindowPosition = async (
+  options?: InvokeOptions
+): Promise<WindowPosition | null> => {
+  logger.info('加载窗口位置');
+  return await invokeRustFunction("load_window_position", {}, options);
+};
+
 export interface KnownPath {
   id: string;
   name: string;

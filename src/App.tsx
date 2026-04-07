@@ -10,6 +10,7 @@ import { useThemeStore } from './stores/themeStore';
 import { useAppStore } from './stores/appStore';
 import { logger } from './helper/logger';
 import RouterRenderer from './components/RouterRenderer';
+import { useWindowPosition } from './hooks/useWindowPosition';
 import './helper/i18n';
 
 const PAGE_TRANSITION_DURATION = 0.35;
@@ -78,6 +79,8 @@ const MainLayout = () => {
 function App() {
   const initTheme = useThemeStore((s) => s.init);
   const initApp = useAppStore((s) => s.init);
+
+  useWindowPosition();
 
   useEffect(() => {
     initTheme();

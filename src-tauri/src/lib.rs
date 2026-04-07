@@ -26,7 +26,11 @@ pub use crate::launch::{
 };
 pub use crate::window::{
     close_window,
-    tauri_close_window
+    tauri_close_window,
+    save_window_position,
+    load_window_position,
+    get_saved_window_position,
+    WindowPosition
 };
 pub use crate::download::{
     get_version_manifest,
@@ -295,6 +299,9 @@ pub fn run() {
             tauri_get_launch_config,
             tauri_update_launch_config,
             tauri_close_window,
+            save_window_position,
+            load_window_position,
+            get_saved_window_position,
             log_frontend,
             save_accounts_to_disk,
             load_accounts_from_disk,
