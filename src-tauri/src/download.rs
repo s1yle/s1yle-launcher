@@ -2,26 +2,26 @@
 
 use crate::log_info;
 
-// use async_fetcher::Fetcher;
 use serde::{Deserialize, Serialize};
 use sha1::{Digest, Sha1};
 use std::collections::HashMap;
 use std::fs;
-use std::io::Read;
+use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::PathBuf;
-use std::sync::Arc;
 use std::sync::Mutex;
-use std::time::Duration;
 use tauri::State;
-use tokio::sync::mpsc;
+
+const CHUNK_SIZE: u64 = 4 * 1024 * 1024;
+const MAX_CHUNKS: usize = 8;
+const MAX_RETRIES: u32 = 3;
 
 fn calculate_file_sha1(path: &std::path::Path) -> Result<String, String> {
     let mut file = fs::File::open(path)
         .map_err(|e| format!("打开文件失败: {}", e))?;
-    
+
     let mut hasher = Sha1::new();
     let mut buffer = [0u8; 8192];
-    
+
     loop {
         let bytes_read = file.read(&mut buffer)
             .map_err(|e| format!("读取文件失败: {}", e))?;
@@ -30,7 +30,7 @@ fn calculate_file_sha1(path: &std::path::Path) -> Result<String, String> {
         }
         hasher.update(&buffer[..bytes_read]);
     }
-    
+
     let result = hasher.finalize();
     Ok(hex::encode(result))
 }
@@ -38,11 +38,11 @@ fn calculate_file_sha1(path: &std::path::Path) -> Result<String, String> {
 fn verify_file_sha1(path: &std::path::Path, expected_sha1: &str) -> Result<bool, String> {
     let actual_sha1 = calculate_file_sha1(path)?;
     let matches = actual_sha1.eq_ignore_ascii_case(expected_sha1);
-    
+
     if !matches {
         log_info!("SHA1 校验失败: 期望 {} 实际 {}", expected_sha1, actual_sha1);
     }
-    
+
     Ok(matches)
 }
 
@@ -239,7 +239,7 @@ fn get_native_classifier(library: &Library) -> Option<(String, String)> {
     let natives = library.natives.as_ref()?;
     let os = get_current_os();
     let arch = get_current_arch();
-    
+
     let native_key = match os {
         "windows" => {
             if arch == "x64" {
@@ -269,29 +269,24 @@ fn get_native_classifier(library: &Library) -> Option<(String, String)> {
 pub struct DownloadManager {
     pub tasks: Mutex<HashMap<String, DownloadTask>>,
     pub base_path: Mutex<PathBuf>,
-    // pub fetcher: Arc<Fetcher<()>>,
     pub manifest_cache: Mutex<HashMap<String, VersionDownloadManifest>>,
+    pub client: reqwest::Client,
 }
 
 impl DownloadManager {
     pub fn new(base_path: PathBuf) -> Self {
         fs::create_dir_all(&base_path).ok();
-        
-        // let (events_tx, _events_rx) = mpsc::unbounded_channel();
-        
-        // let fetcher: Arc<Fetcher<()>> = Fetcher::default()
-        //     .connections_per_file(4)
-        //     .max_part_size(4 * 1024 * 1024)
-        //     .events(events_tx)
-        //     .retries(3)
-        //     .timeout(Duration::from_secs(30))
-        //     .build();
+
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(30))
+            .build()
+            .expect("Failed to create HTTP client");
 
         Self {
             tasks: Mutex::new(HashMap::new()),
             base_path: Mutex::new(base_path),
-            // fetcher,
             manifest_cache: Mutex::new(HashMap::new()),
+            client,
         }
     }
 
@@ -418,7 +413,7 @@ async fn parse_version_downloads(version_json: &serde_json::Value) -> Result<Ver
         let index_id = version_json["assetIndex"]["id"]
             .as_str()
             .unwrap_or("pre-1.6");
-        
+
         asset_index = Some(FileDownload {
             url: version_json["assetIndex"]["url"]
                 .as_str()
@@ -436,7 +431,7 @@ async fn parse_version_downloads(version_json: &serde_json::Value) -> Result<Ver
                     let is_legacy = version_json["assets"].as_str() == Some("pre-1.6")
                         || version_json["assets"].is_null()
                         || version_json["assets"].as_str().is_none();
-                    
+
                     for (virtual_path, obj) in asset_objects {
                         let hash = &obj.hash;
                         let path = if is_legacy {
@@ -538,139 +533,321 @@ pub async fn get_version_download_manifest(
     Ok(manifest)
 }
 
-// #[tauri::command]
-// pub async fn download_file(
-//     url: String,
-//     filename: String,
-//     sha1: Option<String>,
-//     skip_verify: Option<bool>,
-//     total_size: Option<u64>,
-//     download_manager: State<'_, DownloadManager>,
-// ) -> Result<DownloadProgress, String> {
-//     log_info!("开始下载文件: {} -> {}", url, filename);
+async fn get_content_length(client: &reqwest::Client, url: &str) -> Result<u64, String> {
+    let resp = client
+        .head(url)
+        .send()
+        .await
+        .map_err(|e| format!("HEAD 请求失败: {}", e))?;
 
-//     let task_id = format!("{:x}", md5::compute(&url));
-//     let save_path = download_manager.base_path.lock().unwrap().join("temp").join(&filename);
+    resp.content_length()
+        .ok_or_else(|| "无法获取文件大小".to_string())
+}
 
-//     if let Some(parent) = save_path.parent() {
-//         fs::create_dir_all(parent)
-//             .map_err(|e| format!("创建目录失败: {}", e))?;
-//     }
+struct ChunkResult {
+    chunk_index: usize,
+    data: Vec<u8>,
+}
 
-//     let existing_size = if save_path.exists() {
-//         fs::metadata(&save_path).map(|m| m.len()).unwrap_or(0)
-//     } else {
-//         0
-//     };
+async fn download_chunk(
+    client: &reqwest::Client,
+    url: &str,
+    start: u64,
+    end: u64,
+    chunk_index: usize,
+) -> Result<ChunkResult, String> {
+    let mut retries = 0;
+    loop {
+        let resp = client
+            .get(url)
+            .header("Range", format!("bytes={}-{}", start, end))
+            .send()
+            .await
+            .map_err(|e| format!("分块请求失败: {}", e));
 
-//     let expected_total = total_size.unwrap_or(0);
+        match resp {
+            Ok(resp) => {
+                let status = resp.status();
+                if !status.is_success() && status != 206 {
+                    return Err(format!("分块请求返回状态码: {}", status));
+                }
 
-//     let should_verify = skip_verify.unwrap_or(false) == false;
-//     if should_verify && save_path.exists() {
-//         if let Some(ref expected_sha1) = sha1 {
-//             if let Ok(true) = verify_file_sha1(&save_path, expected_sha1) {
-//                 log_info!("文件已存在且校验通过，跳过下载: {}", filename);
-//                 if let Some(t) = download_manager.get_task(&task_id) {
-//                     let mut updated = t;
-//                     updated.status = "completed".to_string();
-//                     updated.downloaded_size = existing_size;
-//                     updated.total_size = existing_size;
-//                     download_manager.update_task(updated);
-//                 }
-//                 return Ok(DownloadProgress {
-//                     task_id,
-//                     downloaded: existing_size,
-//                     total: existing_size,
-//                     speed: 0.0,
-//                     status: "completed".to_string(),
-//                 });
-//             } else {
-//                 log_info!("文件 SHA1 不匹配，将重新下载: {}", filename);
-//             }
-//         }
-//     }
+                let data = resp
+                    .bytes()
+                    .await
+                    .map_err(|e| format!("读取分块数据失败: {}", e))
+                    .map(|b| b.to_vec())?;
 
-//     let task = DownloadTask {
-//         id: task_id.clone(),
-//         url: url.clone(),
-//         path: save_path.to_string_lossy().to_string(),
-//         filename: filename.clone(),
-//         total_size: expected_total,
-//         downloaded_size: existing_size,
-//         status: "downloading".to_string(),
-//     };
-//     download_manager.add_task(task);
+                return Ok(ChunkResult { chunk_index, data });
+            }
+            Err(e) => {
+                retries += 1;
+                if retries >= MAX_RETRIES {
+                    return Err(format!("分块 {} 下载失败 (已重试 {} 次): {}", chunk_index, retries, e));
+                }
+                tokio::time::sleep(std::time::Duration::from_millis(500 * retries as u64)).await;
+            }
+        }
+    }
+}
 
-//     let fetcher = download_manager.fetcher.clone();
+async fn download_file_chunked(
+    client: &reqwest::Client,
+    url: &str,
+    save_path: &std::path::Path,
+    total_size: u64,
+    task_id: &str,
+    download_manager: &State<'_, DownloadManager>,
+) -> Result<u64, String> {
+    let num_chunks = std::cmp::min(
+        MAX_CHUNKS,
+        std::cmp::max(1, (total_size + CHUNK_SIZE - 1) / CHUNK_SIZE) as usize,
+    );
 
-//     match fetcher.request(
-//         std::sync::Arc::new([url.clone().into_boxed_str()]),
-//         std::sync::Arc::from(std::path::PathBuf::from(&save_path)),
-//         std::sync::Arc::new(()),
-//     ).await {
-//         Ok(_) => {
-//             let downloaded = fs::metadata(&save_path)
-//                 .map(|m| m.len())
-//                 .unwrap_or(0);
-            
-//             if should_verify {
-//                 if let Some(ref expected_sha1) = sha1 {
-//                     match verify_file_sha1(&save_path, expected_sha1) {
-//                         Ok(true) => {
-//                             log_info!("SHA1 校验通过: {}", filename);
-//                         }
-//                         Ok(false) => {
-//                             fs::remove_file(&save_path).ok();
-//                             if let Some(t) = download_manager.get_task(&task_id) {
-//                                 let mut updated = t;
-//                                 updated.status = "failed".to_string();
-//                                 download_manager.update_task(updated);
-//                             }
-//                             return Err(format!("SHA1 校验失败: {}", filename));
-//                         }
-//                         Err(e) => {
-//                             fs::remove_file(&save_path).ok();
-//                             if let Some(t) = download_manager.get_task(&task_id) {
-//                                 let mut updated = t;
-//                                 updated.status = "failed".to_string();
-//                                 download_manager.update_task(updated);
-//                             }
-//                             return Err(format!("SHA1 校验出错: {} - {}", filename, e));
-//                         }
-//                     }
-//                 }
-//             }
+    if num_chunks == 1 {
+        return download_file_single(client, url, save_path, task_id, download_manager).await;
+    }
 
-//             if let Some(t) = download_manager.get_task(&task_id) {
-//                 let mut updated = t;
-//                 updated.status = "completed".to_string();
-//                 updated.downloaded_size = downloaded;
-//                 updated.total_size = downloaded;
-//                 download_manager.update_task(updated);
-//             }
+    log_info!("开始分块下载: {} ({} 块, {} bytes)", url, num_chunks, total_size);
 
-//             log_info!("文件下载完成: {}", filename);
-            
-//             Ok(DownloadProgress {
-//                 task_id,
-//                 downloaded,
-//                 total: downloaded,
-//                 speed: 0.0,
-//                 status: "completed".to_string(),
-//             })
-//         }
-//         Err(e) => {
-//             if let Some(t) = download_manager.get_task(&task_id) {
-//                 let mut updated = t;
-//                 updated.status = "failed".to_string();
-//                 download_manager.update_task(updated);
-//             }
-            
-//             log_info!("文件下载失败: {}", filename);
-//             Err(format!("下载失败: {}", e))
-//         }
-//     }
-// }
+    let mut file = fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(save_path)
+        .map_err(|e| format!("创建文件失败: {}", e))?;
+
+    file.set_len(total_size)
+        .map_err(|e| format!("预分配文件空间失败: {}", e))?;
+
+    let mut handles = Vec::new();
+    for i in 0..num_chunks {
+        let start = i as u64 * CHUNK_SIZE;
+        let end = std::cmp::min(start + CHUNK_SIZE - 1, total_size - 1);
+
+        let client = client.clone();
+        let url = url.to_string();
+        handles.push(tokio::spawn(async move {
+            download_chunk(&client, &url, start, end, i).await
+        }));
+    }
+
+    let mut downloaded: u64 = 0;
+    let mut results = Vec::with_capacity(num_chunks);
+
+    for handle in handles {
+        let result = handle
+            .await
+            .map_err(|e| format!("任务执行失败: {}", e))??;
+
+        downloaded += result.data.len() as u64;
+        results.push(result);
+
+        if let Some(t) = download_manager.get_task(task_id) {
+            let mut updated = t;
+            updated.downloaded_size = downloaded;
+            updated.total_size = total_size;
+            download_manager.update_task(updated);
+        }
+    }
+
+    for result in &results {
+        let offset = result.chunk_index as u64 * CHUNK_SIZE;
+        file.seek(SeekFrom::Start(offset))
+            .map_err(|e| format!("文件定位失败: {}", e))?;
+        file.write_all(&result.data)
+            .map_err(|e| format!("写入分块数据失败: {}", e))?;
+    }
+
+    file.flush()
+        .map_err(|e| format!("刷新文件失败: {}", e))?;
+
+    log_info!("分块下载完成: {} ({} bytes)", url, downloaded);
+    Ok(downloaded)
+}
+
+async fn download_file_single(
+    client: &reqwest::Client,
+    url: &str,
+    save_path: &std::path::Path,
+    task_id: &str,
+    download_manager: &State<'_, DownloadManager>,
+) -> Result<u64, String> {
+    log_info!("开始下载: {}", url);
+
+    let mut resp = client
+        .get(url)
+        .send()
+        .await
+        .map_err(|e| format!("请求失败: {}", e))?;
+
+    let total = resp.content_length().unwrap_or(0);
+    let mut file = fs::File::create(save_path)
+        .map_err(|e| format!("创建文件失败: {}", e))?;
+
+    let mut downloaded: u64 = 0;
+
+    while let Some(chunk) = resp
+        .chunk()
+        .await
+        .map_err(|e| format!("读取数据失败: {}", e))?
+    {
+        file.write_all(&chunk)
+            .map_err(|e| format!("写入文件失败: {}", e))?;
+        downloaded += chunk.len() as u64;
+
+        if let Some(t) = download_manager.get_task(task_id) {
+            let mut updated = t;
+            updated.downloaded_size = downloaded;
+            updated.total_size = total;
+            download_manager.update_task(updated);
+        }
+    }
+
+    log_info!("下载完成: {} ({} bytes)", url, downloaded);
+    Ok(downloaded)
+}
+
+#[tauri::command]
+pub async fn download_file(
+    url: String,
+    filename: String,
+    sha1: Option<String>,
+    skip_verify: Option<bool>,
+    total_size: Option<u64>,
+    download_manager: State<'_, DownloadManager>,
+) -> Result<DownloadProgress, String> {
+    log_info!("开始下载文件: {} -> {}", url, filename);
+
+    let task_id = format!("{:x}", md5::compute(&url));
+    let save_path = download_manager.base_path.lock().unwrap().join("temp").join(&filename);
+
+    if let Some(parent) = save_path.parent() {
+        fs::create_dir_all(parent)
+            .map_err(|e| format!("创建目录失败: {}", e))?;
+    }
+
+    let existing_size = if save_path.exists() {
+        fs::metadata(&save_path).map(|m| m.len()).unwrap_or(0)
+    } else {
+        0
+    };
+
+    let expected_total = total_size.unwrap_or(0);
+
+    let should_verify = skip_verify.unwrap_or(false) == false;
+    if should_verify && save_path.exists() {
+        if let Some(ref expected_sha1) = sha1 {
+            if let Ok(true) = verify_file_sha1(&save_path, expected_sha1) {
+                log_info!("文件已存在且校验通过，跳过下载: {}", filename);
+                if let Some(t) = download_manager.get_task(&task_id) {
+                    let mut updated = t;
+                    updated.status = "completed".to_string();
+                    updated.downloaded_size = existing_size;
+                    updated.total_size = existing_size;
+                    download_manager.update_task(updated);
+                }
+                return Ok(DownloadProgress {
+                    task_id,
+                    downloaded: existing_size,
+                    total: existing_size,
+                    speed: 0.0,
+                    status: "completed".to_string(),
+                });
+            } else {
+                log_info!("文件 SHA1 不匹配，将重新下载: {}", filename);
+            }
+        }
+    }
+
+    let task = DownloadTask {
+        id: task_id.clone(),
+        url: url.clone(),
+        path: save_path.to_string_lossy().to_string(),
+        filename: filename.clone(),
+        total_size: expected_total,
+        downloaded_size: existing_size,
+        status: "downloading".to_string(),
+    };
+    download_manager.add_task(task);
+
+    let actual_size = if expected_total > 0 {
+        expected_total
+    } else {
+        match get_content_length(&download_manager.client, &url).await {
+            Ok(size) => size,
+            Err(_) => 0,
+        }
+    };
+
+    let downloaded = if actual_size > CHUNK_SIZE {
+        download_file_chunked(
+            &download_manager.client,
+            &url,
+            &save_path,
+            actual_size,
+            &task_id,
+            &download_manager,
+        )
+        .await?
+    } else {
+        download_file_single(
+            &download_manager.client,
+            &url,
+            &save_path,
+            &task_id,
+            &download_manager,
+        )
+        .await?
+    };
+
+    if should_verify {
+        if let Some(ref expected_sha1) = sha1 {
+            match verify_file_sha1(&save_path, expected_sha1) {
+                Ok(true) => {
+                    log_info!("SHA1 校验通过: {}", filename);
+                }
+                Ok(false) => {
+                    fs::remove_file(&save_path).ok();
+                    if let Some(t) = download_manager.get_task(&task_id) {
+                        let mut updated = t;
+                        updated.status = "failed".to_string();
+                        download_manager.update_task(updated);
+                    }
+                    return Err(format!("SHA1 校验失败: {}", filename));
+                }
+                Err(e) => {
+                    fs::remove_file(&save_path).ok();
+                    if let Some(t) = download_manager.get_task(&task_id) {
+                        let mut updated = t;
+                        updated.status = "failed".to_string();
+                        download_manager.update_task(updated);
+                    }
+                    return Err(format!("SHA1 校验出错: {} - {}", filename, e));
+                }
+            }
+        }
+    }
+
+    if let Some(t) = download_manager.get_task(&task_id) {
+        let mut updated = t;
+        updated.status = "completed".to_string();
+        updated.downloaded_size = downloaded;
+        updated.total_size = downloaded;
+        download_manager.update_task(updated);
+    }
+
+    log_info!("文件下载完成: {}", filename);
+
+    Ok(DownloadProgress {
+        task_id,
+        downloaded,
+        total: downloaded,
+        speed: 0.0,
+        status: "completed".to_string(),
+    })
+}
 
 #[tauri::command]
 pub fn get_download_tasks(download_manager: State<'_, DownloadManager>) -> Vec<DownloadTask> {
@@ -762,14 +939,14 @@ pub fn set_download_base_path(
 #[allow(dead_code)]
 fn deploy_file_to_path(base_path: &PathBuf, file: &FileDownload) -> Result<String, String> {
     let dest_path = base_path.join(&file.path);
-    
+
     if let Some(parent) = dest_path.parent() {
         fs::create_dir_all(parent)
             .map_err(|e| format!("创建目录失败: {}", e))?;
     }
-    
+
     let source_path = base_path.join("temp").join(&file.path);
-    
+
     if source_path.exists() {
         fs::rename(&source_path, &dest_path)
             .map_err(|e| format!("移动文件失败: {}", e))?;
@@ -779,7 +956,7 @@ fn deploy_file_to_path(base_path: &PathBuf, file: &FileDownload) -> Result<Strin
     } else {
         return Err(format!("源文件不存在: {}", source_path.display()));
     }
-    
+
     Ok(dest_path.to_string_lossy().to_string())
 }
 
@@ -798,7 +975,7 @@ pub async fn deploy_version_files(
     download_manager: State<'_, DownloadManager>,
 ) -> Result<String, String> {
     log_info!("开始部署版本文件: {}", version_id);
-    
+
     let manifest = get_version_download_manifest(version_id.clone(), download_manager.clone()).await?;
     deploy_manifest(&manifest, version_id, &download_manager).await
 }
@@ -810,18 +987,18 @@ async fn deploy_manifest(
 ) -> Result<String, String> {
     let base_path = download_manager.base_path.lock().unwrap().clone();
     let base_path = &base_path;
-    
+
     let mut deployed = 0;
-    
+
     for lib in &manifest.libraries {
         let source = base_path.join("temp").join(&lib.path);
         let dest = base_path.join("libraries").join(&lib.path);
-        
+
         if let Some(parent) = dest.parent() {
             fs::create_dir_all(parent)
                 .map_err(|e| format!("创建目录失败: {}", e))?;
         }
-        
+
         if source.exists() {
             fs::rename(&source, &dest)
                 .map_err(|e| format!("部署库文件失败: {}", e))?;
@@ -832,15 +1009,15 @@ async fn deploy_manifest(
             log_info!("[{} / {}] 库已存在: {}", deployed, manifest.libraries.len(), lib.path);
         }
     }
-    
+
     let natives_dir = base_path.join("natives").join(&version_id);
     if manifest.natives.first().is_some() {
         fs::create_dir_all(&natives_dir)
             .map_err(|e| format!("创建原生库目录失败: {}", e))?;
-        
+
         for native in &manifest.natives {
             let source = base_path.join("temp").join(&native.path);
-            
+
             if source.exists() {
                 extract_jar(&source, &natives_dir)?;
                 fs::remove_file(&source).ok();
@@ -848,16 +1025,16 @@ async fn deploy_manifest(
             }
         }
     }
-    
+
     for asset in &manifest.assets {
         let source = base_path.join("temp").join(&asset.path);
         let dest = base_path.join("assets").join(&asset.path);
-        
+
         if let Some(parent) = dest.parent() {
             fs::create_dir_all(parent)
                 .map_err(|e| format!("创建资源目录失败: {}", e))?;
         }
-        
+
         if source.exists() {
             fs::rename(&source, &dest)
                 .map_err(|e| format!("部署资源文件失败: {}", e))?;
@@ -866,27 +1043,27 @@ async fn deploy_manifest(
             deployed += 1;
         }
     }
-    
+
     if let Some(ref client) = manifest.client_jar {
         let source = base_path.join("temp").join(&client.path);
         let dest = base_path.join("versions").join(&version_id).join(format!("{}.jar", &version_id));
-        
+
         if let Some(parent) = dest.parent() {
             fs::create_dir_all(parent)
                 .map_err(|e| format!("创建版本目录失败: {}", e))?;
         }
-        
+
         if source.exists() {
             fs::rename(&source, &dest)
                 .map_err(|e| format!("部署客户端 jar 失败: {}", e))?;
         }
     }
-    
+
     let temp_dir = base_path.join("temp");
     if temp_dir.exists() {
         fs::remove_dir_all(&temp_dir).ok();
     }
-    
+
     log_info!("版本 {} 部署完成，共部署 {} 个文件", version_id, deployed);
     Ok(format!("版本 {} 部署完成", version_id))
 }
@@ -894,19 +1071,19 @@ async fn deploy_manifest(
 fn extract_jar(jar_path: &PathBuf, dest_dir: &PathBuf) -> Result<(), String> {
     let file = fs::File::open(jar_path)
         .map_err(|e| format!("打开 jar 文件失败: {}", e))?;
-    
+
     let mut archive = zip::ZipArchive::new(file)
         .map_err(|e| format!("解析 zip 失败: {}", e))?;
-    
+
     for i in 0..archive.len() {
         let mut file = archive.by_index(i)
             .map_err(|e| format!("读取 zip 条目失败: {}", e))?;
-        
+
         let outpath = match file.enclosed_name() {
             Some(path) => dest_dir.join(path),
             None => continue,
         };
-        
+
         if file.name().ends_with('/') {
             fs::create_dir_all(&outpath)
                 .map_err(|e| format!("创建目录失败: {}", e))?;
@@ -917,14 +1094,14 @@ fn extract_jar(jar_path: &PathBuf, dest_dir: &PathBuf) -> Result<(), String> {
                         .map_err(|e| format!("创建父目录失败: {}", e))?;
                 }
             }
-            
+
             let mut outfile = fs::File::create(&outpath)
                 .map_err(|e| format!("创建文件失败: {}", e))?;
             std::io::copy(&mut file, &mut outfile)
                 .map_err(|e| format!("复制文件失败: {}", e))?;
         }
     }
-    
+
     Ok(())
 }
 
