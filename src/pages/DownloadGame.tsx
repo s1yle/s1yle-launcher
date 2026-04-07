@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Loader2, CheckCircle, FolderOpen } from 'lucide-react';
@@ -7,7 +7,7 @@ import { GameVersion, openFolder, openUrl } from '../helper/rustInvoke';
 import { ProgressBar, DownloadItem, VersionListItem, VersionFilterDropdown, EmptyState, useNotification, VirtualList } from '../components/common';
 import { useNavStore } from '../stores/navStore';
 import { getWikiUrl } from '../utils/modloaderCompat';
-import { VersionCategory, filterVersionsByCategory } from '../utils/versionFilter';
+import { VersionCategory, filterVersionsByCategory, debugVersionTypes } from '../utils/versionFilter';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -42,36 +42,50 @@ const DownloadGame: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('browse');
   const [filter, setFilter] = useState<VersionCategory>('release');
   const [searchQuery, setSearchQuery] = useState('');
-  const [downloadingVersions, setDownloadingVersions] = useState<Set<string>>(new Set());
-  const [deployingVersions, setDeployingVersions] = useState<Set<string>>(new Set());
+  const [downloadingVersions] = useState(() => new Set<string>());
+  const [deployingVersions] = useState(() => new Set<string>());
 
-  const filteredVersions = useCallback(() => {
-    if (!manifest) return [];
+  // Debug: Log version type distribution
+  useMemo(() => {
+    if (manifest?.versions) {
+      console.log('=== Version Types Debug ===');
+      debugVersionTypes(manifest.versions);
+    }
+  }, [manifest?.versions]);
+
+  // Memoized version list to avoid unnecessary recalculations
+  const versionsToShow = useMemo(() => {
+    if (!manifest?.versions) return [];
     let versions = filterVersionsByCategory(manifest.versions, filter);
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       versions = versions.filter(v =>
         v.id.toLowerCase().includes(query) ||
-        v.name.toLowerCase().includes(query)
+        (v.name && v.name.toLowerCase().includes(query))
       );
     }
 
     return versions;
-  }, [manifest, filter, searchQuery]);
+  }, [manifest?.versions, filter, searchQuery]);
 
-  const handleVersionClick = (version: GameVersion) => {
+  // Memoized installed versions set for O(1) lookup
+  const installedSet = useMemo(() => 
+    new Set(installedVersions),
+  [installedVersions]);
+
+  const handleVersionClick = useCallback((version: GameVersion) => {
     navigate(`/download/game/${encodeURIComponent(version.id)}`);
     setCurrentPath(`/download/game/${encodeURIComponent(version.id)}`);
-  };
+  }, [navigate, setCurrentPath]);
 
-  const handleWikiClick = (versionId: string) => {
+  const handleWikiClick = useCallback((versionId: string) => {
     openUrl(getWikiUrl(versionId));
-  };
+  }, []);
 
-  const handleDownload = async (version: GameVersion) => {
+  const handleDownload = useCallback(async (version: GameVersion) => {
     if (downloadingVersions.has(version.id)) return;
-    setDownloadingVersions(prev => new Set(prev).add(version.id));
+    downloadingVersions.add(version.id);
 
     try {
       info(t('notification.downloadStarted'), `${version.id}...`);
@@ -80,17 +94,13 @@ const DownloadGame: React.FC = () => {
     } catch (e) {
       notifyError(t('notification.error'), e instanceof Error ? e.message : t('notification.downloadFailed'));
     } finally {
-      setDownloadingVersions(prev => {
-        const next = new Set(prev);
-        next.delete(version.id);
-        return next;
-      });
+      downloadingVersions.delete(version.id);
     }
-  };
+  }, [downloadVersion, info, notifyError, success, t, downloadingVersions]);
 
-  const handleDeploy = async (versionId: string) => {
+  const handleDeploy = useCallback(async (versionId: string) => {
     if (deployingVersions.has(versionId)) return;
-    setDeployingVersions(prev => new Set(prev).add(versionId));
+    deployingVersions.add(versionId);
 
     try {
       info(t('download.deploying'), `${versionId}...`);
@@ -99,54 +109,64 @@ const DownloadGame: React.FC = () => {
     } catch (e) {
       notifyError(t('notification.error'), e instanceof Error ? e.message : t('notification.deployFailed'));
     } finally {
-      setDeployingVersions(prev => {
-        const next = new Set(prev);
-        next.delete(versionId);
-        return next;
-      });
+      deployingVersions.delete(versionId);
     }
-  };
+  }, [deployVersion, info, notifyError, success, t, deployingVersions]);
 
-  const handleCancel = async (task: { id: string }) => {
+  const handleCancel = useCallback(async (task: { id: string }) => {
     try {
       await cancelTask(task.id);
     } catch {
       notifyError(t('notification.error'), t('common.cancel'));
     }
-  };
+  }, [cancelTask, notifyError, t]);
 
-  const handleClearCompleted = async () => {
+  const handleClearCompleted = useCallback(async () => {
     try {
       await clearCompleted();
     } catch {
       notifyError(t('notification.error'), t('common.cancel'));
     }
-  };
+  }, [clearCompleted, notifyError, t]);
 
-  const handleOpenDownloadFolder = async () => {
+  const handleOpenDownloadFolder = useCallback(async () => {
     if (!downloadPath) return;
     try {
       await openFolder(downloadPath);
     } catch (e) {
       notifyError(t('notification.error'), e instanceof Error ? e.message : t('notification.error'));
     }
-  };
+  }, [downloadPath, notifyError, t]);
 
-  const handleLaunch = (versionId: string) => {
+  const handleLaunch = useCallback((versionId: string) => {
     info('启动游戏', `正在启动 ${versionId}...`);
-  };
+  }, [info]);
 
-  const tabs: { id: TabType; label: string; count?: number }[] = [
+  const tabs: { id: TabType; label: string; count?: number }[] = useMemo(() => [
     { id: 'browse', label: t('download.browse') },
-    { id: 'downloading', label: t('download.downloading'), count: downloadTasks.filter(t => t.status === 'downloading').length || categoryProgress.length },
+    { id: 'downloading', label: t('download.downloading'), count: downloadTasks.filter(task => task.status === 'downloading').length || categoryProgress.length },
     { id: 'installed', label: t('download.installed'), count: installedVersions.length },
-  ];
+  ], [t, downloadTasks, categoryProgress.length, installedVersions.length]);
 
-  const totalProgress = categoryProgress.length > 0
-    ? (categoryProgress.reduce((sum, c) => sum + c.completed, 0) / categoryProgress.reduce((sum, c) => sum + c.total, 0)) * 100
-    : 0;
+  const totalProgress = useMemo(() => {
+    if (categoryProgress.length === 0) return 0;
+    const total = categoryProgress.reduce((sum, c) => sum + c.total, 0);
+    const completed = categoryProgress.reduce((sum, c) => sum + c.completed, 0);
+    return total > 0 ? (completed / total) * 100 : 0;
+  }, [categoryProgress]);
 
-  const versionsToShow = filteredVersions();
+  const renderVersionItem = useCallback((version: GameVersion) => (
+    <VersionListItem
+      version={version}
+      installed={installedSet.has(version.id)}
+      downloading={downloadingVersions.has(version.id)}
+      isDeploying={deployingVersions.has(version.id)}
+      onClick={() => handleVersionClick(version)}
+      onWikiClick={() => handleWikiClick(version.id)}
+      onDownload={() => handleDownload(version)}
+      onDeploy={() => handleDeploy(version.id)}
+    />
+  ), [installedSet, downloadingVersions, deployingVersions, handleVersionClick, handleWikiClick, handleDownload, handleDeploy]);
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -233,25 +253,14 @@ const DownloadGame: React.FC = () => {
                 description={t('download.noVersionDesc')}
               />
             ) : (
-              <div className="flex-1 min-h-0" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <div className="flex-1 min-h-0">
                 <VirtualList
                   items={versionsToShow}
-                  height={400}
+                  height="100%"
                   itemHeight={ITEM_HEIGHT}
                   overscan={5}
-                  className="pr-2"
-                  renderItem={(version) => (
-                    <VersionListItem
-                      version={version}
-                      installed={installedVersions.includes(version.id)}
-                      downloading={downloadingVersions.has(version.id)}
-                      isDeploying={deployingVersions.has(version.id)}
-                      onClick={() => handleVersionClick(version)}
-                      onWikiClick={() => handleWikiClick(version.id)}
-                      onDownload={() => handleDownload(version)}
-                      onDeploy={() => handleDeploy(version.id)}
-                    />
-                  )}
+                  className="h-full"
+                  renderItem={renderVersionItem}
                 />
               </div>
             )}
@@ -398,4 +407,4 @@ const DownloadGame: React.FC = () => {
   );
 };
 
-export default DownloadGame;
+export default memo(DownloadGame);

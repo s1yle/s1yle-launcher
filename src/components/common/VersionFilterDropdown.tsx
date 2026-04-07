@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -21,7 +21,7 @@ export interface VersionFilterDropdownProps {
   className?: string;
 }
 
-const VersionFilterDropdown: React.FC<VersionFilterDropdownProps> = ({
+const VersionFilterDropdownInner: React.FC<VersionFilterDropdownProps> = ({
   value,
   onChange,
   versions,
@@ -41,7 +41,9 @@ const VersionFilterDropdown: React.FC<VersionFilterDropdownProps> = ({
     { value: 'old', label: t('download.versionFilter.old'), count: counts.old },
   ], [t, counts]);
 
-  const selectedOption = options.find(o => o.value === value);
+  const selectedOption = useMemo(() => 
+    options.find(o => o.value === value), 
+  [options, value]);
 
   const handleClickOutside = useCallback((e: MouseEvent) => {
     if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -53,6 +55,11 @@ const VersionFilterDropdown: React.FC<VersionFilterDropdownProps> = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [handleClickOutside]);
+
+  const handleOptionClick = useCallback((optionValue: VersionCategory) => {
+    onChange(optionValue);
+    setIsOpen(false);
+  }, [onChange]);
 
   return (
     <div ref={containerRef} className={cn('relative', className)}>
@@ -99,10 +106,7 @@ const VersionFilterDropdown: React.FC<VersionFilterDropdownProps> = ({
           {options.map(option => (
             <button
               key={option.value}
-              onClick={() => {
-                onChange(option.value);
-                setIsOpen(false);
-              }}
+              onClick={() => handleOptionClick(option.value)}
               className="w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors"
               style={{ 
                 backgroundColor: value === option.value ? 'var(--color-surface-active)' : 'transparent',
@@ -125,5 +129,7 @@ const VersionFilterDropdown: React.FC<VersionFilterDropdownProps> = ({
     </div>
   );
 };
+
+const VersionFilterDropdown = memo(VersionFilterDropdownInner);
 
 export default VersionFilterDropdown;
