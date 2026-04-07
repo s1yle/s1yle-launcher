@@ -45,21 +45,28 @@ const VersionFilterDropdown: React.FC<VersionFilterDropdownProps> = ({
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           'flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all',
-          'bg-surface border border-border hover:border-border-hover',
-          isOpen && 'border-primary'
+          'border hover:border-[var(--color-border-hover)]',
+          isOpen && 'border-[var(--color-primary)]'
         )}
+        style={{ backgroundColor: 'var(--color-surface-solid)', borderColor: 'var(--color-border)' }}
       >
-        <span className="text-text-primary">{selectedOption?.label}</span>
+        <span style={{ color: 'var(--color-text-primary)' }}>{selectedOption?.label}</span>
         {selectedOption?.count !== undefined && (
-          <span className="px-1.5 py-0.5 rounded-full bg-primary-bg text-primary text-xs">
+          <span 
+            className="px-1.5 py-0.5 rounded-full text-xs"
+            style={{ backgroundColor: 'var(--color-primary-bg)', color: 'var(--color-primary)' }}
+          >
             {selectedOption.count}
           </span>
         )}
-        <ChevronDown className={cn('w-4 h-4 text-text-tertiary transition-transform', isOpen && 'rotate-180')} />
+        <ChevronDown className={cn('w-4 h-4 transition-transform', isOpen && 'rotate-180')} style={{ color: 'var(--color-text-tertiary)' }} />
       </button>
 
       {isOpen && (
-        <div className="absolute top-full mt-1 left-0 z-50 min-w-full bg-surface border border-border rounded-lg shadow-lg overflow-hidden">
+        <div 
+          className="absolute top-full mt-1 left-0 z-[100] min-w-full border rounded-lg shadow-lg overflow-hidden"
+          style={{ backgroundColor: 'var(--color-surface-solid)', borderColor: 'var(--color-border)' }}
+        >
           {options.map(option => (
             <button
               key={option.value}
@@ -68,19 +75,20 @@ const VersionFilterDropdown: React.FC<VersionFilterDropdownProps> = ({
                 setIsOpen(false);
               }}
               className={cn(
-                'w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors',
-                value === option.value
-                  ? 'bg-surface-active text-text-primary'
-                  : 'text-text-secondary hover:bg-surface hover:text-text-primary'
+                'w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors'
               )}
+              style={{ 
+                backgroundColor: value === option.value ? 'var(--color-surface-active)' : 'transparent',
+                color: value === option.value ? 'var(--color-text-primary)' : 'var(--color-text-secondary)'
+              }}
             >
               <span>{option.label}</span>
               <div className="flex items-center gap-2">
                 {option.count !== undefined && (
-                  <span className="text-text-tertiary text-xs">{option.count}</span>
+                  <span style={{ color: 'var(--color-text-tertiary)' }} className="text-xs">{option.count}</span>
                 )}
                 {value === option.value && (
-                  <Check className="w-4 h-4 text-primary" />
+                  <Check className="w-4 h-4" style={{ color: 'var(--color-primary)' }} />
                 )}
               </div>
             </button>

@@ -14,6 +14,7 @@ export default {
         },
         surface: {
           DEFAULT: 'var(--color-surface)',
+          solid: 'var(--color-surface-solid)',
           hover: 'var(--color-surface-hover)',
           active: 'var(--color-surface-active)',
         },

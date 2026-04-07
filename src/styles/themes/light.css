@@ -3,6 +3,7 @@
   --color-bg-secondary: #ffffff;
   --color-bg-tertiary: #e5e5e5;
   --color-surface: rgba(0, 0, 0, 0.03);
+  --color-surface-solid: #ffffff;
   --color-surface-hover: rgba(0, 0, 0, 0.06);
   --color-surface-active: rgba(0, 0, 0, 0.08);
   --color-border: rgba(0, 0, 0, 0.1);

@@ -4,6 +4,7 @@
   --color-bg-secondary: #191919;
   --color-bg-tertiary: #141414;
   --color-surface: rgba(255, 255, 255, 0.05);
+  --color-surface-solid: #1e1e1e;
   --color-surface-hover: rgba(255, 255, 255, 0.08);
   --color-surface-active: rgba(255, 255, 255, 0.1);
   --color-border: rgba(255, 255, 255, 0.1);
