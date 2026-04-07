@@ -3,6 +3,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Minus, X } from 'lucide-react';
+import { IconButton } from './common';
 import { getParentPath } from '../router/config';
 
 interface HeaderProps {
@@ -59,39 +60,29 @@ const Header = ({ type, title }: HeaderProps) => {
           </>
         ) : (
           <>
-            <motion.button
+            <IconButton
               onClick={handleBack}
-              className="p-2 rounded-lg transition-all duration-200 hover:bg-surface-hover group flex items-center justify-center"
-              title={t('header.backToParent', '返回上级')}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <ArrowLeft className="w-6 h-6 text-text-secondary group-hover:text-text-primary transition-colors" />
-            </motion.button>
+              icon={ArrowLeft}
+              iconSize={24}
+              label={t('header.backToParent', '返回上级')}
+            />
             <h2 className="text-xl font-bold text-text-primary">{title}</h2>
           </>
         )}
       </div>
 
       <div className="flex items-center gap-2">
-        <motion.button
+        <IconButton
           onClick={handleMinimize}
-          className="p-2 rounded-lg transition-all duration-200 hover:bg-surface-hover group flex items-center justify-center"
-          title={t('common.minimize', '最小化')}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <Minus className="w-5 h-5 text-text-secondary group-hover:text-text-primary transition-colors" />
-        </motion.button>
-        <motion.button
+          icon={Minus}
+          label={t('common.minimize', '最小化')}
+        />
+        <IconButton
           onClick={handleClose}
-          className="p-2 rounded-lg transition-all duration-200 hover:bg-red-500/20 group flex items-center justify-center"
-          title={t('common.close', '关闭')}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <X className="w-5 h-5 text-text-secondary group-hover:text-red-400 transition-colors" />
-        </motion.button>
+          icon={X}
+          variant="danger"
+          label={t('common.close', '关闭')}
+        />
       </div>
     </header>
   );

@@ -63,6 +63,8 @@ function VirtualListInner<T>({
         height,
         overflow: 'auto',
         position: 'relative',
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none',
         ...style,
       }}
     >

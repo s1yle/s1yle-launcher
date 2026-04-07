@@ -53,3 +53,6 @@ export type { LoaderIconProps } from './LoaderIcon';
 
 export { default as VirtualList } from './VirtualList';
 export type { VirtualListProps } from './VirtualList';
+
+export { default as IconButton } from './IconButton';
+export type { IconButtonProps } from './IconButton';

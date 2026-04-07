@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Loader2, LayoutGrid, List, Search, X } from 'lucide-react';
 import { useInstanceStore } from '../stores/instanceStore';
 import { openFolder } from '../helper/rustInvoke';
-import { InstanceCard, EmptyState, useNotification } from '../components/common';
+import { InstanceCard, EmptyState, useNotification, IconButton } from '../components/common';
 
 const InstanceList: React.FC = () => {
   const { t } = useTranslation();
@@ -246,13 +246,11 @@ const InstanceList: React.FC = () => {
                 <List className="w-4 h-4" />
               </button>
             </div>
-            <button
+            <IconButton
               onClick={() => refresh()}
-              className="p-2 text-text-tertiary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors"
-              title={t('instances.refresh', '刷新')}
-            >
-              <Loader2 className="w-5 h-5" />
-            </button>
+              icon={Loader2}
+              label={t('instances.refresh', '刷新')}
+            />
           </div>
         </div>
 
