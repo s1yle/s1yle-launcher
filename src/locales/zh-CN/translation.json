@@ -153,6 +153,7 @@
     "remaining": "剩余",
     "estimatedTime": "预计剩余时间",
     "versionFilter": {
+      "all": "全部",
       "release": "正式版",
       "snapshot": "快照版",
       "aprilFool": "愚人节",

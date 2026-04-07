@@ -1,43 +1,58 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useTranslation } from 'react-i18next';
+import { VersionCategory, countVersionsByCategory } from '../../utils/versionFilter';
+import { GameVersion } from '../../helper/rustInvoke';
 
 const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(inputs));
 
 export interface VersionFilterOption {
-  value: string;
+  value: VersionCategory;
   label: string;
   count?: number;
 }
 
 export interface VersionFilterDropdownProps {
-  value: string;
-  onChange: (value: string) => void;
-  options: VersionFilterOption[];
+  value: VersionCategory;
+  onChange: (value: VersionCategory) => void;
+  versions: GameVersion[];
   className?: string;
 }
 
 const VersionFilterDropdown: React.FC<VersionFilterDropdownProps> = ({
   value,
   onChange,
-  options,
+  versions,
   className,
 }) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const counts = useMemo(() => countVersionsByCategory(versions), [versions]);
+
+  const options: VersionFilterOption[] = useMemo(() => [
+    { value: 'all', label: t('download.versionFilter.all'), count: counts.all },
+    { value: 'release', label: t('download.versionFilter.release'), count: counts.release },
+    { value: 'snapshot', label: t('download.versionFilter.snapshot'), count: counts.snapshot },
+    { value: 'april', label: t('download.versionFilter.aprilFool'), count: counts.april },
+    { value: 'old', label: t('download.versionFilter.old'), count: counts.old },
+  ], [t, counts]);
+
   const selectedOption = options.find(o => o.value === value);
 
+  const handleClickOutside = useCallback((e: MouseEvent) => {
+    if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      setIsOpen(false);
+    }
+  }, []);
+
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [handleClickOutside]);
 
   return (
     <div ref={containerRef} className={cn('relative', className)}>
@@ -47,7 +62,7 @@ const VersionFilterDropdown: React.FC<VersionFilterDropdownProps> = ({
           'flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all'
         )}
         style={{ 
-          backgroundColor: 'var(--color-surface)', 
+          backgroundColor: 'var(--color-surface-solid)', 
           borderColor: 'var(--color-border)',
           borderWidth: '1px',
           borderStyle: 'solid'
@@ -65,7 +80,10 @@ const VersionFilterDropdown: React.FC<VersionFilterDropdownProps> = ({
             {selectedOption.count}
           </span>
         )}
-        <ChevronDown className={cn('w-4 h-4 transition-transform', isOpen && 'rotate-180')} style={{ color: 'var(--color-text-tertiary)' }} />
+        <ChevronDown 
+          className={cn('w-4 h-4 transition-transform', isOpen && 'rotate-180')} 
+          style={{ color: 'var(--color-text-tertiary)' }} 
+        />
       </button>
 
       {isOpen && (
@@ -89,7 +107,6 @@ const VersionFilterDropdown: React.FC<VersionFilterDropdownProps> = ({
               style={{ 
                 backgroundColor: value === option.value ? 'var(--color-surface-active)' : 'transparent',
                 color: value === option.value ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-                borderBottom: value === option.value ? '1px solid var(--color-border)' : 'none'
               }}
             >
               <span>{option.label}</span>

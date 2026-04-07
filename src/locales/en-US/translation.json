@@ -153,6 +153,7 @@
     "remaining": "Remaining",
     "estimatedTime": "Estimated Time Remaining",
     "versionFilter": {
+      "all": "All",
       "release": "Release",
       "snapshot": "Snapshot",
       "aprilFool": "April Fool",

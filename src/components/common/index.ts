@@ -40,6 +40,7 @@ export type {
 
 export { default as VersionFilterDropdown } from './VersionFilterDropdown';
 export type { VersionFilterDropdownProps, VersionFilterOption } from './VersionFilterDropdown';
+export type { VersionCategory } from '../../utils/versionFilter';
 
 export { default as VersionListItem } from './VersionListItem';
 export type { VersionListItemProps } from './VersionListItem';
@@ -49,3 +50,6 @@ export type { InstallCardProps, InstallCardStatus } from './InstallCard';
 
 export { default as LoaderIcon } from './LoaderIcon';
 export type { LoaderIconProps } from './LoaderIcon';
+
+export { default as VirtualList } from './VirtualList';
+export type { VirtualListProps } from './VirtualList';
