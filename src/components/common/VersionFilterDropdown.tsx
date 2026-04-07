@@ -44,17 +44,23 @@ const VersionFilterDropdown: React.FC<VersionFilterDropdownProps> = ({
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all',
-          'border hover:border-[var(--color-border-hover)]',
-          isOpen && 'border-[var(--color-primary)]'
+          'flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all'
         )}
-        style={{ backgroundColor: 'var(--color-surface-solid)', borderColor: 'var(--color-border)' }}
+        style={{ 
+          backgroundColor: 'var(--color-surface)', 
+          borderColor: 'var(--color-border)',
+          borderWidth: '1px',
+          borderStyle: 'solid'
+        }}
       >
         <span style={{ color: 'var(--color-text-primary)' }}>{selectedOption?.label}</span>
         {selectedOption?.count !== undefined && (
           <span 
             className="px-1.5 py-0.5 rounded-full text-xs"
-            style={{ backgroundColor: 'var(--color-primary-bg)', color: 'var(--color-primary)' }}
+            style={{ 
+              backgroundColor: 'var(--color-primary-bg)', 
+              color: 'var(--color-primary)' 
+            }}
           >
             {selectedOption.count}
           </span>
@@ -65,7 +71,12 @@ const VersionFilterDropdown: React.FC<VersionFilterDropdownProps> = ({
       {isOpen && (
         <div 
           className="absolute top-full mt-1 left-0 z-[100] min-w-full border rounded-lg shadow-lg overflow-hidden"
-          style={{ backgroundColor: 'var(--color-surface-solid)', borderColor: 'var(--color-border)' }}
+          style={{ 
+            backgroundColor: 'var(--color-surface-solid)', 
+            borderColor: 'var(--color-border)',
+            borderWidth: '1px',
+            borderStyle: 'solid'
+          }}
         >
           {options.map(option => (
             <button
@@ -74,12 +85,11 @@ const VersionFilterDropdown: React.FC<VersionFilterDropdownProps> = ({
                 onChange(option.value);
                 setIsOpen(false);
               }}
-              className={cn(
-                'w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors'
-              )}
+              className="w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors"
               style={{ 
                 backgroundColor: value === option.value ? 'var(--color-surface-active)' : 'transparent',
-                color: value === option.value ? 'var(--color-text-primary)' : 'var(--color-text-secondary)'
+                color: value === option.value ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                borderBottom: value === option.value ? '1px solid var(--color-border)' : 'none'
               }}
             >
               <span>{option.label}</span>
