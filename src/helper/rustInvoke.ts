@@ -727,6 +727,111 @@ export const getInstalledModLoaders = async (
   return await invokeRustFunction("get_installed_mod_loaders", { versionId }, options);
 };
 
+// ======================== 扩展模组加载器类型定义 ========================
+
+export const enum ExtendedModLoaderType {
+  OptiFine = "OptiFine",
+  Quilt = "Quilt",
+  FabricApi = "FabricApi",
+  QSL = "QSL",
+}
+
+export interface OptiFineVersion {
+  mcVersion: string;
+  patch: string;
+  type: string;
+  date: string;
+  downloadUrl: string;
+}
+
+export interface QuiltVersion {
+  loader: {
+    version: string;
+    stable: boolean;
+  };
+  game: string[];
+}
+
+export interface FabricApiVersion {
+  loader: string;
+  game: string[];
+  versions: {
+    [version: string]: {
+      version: string;
+      stable: boolean;
+    };
+  };
+}
+
+export interface CompatibilityCheck {
+  loader_type: string;
+  mc_version: string;
+  is_compatible: boolean;
+  reason: string | null;
+  available_versions: string[];
+  warning: string | null;
+}
+
+export interface InstallConfig {
+  instance_name: string;
+  mc_version: string;
+  loaders: LoaderInstallConfig[];
+}
+
+export interface LoaderInstallConfig {
+  loader_type: string;
+  loader_version: string | null;
+  install: boolean;
+}
+
+// ======================== 扩展模组加载器函数 ========================
+
+export const getQuiltVersions = async (
+  mcVersion: string,
+  options?: InvokeOptions
+): Promise<ModLoaderVersionList> => {
+  logger.info('获取 Quilt 版本列表', { mcVersion });
+  return await invokeRustFunction("get_quilt_versions", { mcVersion }, options);
+};
+
+export const getFabricApiVersions = async (
+  mcVersion: string,
+  fabricVersion: string,
+  options?: InvokeOptions
+): Promise<ModLoaderVersionList> => {
+  logger.info('获取 Fabric API 版本列表', { mcVersion, fabricVersion });
+  return await invokeRustFunction("get_fabric_api_versions", { mcVersion, fabricVersion }, options);
+};
+
+export const getQslVersions = async (
+  mcVersion: string,
+  quiltVersion: string,
+  options?: InvokeOptions
+): Promise<ModLoaderVersionList> => {
+  logger.info('获取 QSL 版本列表', { mcVersion, quiltVersion });
+  return await invokeRustFunction("get_qsl_versions", { mcVersion, quiltVersion }, options);
+};
+
+export const getAllLoaderCompatibility = async (
+  mcVersion: string,
+  installedLoaders: ModLoaderType[],
+  options?: InvokeOptions
+): Promise<CompatibilityCheck[]> => {
+  logger.info('检查所有加载器兼容性', { mcVersion, installedLoaders });
+  return await invokeRustFunction("get_all_loader_compatibility", {
+    mc_version: mcVersion,
+    installed_loaders: installedLoaders
+  }, options);
+};
+
+export const installWithLoaders = async (
+  config: InstallConfig,
+  options?: InvokeOptions
+): Promise<string> => {
+  logger.info('安装实例及加载器', { config });
+  return await invokeRustFunction("install_with_loaders", { config }, options);
+};
+
 // ======================== 实例管理相关类型定义 ========================
 
 export interface GameInstance {

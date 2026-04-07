@@ -49,7 +49,7 @@ const MainLayout = () => {
       <div className="flex flex-1 overflow-hidden">
         <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} />
         <main
-          className="flex-1 overflow-auto relative noise-bg gradient-bg"
+          className="flex-1 overflow-hidden relative noise-bg gradient-bg"
           style={{ background: 'var(--color-bg-primary)' }}
         >
           <AnimatePresence mode="sync">
@@ -64,10 +64,8 @@ const MainLayout = () => {
                 ease: [0.25, 0.1, 0.25, 1],
               }}
             >
-              <div className="relative z-10 ">
-                <div className="p-8">
-                  <RouterRenderer />
-                </div>
+              <div className="absolute inset-0 overflow-hidden">
+                <RouterRenderer />
               </div>
             </motion.div>
           </AnimatePresence>

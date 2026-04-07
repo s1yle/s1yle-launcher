@@ -151,7 +151,59 @@
     "totalSize": "Total Size",
     "downloaded": "Downloaded",
     "remaining": "Remaining",
-    "estimatedTime": "Estimated Time Remaining"
+    "estimatedTime": "Estimated Time Remaining",
+    "versionFilter": {
+      "release": "Release",
+      "snapshot": "Snapshot",
+      "aprilFool": "April Fool",
+      "old": "Old"
+    },
+    "wiki": "Minecraft Wiki",
+    "latestRelease": "Latest Release",
+    "latestSnapshot": "Latest Snapshot",
+    "loading": "Loading...",
+    "noTasks": "No download tasks",
+    "noInstalled": "No installed versions",
+    "noInstalledDesc": "Download game versions from above",
+    "downloadDir": "Download Directory",
+    "openFolder": "Open Download Folder",
+    "open": "Open",
+    "clearCompleted": "Clear Completed",
+    "totalTasks": "{{count}} tasks total",
+    "downloadProgress": "Download Progress",
+    "cancel": "Cancel",
+    "overallProgress": "Overall Progress",
+    "failed": "Failed",
+    "install": {
+      "title": "Install New Game",
+      "instanceName": "Instance Name",
+      "instanceNamePlaceholder": "Enter instance name",
+      "installButton": "Install",
+      "installing": "Installing...",
+      "installComplete": "Installation Complete",
+      "installFailed": "Installation Failed",
+      "cards": {
+        "minecraft": "Minecraft",
+        "forge": "Forge",
+        "neoforge": "NeoForge",
+        "optifine": "OptiFine",
+        "fabric": "Fabric",
+        "fabricApi": "Fabric API",
+        "quilt": "Quilt",
+        "qsl": "QSL/QFAPI",
+        "notInstalled": "Not Installed",
+        "installed": "Installed",
+        "incompatible": "Incompatible",
+        "selectVersion": "Select Version"
+      },
+      "compatibility": {
+        "notCompatible": "This loader is not compatible with the current MC version",
+        "javaVersionRequired": "Requires Java {{version}} or higher",
+        "loaderConflict": "{{loader}} is incompatible with {{otherLoader}}",
+        "testCompatible": "Test Compatibility",
+        "pureVanillaRequired": "Requires pure vanilla Minecraft"
+      }
+    }
   },
   "settings": {
     "title": "Settings",

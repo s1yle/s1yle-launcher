@@ -81,4 +81,5 @@ export {
   ArrowDownUp,
   SortAsc,
   SortDesc,
+  HelpCircle,
 } from 'lucide-react';

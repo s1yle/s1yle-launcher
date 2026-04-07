@@ -20,7 +20,8 @@ import {
     GameSettingsJava,
     GameSettingsGeneral,
     GameSettingsAppearance,
-    GameSettingsDownload
+    GameSettingsDownload,
+    VersionInstall
 } from '../pages';
 
 // 组件映射
@@ -43,7 +44,8 @@ const componentMap: Record<string, React.FC> = {
     GameSettingsJava,
     GameSettingsGeneral,
     GameSettingsAppearance,
-    GameSettingsDownload
+    GameSettingsDownload,
+    VersionInstall
 };
 
 // 递归渲染所有路由（平级，不嵌套）
@@ -81,7 +83,7 @@ const renderAllRoutes = (routeList: RouteConfig[]): React.ReactNode[] => {
 // 这个组件专门负责根据路由配置渲染对应的页面组件
 const RouterRenderer = () => {
     return (
-        <div>
+        <div className="h-full p-8 overflow-hidden">
             <Routes>
                 {renderAllRoutes(routes)}
             </Routes>

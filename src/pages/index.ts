@@ -18,3 +18,4 @@ export { default as GameSettingsJava } from './GameSettingsJava';
 export { default as GameSettingsGeneral } from './GameSettingsGeneral';
 export { default as GameSettingsAppearance } from './GameSettingsAppearance';
 export { default as GameSettingsDownload } from './GameSettingsDownload';
+export { default as VersionInstall } from './VersionInstall';

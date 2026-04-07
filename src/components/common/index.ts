@@ -37,3 +37,15 @@ export type {
   NotificationItem,
   NotificationType,
 } from './NotificationProvider';
+
+export { default as VersionFilterDropdown } from './VersionFilterDropdown';
+export type { VersionFilterDropdownProps, VersionFilterOption } from './VersionFilterDropdown';
+
+export { default as VersionListItem } from './VersionListItem';
+export type { VersionListItemProps } from './VersionListItem';
+
+export { default as InstallCard } from './InstallCard';
+export type { InstallCardProps, InstallCardStatus } from './InstallCard';
+
+export { default as LoaderIcon } from './LoaderIcon';
+export type { LoaderIconProps } from './LoaderIcon';

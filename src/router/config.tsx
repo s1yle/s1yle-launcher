@@ -117,6 +117,13 @@ export const routes: RouteConfig[] = [
         parentPath: '/'
       },
       {
+        path: '/download/game/:versionId',
+        componentName: 'VersionInstall',
+        header: { type: SidebarType.SECONDARY, title: '安装新游戏', titleI18nKey: 'download.install.title' },
+        sidebarGroup: SidebarGroup.GAME,
+        parentPath: '/'
+      },
+      {
         path: '/download/modpack',
         componentName: 'DownloadModpack',
         header: { type: SidebarType.SECONDARY, title: '整合包', titleI18nKey: 'sidebar.downloadModpack' },

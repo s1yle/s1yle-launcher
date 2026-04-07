@@ -151,7 +151,59 @@
     "totalSize": "总大小",
     "downloaded": "已下载",
     "remaining": "剩余",
-    "estimatedTime": "预计剩余时间"
+    "estimatedTime": "预计剩余时间",
+    "versionFilter": {
+      "release": "正式版",
+      "snapshot": "快照版",
+      "aprilFool": "愚人节",
+      "old": "远古版"
+    },
+    "wiki": "Minecraft Wiki",
+    "latestRelease": "最新正式版",
+    "latestSnapshot": "最新快照",
+    "loading": "加载中...",
+    "noTasks": "暂无下载任务",
+    "noInstalled": "暂无已安装版本",
+    "noInstalledDesc": "从上方下载游戏版本",
+    "downloadDir": "下载目录",
+    "openFolder": "打开下载目录",
+    "open": "打开",
+    "clearCompleted": "清理已完成",
+    "totalTasks": "共 {{count}} 个任务",
+    "downloadProgress": "下载进度",
+    "cancel": "取消",
+    "overallProgress": "总体进度",
+    "failed": "失败",
+    "install": {
+      "title": "安装新游戏",
+      "instanceName": "实例名称",
+      "instanceNamePlaceholder": "输入实例名称",
+      "installButton": "安装",
+      "installing": "安装中...",
+      "installComplete": "安装完成",
+      "installFailed": "安装失败",
+      "cards": {
+        "minecraft": "Minecraft",
+        "forge": "Forge",
+        "neoforge": "NeoForge",
+        "optifine": "OptiFine",
+        "fabric": "Fabric",
+        "fabricApi": "Fabric API",
+        "quilt": "Quilt",
+        "qsl": "QSL/QFAPI",
+        "notInstalled": "不安装",
+        "installed": "已安装",
+        "incompatible": "不兼容",
+        "selectVersion": "选择版本"
+      },
+      "compatibility": {
+        "notCompatible": "此加载器与当前 MC 版本不兼容",
+        "javaVersionRequired": "需要 Java {{version}} 或更高版本",
+        "loaderConflict": "{{loader}} 与 {{otherLoader}} 互斥",
+        "testCompatible": "测试兼容",
+        "pureVanillaRequired": "需要纯净原版 Minecraft"
+      }
+    }
   },
   "settings": {
     "title": "设置",
