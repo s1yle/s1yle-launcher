@@ -1114,3 +1114,96 @@ pub fn is_version_deployed(
     let version_jar = base_path.join("versions").join(&version_id).join(format!("{}.jar", version_id));
     version_jar.exists()
 }
+
+#[tauri::command]
+pub async fn deploy_version_to_instance(
+    instance_path: String,
+    version_id: String,
+    download_manager: State<'_, DownloadManager>,
+) -> Result<String, String> {
+    log_info!("开始部署版本 {} 到实例 {}", version_id, instance_path);
+
+    let manifest = get_version_download_manifest(version_id.clone(), download_manager.clone()).await?;
+    
+    let instance_dir = PathBuf::from(&instance_path);
+    let versions_dir = instance_dir.join("versions");
+    let libraries_dir = instance_dir.join("libraries");
+    let assets_dir = instance_dir.join("assets");
+    let natives_dir = instance_dir.join("natives").join(&version_id);
+
+    fs::create_dir_all(&versions_dir).map_err(|e| format!("创建versions目录失败: {}", e))?;
+    fs::create_dir_all(&libraries_dir).map_err(|e| format!("创建libraries目录失败: {}", e))?;
+    fs::create_dir_all(&assets_dir).map_err(|e| format!("创建assets目录失败: {}", e))?;
+    fs::create_dir_all(&natives_dir).map_err(|e| format!("创建natives目录失败: {}", e))?;
+
+    let base_path = download_manager.base_path.lock().unwrap().clone();
+    
+    for lib in &manifest.libraries {
+        let source = base_path.join("temp").join(&lib.path);
+        let dest = libraries_dir.join(&lib.path);
+
+        if let Some(parent) = dest.parent() {
+            fs::create_dir_all(parent).map_err(|e| format!("创建库目录失败: {}", e))?;
+        }
+
+        if source.exists() {
+            fs::rename(&source, &dest).map_err(|e| format!("部署库文件失败: {}", e))?;
+            log_info!("部署库: {}", lib.path);
+        } else if dest.exists() {
+            log_info!("库已存在: {}", lib.path);
+        }
+    }
+
+    if manifest.natives.first().is_some() {
+        for native in &manifest.natives {
+            let source = base_path.join("temp").join(&native.path);
+            if source.exists() {
+                extract_jar(&source, &natives_dir)?;
+                fs::remove_file(&source).ok();
+                log_info!("解压原生库: {}", native.path);
+            }
+        }
+    }
+
+    for asset in &manifest.assets {
+        let source = base_path.join("temp").join(&asset.path);
+        let dest = assets_dir.join(&asset.path);
+
+        if let Some(parent) = dest.parent() {
+            fs::create_dir_all(parent).map_err(|e| format!("创建资源目录失败: {}", e))?;
+        }
+
+        if source.exists() {
+            fs::rename(&source, &dest).map_err(|e| format!("部署资源文件失败: {}", e))?;
+            log_info!("部署资源: {}", asset.path);
+        } else if dest.exists() {
+            log_info!("资源已存在: {}", asset.path);
+        }
+    }
+
+    if let Some(ref client) = manifest.client_jar {
+        let source = base_path.join("temp").join(&client.path);
+        let dest = versions_dir.join(format!("{}.jar", &version_id));
+
+        if source.exists() {
+            fs::rename(&source, &dest).map_err(|e| format!("部署客户端jar失败: {}", e))?;
+            log_info!("部署客户端: {}", dest.display());
+        }
+    }
+
+    if let Some(ref index) = manifest.asset_index {
+        let source = base_path.join("temp").join(&index.path);
+        let dest = instance_dir.join("assets").join("indexes").join(format!("{}.json", &version_id));
+
+        if let Some(parent) = dest.parent() {
+            fs::create_dir_all(parent).map_err(|e| format!("创建索引目录失败: {}", e))?;
+        }
+
+        if source.exists() {
+            fs::rename(&source, &dest).map_err(|e| format!("部署资源索引失败: {}", e))?;
+        }
+    }
+
+    log_info!("版本 {} 部署到实例完成", version_id);
+    Ok(format!("版本 {} 已部署到实例", version_id))
+}

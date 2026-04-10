@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
-import { launchInstance, stopInstance, getLaunchStatus, LaunchStatus } from '../helper/rustInvoke';
+import { Loader2, Gamepad2 } from 'lucide-react';
+import { launchInstance, stopInstance, getLaunchStatus, LaunchStatus, getCurrentAccount } from '../helper/rustInvoke';
+import { useInstanceStore } from '../stores/instanceStore';
+import type { AccountInfo } from '../helper/rustInvoke';
 
 interface ActionButtonProps {
   onClick?: () => void;
@@ -10,8 +12,22 @@ const ActionButton = ({ onClick }: ActionButtonProps) => {
   const [status, setStatus] = useState<LaunchStatus>(LaunchStatus.Idle);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [currentAccount, setCurrentAccount] = useState<AccountInfo | null>(null);
+  
+  const selectedInstance = useInstanceStore(s => s.getSelectedInstance());
+  
+  useEffect(() => {
+    const loadAccount = async () => {
+      try {
+        const account = await getCurrentAccount();
+        setCurrentAccount(account);
+      } catch (e) {
+        console.error('获取账户失败:', e);
+      }
+    };
+    loadAccount();
+  }, []);
 
-  // 定期检查启动状态
   useEffect(() => {
     const intervalId = setInterval(async () => {
       try {
@@ -20,19 +36,81 @@ const ActionButton = ({ onClick }: ActionButtonProps) => {
       } catch (error) {
         console.error('获取启动状态失败:', error);
       }
-    }, 3000); // 每3秒检查一次
+    }, 3000);
 
-    // 组件卸载时清除定时器
     return () => clearInterval(intervalId);
   }, []);
 
-  // 根据状态确定按钮文本和样式
+  const handleLaunch = async () => {
+    if (isLoading) return;
+    if (!selectedInstance) {
+      setMessage('请先选择一个实例');
+      return;
+    }
+    
+    setIsLoading(true);
+    setMessage('');
+    
+    try {
+      setStatus(LaunchStatus.Launching);
+      
+      const username = currentAccount?.name || 'Steve';
+      const uuid = currentAccount?.uuid || '069a79f4-44e9-4726-a5be-fca90e38aaf5';
+      const accessToken = currentAccount?.account_type === 'microsoft' ? 'mock_token' : undefined;
+      
+      const result = await launchInstance({
+        java_path: 'java',
+        memory_mb: 2048,
+        version: selectedInstance.version,
+        game_dir: selectedInstance.path,
+        assets_dir: `${selectedInstance.path}/assets`,
+        username,
+        uuid,
+        access_token: accessToken,
+      });
+      
+      setMessage(result);
+      const currentStatus = await getLaunchStatus();
+      setStatus(currentStatus);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : '启动失败');
+      setStatus(LaunchStatus.Crashed);
+      console.error('启动失败:', error);
+    } finally {
+      setIsLoading(false);
+    }
+    
+    if (onClick) onClick();
+  };
+
+  const handleStop = async () => {
+    if (isLoading) return;
+    
+    setIsLoading(true);
+    setMessage('');
+    
+    try {
+      const result = await stopInstance();
+      setMessage(result);
+      const currentStatus = await getLaunchStatus();
+      setStatus(currentStatus);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : '停止失败');
+      console.error('停止失败:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const getButtonInfo = () => {
+    const instanceName = selectedInstance?.name || '未选择实例';
+    const instanceVersion = selectedInstance?.version || '';
+    
     switch (status) {
       case LaunchStatus.Idle:
         return {
           text: '启动游戏',
-          subtext: 'Vault Hunters Official Pack',
+          subtext: instanceVersion ? `${instanceName} (${instanceVersion})` : instanceName,
           bgColor: 'bg-primary hover:bg-primary-hover',
           loading: false,
           action: handleLaunch
@@ -43,7 +121,7 @@ const ActionButton = ({ onClick }: ActionButtonProps) => {
           subtext: '正在启动Minecraft',
           bgColor: 'bg-warning hover:bg-yellow-600',
           loading: true,
-          action: () => {} // 启动中不可点击
+          action: () => {}
         };
       case LaunchStatus.Running:
         return {
@@ -72,58 +150,11 @@ const ActionButton = ({ onClick }: ActionButtonProps) => {
       default:
         return {
           text: '启动游戏',
-          subtext: 'Vault Hunters Official Pack',
+          subtext: instanceVersion ? `${instanceName} (${instanceVersion})` : instanceName,
           bgColor: 'bg-primary hover:bg-primary-hover',
           loading: false,
           action: handleLaunch
         };
-    }
-  };
-
-  const handleLaunch = async () => {
-    if (isLoading) return;
-    
-    setIsLoading(true);
-    setMessage('');
-    
-    try {
-      setStatus(LaunchStatus.Launching);
-      const result = await launchInstance();
-      setMessage(result);
-      
-      // 更新状态
-      const currentStatus = await getLaunchStatus();
-      setStatus(currentStatus);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : '启动失败');
-      setStatus(LaunchStatus.Crashed);
-      console.error('启动失败:', error);
-    } finally {
-      setIsLoading(false);
-    }
-    
-    // 如果提供了外部onClick，也执行
-    if (onClick) onClick();
-  };
-
-  const handleStop = async () => {
-    if (isLoading) return;
-    
-    setIsLoading(true);
-    setMessage('');
-    
-    try {
-      const result = await stopInstance();
-      setMessage(result);
-      
-      // 更新状态
-      const currentStatus = await getLaunchStatus();
-      setStatus(currentStatus);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : '停止失败');
-      console.error('停止失败:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -150,13 +181,15 @@ const ActionButton = ({ onClick }: ActionButtonProps) => {
           </div>
         ) : (
           <>
-            <span className="text-lg font-bold">{buttonInfo.text}</span>
+            <div className="flex items-center gap-2">
+              <Gamepad2 className="w-5 h-5" />
+              <span className="text-lg font-bold">{buttonInfo.text}</span>
+            </div>
             <span className="text-xs opacity-90 mt-1">{buttonInfo.subtext}</span>
           </>
         )}
       </button>
       
-      {/* 状态指示器 */}
       <div className="flex items-center space-x-2 text-xs text-text-secondary">
         <div className={`w-2 h-2 rounded-full ${
           status === LaunchStatus.Running ? 'bg-success animate-pulse' :

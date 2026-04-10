@@ -1,34 +1,32 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, LayoutGrid, List, Search, X } from 'lucide-react';
+import { Loader2, Search, X } from 'lucide-react';
 import { useInstanceStore } from '../stores/instanceStore';
 import { openFolder } from '../helper/rustInvoke';
-import { InstanceCard, EmptyState, useNotification, IconButton } from '../components/common';
+import { InstanceListItem, EmptyState, useNotification, IconButton } from '../components/common';
 
 const InstanceList: React.FC = () => {
   const { t } = useTranslation();
   const selectedFolderId = useInstanceStore(s => s.selectedFolderId);
   const knownFolders = useInstanceStore(s => s.knownFolders);
+  const selectedInstanceId = useInstanceStore(s => s.selectedInstanceId);
   const {
     instances,
     loading,
     error,
     instancesPath,
-    viewMode,
     searchQuery,
+    init,
     refresh,
     remove,
-    rename,
     duplicate,
     setSearchQuery,
-    setViewMode,
+    setSelectedInstance,
     getFilteredInstances,
   } = useInstanceStore();
 
-  const { success, error: notifyError, info } = useNotification();
+  const { success, error: notifyError } = useNotification();
 
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState('');
   const [duplicateTargetId, setDuplicateTargetId] = useState<string | null>(null);
   const [duplicateName, setDuplicateName] = useState('');
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
@@ -37,8 +35,12 @@ const InstanceList: React.FC = () => {
   const filteredInstances = getFilteredInstances();
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    init();
+  }, [init]);
+
+  const handleSelect = (id: string) => {
+    setSelectedInstance(id);
+  };
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(t('instances.confirmDelete', '确定要删除实例 "{{name}}" 吗？', { name }))) return;
@@ -49,26 +51,6 @@ const InstanceList: React.FC = () => {
       const msg = e instanceof Error ? e.message : t('notification.error');
       notifyError(t('instances.deleteFailed', '删除失败'), msg);
     }
-  };
-
-  const handleRename = async (id: string) => {
-    const instance = instances.find((i) => i.id === id);
-    if (!editingName.trim() || editingName === instance?.name) {
-      setEditingId(null);
-      return;
-    }
-    try {
-      await rename(id, editingName);
-      success(t('instances.renameSuccess', '重命名成功'), t('instances.renameSuccessMsg', '实例已更名为 "{{name}}"', { name: editingName }));
-      setEditingId(null);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : t('notification.error');
-      notifyError(t('instances.renameFailed', '重命名失败'), msg);
-    }
-  };
-
-  const handleLaunch = (_id: string) => {
-    info(t('instances.launching', '启动'), t('instances.launchingMsg', '正在启动实例...'));
   };
 
   const handleOpenFolder = async (path: string) => {
@@ -103,14 +85,9 @@ const InstanceList: React.FC = () => {
     }
   };
 
-  const handleExport = (_id: string) => {
-    info(t('instances.export', '导出'), t('instances.exportNotReady', '导出整合包功能尚未集成'));
-  };
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setEditingId(null);
         setShowDuplicateModal(false);
       }
     };
@@ -131,74 +108,26 @@ const InstanceList: React.FC = () => {
     if (filteredInstances.length === 0) {
       return (
         <EmptyState
-          icon={searchQuery ? 'search' : 'folder'}
+          icon="folder"
           title={searchQuery ? t('instances.noMatch', '未找到匹配的实例') : t('instances.noInstances', '暂无实例')}
           description={searchQuery ? t('instances.adjustSearch', '尝试调整搜索关键词') : t('instances.noInstancesDesc', '下载或创建新实例来开始游戏')}
         />
       );
     }
 
-    if (viewMode === 'grid') {
-      return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredInstances.map((instance) => (
-            <div key={instance.id} className="relative">
-              {editingId === instance.id ? (
-                <div className="p-4 bg-surface border border-primary rounded-lg">
-                  <input
-                    type="text"
-                    value={editingName}
-                    onChange={(e) => setEditingName(e.target.value)}
-                    onBlur={() => handleRename(instance.id)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleRename(instance.id)}
-                    autoFocus
-                    className="w-full px-2 py-1 bg-surface border border-border-hover rounded text-text-primary text-sm focus:outline-none focus:border-primary"
-                  />
-                </div>
-              ) : (
-                <InstanceCard
-                  instance={instance}
-                  onSelect={() => {}}
-                  onLaunch={() => handleLaunch(instance.id)}
-                  onRename={() => { setEditingId(instance.id); setEditingName(instance.name); }}
-                  onDuplicate={() => handleDuplicate(instance.id)}
-                  onDelete={() => handleDelete(instance.id, instance.name)}
-                  onOpenFolder={() => handleOpenFolder(instance.path)}
-                  onOpenConfigFolder={() => handleOpenFolder(instance.path)}
-                  onExport={() => handleExport(instance.id)}
-                  showPath
-                  viewMode="grid"
-                />
-              )}
-            </div>
-          ))}
-        </div>
-      );
-    }
-
     return (
-      <div className="border border-border rounded-lg overflow-hidden">
-        <div className="flex items-center px-4 py-3 bg-surface border-b border-border text-text-tertiary text-sm font-medium">
-          <div className="w-10 mr-3"></div>
-          <div className="flex-1">{t('instances.instanceName', '实例名称')}</div>
-          <div className="w-24 mx-4">{t('instances.gameVersion', '游戏版本')}</div>
-          <div className="w-28 mx-4">{t('instances.modLoader', '模组加载器')}</div>
-          <div className="w-24 mx-4">{t('instances.lastPlayed', '最后运行')}</div>
-          <div className="w-20 text-center">{t('instances.actions', '操作')}</div>
-        </div>
+      <div className="h-full overflow-y-auto">
         {filteredInstances.map((instance) => (
-          <InstanceCard
+          <InstanceListItem
             key={instance.id}
             instance={instance}
-            onSelect={() => {}}
-            onLaunch={() => handleLaunch(instance.id)}
-            onRename={() => { setEditingId(instance.id); setEditingName(instance.name); }}
+            selected={instance.id === selectedInstanceId}
+            onSelect={() => handleSelect(instance.id)}
+            onLaunch={() => {}}
+            onRename={() => {}}
             onDuplicate={() => handleDuplicate(instance.id)}
             onDelete={() => handleDelete(instance.id, instance.name)}
             onOpenFolder={() => handleOpenFolder(instance.path)}
-            onOpenConfigFolder={() => handleOpenFolder(instance.path)}
-            onExport={() => handleExport(instance.id)}
-            viewMode="list"
           />
         ))}
       </div>
@@ -211,47 +140,21 @@ const InstanceList: React.FC = () => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-bold text-text-primary">{t('instances.title', '实例列表')}</h1>
-            <p className="text-text-tertiary text-sm">{t('instances.subtitle', '查看和管理所有 Minecraft 游戏实例')}</p>
+            <p className="text-text-tertiary text-sm">{t('instances.subtitle', '选择和管理 Minecraft 游戏实例')}</p>
             {(() => {
               const folder = knownFolders.find(f => f.id === selectedFolderId);
               return folder ? (
                 <p className="text-text-tertiary text-xs mt-1 font-mono truncate max-w-md" title={folder.path}>
-                  {folder.name} u2192 {folder.path}
+                  {folder.name} → {folder.path}
                 </p>
               ) : null;
             })()}
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center bg-surface border border-border rounded-lg overflow-hidden">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`px-3 py-1.5 text-sm transition-colors ${
-                  viewMode === 'grid'
-                    ? 'bg-primary text-text-primary'
-                    : 'text-text-tertiary hover:text-text-primary hover:bg-surface-hover'
-                }`}
-                title={t('instances.gridView', '网格视图')}
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`px-3 py-1.5 text-sm transition-colors ${
-                  viewMode === 'list'
-                    ? 'bg-primary text-text-primary'
-                    : 'text-text-tertiary hover:text-text-primary hover:bg-surface-hover'
-                }`}
-                title={t('instances.listView', '列表视图')}
-              >
-                <List className="w-4 h-4" />
-              </button>
-            </div>
-            <IconButton
-              onClick={() => refresh()}
-              icon={Loader2}
-              label={t('instances.refresh', '刷新')}
-            />
-          </div>
+          <IconButton
+            onClick={() => refresh()}
+            icon={Loader2}
+            label={t('instances.refresh', '刷新')}
+          />
         </div>
 
         <div className="flex items-center gap-4">
@@ -260,7 +163,7 @@ const InstanceList: React.FC = () => {
             <input
               ref={searchInputRef}
               type="text"
-              placeholder={t('instances.searchPlaceholder', '搜索实例 (支持名称、版本、加载器)...')}
+              placeholder={t('instances.searchPlaceholder', '搜索实例 (支持名称、版本)...')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-surface border border-border rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:border-primary transition-colors"
@@ -286,7 +189,7 @@ const InstanceList: React.FC = () => {
         </div>
       )}
 
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-hidden p-6">
         {renderContent()}
       </div>
 
@@ -295,11 +198,9 @@ const InstanceList: React.FC = () => {
           <p className="text-text-tertiary text-xs">
             {t('instances.instanceDir', '实例目录')}: <span className="font-mono">{instancesPath}</span>
           </p>
-          <div className="flex items-center gap-4 text-xs text-text-tertiary">
-            <span>{t('instances.doubleClickLaunch', '双击启动')}</span>
-            <span>{t('instances.rightClickMenu', '右键菜单')}</span>
-            <span>ESC {t('instances.cancel', '取消')}</span>
-          </div>
+          <p className="text-text-tertiary text-xs">
+            点击实例卡片可切换当前选择的实例
+          </p>
         </div>
       </div>
 

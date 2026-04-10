@@ -572,6 +572,15 @@ export const deployVersionFiles = async (
   return await invokeRustFunction("deploy_version_files", { versionId }, options);
 };
 
+export const deployVersionToInstance = async (
+  instancePath: string,
+  versionId: string,
+  options?: InvokeOptions
+): Promise<string> => {
+  logger.info('部署版本到实例', { instancePath, versionId });
+  return await invokeRustFunction("deploy_version_to_instance", { instance_path: instancePath, version_id: versionId }, options);
+};
+
 export const isVersionDeployed = async (
   versionId: string,
   options?: InvokeOptions

@@ -16,6 +16,8 @@ export type { VersionCardProps } from './VersionCard';
 export { default as InstanceCard } from './InstanceCard';
 export type { InstanceCardProps } from './InstanceCard';
 
+export { default as InstanceListItem } from './InstanceListItem';
+
 export { default as EmptyState } from './EmptyState';
 export type { EmptyStateProps } from './EmptyState';
 
