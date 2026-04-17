@@ -14,7 +14,7 @@ const BaseSidebarLayout = ({ children, title = "MC启动器", subtitle = "简洁
         <p className="text-sm text-[var(--color-text-secondary)] mt-1">{subtitle}</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4 scrollbar-custom">
         {children}
       </div>
     </aside>

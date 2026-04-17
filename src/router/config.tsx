@@ -235,14 +235,6 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
     group: SidebarGroup.GAME,
     children: [
       {
-        id: 'launch-game',
-        type: 'action',
-        title: '启动游戏',
-        titleI18nKey: 'sidebar.launchGame',
-        icon: <Rocket className="w-4 h-4" />,
-        group: SidebarGroup.GAME
-      },
-      {
         id: 'instance-manage',
         type: 'route',
         title: '实例管理',
