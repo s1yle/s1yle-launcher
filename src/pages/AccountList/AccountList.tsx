@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Loader2 } from 'lucide-react';
-import Popup from "../components/Popup";
+import Popup from "../../components/Popup";
 import { 
   invokeAddAccount, 
   getAccountList, 
@@ -9,8 +9,8 @@ import {
   setCurrentAccount,
   AccountInfo,
   AccountType 
-} from "../helper/rustInvoke";
-import { logger } from "../helper/logger";
+} from "../../helper/rustInvoke";
+import { logger } from "../../helper/logger";
 
 interface AccountListProps {
   onClickAddAccount?: () => void;

@@ -11,7 +11,6 @@ import {
   Gamepad2,
   Package,
   Monitor,
-  Rocket,
   ExternalLink,
   FolderTree,
   FolderPlus,
@@ -224,7 +223,7 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
         children: [
           {
             id: 'microsoft-account',
-            type: 'route',
+            type: 'action',
             title: '微软账户',
             titleI18nKey: 'sidebar.microsoftAccount',
             icon: <Monitor className="w-4 h-4" />,
@@ -233,7 +232,7 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
           },
           {
             id: 'offline-account',
-            type: 'route',
+            type: 'action',
             title: '离线账户',
             titleI18nKey: 'sidebar.offlineAccount',
             icon: <UserMinus className="w-4 h-4" />,

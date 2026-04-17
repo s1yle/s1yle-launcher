@@ -1,17 +1,17 @@
 // 统一导出所有页面组件
 export { default as Home } from './Home';
-export { default as AccountList } from './AccountList';
-export { default as AccountListWithSidebar } from './AccountListWithSidebar';
+export { default as AccountList } from './AccountList/AccountList';
+export { default as AccountListWithSidebar } from './AccountList/AccountListWithSidebar';
 export { default as InstanceManage } from './InstanceManage';
 export { default as InstanceList } from './InstanceList';
 export { default as DownloadGame } from './Download/DownloadGame';
 export { default as DownloadModpack } from './Download/DownloadModpack';
-export { default as MicrosoftAccount } from './MicrosoftAccount';
-export { default as OfflineAccount } from './OfflineAccount';
+export { default as MicrosoftAccount } from './AccountList/MicrosoftAccount';
+export { default as OfflineAccount } from './AccountList/OfflineAccount';
 export { default as Settings } from './Settings';
 export { default as Multiplayer } from './Multiplayer';
-export { default as Feedback } from './Feedback';
-export { default as Hint } from './Hint'
+export { default as Feedback } from './Feedback/Feedback';
+export { default as Hint } from './Feedback/Hint'
 export { default as GameSettingsJava } from './GameSettings/GameSettingsJava';
 export { default as GameSettingsGeneral } from './GameSettings/GameSettingsGeneral';
 export { default as GameSettingsAppearance } from './GameSettings/GameSettingsAppearance';
