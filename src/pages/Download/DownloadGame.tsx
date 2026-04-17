@@ -2,12 +2,12 @@ import { useState, useCallback, useMemo, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Loader2, CheckCircle, FolderOpen } from 'lucide-react';
-import { useDownload } from '../hooks/useDownload';
-import { GameVersion, openFolder, openUrl } from '../helper/rustInvoke';
-import { ProgressBar, DownloadItem, VersionListItem, VersionFilterDropdown, EmptyState, useNotification, VirtualList } from '../components/common';
-import { useNavStore } from '../stores/navStore';
-import { getWikiUrl } from '../utils/modloaderCompat';
-import { VersionCategory, filterVersionsByCategory, debugVersionTypes } from '../utils/versionFilter';
+import { useDownload } from '../../hooks/useDownload';
+import { GameVersion, openFolder, openUrl } from '../../helper/rustInvoke';
+import { ProgressBar, DownloadItem, VersionListItem, VersionFilterDropdown, EmptyState, useNotification, VirtualList } from '../../components/common';
+import { useNavStore } from '../../stores/navStore';
+import { getWikiUrl } from '../../utils/modloaderCompat';
+import { VersionCategory, filterVersionsByCategory, debugVersionTypes } from '../../utils/versionFilter';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 

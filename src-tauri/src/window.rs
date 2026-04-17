@@ -2,8 +2,6 @@ use crate::DEV;
 use once_cell::sync::Lazy;
 use std::{fs, sync::Mutex};
 
-pub const CONFIG_PATH: &str = ".slauncher/slauncher.json";
-
 #[derive(serde::Serialize, serde::Deserialize, Default, Clone, Debug)]
 pub struct WindowPosition {
     pub x: i32,

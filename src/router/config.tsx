@@ -103,7 +103,7 @@ export const routes: RouteConfig[] = [
   },
   {
     path: '/download',
-    componentName: 'Download',
+    componentName: 'DownloadGame',
     header: { type: SidebarType.SUB, title: '下载', titleI18nKey: 'sidebar.download' },
     sidebarGroup: SidebarGroup.GAME,
     parentPath: '/',
@@ -134,15 +134,32 @@ export const routes: RouteConfig[] = [
   },
   {
     path: '/game-settings',
-    componentName: 'GameSettings',
+    componentName: 'GameSettingsJava',
     header: { type: SidebarType.SUB, title: '全局游戏设置', titleI18nKey: 'gameSettings.title' },
     sidebarGroup: SidebarGroup.COMMON,
     parentPath: '/',
+    autoNavigateToFirstChild: true,
     children: [
-      { path: '/game-settings/java', componentName: 'GameSettingsJava', header: { type: SidebarType.SECONDARY, title: 'Java 管理', titleI18nKey: 'gameSettings.java' }, sidebarGroup: SidebarGroup.COMMON, parentPath: '/game-settings' },
-      { path: '/game-settings/general', componentName: 'GameSettingsGeneral', header: { type: SidebarType.SECONDARY, title: '通用', titleI18nKey: 'gameSettings.general' }, sidebarGroup: SidebarGroup.COMMON, parentPath: '/game-settings' },
-      { path: '/game-settings/appearance', componentName: 'GameSettingsAppearance', header: { type: SidebarType.SECONDARY, title: '外观', titleI18nKey: 'gameSettings.appearance' }, sidebarGroup: SidebarGroup.COMMON, parentPath: '/game-settings' },
-      { path: '/game-settings/download', componentName: 'GameSettingsDownload', header: { type: SidebarType.SECONDARY, title: '下载', titleI18nKey: 'gameSettings.download' }, sidebarGroup: SidebarGroup.COMMON, parentPath: '/game-settings' },
+      { 
+        path: '/game-settings/java', componentName: 'GameSettingsJava', 
+        header: { type: SidebarType.SECONDARY, title: 'Java 管理', titleI18nKey: 'gameSettings.java' }, 
+        sidebarGroup: SidebarGroup.COMMON, parentPath: '/' 
+      },
+      { 
+        path: '/game-settings/general', componentName: 'GameSettingsGeneral', 
+        header: { type: SidebarType.SECONDARY, title: '通用', titleI18nKey: 'gameSettings.general' }, 
+        sidebarGroup: SidebarGroup.COMMON, parentPath: '/' 
+      },
+      { 
+        path: '/game-settings/appearance', componentName: 'GameSettingsAppearance', 
+        header: { type: SidebarType.SECONDARY, title: '外观', titleI18nKey: 'gameSettings.appearance' }, 
+        sidebarGroup: SidebarGroup.COMMON, parentPath: '/' 
+      },
+      { 
+        path: '/game-settings/download', componentName: 'GameSettingsDownload', 
+        header: { type: SidebarType.SECONDARY, title: '下载', titleI18nKey: 'gameSettings.download' },
+        sidebarGroup: SidebarGroup.COMMON, parentPath: '/' 
+      },
     ]
   },
   {

@@ -45,12 +45,12 @@ const MainLayout = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" onContextMenu={handleContextMenu}>
+    <div className="h-screen flex flex-col " onContextMenu={handleContextMenu}>
       <Header type={currentRoute.header.type === 'main' ? 'main' : 'sub'} title={currentRoute.header.title} />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden ">
         <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} />
         <main
-          className="flex-1 overflow-hidden relative noise-bg gradient-bg"
+          className="flex-1 overflow-auto relative noise-bg gradient-bg scrollbar-custom"
           style={{ background: 'var(--color-bg-primary)' }}
         >
           <AnimatePresence mode="sync">
@@ -65,7 +65,7 @@ const MainLayout = () => {
                 ease: [0.25, 0.1, 0.25, 1],
               }}
             >
-              <div className="absolute inset-0 overflow-hidden">
+              <div className="absolute inset-0 ">
                 <RouterRenderer />
               </div>
             </motion.div>

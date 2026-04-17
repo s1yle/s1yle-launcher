@@ -7,7 +7,6 @@ import {
     AccountListWithSidebar,
     InstanceManage,
     InstanceList,
-    Download,
     DownloadGame,
     DownloadModpack,
     MicrosoftAccount,
@@ -16,7 +15,6 @@ import {
     Multiplayer,
     Feedback,
     Hint,
-    GameSettings,
     GameSettingsJava,
     GameSettingsGeneral,
     GameSettingsAppearance,
@@ -31,7 +29,6 @@ const componentMap: Record<string, React.FC> = {
     AccountListWithSidebar,
     InstanceManage,
     InstanceList,
-    Download,
     DownloadGame,
     DownloadModpack,
     MicrosoftAccount,
@@ -40,7 +37,6 @@ const componentMap: Record<string, React.FC> = {
     Multiplayer,
     Feedback,
     Hint,
-    GameSettings,
     GameSettingsJava,
     GameSettingsGeneral,
     GameSettingsAppearance,
@@ -83,7 +79,7 @@ const renderAllRoutes = (routeList: RouteConfig[]): React.ReactNode[] => {
 // 这个组件专门负责根据路由配置渲染对应的页面组件
 const RouterRenderer = () => {
     return (
-        <div className="h-full pl-3 pr-3 overflow-hidden router-renderer">
+        <div className="h-full pl-3 pr-3 ">
             <Routes>
                 {renderAllRoutes(routes)}
             </Routes>
