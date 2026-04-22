@@ -33,6 +33,7 @@ const InstanceList: React.FC = () => {
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const filteredInstances = getFilteredInstances();
+  console.log("[filteredInstances] 扫描并过滤后的实力列表：", filteredInstances);
 
   useEffect(() => {
     init();

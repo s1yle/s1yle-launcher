@@ -55,6 +55,7 @@ pub struct InstanceManager {
 
 impl InstanceManager {
     pub fn new(base_path: PathBuf) -> Self {
+        println!("InstanceManager base_path: {:?}", base_path);
         let daemon_path = base_path.join(DAEMON_DIR);
         fs::create_dir_all(&daemon_path).ok();
         Self { base_path }

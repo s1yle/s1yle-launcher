@@ -1,18 +1,13 @@
 use chrono::Local;
-use directories::ProjectDirs;
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, fs, path::PathBuf, sync::Mutex};
+use std::{collections::HashMap, fs, sync::Mutex};
 use tauri::command;
 use uuid::Uuid;
+use crate::config;
 
 use crate::log_info;
 
-// ======================== 配置常量 ========================
-const CONFIG_QUALIFIER: &str = "art";
-const CONFIG_ORGANIZATION: &str = "s1yle"; // 替换为你的工作室/组织名
-const CONFIG_APPLICATION: &str = "mc_launcher"; // 替换为你的应用名
-const CONFIG_FILENAME: &str = "accounts.json";
 
 // ======================== 类型定义 ========================
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
@@ -61,21 +56,10 @@ static ACCOUNT_MANAGER: OnceCell<Mutex<AccountManager>> = OnceCell::new();
 
 // ======================== 核心逻辑：文件存储 ========================
 
-/// 获取配置文件的完整路径
-fn get_config_path() -> Result<PathBuf, String> {
-    let proj_dirs = ProjectDirs::from(CONFIG_QUALIFIER, CONFIG_ORGANIZATION, CONFIG_APPLICATION)
-        .ok_or("无法确定系统应用数据目录")?;
-
-    // 确保目录存在
-    let config_dir = proj_dirs.data_dir();
-    fs::create_dir_all(config_dir).map_err(|e| format!("创建配置目录失败: {}", e))?;
-
-    Ok(config_dir.join(CONFIG_FILENAME))
-}
 
 /// 从磁盘加载账户数据（启动时调用一次）
 pub fn load_accounts_from_disk_internal() -> Result<(), String> {
-    let path = get_config_path()?;
+    let path = crate::config::get_config_path()?;
 
     if !path.exists() {
         println!("ℹ️ 配置文件不存在，将使用空初始状态");
@@ -101,7 +85,7 @@ pub fn load_accounts_from_disk_internal() -> Result<(), String> {
 
 /// 将当前内存中的账户数据保存到磁盘（内部调用）
 fn save_accounts_to_disk_internal() -> Result<(), String> {
-    let path = get_config_path()?;
+    let path = config::get_config_path()?;
     let manager = ACCOUNT_MANAGER
         .get()
         .ok_or("账户管理器未初始化")?

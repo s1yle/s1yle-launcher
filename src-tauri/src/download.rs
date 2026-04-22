@@ -275,6 +275,7 @@ pub struct DownloadManager {
 
 impl DownloadManager {
     pub fn new(base_path: PathBuf) -> Self {
+        println!("base_path: {:?}", base_path);
         fs::create_dir_all(&base_path).ok();
 
         let client = reqwest::Client::builder()
@@ -722,7 +723,7 @@ pub async fn download_file(
 
     let task_id = format!("{:x}", md5::compute(&url));
     let save_path = download_manager.base_path.lock().unwrap().join("temp").join(&filename);
-
+    log_info!("保存路径：{:?}", save_path);
     if let Some(parent) = save_path.parent() {
         fs::create_dir_all(parent)
             .map_err(|e| format!("创建目录失败: {}", e))?;

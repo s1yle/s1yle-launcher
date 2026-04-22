@@ -4,16 +4,26 @@ mod account;
 mod config;
 mod download;
 mod instance;
-mod json;
 mod launch;
 mod modloader;
 mod window;
 use std::fs;
 use std::sync::Mutex;
-use std::path::PathBuf;
 
 pub use crate::account::{add_account, get_account_list, get_current_account, delete_account, set_current_account, init_account_manager, save_accounts_to_disk, load_accounts_from_disk, initialize_account_system};
-pub use crate::config::{get_config, init_config, DEV};
+pub use crate::config::{
+    get_config,
+    update_config,
+    init_config,
+    get_game_settings,
+    update_game_settings,
+    get_download_config,
+    update_download_config,
+    AppConfig,
+    AppSettings,
+    DownloadConfig,
+    DEV,
+};
 pub use crate::launch::{
     init_launch_manager,
     tauri_launch_instance,
@@ -265,15 +275,13 @@ fn open_folder(path: String) -> Result<String, String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let download_base_path = dirs_next::data_local_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join("art")
-        .join("s1yle")
-        .join("minecraft");
 
-    let download_manager = DownloadManager::new(download_base_path.clone());
-    let mod_loader_manager = ModLoaderManager::new(download_base_path.clone());
-    let instance_manager = InstanceManager::new(download_base_path.clone());
+    let download_path = &*config::CONFIG_APPLICATION;
+    let instance_path = &*config::DEFAULT_DEAMON_PATH;
+
+    let download_manager = DownloadManager::new(download_path.to_path_buf().clone());
+    let mod_loader_manager = ModLoaderManager::new(download_path.to_path_buf());
+    let instance_manager = InstanceManager::new(instance_path.to_path_buf());
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
