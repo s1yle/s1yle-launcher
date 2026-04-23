@@ -71,7 +71,7 @@ pub fn save_window_position(
 
 #[tauri::command]
 pub fn load_window_position() -> Result<Option<WindowPosition>, String> {
-    let pos_file = &*config::CONFIG_FILE_PATH;
+    let pos_file = &*config::CONFIG_APPLICATION;
 
     if pos_file.exists() {
         let json = fs::read_to_string(pos_file).map_err(|e| e.to_string())?;

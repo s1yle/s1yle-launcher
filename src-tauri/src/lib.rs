@@ -273,7 +273,6 @@ fn open_folder(path: String) -> Result<String, String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-
     let download_path = &*config::DOWNLOAD_BASE_PATH;
     let instance_path = &*config::DEFAULT_DEAMON_PATH;
 

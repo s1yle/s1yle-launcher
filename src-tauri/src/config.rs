@@ -47,7 +47,6 @@ pub static MIN_WIDTH: Lazy<u32> = Lazy::new(|| {
 pub static MIN_HEIGHT: Lazy<u32> = Lazy::new(|| {
     600
 });
-        // "minHeight": 600,
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct AppSettings {
@@ -63,6 +62,13 @@ pub struct DownloadConfig {
     pub timeout_seconds: u32,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct PathConfig {
+    pub app_data: PathBuf,
+    pub download_cache: PathBuf,
+    pub instances: PathBuf,
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct AppConfig {
     pub game_settings: AppSettings,
@@ -71,6 +77,7 @@ pub struct AppConfig {
     pub theme: String,
     pub accent_color: String,
 }
+
 
 impl Default for AppConfig {
     fn default() -> Self {
