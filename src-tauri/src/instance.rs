@@ -5,7 +5,6 @@ use std::path::PathBuf;
 use tauri::State;
 use uuid::Uuid;
 
-const DAEMON_DIR: &str = "daemon";
 const META_FILE: &str = "instance.json";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -54,15 +53,15 @@ pub struct InstanceManager {
 }
 
 impl InstanceManager {
+    // 路径为 ..../minecraft/default/
     pub fn new(base_path: PathBuf) -> Self {
-        println!("InstanceManager base_path: {:?}", base_path);
-        let daemon_path = base_path.join(DAEMON_DIR);
-        fs::create_dir_all(&daemon_path).ok();
-        Self { base_path }
+        println!("InstanceManager base_path: {:?}", &base_path);
+        fs::create_dir_all(&base_path).ok();
+        Self { base_path: base_path }
     }
 
     fn get_daemon_dir(&self) -> PathBuf {
-        self.base_path.join(DAEMON_DIR)
+        self.base_path.clone()
     }
 
     fn get_minecraft_dir(&self, name: &str) -> PathBuf {

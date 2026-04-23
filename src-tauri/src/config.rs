@@ -34,7 +34,20 @@ pub static CONFIG_APPLICATION: Lazy<PathBuf> = Lazy::new(|| {
 });
 
 // 应用配置文件名
-const CONFIG_FILENAME: &str = "app_config.json";
+pub static CONFIG_FILE_PATH: Lazy<PathBuf> = Lazy::new(|| {
+    Lazy::<PathBuf>::get(&CONFIG_APPLICATION).unwrap_or(&PathBuf::from(".smcl")).join("app_config.json")
+});
+
+// 最小窗口宽度 
+pub static MIN_WIDTH: Lazy<u32> = Lazy::new(|| {
+    960
+});
+
+// 最小窗口高度
+pub static MIN_HEIGHT: Lazy<u32> = Lazy::new(|| {
+    600
+});
+        // "minHeight": 600,
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct AppSettings {
@@ -97,7 +110,7 @@ pub fn get_config_path() -> Result<PathBuf, String> {
     let config_dir = &*CONFIG_APPLICATION;
     fs::create_dir_all(config_dir.clone()).map_err(|e| format!("创建配置目录失败: {}", e))?;
 
-    Ok((config_dir.join(CONFIG_FILENAME)).into())
+    Ok((*CONFIG_FILE_PATH.clone()).to_path_buf())
 }
 
 pub fn init_config() {
