@@ -14,6 +14,7 @@ pub static BASE_PATH: Lazy<PathBuf> = Lazy::new(|| {
 });
 
 // APP 的名字
+#[allow(dead_code)]
 pub static APP_NAME: Lazy<PathBuf> = Lazy::new(|| {
     PathBuf::from(".smcl")
 });
@@ -63,6 +64,7 @@ pub struct DownloadConfig {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[allow(dead_code)]
 pub struct PathConfig {
     pub app_data: PathBuf,
     pub download_cache: PathBuf,

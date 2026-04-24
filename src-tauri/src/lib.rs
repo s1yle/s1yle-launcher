@@ -9,6 +9,8 @@ mod modloader;
 mod window;
 use std::fs;
 use std::sync::Mutex;
+use crate::download::DownloadManager;
+
 
 pub use crate::account::{add_account, get_account_list, get_current_account, delete_account, set_current_account, init_account_manager, save_accounts_to_disk, load_accounts_from_disk, initialize_account_system};
 pub use crate::config::{
@@ -40,25 +42,15 @@ pub use crate::window::{
     get_saved_window_position,
     WindowPosition
 };
-pub use crate::download::{
-    get_version_manifest,
-    get_version_detail,
-    get_version_download_manifest,
-    download_file,
-    get_download_tasks,
-    get_download_task,
-    cancel_download,
-    clear_completed_tasks,
-    get_game_versions,
-    get_download_base_path,
-    set_download_base_path,
-    deploy_version_files,
-    deploy_version_to_instance,
+
+pub use download::{
+    get_version_manifest, get_version_detail, get_version_download_manifest,
+    download_file, get_download_tasks, get_download_task, cancel_download,
+    clear_completed_tasks, get_game_versions, get_download_base_path,
+    set_download_base_path, deploy_version_files, deploy_version_to_instance,
     is_version_deployed,
-    DownloadManager,
-    FileDownload,
-    VersionDownloadManifest,
 };
+
 pub use crate::modloader::{
     get_fabric_versions,
     get_fabric_version_detail,
