@@ -6,7 +6,6 @@ import AccountSidebarContent from './content/AccountSidebarContent';
 import GameSidebarContent from './content/GameSidebarContent';
 import CommonSidebarContent from './content/CommonSidebarContent';
 import BaseChildrenContent from './content/BaseChildrenContent';
-import { findMatchingSidebar } from '../../sidebar/registry';
 import { logger } from '../../helper/logger';
 import { openUrl } from '../../helper/rustInvoke';
 
@@ -66,27 +65,6 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
   };
 
   const currentGroup = getCurrentSidebarGroup();
-
-  // Check registry for custom sidebar configs
-  const customSidebar = findMatchingSidebar(location.pathname);
-  if (customSidebar) {
-    return (
-      <BaseSidebarLayout>
-        <div className="py-8">
-          <BaseChildrenContent
-            items={customSidebar.items()}
-            onMenuClick={customSidebar.onItemClick}
-            isActive={customSidebar.isActive || (() => false)}
-            isItemActive={customSidebar.isActive}
-            isParentActive={customSidebar.isParentActive || (() => false)}
-            hasChildrenItems={customSidebar.hasChildrenItems || (() => false)}
-            groupTitle={customSidebar.groupTitle}
-            groupTitleI18nKey={customSidebar.groupTitleI18nKey}
-          />
-        </div>
-      </BaseSidebarLayout>
-    );
-  }
 
   // Account/Download/GameSettings: show their children items
   const pagesWithOwnSidebar = ['/account', '/download', '/game-settings'];

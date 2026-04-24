@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, X, AlertTriangle, Info } from 'lucide-react';
+import { Check, X, AlertTriangle, Info, Bug } from 'lucide-react';
 
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';
 
@@ -156,9 +156,10 @@ interface NotificationToastProps {
 }
 
 const NotificationToast: React.FC<NotificationToastProps> = ({ notification, onRemove }) => {
+  console.log("Notifacation Toast: ", notification);
   const typeConfig = {
     success: { bg: 'bg-success text-text-primary', icon: <Check className="w-5 h-5" /> },
-    error: { bg: 'bg-error text-text-primary', icon: <X className="w-5 h-5" /> },
+    error: { bg: 'bg-error text-text-primary', icon: <Bug className="w-5 h-5" /> },
     warning: { bg: 'bg-warning text-text-primary', icon: <AlertTriangle className="w-5 h-5" /> },
     info: { bg: 'bg-info text-text-primary', icon: <Info className="w-5 h-5" /> },
   };

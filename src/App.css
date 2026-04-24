@@ -111,3 +111,20 @@ select {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+.bg-success {
+  background-color: chartreuse;
+}
+
+.bg-error {
+  background-color: rgba(255,99,71,0.5);
+}
+
+.bg-warning {
+  background-color: darkgoldenrod;
+}
+
+.bg-info {
+  background-color:rgba(255,255,255, 0.2);
+}
+
