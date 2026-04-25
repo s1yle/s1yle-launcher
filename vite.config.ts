@@ -11,9 +11,11 @@ export default defineConfig(async () => ({
   // 添加 resolve 配置
   resolve: {
     alias: {
-      "@/src/": path.resolve(__dirname, "./src/"),
-      "@/": path.resolve(__dirname, "./src/"),
+      "@": path.resolve(__dirname, "./src"),
     },
+  },
+  optimizeDeps: {
+    entries: ["src/**/*.{ts,tsx}", "index.html"], // ← 只扫前端源码
   },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`

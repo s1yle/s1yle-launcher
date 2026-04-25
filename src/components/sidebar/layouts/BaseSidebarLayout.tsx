@@ -6,7 +6,7 @@ interface BaseSidebarLayoutProps {
   subtitle?: string;
 }
 
-const BaseSidebarLayout = ({ children, title = "MC启动器", subtitle = "简洁高效的游戏启动管理" }: BaseSidebarLayoutProps) => {
+const BaseSidebarLayout = ({ children, title = "SMCL", subtitle = "使用 Rust 重写的MC启动器" }: BaseSidebarLayoutProps) => {
   return (
     <aside className="w-55 h-full flex flex-col bg-[var(--color-bg-secondary)] border-r border-[var(--color-border)]">
       <div className="p-6 border-b border-[var(--color-border)]">

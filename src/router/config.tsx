@@ -98,7 +98,17 @@ export const routes: RouteConfig[] = [
     componentName: 'InstanceList',
     header: { type: SidebarType.SUB, title: '实例列表', titleI18nKey: 'sidebar.instanceList' },
     sidebarGroup: SidebarGroup.GAME,
-    parentPath: '/'
+    parentPath: '/',
+    autoNavigateToFirstChild: false,
+    children: [
+      {
+        path: '/instance-list/game-folder',
+        componentName: 'DownloadGame',
+        header: { type: SidebarType.SECONDARY, title: '游戏文件夹', titleI18nKey: 'instances.gameFolders' },
+        sidebarGroup: SidebarGroup.GAME,
+        parentPath: '/'
+      },
+    ]
   },
   {
     path: '/download',

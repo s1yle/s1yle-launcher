@@ -2,8 +2,8 @@
 export { default as Home } from './Home';
 export { default as AccountList } from './AccountList/AccountList';
 export { default as AccountListWithSidebar } from './AccountList/AccountListWithSidebar';
-export { default as InstanceManage } from './InstanceManage';
-export { default as InstanceList } from './InstanceList';
+export { default as InstanceManage } from './Instance/InstanceManage';
+export { default as InstanceList } from './Instance/InstanceList';
 export { default as DownloadGame } from './Download/DownloadGame';
 export { default as DownloadModpack } from './Download/DownloadModpack';
 export { default as MicrosoftAccount } from './AccountList/MicrosoftAccount';

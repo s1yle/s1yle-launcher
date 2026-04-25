@@ -66,8 +66,8 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
 
   const currentGroup = getCurrentSidebarGroup();
 
-  // Account/Download/GameSettings: show their children items
-  const pagesWithOwnSidebar = ['/account', '/download', '/game-settings'];
+  // 带独立侧边栏的渲染逻辑
+  const pagesWithOwnSidebar = ['/account', '/download', '/game-settings', '/instance-list'];
   if (pagesWithOwnSidebar.some(path => location.pathname.startsWith(path))) {
     const findMenuItemsByPath = (path: string): { current: SidebarMenuItem | undefined, parent: SidebarMenuItem | undefined } => {
       let foundParent: SidebarMenuItem | undefined = undefined;

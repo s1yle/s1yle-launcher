@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { useInstances } from '../hooks/useInstances';
-import { ModLoaderType, openFolder } from '../helper/rustInvoke';
-import { InstanceCard, EmptyState, useNotification } from '../components/common';
+import { useInstances } from '@/hooks/useInstances';
+import { ModLoaderType, openFolder } from '@/helper/rustInvoke';
+import { InstanceCard, EmptyState, useNotification } from '@/components/common';
 
 const InstanceManage: React.FC = () => {
   const {

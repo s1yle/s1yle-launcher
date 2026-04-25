@@ -29,8 +29,8 @@ const DownloadGame: React.FC = () => {
 
   const [filter, setFilter] = useState<VersionCategory>('release');
   const [searchQuery, setSearchQuery] = useState('');
-  const [downloadingVersions] = useState(() => new Set<string>());
-  const [deployingVersions] = useState(() => new Set<string>());
+  const downloadingVersions = useRef(new Set<string>());
+  const deployingVersions = useRef(new Set<string>());
 
 
   // Debug: Log version type distribution
@@ -74,8 +74,8 @@ const DownloadGame: React.FC = () => {
 
   // handle 下载
   const handleDownload = useCallback(async (version: GameVersion) => {
-    if (downloadingVersions.has(version.id)) return;
-    downloadingVersions.add(version.id);
+    if (downloadingVersions.current.has(version.id)) return;
+    downloadingVersions.current.add(version.id);
 
     try {
       info(t('notification.downloadStarted'), `${version.id}...`);
@@ -84,14 +84,14 @@ const DownloadGame: React.FC = () => {
     } catch (e) {
       notifyError(t('notification.error'), e instanceof Error ? e.message : t('notification.downloadFailed'));
     } finally {
-      downloadingVersions.delete(version.id);
+      downloadingVersions.current.delete(version.id);
     }
   }, [downloadVersion, info, notifyError, success, t, downloadingVersions]);
 
   // 部署
   const handleDeploy = useCallback(async (versionId: string) => {
-    if (deployingVersions.has(versionId)) return;
-    deployingVersions.add(versionId);
+    if (deployingVersions.current.has(versionId)) return;
+    deployingVersions.current.add(versionId);
 
     try {
       info(t('download.deploying'), `${versionId}...`);
@@ -100,7 +100,7 @@ const DownloadGame: React.FC = () => {
     } catch (e) {
       notifyError(t('notification.error'), e instanceof Error ? e.message : t('notification.deployFailed'));
     } finally {
-      deployingVersions.delete(versionId);
+      deployingVersions.current.delete(versionId);
     }
   }, [deployVersion, info, notifyError, success, t, deployingVersions]);
 
@@ -127,14 +127,14 @@ const DownloadGame: React.FC = () => {
     <VersionListItem
       version={version}
       installed={installedSet.has(version.id)}
-      downloading={downloadingVersions.has(version.id)}
-      isDeploying={deployingVersions.has(version.id)}
+      downloading={downloadingVersions.current.has(version.id)}
+      isDeploying={deployingVersions.current.has(version.id)}
       onClick={() => handleVersionClick(version)}
       onWikiClick={() => handleWikiClick(version.id)}
       onDownload={() => handleDownload(version)}
       onDeploy={() => handleDeploy(version.id)}
     />
-  ), [installedSet, downloadingVersions, deployingVersions, handleVersionClick, handleWikiClick, handleDownload, handleDeploy]);
+  ), [installedSet, handleVersionClick, handleWikiClick, handleDownload, handleDeploy]);
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -208,6 +208,7 @@ const DownloadGame: React.FC = () => {
 
       </div>
 
+      {/* 底部栏 */}
       <div className="px-4 py-2 border-t border-border flex items-center justify-between flex-shrink-0" style={{ backgroundColor: 'var(--color-surface-solid)' }}>
         <p style={{ color: 'var(--color-text-tertiary)' }} className="text-xs truncate">
           {t('download.downloadDir')}: <span className="font-mono">{downloadPath}</span>
