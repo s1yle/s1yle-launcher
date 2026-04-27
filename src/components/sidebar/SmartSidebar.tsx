@@ -96,6 +96,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
 
     const { current: currentMenuItem, parent: parentMenuItem } = findMenuItemsByPath(location.pathname);
 
+    // 渲染子侧边栏
     let childrenItems: SidebarMenuItem[] = [];
     if (currentMenuItem?.children && currentMenuItem.children.length > 0) {
       childrenItems = currentMenuItem.children;

@@ -1,84 +1,46 @@
-use crate::modloader::ModLoaderType;
-use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
-use tauri::State;
 use uuid::Uuid;
 
+use crate::modloader::ModLoaderType;
+use super::models::{GameInstance, InstanceMeta, KnownPath};
+use super::utils::copy_dir_all;
+
 const META_FILE: &str = "instance.json";
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct InstanceMeta {
-    pub id: String,
-    pub name: String,
-    pub version: String,
-    pub loader_type: ModLoaderType,
-    pub loader_version: Option<String>,
-    pub icon_path: Option<String>,
-    pub created_at: i64,
-    pub last_played: Option<i64>,
-}
-
-impl Default for InstanceMeta {
-    fn default() -> Self {
-        Self {
-            id: Uuid::new_v4().to_string(),
-            name: String::new(),
-            version: String::new(),
-            loader_type: ModLoaderType::Vanilla,
-            loader_version: None,
-            icon_path: None,
-            created_at: 0,
-            last_played: None,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GameInstance {
-    pub id: String,
-    pub name: String,
-    pub version: String,
-    pub loader_type: ModLoaderType,
-    pub loader_version: Option<String>,
-    pub path: String,
-    pub icon_path: Option<String>,
-    pub last_played: Option<i64>,
-    pub created_at: i64,
-    pub enabled: bool,
-}
 
 pub struct InstanceManager {
     base_path: PathBuf,
 }
 
 impl InstanceManager {
-    // 路径为 ..../minecraft/default/
+    /// ## base_path的路径为 /minecraft
     pub fn new(base_path: PathBuf) -> Self {
         println!("InstanceManager base_path: {:?}", &base_path);
         fs::create_dir_all(&base_path).ok();
-        Self {
-            base_path: base_path,
-        }
+        Self { base_path }
     }
 
     fn get_daemon_dir(&self) -> PathBuf {
         self.base_path.clone()
     }
 
+    // 获取mc路径
     fn get_minecraft_dir(&self, name: &str) -> PathBuf {
         self.get_daemon_dir().join(name).join(".minecraft")
     }
 
+    // 获取版本路径
     fn get_versions_dir(&self, name: &str) -> PathBuf {
         self.get_minecraft_dir(name).join("versions")
     }
 
+    // 获取 InstanceMeta 的 path
     fn get_meta_path(&self, name: &str) -> PathBuf {
         self.get_daemon_dir().join(name).join(META_FILE)
     }
 
-    fn load_meta(&self, name: &str) -> Option<InstanceMeta> {
+    // 加载 InstanceMeta
+    pub fn load_meta(&self, name: &str) -> Option<InstanceMeta> {
         let meta_path = self.get_meta_path(name);
         if meta_path.exists() {
             if let Ok(content) = fs::read_to_string(&meta_path) {
@@ -90,17 +52,19 @@ impl InstanceManager {
         None
     }
 
-    fn save_meta(&self, meta: &InstanceMeta, name: &str) -> Result<(), String> {
+    // 保存 InstanceMeta
+    pub fn save_meta(&self, meta: &InstanceMeta, name: &str) -> Result<(), String> {
         let meta_path = self.get_meta_path(name);
         if let Some(parent) = meta_path.parent() {
             fs::create_dir_all(parent).map_err(|e| format!("创建元数据目录失败: {}", e))?;
         }
-        let content =
-            serde_json::to_string_pretty(meta).map_err(|e| format!("序列化元数据失败: {}", e))?;
+        let content = serde_json::to_string_pretty(meta)
+            .map_err(|e| format!("序列化元数据失败: {}", e))?;
         fs::write(&meta_path, content).map_err(|e| format!("写入元数据失败: {}", e))?;
         Ok(())
     }
 
+    // 发掘 versions 字符串
     fn discover_versions(&self, name: &str) -> Vec<String> {
         let versions_dir = self.get_versions_dir(name);
         let mut versions = Vec::new();
@@ -118,6 +82,7 @@ impl InstanceManager {
         versions
     }
 
+    // 加载 GameInstance
     fn load_instance(&self, name: &str) -> Option<GameInstance> {
         let daemon_dir = self.get_daemon_dir();
         let instance_dir = daemon_dir.join(name);
@@ -219,6 +184,7 @@ impl InstanceManager {
         })
     }
 
+    // 扫描 GameInstance
     pub fn scan_instances(&self) -> Vec<GameInstance> {
         let daemon_dir = self.get_daemon_dir();
         let mut instances = Vec::new();
@@ -334,10 +300,12 @@ impl InstanceManager {
         instances
     }
 
+    // 通过 id 获取 GameInstance
     pub fn get_instance(&self, id: &str) -> Option<GameInstance> {
         self.scan_instances().into_iter().find(|i| i.id == id)
     }
 
+    // 创建 GameInstance
     pub fn create_instance(&self, name: &str, version: &str) -> Result<GameInstance, String> {
         let minecraft_dir = self.get_minecraft_dir(name);
         let versions_dir = self.get_versions_dir(name);
@@ -362,6 +330,7 @@ impl InstanceManager {
         Ok(instance)
     }
 
+    // 删除 GameInstance
     pub fn delete_instance(&self, id: &str) -> Result<(), String> {
         let instance = self
             .get_instance(id)
@@ -375,6 +344,7 @@ impl InstanceManager {
         Ok(())
     }
 
+    // 复制 GameInstnace
     pub fn copy_instance(&self, id: &str, new_name: &str) -> Result<GameInstance, String> {
         let instance = self
             .get_instance(id)
@@ -395,6 +365,7 @@ impl InstanceManager {
             .ok_or_else(|| "复制实例后加载失败".to_string())
     }
 
+    // 重命名 GameInstance
     pub fn rename_instance(&self, id: &str, new_name: &str) -> Result<GameInstance, String> {
         let instance = self
             .get_instance(id)
@@ -419,6 +390,7 @@ impl InstanceManager {
             .ok_or_else(|| "重命名实例后加载失败".to_string())
     }
 
+    // 指定 GameInstnace 的 id/name/enabled 属性
     pub fn update_instance(
         &self,
         id: &str,
@@ -439,116 +411,12 @@ impl InstanceManager {
         Ok(instance)
     }
 
+    // 获取到 instance 的 path
     pub fn get_instances_path(&self) -> String {
         self.get_daemon_dir().to_string_lossy().to_string()
     }
-}
 
-fn copy_dir_all(src: &PathBuf, dst: &PathBuf) -> Result<(), std::io::Error> {
-    if !dst.exists() {
-        fs::create_dir_all(dst)?;
-    }
-    for entry in fs::read_dir(src)? {
-        let entry = entry?;
-        let ty = entry.file_type()?;
-        let dest_path = dst.join(entry.file_name());
-        if ty.is_dir() {
-            copy_dir_all(&entry.path(), &dest_path)?;
-        } else {
-            fs::copy(entry.path(), dest_path)?;
-        }
-    }
-    Ok(())
-}
-
-#[tauri::command]
-pub fn scan_instances(instance_manager: State<'_, InstanceManager>) -> Vec<GameInstance> {
-    instance_manager.scan_instances()
-}
-
-#[tauri::command]
-pub fn get_instance(
-    id: String,
-    instance_manager: State<'_, InstanceManager>,
-) -> Option<GameInstance> {
-    instance_manager.get_instance(&id)
-}
-
-#[tauri::command]
-pub fn create_instance(
-    name: String,
-    version: String,
-    loader_type: ModLoaderType,
-    loader_version: Option<String>,
-    icon_path: Option<String>,
-    instance_manager: State<'_, InstanceManager>,
-) -> Result<GameInstance, String> {
-    let instance = instance_manager.create_instance(&name, &version)?;
-
-    if let Some(meta) = instance_manager.load_meta(&name) {
-        let mut new_meta = meta;
-        new_meta.loader_type = loader_type;
-        new_meta.loader_version = loader_version;
-        new_meta.icon_path = icon_path;
-        let _ = instance_manager.save_meta(&new_meta, &name);
-    }
-
-    instance_manager
-        .get_instance(&instance.id)
-        .ok_or_else(|| "获取实例失败".to_string())
-}
-
-#[tauri::command]
-pub fn delete_instance(
-    id: String,
-    _delete_files: bool,
-    instance_manager: State<'_, InstanceManager>,
-) -> Result<(), String> {
-    instance_manager.delete_instance(&id)
-}
-
-#[tauri::command]
-pub fn copy_instance(
-    id: String,
-    new_name: String,
-    instance_manager: State<'_, InstanceManager>,
-) -> Result<GameInstance, String> {
-    instance_manager.copy_instance(&id, &new_name)
-}
-
-#[tauri::command]
-pub fn rename_instance(
-    id: String,
-    new_name: String,
-    instance_manager: State<'_, InstanceManager>,
-) -> Result<GameInstance, String> {
-    instance_manager.rename_instance(&id, &new_name)
-}
-
-#[tauri::command]
-pub fn update_instance(
-    id: String,
-    name: Option<String>,
-    enabled: Option<bool>,
-    instance_manager: State<'_, InstanceManager>,
-) -> Result<GameInstance, String> {
-    instance_manager.update_instance(&id, name, enabled)
-}
-
-#[tauri::command]
-pub fn get_instances_path(instance_manager: State<'_, InstanceManager>) -> String {
-    instance_manager.get_instances_path()
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct KnownPath {
-    pub id: String,
-    pub name: String,
-    pub path: String,
-    pub is_default: bool,
-}
-
-impl InstanceManager {
+    // ---------- 多路径扫描扩展 ----------
     pub fn scan_instances_in_folder(&self, folder_path: &PathBuf) -> Vec<GameInstance> {
         let mut instances = Vec::new();
         if !folder_path.exists() || !folder_path.is_dir() {
@@ -584,6 +452,7 @@ impl InstanceManager {
         instances
     }
 
+    // 通过 path 加载 instance
     fn load_instance_from_path(&self, name: &str, minecraft_dir: &PathBuf) -> Option<GameInstance> {
         let versions_dir = minecraft_dir.join("versions");
         let mut versions = Vec::new();
@@ -703,6 +572,7 @@ impl InstanceManager {
         })
     }
 
+    // 通过 path 加载 InstanceMeta
     fn load_meta_from_path(&self, meta_path: &PathBuf) -> Option<InstanceMeta> {
         if let Ok(content) = fs::read_to_string(meta_path) {
             if let Ok(meta) = serde_json::from_str::<InstanceMeta>(&content) {
@@ -712,16 +582,18 @@ impl InstanceManager {
         None
     }
 
+    // 向 path 保存 InstanceMeta
     fn save_meta_to_path(&self, meta: &InstanceMeta, meta_path: &PathBuf) -> Result<(), String> {
         if let Some(parent) = meta_path.parent() {
             fs::create_dir_all(parent).map_err(|e| format!("创建元数据目录失败: {}", e))?;
         }
-        let content =
-            serde_json::to_string_pretty(meta).map_err(|e| format!("序列化元数据失败: {}", e))?;
+        let content = serde_json::to_string_pretty(meta)
+            .map_err(|e| format!("序列化元数据失败: {}", e))?;
         fs::write(meta_path, content).map_err(|e| format!("写入元数据失败: {}", e))?;
         Ok(())
     }
 
+    // 扫描已知路径
     pub fn scan_known_paths(&self) -> Vec<KnownPath> {
         let mut paths = Vec::new();
 
@@ -765,6 +637,7 @@ impl InstanceManager {
         paths
     }
 
+    // 通过 path 添加 Game Folder
     pub fn add_known_path(&self, path: &str) -> Result<KnownPath, String> {
         let p = PathBuf::from(path);
         if !p.exists() {
@@ -794,17 +667,4 @@ impl InstanceManager {
             is_default: false,
         })
     }
-}
-
-#[tauri::command]
-pub fn scan_known_mc_paths(instance_manager: State<'_, InstanceManager>) -> Vec<KnownPath> {
-    instance_manager.scan_known_paths()
-}
-
-#[tauri::command]
-pub fn add_known_path(
-    path: String,
-    instance_manager: State<'_, InstanceManager>,
-) -> Result<KnownPath, String> {
-    instance_manager.add_known_path(&path)
 }
