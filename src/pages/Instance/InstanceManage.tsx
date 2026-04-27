@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { useInstances } from '@/hooks/useInstances';
 import { ModLoaderType, openFolder } from '@/helper/rustInvoke';
 import { InstanceCard, EmptyState, useNotification } from '@/components/common';
+import BottomBar from '@/components/BottomBar/BottomBar';
 
 const InstanceManage: React.FC = () => {
   const {
@@ -190,11 +191,12 @@ const InstanceManage: React.FC = () => {
         )}
       </div>
 
-      <div className="px-6 py-3 border-t border-border bg-surface">
-        <p className="text-gray-500 text-xs">
-          实例目录: <span className="font-mono">{instancesPath}</span>
-        </p>
-      </div>
+      {/* 底部栏 */}
+      <BottomBar
+        dir='instances.instanceDir'
+        cmdOpen='common.open'
+        path= {instancesPath}
+      />
 
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">

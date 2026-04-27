@@ -104,16 +104,6 @@ const Instance: React.FC<InstanceProps> = ({
                 {renderContent()}
             </div>
 
-            <div className="px-6 py-3 border-t border-border bg-surface">
-                <div className="flex items-center justify-between">
-                    <p className="text-text-tertiary text-xs">
-                        {t('instances.instanceDir', '实例目录')}: <span className="font-mono">{instancesPath}</span>
-                    </p>
-                    <p className="text-text-tertiary text-xs">
-                        点击实例卡片可切换当前选择的实例
-                    </p>
-                </div>
-            </div>
 
             {showDuplicateModal && (
                 <div className="fixed inset-0 bg-overlay flex items-center justify-center z-50">

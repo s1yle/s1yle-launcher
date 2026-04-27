@@ -5,6 +5,7 @@ import { useInstanceStore } from '../../stores/instanceStore';
 import { openFolder } from '../../helper/rustInvoke';
 import { InstanceListItem, EmptyState, useNotification, IconButton } from '../../components/common';
 import Instance from './Instance';
+import BottomBar from '@/components/BottomBar/BottomBar';
 
 const InstanceList: React.FC = () => {
   const { t } = useTranslation();
@@ -100,7 +101,7 @@ const InstanceList: React.FC = () => {
   };
 
 
-
+  // 渲染加载动画
   const renderContent = () => {
     if (loading && instances.length === 0) {
       return (
@@ -111,6 +112,7 @@ const InstanceList: React.FC = () => {
       );
     }
 
+    // 没有实例时
     if (filteredInstances.length === 0) {
       return (
         <EmptyState
@@ -156,12 +158,19 @@ const InstanceList: React.FC = () => {
         error={error}
         renderContent={renderContent}
         instancesPath={instancesPath}
-        showDuplicateModal = {showDuplicateModal}
-        duplicateName = {duplicateName}
-        setDuplicateName = {setDuplicateName}
-        handleConfirmDuplicate = {handleConfirmDuplicate}
-        setShowDuplicateModal = {setShowDuplicateModal}
-        setDuplicateTargetId = {setDuplicateTargetId}
+        showDuplicateModal={showDuplicateModal}
+        duplicateName={duplicateName}
+        setDuplicateName={setDuplicateName}
+        handleConfirmDuplicate={handleConfirmDuplicate}
+        setShowDuplicateModal={setShowDuplicateModal}
+        setDuplicateTargetId={setDuplicateTargetId}
+      />
+
+      {/* 底部栏 */}
+      <BottomBar
+        dir='instances.instanceDir'
+        cmdOpen='common.open'
+        path= {instancesPath}
       />
 
     </div>

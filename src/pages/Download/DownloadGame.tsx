@@ -8,6 +8,7 @@ import { VersionListItem, VersionFilterDropdown, EmptyState, useNotification, Vi
 import { useNavStore } from '../../stores/navStore';
 import { getWikiUrl } from '../../utils/modloaderCompat';
 import { VersionCategory, filterVersionsByCategory, debugVersionTypes } from '../../utils/versionFilter';
+import BottomBar from '@/components/BottomBar/BottomBar';
 
 const ITEM_HEIGHT = 72;
 
@@ -209,22 +210,14 @@ const DownloadGame: React.FC = () => {
       </div>
 
       {/* 底部栏 */}
-      <div className="px-4 py-2 border-t border-border flex items-center justify-between flex-shrink-0" style={{ backgroundColor: 'var(--color-surface-solid)' }}>
-        <p style={{ color: 'var(--color-text-tertiary)' }} className="text-xs truncate">
-          {t('download.downloadDir')}: <span className="font-mono">{downloadPath}</span>
-        </p>
-        {downloadPath && (
-          <button
-            onClick={handleOpenDownloadFolder}
-            className="text-xs transition-colors flex items-center gap-1 flex-shrink-0 ml-4"
-            style={{ color: 'var(--color-text-secondary)' }}
-            title={t('download.openFolder')}
-          >
-            <FolderOpen className="w-3.5 h-3.5" />
-            {t('common.open')}
-          </button>
-        )}
-      </div>
+      <BottomBar
+        dir='download.downloadDir'
+        cmdOpen='common.open'
+        title='download.openFolder'
+        path= {downloadPath}
+        handleOpenDownloadFolder={handleOpenDownloadFolder}
+      />
+      
     </div>
   );
 };

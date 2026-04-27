@@ -21,9 +21,6 @@ export { default as InstanceListItem } from './InstanceListItem';
 export { default as EmptyState } from './EmptyState';
 export type { EmptyStateProps } from './EmptyState';
 
-export { default as TabBar } from './TabBar';
-export type { TabBarProps, TabItem } from './TabBar';
-
 export { default as SpinnerOverlay } from './SpinnerOverlay';
 export type { SpinnerOverlayProps } from './SpinnerOverlay';
 

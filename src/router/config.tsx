@@ -63,7 +63,8 @@ export const routes: RouteConfig[] = [
     header: { type: SidebarType.MAIN, title: 'Hello Minecraft! Launcher', titleI18nKey: 'header.title' },
     sidebarGroup: SidebarGroup.NONE
   },
-  {
+  // 账号 account
+  { 
     path: '/account',
     componentName: 'AccountListWithSidebar',
     header: { type: SidebarType.SUB, title: '账户列表', titleI18nKey: 'sidebar.accountList' },
@@ -86,6 +87,7 @@ export const routes: RouteConfig[] = [
       },
     ]
   },
+  // 实例管理
   {
     path: '/instance-manage',
     componentName: 'InstanceManage',
@@ -93,6 +95,7 @@ export const routes: RouteConfig[] = [
     sidebarGroup: SidebarGroup.GAME,
     parentPath: '/'
   },
+  // 实例列表
   {
     path: '/instance-list',
     componentName: 'InstanceList',
@@ -102,7 +105,7 @@ export const routes: RouteConfig[] = [
     autoNavigateToFirstChild: false,
     children: [
       {
-        path: '/instance-list/game-folder',
+        path: '/instance-list/game-folder:default',
         componentName: 'DownloadGame',
         header: { type: SidebarType.SECONDARY, title: '游戏文件夹', titleI18nKey: 'instances.gameFolders' },
         sidebarGroup: SidebarGroup.GAME,
@@ -110,6 +113,7 @@ export const routes: RouteConfig[] = [
       },
     ]
   },
+  // 下载 download
   {
     path: '/download',
     componentName: 'DownloadGame',
