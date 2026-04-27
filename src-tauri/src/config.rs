@@ -39,11 +39,7 @@ pub static CONFIG_APPLICATION: Lazy<PathBuf> = Lazy::new(|| {
         .join(".smcl")
 });
 
-/// # 已知路径存储文件
-pub static KNOWN_PATHS_FILE: Lazy<PathBuf> =
-    Lazy::new(|| CONFIG_APPLICATION.join("known_paths.json"));
-
-/// # 应用配置文件名
+/// # 应用配置文件名  /.smcl/app_config.json
 pub static CONFIG_FILE_PATH: Lazy<PathBuf> = Lazy::new(|| {
     Lazy::<PathBuf>::get(&CONFIG_APPLICATION)
         .unwrap_or(&PathBuf::from(".smcl"))

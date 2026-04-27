@@ -50,3 +50,14 @@ pub struct KnownPath {
     pub path: String,
     pub is_default: bool,
 }
+
+impl Default for KnownPath {
+    fn default() -> Self {
+        Self {
+            id: String::from("default"),
+            name: String::from("default"),
+            path: String::new(),
+            is_default: true
+        }
+    }
+}

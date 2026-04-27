@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{PathBuf};
 use uuid::Uuid;
 
 use super::models::{GameInstance, InstanceMeta, KnownPath};
 use super::utils::copy_dir_all;
-use crate::config;
+use crate::config::{self, get_config_path};
+use crate::log_error;
 use crate::modloader::ModLoaderType;
 
 #[derive(Debug)]
@@ -578,26 +579,47 @@ impl InstanceManager {
     // ---------- 已知路径管理 ----------
     // 从文件加载自定义路径
     fn load_known_paths(&self) -> Vec<KnownPath> {
-        let path = &*config::KNOWN_PATHS_FILE;
-        if path.exists() {
-            if let Ok(content) = fs::read_to_string(path) {
-                if let Ok(paths) = serde_json::from_str::<Vec<KnownPath>>(&content) {
-                    return paths;
+        let config_path = get_config_path().unwrap_or_else(|e| {
+            log_error!("获取配置失败: {}", e);
+            (&*config::CONFIG_FILE_PATH).clone()
+        });
+                
+        if config_path.exists() {
+            match fs::read_to_string(&config_path) {
+                Ok(content) => {
+                    if let Ok(paths) = serde_json::from_str::<Vec<KnownPath>>(&content) {
+                        return paths;
+                    }
+                }
+                Err(e) => {
+                    eprintln!("读取已知路径文件失败: {}", e);
                 }
             }
+        } else {
+            // 文件不存在，尝试创建默认空文件
+            let kp: &[KnownPath] = &[];
+            if let Err(e) = self.save_known_paths(kp) {
+                eprintln!("初始化已知路径文件失败: {}", e);
+                return Vec::new();   // 回退，不要 panic
+            }
+            return Vec::new();       // 刚初始化，空列表
         }
         Vec::new()
     }
 
     // 将自定义路径保存到文件
     fn save_known_paths(&self, paths: &[KnownPath]) -> Result<(), String> {
-        let path = config::CONFIG_APPLICATION;
-        if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {}", e))?;
+        let config_path = get_config_path()
+                    .map_err(|e| format!("获取配置目录失败: {}", e))?;
+
+        if let Some(parent) = config_path.parent() {
+            if !parent.exists() {
+                fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {}, path: {:?}", e, parent))?;
+            }
         }
         let content =
             serde_json::to_string_pretty(paths).map_err(|e| format!("序列化失败: {}", e))?;
-        fs::write(path, content).map_err(|e| format!("写入失败: {}", e))?;
+        fs::write(config_path, content).map_err(|e| format!("写入失败: {}", e))?;
         Ok(())
     }
 
