@@ -1,7 +1,7 @@
 import { IconButton } from "@/components/common";
 import { GameInstance, KnownPath } from "@/helper/rustInvoke";
 import { t } from "i18next";
-import { Loader2, Search, X } from "lucide-react";
+import { Loader2, RefreshCcw, Search, X } from "lucide-react";
 import { JSX, useRef } from "react";
 
 export interface InstanceProps {
@@ -61,11 +61,6 @@ const Instance: React.FC<InstanceProps> = ({
                             ) : null;
                         })()}
                     </div>
-                    <IconButton
-                        onClick={() => refresh()}
-                        icon={Loader2}
-                        label={t('instances.refresh', '刷新')}
-                    />
                 </div>
 
                 <div className="flex items-center gap-4">

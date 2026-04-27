@@ -104,15 +104,17 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
     }
 
     // 生成动态文件夹菜单项
-    const folderItems: SidebarMenuItem[] = knownFolders.map(f => ({
-      id: `folder-${f.id}`,
-      type: 'action' as const,
-      title: f.name,
-      titleI18nKey: '',
-      icon: <Folder className="w-4 h-4" />,
-      action: () => useInstanceStore.getState().setSelectedFolder(f.id),
-      group: 'game' as SidebarGroup,
-    }));
+    let folderItems: SidebarMenuItem[] = location.pathname.startsWith('/instance-list') ? 
+      knownFolders.map(f => ({
+        id: `folder-${f.id}`,
+        type: 'action' as const,
+        title: f.name,
+        titleI18nKey: '',
+        icon: <Folder className="w-4 h-4" />,
+        action: () => useInstanceStore.getState().setSelectedFolder(f.id),
+        group: 'game' as SidebarGroup,
+      })) : [];
+    
 
     // 合并动态 + 静态
     const allChildrenItems = [
