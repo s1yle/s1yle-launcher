@@ -1,13 +1,14 @@
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use uuid::Uuid;
 
-use crate::modloader::ModLoaderType;
 use super::models::{GameInstance, InstanceMeta, KnownPath};
 use super::utils::copy_dir_all;
+use crate::config;
+use crate::modloader::ModLoaderType;
 
-const META_FILE: &str = "instance.json";
-
+#[derive(Debug)]
 pub struct InstanceManager {
     base_path: PathBuf,
 }
@@ -20,48 +21,57 @@ impl InstanceManager {
         Self { base_path }
     }
 
-    fn get_daemon_dir(&self) -> PathBuf {
+    // 获取mc路径
+    fn get_minecraft_dir(&self) -> PathBuf {
         self.base_path.clone()
     }
 
-    // 获取mc路径
-    fn get_minecraft_dir(&self, name: &str) -> PathBuf {
-        self.get_daemon_dir().join(name).join(".minecraft")
-    }
-
     // 获取版本路径
+    // /minecraft/{daemon_name}/versions/
     fn get_versions_dir(&self, name: &str) -> PathBuf {
-        self.get_minecraft_dir(name).join("versions")
+        self.get_minecraft_dir().join(name).join("versions")
     }
 
     // 获取 InstanceMeta 的 path
-    fn get_meta_path(&self, name: &str) -> PathBuf {
-        self.get_daemon_dir().join(name).join(META_FILE)
+    fn get_meta_path(&self) -> PathBuf {
+        (*config::INSTANCE_META_PATH).clone()
     }
 
-    // 加载 InstanceMeta
-    pub fn load_meta(&self, name: &str) -> Option<InstanceMeta> {
-        let meta_path = self.get_meta_path(name);
+    // 从文件读取全部 InstanceMeta（HashMap<daemon_name, InstanceMeta>）
+    fn read_all_metas(&self) -> HashMap<String, InstanceMeta> {
+        let meta_path = self.get_meta_path();
         if meta_path.exists() {
             if let Ok(content) = fs::read_to_string(&meta_path) {
-                if let Ok(meta) = serde_json::from_str::<InstanceMeta>(&content) {
-                    return Some(meta);
+                if let Ok(map) = serde_json::from_str::<HashMap<String, InstanceMeta>>(&content) {
+                    return map;
                 }
             }
         }
-        None
+        HashMap::new()
     }
 
-    // 保存 InstanceMeta
-    pub fn save_meta(&self, meta: &InstanceMeta, name: &str) -> Result<(), String> {
-        let meta_path = self.get_meta_path(name);
+    // 将所有 InstanceMeta 写入文件
+    fn write_all_metas(&self, metas: &HashMap<String, InstanceMeta>) -> Result<(), String> {
+        let meta_path = self.get_meta_path();
         if let Some(parent) = meta_path.parent() {
             fs::create_dir_all(parent).map_err(|e| format!("创建元数据目录失败: {}", e))?;
         }
-        let content = serde_json::to_string_pretty(meta)
-            .map_err(|e| format!("序列化元数据失败: {}", e))?;
+        let content =
+            serde_json::to_string_pretty(metas).map_err(|e| format!("序列化元数据失败: {}", e))?;
         fs::write(&meta_path, content).map_err(|e| format!("写入元数据失败: {}", e))?;
         Ok(())
+    }
+
+    // 加载指定 daemon 的 InstanceMeta
+    pub fn load_meta(&self, name: &str) -> Option<InstanceMeta> {
+        self.read_all_metas().remove(name)
+    }
+
+    // 保存指定 daemon 的 InstanceMeta（插入或更新）
+    pub fn save_meta(&self, name: &str, meta: &InstanceMeta) -> Result<(), String> {
+        let mut all = self.read_all_metas();
+        all.insert(name.to_string(), meta.clone());
+        self.write_all_metas(&all)
     }
 
     // 发掘 versions 字符串
@@ -70,6 +80,7 @@ impl InstanceManager {
         let mut versions = Vec::new();
         if let Ok(entries) = fs::read_dir(&versions_dir) {
             for entry in entries.flatten() {
+                // /minecraft/{daemon_name}/versions/{version_name}/
                 let path = entry.path();
                 if path.is_dir() {
                     if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
@@ -84,14 +95,15 @@ impl InstanceManager {
 
     // 加载 GameInstance
     fn load_instance(&self, name: &str) -> Option<GameInstance> {
-        let daemon_dir = self.get_daemon_dir();
-        let instance_dir = daemon_dir.join(name);
-        if !instance_dir.is_dir() {
+        // /minecraft/
+        let minecraft_dir = self.get_minecraft_dir();
+        if !minecraft_dir.is_dir() {
             return None;
         }
 
-        let minecraft_dir = self.get_minecraft_dir(name);
-        if !minecraft_dir.is_dir() {
+        // /minecraft/{daemon_name}/
+        let instance_dir = minecraft_dir.join(name);
+        if !instance_dir.is_dir() {
             return None;
         }
 
@@ -101,43 +113,16 @@ impl InstanceManager {
             .cloned()
             .unwrap_or_else(|| "unknown".to_string());
 
-        let instance_meta_path = self.get_meta_path(name);
         let (id, loader_type, loader_version, icon_path, created_at, last_played) =
-            if instance_meta_path.exists() {
-                if let Some(meta) = self.load_meta(name) {
-                    (
-                        meta.id,
-                        meta.loader_type,
-                        meta.loader_version,
-                        meta.icon_path,
-                        meta.created_at,
-                        meta.last_played,
-                    )
-                } else {
-                    let now = std::time::SystemTime::now()
-                        .duration_since(std::time::UNIX_EPOCH)
-                        .map(|d| d.as_secs() as i64)
-                        .unwrap_or(0);
-                    let new_meta = InstanceMeta {
-                        id: Uuid::new_v4().to_string(),
-                        name: name.to_string(),
-                        version: version.clone(),
-                        loader_type: ModLoaderType::Vanilla,
-                        loader_version: None,
-                        icon_path: None,
-                        created_at: now,
-                        last_played: None,
-                    };
-                    let _ = self.save_meta(&new_meta, name);
-                    (
-                        new_meta.id,
-                        new_meta.loader_type,
-                        new_meta.loader_version,
-                        new_meta.icon_path,
-                        new_meta.created_at,
-                        new_meta.last_played,
-                    )
-                }
+            if let Some(meta) = self.load_meta(name) {
+                (
+                    meta.id,
+                    meta.loader_type,
+                    meta.loader_version,
+                    meta.icon_path,
+                    meta.created_at,
+                    meta.last_played,
+                )
             } else {
                 let now = instance_dir
                     .metadata()
@@ -159,7 +144,7 @@ impl InstanceManager {
                     created_at: now,
                     last_played: None,
                 };
-                let _ = self.save_meta(&new_meta, name);
+                let _ = self.save_meta(name, &new_meta);
                 (
                     new_meta.id,
                     new_meta.loader_type,
@@ -184,28 +169,13 @@ impl InstanceManager {
         })
     }
 
-    // 扫描 GameInstance
-    pub fn scan_instances(&self) -> Vec<GameInstance> {
-        let daemon_dir = self.get_daemon_dir();
-        let mut instances = Vec::new();
-
-        if let Ok(entries) = fs::read_dir(&daemon_dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if path.is_dir() {
-                    if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                        if let Some(instance) = self.load_instance(name) {
-                            instances.push(instance);
-                        }
-                    }
-                }
-            }
-        }
-
-        let versions_dir = self.base_path.join("versions");
+    fn scan_versions(&self, name: &str, instances: &mut Vec<GameInstance>) {
+        // /minecraft/{name}/versions
+        let versions_dir = self.get_versions_dir(name);
         if versions_dir.exists() && versions_dir.is_dir() {
             if let Ok(entries) = fs::read_dir(&versions_dir) {
                 for entry in entries.flatten() {
+                    // /minecraft/{name}/versions/
                     let path = entry.path();
                     if path.is_dir() {
                         if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
@@ -222,7 +192,7 @@ impl InstanceManager {
                                     })
                                     .unwrap_or(0);
 
-                                let meta_path = path.join(META_FILE);
+                                let meta_path = path.join(config::INSTANCE_META_FILE_NAME);
                                 let (id, loader_type, loader_version, icon_path, last_played) =
                                     if meta_path.exists() {
                                         if let Some(meta) = self.load_meta_from_path(&meta_path) {
@@ -295,6 +265,25 @@ impl InstanceManager {
                 }
             }
         }
+    }
+
+    // 扫描 GameInstance（仅扫描版本级实例，去除了 daemon 级重复）
+    pub fn scan_instances(&self) -> Vec<GameInstance> {
+        // /minecraft/
+        let daemon_dir = self.get_minecraft_dir();
+        let mut instances = Vec::new();
+
+        if let Ok(entries) = fs::read_dir(&daemon_dir) {
+            for entry in entries.flatten() {
+                // /minecraft/{daemon_name}/
+                let path = entry.path();
+                if path.is_dir() {
+                    if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                        self.scan_versions(name, &mut instances);
+                    }
+                }
+            }
+        }
 
         instances.sort_by(|a, b| b.created_at.cmp(&a.created_at));
         instances
@@ -307,21 +296,27 @@ impl InstanceManager {
 
     // 创建 GameInstance
     pub fn create_instance(&self, name: &str, version: &str) -> Result<GameInstance, String> {
-        let minecraft_dir = self.get_minecraft_dir(name);
+        let daemon_dir = self.get_minecraft_dir().join(name);
         let versions_dir = self.get_versions_dir(name);
+        let game_version_dir = versions_dir.join(version);
 
-        if minecraft_dir.exists() {
+        if daemon_dir.exists() {
             return Err(format!("实例 {} 已存在", name));
         }
 
-        fs::create_dir_all(&versions_dir).map_err(|e| format!("创建实例目录失败: {}", e))?;
+        if game_version_dir.exists() {
+            return Err(format!("版本 {} 已存在", version));
+        }
 
-        fs::create_dir_all(minecraft_dir.join("libraries")).ok();
-        fs::create_dir_all(minecraft_dir.join("assets")).ok();
-        fs::create_dir_all(minecraft_dir.join("natives")).ok();
+        // 根据版本名称创建 例：minecraft/default/versions/{version}
+        //                    minecraft/default/versions/1.21.11
+        //                    minecraft/default/versions/亡者世界
+        fs::create_dir_all(&daemon_dir).map_err(|e| format!("创建实例目录失败: {}", e))?;
+        fs::create_dir_all(&game_version_dir).map_err(|e| format!("创建版本文件失败: {}", e))?;
 
-        let version_dir = versions_dir.join(version);
-        fs::create_dir_all(&version_dir).ok();
+        fs::create_dir_all(game_version_dir.join("libraries")).ok();
+        fs::create_dir_all(game_version_dir.join("assets")).ok();
+        fs::create_dir_all(game_version_dir.join("natives")).ok();
 
         let instance = self
             .load_instance(name)
@@ -336,7 +331,7 @@ impl InstanceManager {
             .get_instance(id)
             .ok_or_else(|| format!("实例不存在: {}", id))?;
 
-        let instance_dir = self.get_daemon_dir().join(&instance.name);
+        let instance_dir = self.get_minecraft_dir().join(&instance.name);
         if instance_dir.exists() {
             fs::remove_dir_all(&instance_dir).map_err(|e| format!("删除实例失败: {}", e))?;
         }
@@ -350,8 +345,8 @@ impl InstanceManager {
             .get_instance(id)
             .ok_or_else(|| format!("实例不存在: {}", id))?;
 
-        let source_dir = self.get_daemon_dir().join(&instance.name);
-        let dest_dir = self.get_daemon_dir().join(new_name);
+        let source_dir = self.get_minecraft_dir().join(&instance.name);
+        let dest_dir = self.get_minecraft_dir().join(new_name);
 
         if dest_dir.exists() {
             return Err(format!("实例 {} 已存在", new_name));
@@ -371,18 +366,20 @@ impl InstanceManager {
             .get_instance(id)
             .ok_or_else(|| format!("实例不存在: {}", id))?;
 
-        let old_dir = self.get_daemon_dir().join(&instance.name);
-        let new_dir = self.get_daemon_dir().join(new_name);
+        let old_dir = self.get_minecraft_dir().join(&instance.name);
+        let new_dir = self.get_minecraft_dir().join(new_name);
 
         if new_dir.exists() {
             return Err(format!("实例 {} 已存在", new_name));
         }
 
-        if let Some(meta) = self.load_meta(&instance.name) {
-            let mut new_meta = meta;
-            new_meta.name = new_name.to_string();
-            let _ = self.save_meta(&new_meta, new_name);
+        // 更新 meta: 删除旧 key，插入新 key
+        let mut all = self.read_all_metas();
+        if let Some(mut meta) = all.remove(&instance.name) {
+            meta.name = new_name.to_string();
+            all.insert(new_name.to_string(), meta);
         }
+        let _ = self.write_all_metas(&all);
 
         fs::rename(&old_dir, &new_dir).map_err(|e| format!("重命名失败: {}", e))?;
 
@@ -413,7 +410,7 @@ impl InstanceManager {
 
     // 获取到 instance 的 path
     pub fn get_instances_path(&self) -> String {
-        self.get_daemon_dir().to_string_lossy().to_string()
+        self.get_minecraft_dir().to_string_lossy().to_string()
     }
 
     // ---------- 多路径扫描扩展 ----------
@@ -477,44 +474,18 @@ impl InstanceManager {
             .cloned()
             .unwrap_or_else(|| "unknown".to_string());
 
-        let instance_meta_path = minecraft_dir.parent().map(|p| p.join(META_FILE));
+        let meta_path = self.get_meta_path();
         let (id, loader_type, loader_version, icon_path, created_at, last_played) =
-            if let Some(meta_path) = instance_meta_path {
-                if meta_path.exists() {
-                    if let Some(meta) = self.load_meta_from_path(&meta_path) {
-                        (
-                            meta.id,
-                            meta.loader_type,
-                            meta.loader_version,
-                            meta.icon_path,
-                            meta.created_at,
-                            meta.last_played,
-                        )
-                    } else {
-                        let now = std::time::SystemTime::now()
-                            .duration_since(std::time::UNIX_EPOCH)
-                            .map(|d| d.as_secs() as i64)
-                            .unwrap_or(0);
-                        let new_meta = InstanceMeta {
-                            id: Uuid::new_v4().to_string(),
-                            name: name.to_string(),
-                            version: version.clone(),
-                            loader_type: ModLoaderType::Vanilla,
-                            loader_version: None,
-                            icon_path: None,
-                            created_at: now,
-                            last_played: None,
-                        };
-                        let _ = self.save_meta_to_path(&new_meta, &meta_path);
-                        (
-                            new_meta.id,
-                            new_meta.loader_type,
-                            new_meta.loader_version,
-                            new_meta.icon_path,
-                            new_meta.created_at,
-                            new_meta.last_played,
-                        )
-                    }
+            if meta_path.exists() {
+                if let Some(meta) = self.load_meta_from_path(&meta_path) {
+                    (
+                        meta.id,
+                        meta.loader_type,
+                        meta.loader_version,
+                        meta.icon_path,
+                        meta.created_at,
+                        meta.last_played,
+                    )
                 } else {
                     let now = std::time::SystemTime::now()
                         .duration_since(std::time::UNIX_EPOCH)
@@ -530,9 +501,6 @@ impl InstanceManager {
                         created_at: now,
                         last_played: None,
                     };
-                    if let Some(parent) = meta_path.parent() {
-                        let _ = fs::create_dir_all(parent);
-                    }
                     let _ = self.save_meta_to_path(&new_meta, &meta_path);
                     (
                         new_meta.id,
@@ -548,13 +516,27 @@ impl InstanceManager {
                     .duration_since(std::time::UNIX_EPOCH)
                     .map(|d| d.as_secs() as i64)
                     .unwrap_or(0);
+                let new_meta = InstanceMeta {
+                    id: Uuid::new_v4().to_string(),
+                    name: name.to_string(),
+                    version: version.clone(),
+                    loader_type: ModLoaderType::Vanilla,
+                    loader_version: None,
+                    icon_path: None,
+                    created_at: now,
+                    last_played: None,
+                };
+                if let Some(parent) = meta_path.parent() {
+                    let _ = fs::create_dir_all(parent);
+                }
+                let _ = self.save_meta_to_path(&new_meta, &meta_path);
                 (
-                    Uuid::new_v4().to_string(),
-                    ModLoaderType::Vanilla,
-                    None,
-                    None,
-                    now,
-                    None,
+                    new_meta.id,
+                    new_meta.loader_type,
+                    new_meta.loader_version,
+                    new_meta.icon_path,
+                    new_meta.created_at,
+                    new_meta.last_played,
                 )
             };
 
@@ -587,22 +569,48 @@ impl InstanceManager {
         if let Some(parent) = meta_path.parent() {
             fs::create_dir_all(parent).map_err(|e| format!("创建元数据目录失败: {}", e))?;
         }
-        let content = serde_json::to_string_pretty(meta)
-            .map_err(|e| format!("序列化元数据失败: {}", e))?;
+        let content =
+            serde_json::to_string_pretty(meta).map_err(|e| format!("序列化元数据失败: {}", e))?;
         fs::write(meta_path, content).map_err(|e| format!("写入元数据失败: {}", e))?;
         Ok(())
     }
 
-    // 扫描已知路径
+    // ---------- 已知路径管理 ----------
+    // 从文件加载自定义路径
+    fn load_known_paths(&self) -> Vec<KnownPath> {
+        let path = &*config::KNOWN_PATHS_FILE;
+        if path.exists() {
+            if let Ok(content) = fs::read_to_string(path) {
+                if let Ok(paths) = serde_json::from_str::<Vec<KnownPath>>(&content) {
+                    return paths;
+                }
+            }
+        }
+        Vec::new()
+    }
+
+    // 将自定义路径保存到文件
+    fn save_known_paths(&self, paths: &[KnownPath]) -> Result<(), String> {
+        let path = config::CONFIG_APPLICATION;
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {}", e))?;
+        }
+        let content =
+            serde_json::to_string_pretty(paths).map_err(|e| format!("序列化失败: {}", e))?;
+        fs::write(path, content).map_err(|e| format!("写入失败: {}", e))?;
+        Ok(())
+    }
+
+    // 扫描已知路径（系统扫描 + 持久化自定义路径）
     pub fn scan_known_paths(&self) -> Vec<KnownPath> {
         let mut paths = Vec::new();
 
         // Default daemon directory
-        let daemon_path = self.get_daemon_dir();
+        let daemon_path = self.get_minecraft_dir();
         if daemon_path.exists() {
             paths.push(KnownPath {
-                id: "daemon".to_string(),
-                name: "当前文件夹".to_string(),
+                id: "default".to_string(),
+                name: "默认文件夹".to_string(),
                 path: daemon_path.to_string_lossy().to_string(),
                 is_default: true,
             });
@@ -634,10 +642,18 @@ impl InstanceManager {
             }
         }
 
+        // 加载持久化的自定义路径
+        let custom_paths = self.load_known_paths();
+        for cp in custom_paths {
+            if !paths.iter().any(|p| p.path == cp.path) {
+                paths.push(cp);
+            }
+        }
+
         paths
     }
 
-    // 通过 path 添加 Game Folder
+    // 通过 path 添加 Game Folder（添加后持久化）
     pub fn add_known_path(&self, path: &str) -> Result<KnownPath, String> {
         let p = PathBuf::from(path);
         if !p.exists() {
@@ -653,7 +669,7 @@ impl InstanceManager {
             .unwrap_or("自定义文件夹")
             .to_string();
 
-        Ok(KnownPath {
+        let new_path = KnownPath {
             id: format!(
                 "custom-{}",
                 uuid::Uuid::new_v4()
@@ -665,6 +681,13 @@ impl InstanceManager {
             name,
             path: p.to_string_lossy().to_string(),
             is_default: false,
-        })
+        };
+
+        // 持久化
+        let mut existing = self.load_known_paths();
+        existing.push(new_path.clone());
+        self.save_known_paths(&existing)?;
+
+        Ok(new_path)
     }
 }

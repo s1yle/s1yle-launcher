@@ -17,16 +17,20 @@ pub static BASE_PATH: Lazy<PathBuf> =
 pub static APP_NAME: Lazy<PathBuf> = Lazy::new(|| PathBuf::from(".smcl"));
 
 /// # minecraft 根目录
-pub static DEAMON_BASE_PATH: Lazy<PathBuf> =
-    Lazy::new(|| BASE_PATH.join("minecraft"));
+pub static DEAMON_BASE_PATH: Lazy<PathBuf> = Lazy::new(|| BASE_PATH.join("minecraft"));
 
 /// # 默认的 实例名称
 pub static DEFAULT_DEAMON_PATH: Lazy<PathBuf> =
     Lazy::new(|| BASE_PATH.join("minecraft").join("default"));
 
 /// # 下载路径
-pub static DOWNLOAD_BASE_PATH: Lazy<PathBuf> =
-    Lazy::new(|| BASE_PATH.join("minecraft").join("download"));
+pub static DOWNLOAD_BASE_PATH: Lazy<PathBuf> = Lazy::new(|| CONFIG_APPLICATION.join("download"));
+
+pub static INSTANCE_META_FILE_NAME: &str = "instance_meta.json";
+
+/// # InstanceMeta 路径
+pub static INSTANCE_META_PATH: Lazy<PathBuf> =
+    Lazy::new(|| DEAMON_BASE_PATH.join(PathBuf::from(INSTANCE_META_FILE_NAME)));
 
 /// # 应用配置目录
 pub static CONFIG_APPLICATION: Lazy<PathBuf> = Lazy::new(|| {
@@ -34,6 +38,10 @@ pub static CONFIG_APPLICATION: Lazy<PathBuf> = Lazy::new(|| {
         .unwrap_or(&PathBuf::new())
         .join(".smcl")
 });
+
+/// # 已知路径存储文件
+pub static KNOWN_PATHS_FILE: Lazy<PathBuf> =
+    Lazy::new(|| CONFIG_APPLICATION.join("known_paths.json"));
 
 /// # 应用配置文件名
 pub static CONFIG_FILE_PATH: Lazy<PathBuf> = Lazy::new(|| {

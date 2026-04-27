@@ -1,8 +1,9 @@
 use tauri::State;
 
-use crate::modloader::ModLoaderType;
 use super::manager::InstanceManager;
 use super::models::{GameInstance, KnownPath};
+use crate::log_info;
+use crate::modloader::ModLoaderType;
 
 #[tauri::command]
 pub fn scan_instances(instance_manager: State<'_, InstanceManager>) -> Vec<GameInstance> {
@@ -33,7 +34,7 @@ pub fn create_instance(
         new_meta.loader_type = loader_type;
         new_meta.loader_version = loader_version;
         new_meta.icon_path = icon_path;
-        let _ = instance_manager.save_meta(&new_meta, &name);
+        let _ = instance_manager.save_meta(&name, &new_meta);
     }
 
     instance_manager
@@ -93,5 +94,6 @@ pub fn add_known_path(
     path: String,
     instance_manager: State<'_, InstanceManager>,
 ) -> Result<KnownPath, String> {
+    log_info!("<add_known_path> {:?}, {:?}", path, instance_manager);
     instance_manager.add_known_path(&path)
 }
