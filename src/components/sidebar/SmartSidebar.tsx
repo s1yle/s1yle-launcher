@@ -20,6 +20,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
   const location = useLocation();
   const { t } = useTranslation();
   const groups = getSidebarGroups();
+  const selectedFolderId = useInstanceStore(s => s.selectedFolderId);
 
   const getCurrentSidebarGroup = (): 'account' | 'game' | 'common' | 'none' | 'all' => {
     if (showAllGroups) return 'all';
@@ -125,7 +126,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
           <BaseChildrenContent
             items={allChildrenItems}
             onMenuClick={handleItemClick}
-            isActive={isActive}
+            isItemActive={(id) => id === `folder-${selectedFolderId}`}  // ← 高亮匹配
             isParentActive={isParentOfActive}
             hasChildrenItems={hasChildrenItems}
             groupTitle={currentMenuItem?.title || parentMenuItem?.title || ''}
