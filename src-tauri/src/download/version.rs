@@ -1,13 +1,13 @@
-use tauri::State;
-use crate::log_info;
-use crate::download::models::*;
-use crate::download::utils::{should_use_library, get_native_classifier};
 use crate::download::manager::DownloadManager;
-use serde::{Deserialize};
+use crate::download::models::*;
+use crate::download::utils::{get_native_classifier, should_use_library};
+use crate::log_info;
+use serde::Deserialize;
 use std::collections::HashMap;
+use tauri::State;
 
-
-const VERSION_MANIFEST_URL: &str = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
+const VERSION_MANIFEST_URL: &str =
+    "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
 
 #[tauri::command]
 pub async fn get_version_manifest() -> Result<VersionManifest, String> {
@@ -49,7 +49,9 @@ pub async fn get_version_detail(version_id: String) -> Result<serde_json::Value,
     Ok(detail)
 }
 
-async fn parse_version_downloads(version_json: &serde_json::Value) -> Result<VersionDownloadManifest, String> {
+async fn parse_version_downloads(
+    version_json: &serde_json::Value,
+) -> Result<VersionDownloadManifest, String> {
     let version_id = version_json["id"]
         .as_str()
         .ok_or("Missing version id")?
@@ -95,7 +97,11 @@ async fn parse_version_downloads(version_json: &serde_json::Value) -> Result<Ver
         }
     }
 
-    log_info!("解析到 {} 个库文件, {} 个原生库", libraries.len(), natives.len());
+    log_info!(
+        "解析到 {} 个库文件, {} 个原生库",
+        libraries.len(),
+        natives.len()
+    );
 
     let mut assets = Vec::new();
     let mut asset_index: Option<FileDownload> = None;
@@ -110,7 +116,9 @@ async fn parse_version_downloads(version_json: &serde_json::Value) -> Result<Ver
                 .as_str()
                 .unwrap_or("")
                 .to_string(),
-            sha1: version_json["assetIndex"]["sha1"].as_str().map(String::from),
+            sha1: version_json["assetIndex"]["sha1"]
+                .as_str()
+                .map(String::from),
             size: version_json["assetIndex"]["size"].as_u64().unwrap_or(0),
             path: format!("indexes/{}.json", index_id),
         });
@@ -131,7 +139,11 @@ async fn parse_version_downloads(version_json: &serde_json::Value) -> Result<Ver
                             format!("objects/{}/{}", &hash[..2], hash)
                         };
                         assets.push(FileDownload {
-                            url: format!("https://resources.download.minecraft.net/{}/{}", &hash[..2], hash),
+                            url: format!(
+                                "https://resources.download.minecraft.net/{}/{}",
+                                &hash[..2],
+                                hash
+                            ),
                             sha1: Some(hash.clone()),
                             size: obj.size,
                             path,

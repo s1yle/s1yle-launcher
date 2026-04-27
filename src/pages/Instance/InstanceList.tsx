@@ -6,6 +6,7 @@ import { openFolder } from '../../helper/rustInvoke';
 import { InstanceListItem, EmptyState, useNotification, IconButton } from '../../components/common';
 import Instance from './Instance';
 import BottomBar from '@/components/BottomBar/BottomBar';
+import { logger } from '@/helper/logger';
 
 const InstanceList: React.FC = () => {
   const { t } = useTranslation();
@@ -29,7 +30,6 @@ const InstanceList: React.FC = () => {
 
   const { success, error: notifyError } = useNotification();
 
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const filteredInstances = getFilteredInstances();
   console.log("[filteredInstances] 扫描并过滤后的实力列表：", filteredInstances);
 
@@ -73,6 +73,7 @@ const InstanceList: React.FC = () => {
 
   useEffect(() => {
     init();
+    logger.info("选中的 Game Folder ID 为：", selectedFolderId);
   }, [init]);
 
   const handleSelect = (id: string) => {
@@ -141,7 +142,6 @@ const InstanceList: React.FC = () => {
       </div>
     );
   };
-
 
 
   return (

@@ -1,9 +1,9 @@
+use crate::download::manager::DownloadManager;
+use crate::download::models::DownloadTask;
+use crate::log_info;
 use std::fs;
 use std::path::PathBuf;
 use tauri::State;
-use crate::log_info;
-use crate::download::models::DownloadTask;
-use crate::download::manager::DownloadManager;
 
 #[tauri::command]
 pub fn get_download_tasks(download_manager: State<'_, DownloadManager>) -> Vec<DownloadTask> {
@@ -36,7 +36,9 @@ pub fn cancel_download(
 }
 
 #[tauri::command]
-pub fn clear_completed_tasks(download_manager: State<'_, DownloadManager>) -> Result<String, String> {
+pub fn clear_completed_tasks(
+    download_manager: State<'_, DownloadManager>,
+) -> Result<String, String> {
     log_info!("清理已完成任务");
     let tasks = download_manager.get_all_tasks();
     let mut removed = 0;
@@ -52,7 +54,9 @@ pub fn clear_completed_tasks(download_manager: State<'_, DownloadManager>) -> Re
 }
 
 #[tauri::command]
-pub fn get_game_versions(download_manager: State<'_, DownloadManager>) -> Result<Vec<String>, String> {
+pub fn get_game_versions(
+    download_manager: State<'_, DownloadManager>,
+) -> Result<Vec<String>, String> {
     let game_dir = download_manager.base_path.lock().unwrap().clone();
     let versions_dir = game_dir.join("versions");
 
@@ -73,7 +77,12 @@ pub fn get_game_versions(download_manager: State<'_, DownloadManager>) -> Result
 
 #[tauri::command]
 pub fn get_download_base_path(download_manager: State<'_, DownloadManager>) -> String {
-    download_manager.base_path.lock().unwrap().to_string_lossy().to_string()
+    download_manager
+        .base_path
+        .lock()
+        .unwrap()
+        .to_string_lossy()
+        .to_string()
 }
 
 #[tauri::command]
@@ -82,8 +91,7 @@ pub fn set_download_base_path(
     download_manager: State<'_, DownloadManager>,
 ) -> Result<String, String> {
     let new_path = PathBuf::from(&path);
-    fs::create_dir_all(&new_path)
-        .map_err(|e| format!("创建目录失败: {}", e))?;
+    fs::create_dir_all(&new_path).map_err(|e| format!("创建目录失败: {}", e))?;
 
     let mut base_path = download_manager.base_path.lock().unwrap();
     *base_path = new_path;

@@ -17,6 +17,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { type ReactNode } from 'react';
+import usehAction, { handleAddGameFolder } from './actionHandler';
 
 export enum SidebarType {
   MAIN = 'main',
@@ -64,7 +65,7 @@ export const routes: RouteConfig[] = [
     sidebarGroup: SidebarGroup.NONE
   },
   // 账号 account
-  { 
+  {
     path: '/account',
     componentName: 'AccountListWithSidebar',
     header: { type: SidebarType.SUB, title: '账户列表', titleI18nKey: 'sidebar.accountList' },
@@ -153,25 +154,25 @@ export const routes: RouteConfig[] = [
     parentPath: '/',
     autoNavigateToFirstChild: true,
     children: [
-      { 
-        path: '/game-settings/java', componentName: 'GameSettingsJava', 
-        header: { type: SidebarType.SECONDARY, title: 'Java 管理', titleI18nKey: 'gameSettings.java' }, 
-        sidebarGroup: SidebarGroup.COMMON, parentPath: '/' 
+      {
+        path: '/game-settings/java', componentName: 'GameSettingsJava',
+        header: { type: SidebarType.SECONDARY, title: 'Java 管理', titleI18nKey: 'gameSettings.java' },
+        sidebarGroup: SidebarGroup.COMMON, parentPath: '/'
       },
-      { 
-        path: '/game-settings/general', componentName: 'GameSettingsGeneral', 
-        header: { type: SidebarType.SECONDARY, title: '通用', titleI18nKey: 'gameSettings.general' }, 
-        sidebarGroup: SidebarGroup.COMMON, parentPath: '/' 
+      {
+        path: '/game-settings/general', componentName: 'GameSettingsGeneral',
+        header: { type: SidebarType.SECONDARY, title: '通用', titleI18nKey: 'gameSettings.general' },
+        sidebarGroup: SidebarGroup.COMMON, parentPath: '/'
       },
-      { 
-        path: '/game-settings/appearance', componentName: 'GameSettingsAppearance', 
-        header: { type: SidebarType.SECONDARY, title: '外观', titleI18nKey: 'gameSettings.appearance' }, 
-        sidebarGroup: SidebarGroup.COMMON, parentPath: '/' 
+      {
+        path: '/game-settings/appearance', componentName: 'GameSettingsAppearance',
+        header: { type: SidebarType.SECONDARY, title: '外观', titleI18nKey: 'gameSettings.appearance' },
+        sidebarGroup: SidebarGroup.COMMON, parentPath: '/'
       },
-      { 
-        path: '/game-settings/download', componentName: 'GameSettingsDownload', 
+      {
+        path: '/game-settings/download', componentName: 'GameSettingsDownload',
         header: { type: SidebarType.SECONDARY, title: '下载', titleI18nKey: 'gameSettings.download' },
-        sidebarGroup: SidebarGroup.COMMON, parentPath: '/' 
+        sidebarGroup: SidebarGroup.COMMON, parentPath: '/'
       },
     ]
   },
@@ -292,15 +293,6 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
             group: SidebarGroup.GAME
           },
           {
-            id: 'add-game-folder',
-            type: 'action',
-            title: '添加游戏文件夹',
-            titleI18nKey: 'instances.addGameFolder',
-            icon: <FolderPlus className="w-4 h-4" />,
-            path: '/instance-list',
-            group: SidebarGroup.GAME
-          },
-          {
             id: 'divider-instances',
             type: 'divider',
             title: '',
@@ -308,18 +300,19 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
             group: SidebarGroup.GAME
           },
           {
-            id: 'install-new-game',
+            id: 'add-game-folder',
             type: 'action',
-            title: '安装新游戏',
-            titleI18nKey: 'instances.installNewGame',
-            icon: <Download className="w-4 h-4" />,
+            title: '添加游戏文件夹',
+            titleI18nKey: 'instances.addGameFolder',
+            icon: <FolderPlus className="w-4 h-4" />,
             path: '/instance-list',
-            group: SidebarGroup.GAME
+            group: SidebarGroup.GAME,
+            action: handleAddGameFolder,
           },
           {
             id: 'install-modpack',
             type: 'action',
-            title: '安装整合包',
+            title: '导入整合包',
             titleI18nKey: 'instances.installModpack',
             icon: <Package className="w-4 h-4" />,
             path: '/instance-list',

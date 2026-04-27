@@ -1,41 +1,41 @@
 // src-tauri/src/launch.rs
 // Minecraft 启动模块
 
-use std::process::{Command, Child};
-use std::sync::Mutex;
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
+use std::process::{Child, Command};
+use std::sync::Mutex;
 
 // ======================== 类型定义 ========================
 
 /// 启动状态枚举
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum LaunchStatus {
-    Idle,           // 未启动
-    Launching,      // 启动中
-    Running,        // 运行中
-    Crashed,        // 崩溃
-    Stopped,        // 已停止
+    Idle,      // 未启动
+    Launching, // 启动中
+    Running,   // 运行中
+    Crashed,   // 崩溃
+    Stopped,   // 已停止
 }
 
 /// 启动配置结构体
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct LaunchConfig {
-    pub java_path: String,           // Java可执行文件路径
-    pub memory_mb: u32,              // 内存大小（MB）
-    pub version: String,             // Minecraft版本
-    pub game_dir: String,            // 游戏目录
-    pub assets_dir: String,          // 资源目录
-    pub username: String,            // 用户名
-    pub uuid: String,                // 用户UUID
+    pub java_path: String,            // Java可执行文件路径
+    pub memory_mb: u32,               // 内存大小（MB）
+    pub version: String,              // Minecraft版本
+    pub game_dir: String,             // 游戏目录
+    pub assets_dir: String,           // 资源目录
+    pub username: String,             // 用户名
+    pub uuid: String,                 // 用户UUID
     pub access_token: Option<String>, // 访问令牌（微软账户）
 }
 
 impl Default for LaunchConfig {
     fn default() -> Self {
         Self {
-            java_path: "java".to_string(),  // 默认使用PATH中的java
-            memory_mb: 2048,                // 2GB内存
+            java_path: "java".to_string(), // 默认使用PATH中的java
+            memory_mb: 2048,               // 2GB内存
             version: "1.20.4".to_string(),
             game_dir: "./.minecraft".to_string(),
             assets_dir: "./.minecraft/assets".to_string(),
@@ -49,7 +49,7 @@ impl Default for LaunchConfig {
 /// 启动管理器状态
 struct LaunchManager {
     config: LaunchConfig,
-    child_process: Option<Child>,  // 子进程句柄
+    child_process: Option<Child>, // 子进程句柄
     status: LaunchStatus,
     last_error: Option<String>,
 }
@@ -83,43 +83,43 @@ pub fn init_launch_manager() {
 /// 构建启动命令参数
 fn build_launch_args(config: &LaunchConfig) -> Vec<String> {
     let mut args = Vec::new();
-    
+
     // JVM参数
     args.push(format!("-Xmx{}M", config.memory_mb));
     args.push(format!("-Xms{}M", config.memory_mb / 2));
-    
+
     // 类路径（简化版，实际需要根据版本管理动态构建）
     args.push("-cp".to_string());
     args.push(format!("{}/libraries/*", config.game_dir));
     args.push("net.minecraft.client.main.Main".to_string());
-    
+
     // 游戏参数
     args.push("--version".to_string());
     args.push(config.version.clone());
-    
+
     args.push("--gameDir".to_string());
     args.push(config.game_dir.clone());
-    
+
     args.push("--assetsDir".to_string());
     args.push(config.assets_dir.clone());
-    
+
     args.push("--assetIndex".to_string());
     args.push(config.version.clone()); // 简化：版本作为asset index
-    
+
     args.push("--uuid".to_string());
     args.push(config.uuid.clone());
-    
+
     args.push("--username".to_string());
     args.push(config.username.clone());
-    
+
     if let Some(token) = &config.access_token {
         args.push("--accessToken".to_string());
         args.push(token.clone());
     }
-    
+
     args.push("--userType".to_string());
     args.push("mojang".to_string()); // 简化：默认mojang
-    
+
     args
 }
 
@@ -130,31 +130,31 @@ pub fn launch_instance(config: Option<LaunchConfig>) -> Result<String, String> {
         .ok_or("启动管理器未初始化")?
         .lock()
         .map_err(|e| format!("获取启动锁失败: {}", e))?;
-    
+
     // 检查是否已在运行
     if manager.status == LaunchStatus::Running || manager.status == LaunchStatus::Launching {
         return Err("Minecraft 已在运行".to_string());
     }
-    
+
     // 使用提供的配置或默认配置
     if let Some(new_config) = config {
         manager.config = new_config;
     }
-    
+
     // 更新状态
     manager.status = LaunchStatus::Launching;
     manager.last_error = None;
-    
+
     // 构建命令
     let java_path = &manager.config.java_path;
     let launch_args = build_launch_args(&manager.config);
-    
+
     println!("🚀 启动 Minecraft:");
     println!("  Java路径: {}", java_path);
     println!("  内存: {}MB", manager.config.memory_mb);
     println!("  版本: {}", manager.config.version);
     println!("  用户名: {}", manager.config.username);
-    
+
     // 启动进程
     match Command::new(java_path)
         .args(&launch_args)
@@ -184,7 +184,7 @@ pub fn stop_instance() -> Result<String, String> {
         .ok_or("启动管理器未初始化")?
         .lock()
         .map_err(|e| format!("获取启动锁失败: {}", e))?;
-    
+
     match manager.child_process.take() {
         Some(mut child) => {
             // 尝试正常终止
@@ -193,14 +193,14 @@ pub fn stop_instance() -> Result<String, String> {
                 manager.last_error = Some(error_msg.clone());
                 return Err(error_msg);
             }
-            
+
             // 等待进程结束
             if let Err(e) = child.wait() {
                 let error_msg = format!("等待进程结束失败: {}", e);
                 manager.last_error = Some(error_msg.clone());
                 return Err(error_msg);
             }
-            
+
             manager.status = LaunchStatus::Stopped;
             println!("✅ Minecraft 已停止");
             Ok("Minecraft 已停止".to_string())
@@ -219,7 +219,7 @@ pub fn get_launch_status() -> Result<LaunchStatus, String> {
         .ok_or("启动管理器未初始化")?
         .lock()
         .map_err(|e| format!("获取启动锁失败: {}", e))?;
-    
+
     // 如果状态为Running，检查进程是否还在运行
     if manager.status == LaunchStatus::Running {
         if let Some(child) = &mut manager.child_process {
@@ -232,7 +232,7 @@ pub fn get_launch_status() -> Result<LaunchStatus, String> {
                         LaunchStatus::Crashed
                     };
                     manager.child_process = None;
-                    
+
                     return Ok(manager.status.clone());
                 }
                 Ok(None) => {
@@ -247,7 +247,7 @@ pub fn get_launch_status() -> Result<LaunchStatus, String> {
             }
         }
     }
-    
+
     Ok(manager.status.clone())
 }
 
@@ -258,7 +258,7 @@ pub fn get_launch_config() -> Result<LaunchConfig, String> {
         .ok_or("启动管理器未初始化")?
         .lock()
         .map_err(|e| format!("获取启动锁失败: {}", e))?;
-    
+
     Ok(manager.config.clone())
 }
 
@@ -269,7 +269,7 @@ pub fn update_launch_config(config: LaunchConfig) -> Result<String, String> {
         .ok_or("启动管理器未初始化")?
         .lock()
         .map_err(|e| format!("获取启动锁失败: {}", e))?;
-    
+
     manager.config = config;
     println!("✅ 启动配置已更新");
     Ok("启动配置已更新".to_string())
@@ -307,22 +307,22 @@ pub fn tauri_update_launch_config(config: LaunchConfig) -> Result<String, String
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_build_launch_args() {
         let config = LaunchConfig::default();
         let args = build_launch_args(&config);
-        
+
         assert!(args.contains(&format!("-Xmx{}M", config.memory_mb)));
         assert!(args.contains(&format!("-Xms{}M", config.memory_mb / 2)));
         assert!(args.contains(&format!("--version {}", config.version)));
         assert!(args.contains(&format!("--username {}", config.username)));
     }
-    
+
     #[test]
     fn test_default_config() {
         let config = LaunchConfig::default();
-        
+
         assert_eq!(config.java_path, "java");
         assert_eq!(config.memory_mb, 2048);
         assert_eq!(config.version, "1.20.4");

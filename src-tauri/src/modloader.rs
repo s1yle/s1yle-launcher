@@ -171,12 +171,18 @@ impl ModLoaderManager {
             loaders.push(ModLoaderType::Vanilla);
         }
 
-        let fabric_dir = self.base_path.join("versions").join(format!("{}-fabric", version_id));
+        let fabric_dir = self
+            .base_path
+            .join("versions")
+            .join(format!("{}-fabric", version_id));
         if fabric_dir.exists() {
             loaders.push(ModLoaderType::Fabric);
         }
 
-        let forge_dir = self.base_path.join("versions").join(format!("{}-forge", version_id));
+        let forge_dir = self
+            .base_path
+            .join("versions")
+            .join(format!("{}-forge", version_id));
         if forge_dir.exists() {
             loaders.push(ModLoaderType::Forge);
         }
@@ -248,7 +254,11 @@ pub async fn get_fabric_version_detail(
     mc_version: String,
     loader_version: String,
 ) -> Result<FabricVersionDetail, String> {
-    log_info!("获取 Fabric 版本详情: MC {} + Loader {}", mc_version, loader_version);
+    log_info!(
+        "获取 Fabric 版本详情: MC {} + Loader {}",
+        mc_version,
+        loader_version
+    );
 
     let url = format!(
         "{}/v2/versions/loader/{}/{}",
@@ -289,40 +299,39 @@ pub async fn build_fabric_launch_config(
     let mut libraries = Vec::new();
 
     for lib in &fabric_meta.libraries {
-        let (url, path) = get_maven_url_for_fabric_library(&lib.name)
-            .unwrap_or_else(|| {
-                let fallback_url = lib.url.clone().unwrap_or_else(|| {
-                    let parts: Vec<&str> = lib.name.split(':').collect();
-                    if parts.len() == 3 {
-                        format!(
-                            "https://maven.fabricmc.net/{}/{}/{}/{}-{}.jar",
-                            parts[0].replace('.', "/"),
-                            parts[1],
-                            parts[2],
-                            parts[1],
-                            parts[2]
-                        )
-                    } else {
-                        String::new()
-                    }
-                });
-                let fallback_path = lib.path.clone().unwrap_or_else(|| {
-                    let parts: Vec<&str> = lib.name.split(':').collect();
-                    if parts.len() == 3 {
-                        format!(
-                            "maven/fabric/{}/{}/{}/{}-{}.jar",
-                            parts[0].replace('.', "/"),
-                            parts[1],
-                            parts[2],
-                            parts[1],
-                            parts[2]
-                        )
-                    } else {
-                        lib.name.clone()
-                    }
-                });
-                (fallback_url, fallback_path)
+        let (url, path) = get_maven_url_for_fabric_library(&lib.name).unwrap_or_else(|| {
+            let fallback_url = lib.url.clone().unwrap_or_else(|| {
+                let parts: Vec<&str> = lib.name.split(':').collect();
+                if parts.len() == 3 {
+                    format!(
+                        "https://maven.fabricmc.net/{}/{}/{}/{}-{}.jar",
+                        parts[0].replace('.', "/"),
+                        parts[1],
+                        parts[2],
+                        parts[1],
+                        parts[2]
+                    )
+                } else {
+                    String::new()
+                }
             });
+            let fallback_path = lib.path.clone().unwrap_or_else(|| {
+                let parts: Vec<&str> = lib.name.split(':').collect();
+                if parts.len() == 3 {
+                    format!(
+                        "maven/fabric/{}/{}/{}/{}-{}.jar",
+                        parts[0].replace('.', "/"),
+                        parts[1],
+                        parts[2],
+                        parts[1],
+                        parts[2]
+                    )
+                } else {
+                    lib.name.clone()
+                }
+            });
+            (fallback_url, fallback_path)
+        });
 
         libraries.push(LibraryInfo {
             name: lib.name.clone(),

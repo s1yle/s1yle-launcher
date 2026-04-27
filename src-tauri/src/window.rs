@@ -1,4 +1,4 @@
-use crate::{config};
+use crate::config;
 use once_cell::sync::Lazy;
 use std::{fs, sync::Mutex};
 
@@ -21,7 +21,7 @@ fn window_check(pos: &mut WindowPosition) {
     if pos.y <= 0 {
         pos.y = 1;
     }
-    
+
     if pos.height < *config::MIN_HEIGHT {
         pos.height = *config::MIN_HEIGHT;
     }
@@ -75,7 +75,8 @@ pub fn load_window_position() -> Result<Option<WindowPosition>, String> {
 
     if pos_file.exists() {
         let json = fs::read_to_string(pos_file).map_err(|e| e.to_string())?;
-        let mut position: WindowPosition = serde_json::from_str(&json).map_err(|e| e.to_string())?;
+        let mut position: WindowPosition =
+            serde_json::from_str(&json).map_err(|e| e.to_string())?;
 
         window_check(&mut position);
 

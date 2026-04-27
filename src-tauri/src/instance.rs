@@ -57,7 +57,9 @@ impl InstanceManager {
     pub fn new(base_path: PathBuf) -> Self {
         println!("InstanceManager base_path: {:?}", &base_path);
         fs::create_dir_all(&base_path).ok();
-        Self { base_path: base_path }
+        Self {
+            base_path: base_path,
+        }
     }
 
     fn get_daemon_dir(&self) -> PathBuf {

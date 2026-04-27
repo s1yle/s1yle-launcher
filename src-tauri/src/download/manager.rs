@@ -1,9 +1,9 @@
+use crate::download::models::DownloadTask;
+use crate::download::VersionDownloadManifest;
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::Mutex;
-use crate::download::models::DownloadTask;
-use crate::download::VersionDownloadManifest;
 
 pub struct DownloadManager {
     pub tasks: Mutex<HashMap<String, DownloadTask>>,

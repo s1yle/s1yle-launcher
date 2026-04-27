@@ -7,85 +7,49 @@ mod instance;
 mod launch;
 mod modloader;
 mod window;
+use crate::download::DownloadManager;
 use std::fs;
 use std::sync::Mutex;
-use crate::download::DownloadManager;
 
-
-pub use crate::account::{add_account, get_account_list, get_current_account, delete_account, set_current_account, init_account_manager, save_accounts_to_disk, load_accounts_from_disk, initialize_account_system};
+pub use crate::account::{
+    add_account, delete_account, get_account_list, get_current_account, init_account_manager,
+    initialize_account_system, load_accounts_from_disk, save_accounts_to_disk, set_current_account,
+};
 pub use crate::config::{
-    get_config,
-    update_config,
-    init_config,
-    get_game_settings,
-    update_game_settings,
-    get_download_config,
-    update_download_config,
-    AppConfig,
-    AppSettings,
-    DownloadConfig,
-    DEV,
+    get_config, get_download_config, get_game_settings, init_config, update_config,
+    update_download_config, update_game_settings, AppConfig, AppSettings, DownloadConfig, DEV,
 };
 pub use crate::launch::{
-    init_launch_manager,
-    tauri_launch_instance,
-    tauri_stop_instance,
-    tauri_get_launch_status,
-    tauri_get_launch_config,
-    tauri_update_launch_config,
-    LaunchConfig,
-    LaunchStatus,
+    init_launch_manager, tauri_get_launch_config, tauri_get_launch_status, tauri_launch_instance,
+    tauri_stop_instance, tauri_update_launch_config, LaunchConfig, LaunchStatus,
 };
 pub use crate::window::{
-    save_window_position,
-    load_window_position,
-    get_saved_window_position,
-    WindowPosition
+    get_saved_window_position, load_window_position, save_window_position, WindowPosition,
 };
 
 pub use download::{
-    get_version_manifest, get_version_detail, get_version_download_manifest,
-    download_file, get_download_tasks, get_download_task, cancel_download,
-    clear_completed_tasks, get_game_versions, get_download_base_path,
-    set_download_base_path, deploy_version_files, deploy_version_to_instance,
-    is_version_deployed,
+    cancel_download, clear_completed_tasks, deploy_version_files, deploy_version_to_instance,
+    download_file, get_download_base_path, get_download_task, get_download_tasks,
+    get_game_versions, get_version_detail, get_version_download_manifest, get_version_manifest,
+    is_version_deployed, set_download_base_path,
 };
 
-pub use crate::modloader::{
-    get_fabric_versions,
-    get_fabric_version_detail,
-    build_fabric_launch_config,
-    get_forge_versions,
-    build_forge_launch_config,
-    get_installed_mod_loaders,
-    ModLoaderType,
-    ModLoaderInfo,
-    ModLoaderVersionList,
-    ModLoaderVersionItem,
-    LibraryInfo,
-    ModLoaderManager,
-};
 pub use crate::instance::{
-    scan_instances,
-    get_instance,
-    create_instance,
-    delete_instance,
-    copy_instance,
-    rename_instance,
-    update_instance,
-    get_instances_path,
-            scan_known_mc_paths,
-            add_known_path,
-    GameInstance,
-    InstanceManager,
+    add_known_path, copy_instance, create_instance, delete_instance, get_instance,
+    get_instances_path, rename_instance, scan_instances, scan_known_mc_paths, update_instance,
+    GameInstance, InstanceManager,
+};
+pub use crate::modloader::{
+    build_fabric_launch_config, build_forge_launch_config, get_fabric_version_detail,
+    get_fabric_versions, get_forge_versions, get_installed_mod_loaders, LibraryInfo, ModLoaderInfo,
+    ModLoaderManager, ModLoaderType, ModLoaderVersionItem, ModLoaderVersionList,
 };
 use once_cell::sync::Lazy;
 use tauri::Manager;
-use tracing_subscriber::fmt::time::UtcTime;
-use tracing_subscriber::{prelude::*};
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
-use tracing_subscriber::{EnvFilter, fmt as tracing_fmt};
-
+use tracing_subscriber::fmt::time::UtcTime;
+use tracing_subscriber::prelude::*;
+use tracing_subscriber::{fmt as tracing_fmt, EnvFilter};
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -124,18 +88,19 @@ fn get_system_info() -> Result<SystemInfo, String> {
         "unknown"
     };
 
-    Ok(SystemInfo { os: os.to_string(), arch: arch.to_string() })
+    Ok(SystemInfo {
+        os: os.to_string(),
+        arch: arch.to_string(),
+    })
 }
 
 // 初始化日志系统
 pub fn init_logging(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     // 1. 获取日志存储目录（跨平台：app_data_dir/logs）
-    let log_dir = app.path()
-        .app_data_dir()?
-        .join("logs");
+    let log_dir = app.path().app_data_dir()?.join("logs");
     fs::create_dir_all(&log_dir)?; // 自动创建目录
 
-    println!("日志存储位置，{}",log_dir.to_string_lossy());
+    println!("日志存储位置，{}", log_dir.to_string_lossy());
 
     // 2. 配置日志文件：按天滚动，保留 30 天，文件名格式 mc-launcher-2026-02-28.log
     let file_appender = RollingFileAppender::builder()
@@ -147,8 +112,7 @@ pub fn init_logging(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> 
 
     // 3. 配置日志级别：从环境变量 RUST_LOG 读取，默认 info
     // 开发时设 RUST_LOG=debug，生产默认 info
-    let env_filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("info"));
+    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
 
     let time_format = UtcTime::rfc_3339();
 
@@ -172,13 +136,12 @@ pub fn init_logging(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> 
     tracing_subscriber::registry()
         .with(env_filter)
         .with(console_layer) // 控制台输出
-        .with(file_layer)    // 文件输出
+        .with(file_layer) // 文件输出
         .init();
 
     tracing::info!("日志系统初始化完成");
     Ok(())
 }
-
 
 #[allow(dead_code)]
 enum LogLevel {
@@ -210,9 +173,7 @@ impl Logger {
 }
 
 #[allow(dead_code)]
-static GLOBAL_LOGGER: Lazy<Mutex<Logger>> = Lazy::new(|| {
-    Mutex::new(Logger::new(LogLevel::Info))
-});
+static GLOBAL_LOGGER: Lazy<Mutex<Logger>> = Lazy::new(|| Mutex::new(Logger::new(LogLevel::Info)));
 
 #[macro_export]
 macro_rules! log_internal {
@@ -233,7 +194,6 @@ macro_rules! log_info {
 macro_rules! log_error {
     ($($arg:tt)*) => ($crate::log_internal!($crate::LogLevel::Error, $($arg)*));
 }
-
 
 #[tauri::command]
 fn log_frontend(level: String, message: String) {
@@ -262,7 +222,6 @@ fn open_folder(path: String) -> Result<String, String> {
     Ok(path)
 }
 
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let download_path = &*config::DOWNLOAD_BASE_PATH;
@@ -273,20 +232,19 @@ pub fn run() {
     let instance_manager = InstanceManager::new(instance_path.to_path_buf());
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .manage(download_manager)
         .manage(mod_loader_manager)
         .manage(instance_manager)
-
         .setup(|app| {
             init_logging(app)?;
             Ok(())
         })
-
         .invoke_handler(tauri::generate_handler![
-            greet, 
-            get_system_info, 
-            add_account,  
+            greet,
+            get_system_info,
+            add_account,
             get_account_list,
             get_current_account,
             delete_account,
@@ -336,7 +294,6 @@ pub fn run() {
             open_url,
             open_folder
         ])
-
         .run(tauri::generate_context!())
         .expect("启动失败！");
 }

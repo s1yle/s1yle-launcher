@@ -16,21 +16,25 @@ import { ModLoaderType } from '../helper/rustInvoke';
 const STORAGE_KEY_FOLDER = 's1yle-selected-folder';
 const STORAGE_KEY_INSTANCE = 's1yle-selected-instance';
 
+// 获取 localstorage 存储的 Game Folder ID
 function getSavedFolderId(): string | null {
   try { return localStorage.getItem(STORAGE_KEY_FOLDER) || null; }
   catch { return null; }
 }
 
+// 使用 localstorage 存储 Game Folder ID
 function saveFolderId(id: string | null) {
   try { localStorage.setItem(STORAGE_KEY_FOLDER, id || ''); }
   catch { /* storage not available */ }
 }
 
+// 获取 localstorage 存储的 Instace ID
 function getSavedInstanceId(): string | null {
   try { return localStorage.getItem(STORAGE_KEY_INSTANCE) || null; }
   catch { return null; }
 }
 
+// 使用 localstorage 存储 Instace ID
 function saveInstanceId(id: string | null) {
   try { localStorage.setItem(STORAGE_KEY_INSTANCE, id || ''); }
   catch { /* storage not available */ }
@@ -143,6 +147,7 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
     }
   },
 
+  // 添加 Game Folder
   addKnownFolder: async (path: string) => {
     try {
       const folder = await addKnownPath(path);

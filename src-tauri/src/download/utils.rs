@@ -1,22 +1,22 @@
+use crate::download::Library;
+use crate::log_info;
 use sha1::{Digest, Sha1};
 use std::fs;
 use std::io::Read;
-use crate::log_info;
-use crate::download::Library;
 
 pub const CHUNK_SIZE: u64 = 4 * 1024 * 1024;
 pub const MAX_CHUNKS: usize = 8;
 pub const MAX_RETRIES: u32 = 3;
 
 fn calculate_file_sha1(path: &std::path::Path) -> Result<String, String> {
-    let mut file = fs::File::open(path)
-        .map_err(|e| format!("打开文件失败: {}", e))?;
+    let mut file = fs::File::open(path).map_err(|e| format!("打开文件失败: {}", e))?;
 
     let mut hasher = Sha1::new();
     let mut buffer = [0u8; 8192];
 
     loop {
-        let bytes_read = file.read(&mut buffer)
+        let bytes_read = file
+            .read(&mut buffer)
             .map_err(|e| format!("读取文件失败: {}", e))?;
         if bytes_read == 0 {
             break;
@@ -38,7 +38,6 @@ pub fn verify_file_sha1(path: &std::path::Path, expected_sha1: &str) -> Result<b
 
     Ok(matches)
 }
-
 
 pub fn get_current_os() -> &'static str {
     if cfg!(target_os = "windows") {

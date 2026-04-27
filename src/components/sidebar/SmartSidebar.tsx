@@ -1,6 +1,6 @@
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { getSidebarGroups, routes, sidebarMenuItems, type SidebarMenuItem, findRouteByPath } from '../../router/config';
+import { getSidebarGroups, routes, sidebarMenuItems, type SidebarMenuItem, findRouteByPath, SidebarGroup } from '../../router/config';
 import BaseSidebarLayout from './layouts/BaseSidebarLayout';
 import AccountSidebarContent from './content/AccountSidebarContent';
 import GameSidebarContent from './content/GameSidebarContent';
@@ -8,6 +8,8 @@ import CommonSidebarContent from './content/CommonSidebarContent';
 import BaseChildrenContent from './content/BaseChildrenContent';
 import { logger } from '../../helper/logger';
 import { openUrl } from '../../helper/rustInvoke';
+import { useInstanceStore } from '@/stores/instanceStore';
+import { Folder } from 'lucide-react';
 
 interface SmartSidebarProps {
   onMenuClick?: (path: string) => void;
@@ -68,6 +70,9 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
 
   // 带独立侧边栏的渲染逻辑
   const pagesWithOwnSidebar = ['/account', '/download', '/game-settings', '/instance-list'];
+
+  const knownFolders = useInstanceStore(s => s.knownFolders);
+
   if (pagesWithOwnSidebar.some(path => location.pathname.startsWith(path))) {
     const findMenuItemsByPath = (path: string): { current: SidebarMenuItem | undefined, parent: SidebarMenuItem | undefined } => {
       let foundParent: SidebarMenuItem | undefined = undefined;
@@ -97,11 +102,28 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
       childrenItems = parentMenuItem.children;
     }
 
+    // 生成动态文件夹菜单项
+    const folderItems: SidebarMenuItem[] = knownFolders.map(f => ({
+      id: `folder-${f.id}`,
+      type: 'action' as const,
+      title: f.name,
+      titleI18nKey: '',
+      icon: <Folder className="w-4 h-4" />,
+      action: () => useInstanceStore.getState().setSelectedFolder(f.id),
+      group: 'game' as SidebarGroup,
+    }));
+
+    // 合并动态 + 静态
+    const allChildrenItems = [
+      ...folderItems,
+      ...childrenItems.filter(item => item.id !== 'game-folders'),
+    ];
+
     return (
       <BaseSidebarLayout>
         <div className="py-8">
           <BaseChildrenContent
-            items={childrenItems}
+            items={allChildrenItems}
             onMenuClick={handleItemClick}
             isActive={isActive}
             isParentActive={isParentOfActive}

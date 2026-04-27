@@ -1,5 +1,5 @@
-use tauri::is_dev;
 use once_cell::sync::Lazy;
+use tauri::is_dev;
 
 pub const DEV: bool = is_dev();
 use once_cell::sync::OnceCell;
@@ -9,45 +9,40 @@ use std::{fs, path::PathBuf, sync::Mutex};
 use crate::log_info;
 
 // BASE_PATH
-pub static BASE_PATH: Lazy<PathBuf> = Lazy::new(|| {
-    std::env::current_dir().unwrap_or(PathBuf::from(""))
-});
+pub static BASE_PATH: Lazy<PathBuf> =
+    Lazy::new(|| std::env::current_dir().unwrap_or(PathBuf::from("")));
 
 // APP 的名字
 #[allow(dead_code)]
-pub static APP_NAME: Lazy<PathBuf> = Lazy::new(|| {
-    PathBuf::from(".smcl")
-});
+pub static APP_NAME: Lazy<PathBuf> = Lazy::new(|| PathBuf::from(".smcl"));
 
 // 默认的 实例名称
-pub static DEFAULT_DEAMON_PATH: Lazy<PathBuf> = Lazy::new(|| {
-    BASE_PATH.join("minecraft").join("default")
-});
+pub static DEFAULT_DEAMON_PATH: Lazy<PathBuf> =
+    Lazy::new(|| BASE_PATH.join("minecraft").join("default"));
 
 // 下载路径
-pub static DOWNLOAD_BASE_PATH: Lazy<PathBuf> = Lazy::new(|| {
-    BASE_PATH.join("minecraft").join("download")
-});
+pub static DOWNLOAD_BASE_PATH: Lazy<PathBuf> =
+    Lazy::new(|| BASE_PATH.join("minecraft").join("download"));
 
 // 应用配置目录
 pub static CONFIG_APPLICATION: Lazy<PathBuf> = Lazy::new(|| {
-    Lazy::<PathBuf>::get(&BASE_PATH).unwrap_or(&PathBuf::new()).join(".smcl")
+    Lazy::<PathBuf>::get(&BASE_PATH)
+        .unwrap_or(&PathBuf::new())
+        .join(".smcl")
 });
 
 // 应用配置文件名
 pub static CONFIG_FILE_PATH: Lazy<PathBuf> = Lazy::new(|| {
-    Lazy::<PathBuf>::get(&CONFIG_APPLICATION).unwrap_or(&PathBuf::from(".smcl")).join("app_config.json")
+    Lazy::<PathBuf>::get(&CONFIG_APPLICATION)
+        .unwrap_or(&PathBuf::from(".smcl"))
+        .join("app_config.json")
 });
 
-// 最小窗口宽度 
-pub static MIN_WIDTH: Lazy<u32> = Lazy::new(|| {
-    960
-});
+// 最小窗口宽度
+pub static MIN_WIDTH: Lazy<u32> = Lazy::new(|| 960);
 
 // 最小窗口高度
-pub static MIN_HEIGHT: Lazy<u32> = Lazy::new(|| {
-    600
-});
+pub static MIN_HEIGHT: Lazy<u32> = Lazy::new(|| 600);
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct AppSettings {
@@ -79,7 +74,6 @@ pub struct AppConfig {
     pub theme: String,
     pub accent_color: String,
 }
-
 
 impl Default for AppConfig {
     fn default() -> Self {

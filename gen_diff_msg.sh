@@ -10,7 +10,7 @@ echo " "
 
 
 # 如果文件存在则删除
-if [ -f "commit.txt" ]; then
+if [ -f $file ]; then
     echo " "
     echo "-------------------------------------------"
     echo "检测到 $file 已存在，即将删除该文件！"

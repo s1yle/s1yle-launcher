@@ -1,14 +1,13 @@
+use crate::download::manager::DownloadManager;
+use crate::download::models::{DownloadProgress, DownloadTask};
+use crate::download::utils::{verify_file_sha1, CHUNK_SIZE, MAX_CHUNKS, MAX_RETRIES};
+use crate::log_info;
+use md5;
+use reqwest;
 use std::fs;
 use std::io::{Seek, SeekFrom, Write};
 use tauri::State;
-use md5;
-use reqwest;
 use tokio;
-use crate::log_info;
-use crate::download::models::{DownloadTask, DownloadProgress};
-use crate::download::utils::{CHUNK_SIZE, MAX_CHUNKS, MAX_RETRIES, verify_file_sha1};
-use crate::download::manager::DownloadManager;
-
 
 async fn get_content_length(client: &reqwest::Client, url: &str) -> Result<u64, String> {
     let resp = client
@@ -60,7 +59,10 @@ async fn download_chunk(
             Err(e) => {
                 retries += 1;
                 if retries >= MAX_RETRIES {
-                    return Err(format!("分块 {} 下载失败 (已重试 {} 次): {}", chunk_index, retries, e));
+                    return Err(format!(
+                        "分块 {} 下载失败 (已重试 {} 次): {}",
+                        chunk_index, retries, e
+                    ));
                 }
                 tokio::time::sleep(std::time::Duration::from_millis(500 * retries as u64)).await;
             }
@@ -85,7 +87,12 @@ async fn download_file_chunked(
         return download_file_single(client, url, save_path, task_id, download_manager).await;
     }
 
-    log_info!("开始分块下载: {} ({} 块, {} bytes)", url, num_chunks, total_size);
+    log_info!(
+        "开始分块下载: {} ({} 块, {} bytes)",
+        url,
+        num_chunks,
+        total_size
+    );
 
     let mut file = fs::OpenOptions::new()
         .read(true)
@@ -114,9 +121,7 @@ async fn download_file_chunked(
     let mut results = Vec::with_capacity(num_chunks);
 
     for handle in handles {
-        let result = handle
-            .await
-            .map_err(|e| format!("任务执行失败: {}", e))??;
+        let result = handle.await.map_err(|e| format!("任务执行失败: {}", e))??;
 
         downloaded += result.data.len() as u64;
         results.push(result);
@@ -137,8 +142,7 @@ async fn download_file_chunked(
             .map_err(|e| format!("写入分块数据失败: {}", e))?;
     }
 
-    file.flush()
-        .map_err(|e| format!("刷新文件失败: {}", e))?;
+    file.flush().map_err(|e| format!("刷新文件失败: {}", e))?;
 
     log_info!("分块下载完成: {} ({} bytes)", url, downloaded);
     Ok(downloaded)
@@ -160,8 +164,7 @@ async fn download_file_single(
         .map_err(|e| format!("请求失败: {}", e))?;
 
     let total = resp.content_length().unwrap_or(0);
-    let mut file = fs::File::create(save_path)
-        .map_err(|e| format!("创建文件失败: {}", e))?;
+    let mut file = fs::File::create(save_path).map_err(|e| format!("创建文件失败: {}", e))?;
 
     let mut downloaded: u64 = 0;
 
@@ -198,11 +201,15 @@ pub async fn download_file(
     log_info!("开始下载文件: {} -> {}", url, filename);
 
     let task_id = format!("{:x}", md5::compute(&url));
-    let save_path = download_manager.base_path.lock().unwrap().join("temp").join(&filename);
+    let save_path = download_manager
+        .base_path
+        .lock()
+        .unwrap()
+        .join("temp")
+        .join(&filename);
     log_info!("保存路径：{:?}", save_path);
     if let Some(parent) = save_path.parent() {
-        fs::create_dir_all(parent)
-            .map_err(|e| format!("创建目录失败: {}", e))?;
+        fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {}", e))?;
     }
 
     let existing_size = if save_path.exists() {
