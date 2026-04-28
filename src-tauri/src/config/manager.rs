@@ -1,38 +1,11 @@
 use std::{fs, path::PathBuf, sync::Mutex};
 
-use crate::config::{CONFIG_APPLICATION, CONFIG_FILE_PATH};
+use crate::config::{AppConfig, CONFIG_APPLICATION, CONFIG_FILE_PATH, ConfigManager, WindowPosition};
 use crate::{log_error, log_info};
-use serde::{Deserialize, Serialize};
 use tauri::State;
 
-// 启动器设置
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct AppConfig {
-    pub base_path: PathBuf,
-}
-
-impl Default for AppConfig {
-    fn default() -> Self {
-        Self {
-            base_path: (&*CONFIG_FILE_PATH).clone(),
-        }
-    }
-}
-
-pub struct ConfigManager {
-    config: Mutex<AppConfig>,
-}
-
-impl Default for ConfigManager {
-    fn default() -> Self {
-        Self {
-            config: Mutex::new(AppConfig::default()),
-        }
-    }
-}
-
 impl ConfigManager {
-    pub fn new(config: AppConfig) -> Self {
+    pub fn new(config: AppConfig, window: WindowPosition) -> Self {
         if !config.base_path.exists() {
             log_info!("启动器配置文件不存在，即将创建！");
             if let Some(parent) = config.base_path.parent() {
@@ -44,6 +17,7 @@ impl ConfigManager {
 
         Self {
             config: Mutex::new(config),
+            window: Mutex::new(window)
         }
     }
 

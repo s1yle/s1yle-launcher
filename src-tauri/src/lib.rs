@@ -8,7 +8,7 @@ mod launch;
 mod modloader;
 mod window;
 use crate::download::DownloadManager;
-use crate::config::{AppConfig, ConfigManager, get_config, update_config};
+use crate::config::{AppConfig, ConfigManager, WindowPosition, get_config, update_config};
 use std::fs;
 use std::sync::{Mutex, OnceLock};
 
@@ -22,7 +22,7 @@ pub use crate::launch::{
     tauri_stop_instance, tauri_update_launch_config, LaunchConfig, LaunchStatus,
 };
 pub use crate::window::{
-    get_saved_window_position, load_window_position, save_window_position, WindowPosition,
+    get_saved_window_position, load_window_position, save_window_position
 };
 
 pub use download::{
@@ -232,8 +232,9 @@ pub fn run() {
     let mod_loader_manager = ModLoaderManager::new(download_path.to_path_buf());
     let instance_manager = InstanceManager::new(instance_path.to_path_buf());
 
-    let appconfig = AppConfig { base_path: config_path.clone() };
-    let config_manager = ConfigManager::new(appconfig);
+    let app_config = AppConfig { base_path: config_path.clone() };
+    let window_config = WindowPosition::default();
+    let config_manager: ConfigManager = ConfigManager::new(app_config, window_config);
     let _ = config_manager.load_config_from_disk();
     log_info!("✅ 配置管理器初始化完成");
 

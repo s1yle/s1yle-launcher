@@ -1,17 +1,5 @@
-use crate::config;
-use once_cell::sync::Lazy;
-use std::{fs, sync::Mutex};
-
-#[derive(serde::Serialize, serde::Deserialize, Default, Clone, Debug)]
-pub struct WindowPosition {
-    pub x: i32,
-    pub y: i32,
-    pub width: u32,
-    pub height: u32,
-    pub maximized: bool,
-}
-
-static SAVED_POSITION: Lazy<Mutex<Option<WindowPosition>>> = Lazy::new(|| Mutex::new(None));
+use crate::config::{self, SAVED_POSITION, WindowPosition};
+use std::{fs};
 
 fn window_check(pos: &mut WindowPosition) {
     if pos.x <= 0 {
