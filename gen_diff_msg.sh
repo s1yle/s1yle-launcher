@@ -37,6 +37,14 @@ git diff --stat -w $VERSION >> $file
 
 echo -e "\n===== 完整差异内容 =====" >> $file
 git diff -w $VERSION >> $file
+echo "-------------------------------------------" >> $file
+echo " " >> $file
 
-echo "✅ 差异文件已生成：commit.txt"
+echo "===== 暂存区 文件变更统计 =====" >> $file
+git diff --staged --stat -w $VERSION >> $file 
+
+echo -e "\n===== 暂存区 完整差异 =====" >> $file
+git diff --staged -w $VERSION >> $file
+
+echo "✅ 差异文件已生成：$file"
 echo " "

@@ -4,7 +4,7 @@
 #[allow(unused_imports)]
 use std::env;
 
-use s1yle_launcher_lib::{init_account_manager, init_config, init_launch_manager, run};
+use s1yle_launcher_lib::{init_account_manager, init_launch_manager, run};
 
 fn main() {
     #[cfg(target_os = "windows")]
@@ -15,12 +15,8 @@ fn main() {
         );
     }
 
-    init_config(); // 1
-    init_account_manager(); // 2
-    init_launch_manager(); // 3
-
-    // 禁用触摸板缩放
-    // ICoreWebView2Settings5::SetIsPinchZoomEnabled(false)?;
+    init_account_manager();
+    init_launch_manager();
 
     run();
 }

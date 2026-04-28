@@ -5,8 +5,7 @@ use uuid::Uuid;
 
 use super::models::{GameInstance, InstanceMeta, KnownPath};
 use super::utils::copy_dir_all;
-use crate::config::{self, get_config_path};
-use crate::log_error;
+use crate::{config, log_error};
 use crate::modloader::ModLoaderType;
 
 #[derive(Debug)]
@@ -579,7 +578,7 @@ impl InstanceManager {
     // ---------- 已知路径管理 ----------
     // 从文件加载自定义路径
     fn load_known_paths(&self) -> Vec<KnownPath> {
-        let config_path = get_config_path().unwrap_or_else(|e| {
+        let config_path = config::get_config_path().unwrap_or_else(|e| {
             log_error!("获取配置失败: {}", e);
             (&*config::CONFIG_FILE_PATH).clone()
         });
@@ -609,7 +608,7 @@ impl InstanceManager {
 
     // 将自定义路径保存到文件
     fn save_known_paths(&self, paths: &[KnownPath]) -> Result<(), String> {
-        let config_path = get_config_path()
+        let config_path = config::get_config_path()
                     .map_err(|e| format!("获取配置目录失败: {}", e))?;
 
         if let Some(parent) = config_path.parent() {

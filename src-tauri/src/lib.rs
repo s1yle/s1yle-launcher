@@ -8,17 +8,15 @@ mod launch;
 mod modloader;
 mod window;
 use crate::download::DownloadManager;
+use crate::config::{AppConfig, ConfigManager, get_config, update_config};
 use std::fs;
-use std::sync::Mutex;
+use std::sync::{Mutex, OnceLock};
 
 pub use crate::account::{
     add_account, delete_account, get_account_list, get_current_account, init_account_manager,
     initialize_account_system, load_accounts_from_disk, save_accounts_to_disk, set_current_account,
 };
-pub use crate::config::{
-    get_config, get_download_config, get_game_settings, init_config, update_config,
-    update_download_config, update_game_settings, AppConfig, AppSettings, DownloadConfig, DEV,
-};
+
 pub use crate::launch::{
     init_launch_manager, tauri_get_launch_config, tauri_get_launch_status, tauri_launch_instance,
     tauri_stop_instance, tauri_update_launch_config, LaunchConfig, LaunchStatus,
@@ -50,6 +48,8 @@ use tracing_appender::rolling::{RollingFileAppender, Rotation};
 use tracing_subscriber::fmt::time::UtcTime;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::{fmt as tracing_fmt, EnvFilter};
+
+static APP_HANDLE: OnceLock<tauri::AppHandle> = OnceLock::new();
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -226,10 +226,16 @@ fn open_folder(path: String) -> Result<String, String> {
 pub fn run() {
     let download_path = &*config::DOWNLOAD_BASE_PATH;
     let instance_path = &*config::DEFAULT_DEAMON_PATH;
+    let config_path = &*config::CONFIG_FILE_PATH;
 
     let download_manager = DownloadManager::new(download_path.to_path_buf().clone());
     let mod_loader_manager = ModLoaderManager::new(download_path.to_path_buf());
     let instance_manager = InstanceManager::new(instance_path.to_path_buf());
+
+    let appconfig = AppConfig { base_path: config_path.clone() };
+    let config_manager = ConfigManager::new(appconfig);
+    let _ = config_manager.load_config_from_disk();
+    log_info!("✅ 配置管理器初始化完成");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -237,7 +243,9 @@ pub fn run() {
         .manage(download_manager)
         .manage(mod_loader_manager)
         .manage(instance_manager)
+        .manage(config_manager)
         .setup(|app| {
+            APP_HANDLE.set(app.handle().clone()).ok();
             init_logging(app)?;
             Ok(())
         })
@@ -292,7 +300,9 @@ pub fn run() {
             scan_known_mc_paths,
             add_known_path,
             open_url,
-            open_folder
+            open_folder,
+            get_config,
+            update_config
         ])
         .run(tauri::generate_context!())
         .expect("启动失败！");
