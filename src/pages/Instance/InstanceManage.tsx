@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Settings } from 'lucide-react';
 import { useInstances } from '@/hooks/useInstances';
 import { ModLoaderType, openFolder } from '@/helper/rustInvoke';
 import { InstanceCard, EmptyState, useNotification } from '@/components/common';
+import InstanceConfigPanel from '@/components/InstanceConfigPanel';
 import BottomBar from '@/components/BottomBar/BottomBar';
 
 const InstanceManage: React.FC = () => {
@@ -28,6 +29,7 @@ const InstanceManage: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  const [showConfigPanel, setShowConfigPanel] = useState<string | null>(null);
 
   const filteredInstances = instances.filter((instance) =>
     instance.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -96,6 +98,10 @@ const InstanceManage: React.FC = () => {
       const msg = e instanceof Error ? e.message : '打开目录失败';
       notifyError('打开目录失败', msg);
     }
+  };
+
+  const handleOpenConfig = (id: string) => {
+    setShowConfigPanel(id);
   };
 
   return (
@@ -182,6 +188,7 @@ const InstanceManage: React.FC = () => {
                     onLaunch={() => handleLaunch(instance.id)}
                     onDelete={() => handleDelete(instance.id, instance.name)}
                     onOpenFolder={() => handleOpenFolder(instance.path)}
+                    onOpenConfig={() => handleOpenConfig(instance.id)}
                     showPath
                   />
                 )}
@@ -263,6 +270,15 @@ const InstanceManage: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 实例配置面板 */}
+      {showConfigPanel && (
+        <InstanceConfigPanel
+          instanceId={showConfigPanel}
+          instanceName={instances.find(i => i.id === showConfigPanel)?.name || ''}
+          onClose={() => setShowConfigPanel(null)}
+        />
       )}
     </div>
   );

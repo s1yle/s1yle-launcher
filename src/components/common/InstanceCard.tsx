@@ -25,6 +25,7 @@ export interface InstanceCardProps {
   onRename?: () => void;
   onExport?: () => void;
   onOpenConfigFolder?: () => void;
+  onOpenConfig?: () => void;
   isRunning?: boolean;
   showPath?: boolean;
   viewMode?: 'grid' | 'list';
@@ -41,7 +42,7 @@ const InstanceCard: React.FC<InstanceCardProps> = ({
   onDuplicate,
   onRename,
   onExport,
-  onOpenConfigFolder,
+  onOpenConfig,
   isRunning = false,
   showPath = false,
   viewMode = 'grid',
@@ -105,7 +106,7 @@ const InstanceCard: React.FC<InstanceCardProps> = ({
       case 'openFolder': onOpenFolder?.(); break;
       case 'openConfigFolder': onOpenConfigFolder?.(); break;
       case 'export': onExport?.(); break;
-      case 'edit': onEdit?.(); break;
+      case 'openConfig': onOpenConfig?.(); break;
     }
   };
 
@@ -268,11 +269,11 @@ const InstanceCard: React.FC<InstanceCardProps> = ({
 
         <div className="flex items-center gap-1">
           <button
-            onClick={(e) => { e.stopPropagation(); onEdit?.(); }}
+            onClick={(e) => { e.stopPropagation(); onOpenConfig?.(); }}
             className="p-1.5 text-text-tertiary hover:text-text-primary hover:bg-surface-hover rounded transition-colors"
-            title="编辑"
+            title="配置"
           >
-            <Pencil className="w-4 h-4" />
+            <Settings className="w-4 h-4" />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onOpenFolder?.(); }}
@@ -294,7 +295,7 @@ const InstanceCard: React.FC<InstanceCardProps> = ({
       {showContextMenu && (
         <div ref={contextMenuRef} className="absolute right-0 top-full mt-1 z-50 bg-context-bg border border-context-border rounded-lg shadow-xl py-1 min-w-[180px]">
           <ContextMenuItem icon={<Rocket className="w-4 h-4" />} label="启动游戏" action={() => handleContextAction('launch')} />
-          <ContextMenuItem icon={<Settings className="w-4 h-4" />} label="管理" action={() => handleContextAction('edit')} />
+          <ContextMenuItem icon={<Settings className="w-4 h-4" />} label="实例配置" action={() => handleContextAction('openConfig')} />
           <ContextMenuDivider />
           <ContextMenuItem icon={<Pencil className="w-4 h-4" />} label="重命名" action={() => handleContextAction('rename')} />
           <ContextMenuItem icon={<Copy className="w-4 h-4" />} label="复制实例" action={() => handleContextAction('duplicate')} />

@@ -129,7 +129,8 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
           <BaseChildrenContent
             items={allChildrenItems}
             onMenuClick={handleItemClick}
-            isItemActive={(id) => id === `folder-${selectedFolderId}`}  // ← 高亮匹配
+            isActive={isActive}
+            isItemActive={(id) => id === `folder-${selectedFolderId}` } // ← 高亮匹配
             isParentActive={isParentOfActive}
             hasChildrenItems={hasChildrenItems}
             groupTitle={currentMenuItem?.title || parentMenuItem?.title || ''}
