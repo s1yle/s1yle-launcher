@@ -1003,3 +1003,178 @@ export const addKnownPath = async (
 ): Promise<KnownPath> => {
   return await invokeRustFunction("add_known_path", { path }, options);
 };
+
+// ======================== 配置相关类型定义 ========================
+
+export interface AppConfig {
+  version: number;
+  base_path: string;
+  window_position: WindowPosition;
+  preferences: UserPreferences;
+  download: DownloadConfig;
+  instance_configs: Record<string, InstanceConfig>;
+}
+
+export interface UserPreferences {
+  theme: 'dark' | 'light' | 'system';
+  accent_color: string;
+  language: 'zh-CN' | 'en-US';
+  enable_animation: boolean;
+}
+
+export interface DownloadConfig {
+  download_path: string;
+  concurrent_limit: number;
+  auto_verify: boolean;
+}
+
+export interface InstanceConfig {
+  id: string;
+  name: string;
+  version: string;
+  loader_type: ModLoaderType;
+  loader_version: string | null;
+  java: JavaConfig;
+  memory: MemoryConfig;
+  graphics: GraphicsConfig;
+  custom_args: string[];
+  icon_path: string | null;
+  last_played: number | null;
+  created_at: number;
+  enabled: boolean;
+}
+
+export interface JavaConfig {
+  java_path: string | null;
+  java_args: string[];
+  use_bundled: boolean;
+}
+
+export interface MemoryConfig {
+  min_memory: number;
+  max_memory: number;
+}
+
+export interface GraphicsConfig {
+  width: number;
+  height: number;
+  fullscreen: boolean;
+}
+
+// ======================== 配置相关函数 ========================
+
+/**
+ * 获取全局配置
+ */
+export const getConfig = async (
+  options?: InvokeOptions
+): Promise<AppConfig> => {
+  logger.info('获取全局配置');
+  return await invokeRustFunction("config::get_config", {}, options);
+};
+
+/**
+ * 更新全局配置
+ */
+export const updateConfig = async (
+  newConfig: AppConfig,
+  options?: InvokeOptions
+): Promise<void> => {
+  logger.info('更新全局配置', newConfig);
+  return await invokeRustFunction("config::update_config", { new_config: newConfig }, options);
+};
+
+/**
+ * 动态获取配置值
+ * @param key 配置键路径，如 'preferences.theme'
+ */
+export const getConfigValue = async (
+  key: string,
+  options?: InvokeOptions
+): Promise<string | null> => {
+  logger.info('获取配置值', { key });
+  return await invokeRustFunction("get_config_value", { key }, options);
+};
+
+/**
+ * 动态设置配置值
+ * @param key 配置键路径
+ * @param value 配置值
+ */
+export const setConfigValue = async <T>(
+  key: string,
+  value: T,
+  options?: InvokeOptions
+): Promise<void> => {
+  logger.info('设置配置值', { key, value });
+  return await invokeRustFunction("set_config_value", { key, value }, options);
+};
+
+/**
+ * 获取实例配置
+ */
+export const getInstanceConfig = async (
+  instanceId: string,
+  options?: InvokeOptions
+): Promise<InstanceConfig | null> => {
+  logger.info('获取实例配置', { instanceId });
+  return await invokeRustFunction("get_instance_config", { instance_id: instanceId }, options);
+};
+
+/**
+ * 更新实例配置
+ */
+export const updateInstanceConfig = async (
+  instanceId: string,
+  config: InstanceConfig,
+  options?: InvokeOptions
+): Promise<void> => {
+  logger.info('更新实例配置', { instanceId, config });
+  return await invokeRustFunction("update_instance_config", {
+    instance_id: instanceId,
+    config,
+  }, options);
+};
+
+/**
+ * 删除实例配置
+ */
+export const removeInstanceConfig = async (
+  instanceId: string,
+  options?: InvokeOptions
+): Promise<void> => {
+  logger.info('删除实例配置', { instanceId });
+  return await invokeRustFunction("remove_instance_config", { instance_id: instanceId }, options);
+};
+
+/**
+ * 重置配置到默认值
+ */
+export const resetConfig = async (
+  options?: InvokeOptions
+): Promise<void> => {
+  logger.info('重置配置到默认值');
+  return await invokeRustFunction("reset_config", {}, options);
+};
+
+/**
+ * 导出配置到文件
+ */
+export const exportConfig = async (
+  targetPath: string,
+  options?: InvokeOptions
+): Promise<void> => {
+  logger.info('导出配置', { targetPath });
+  return await invokeRustFunction("export_config", { target_path: targetPath }, options);
+};
+
+/**
+ * 从文件导入配置
+ */
+export const importConfig = async (
+  sourcePath: string,
+  options?: InvokeOptions
+): Promise<void> => {
+  logger.info('导入配置', { sourcePath });
+  return await invokeRustFunction("import_config", { source_path: sourcePath }, options);
+};

@@ -8,7 +8,12 @@ mod launch;
 mod modloader;
 mod window;
 use crate::download::DownloadManager;
-use crate::config::{AppConfig, ConfigManager, WindowPosition, get_config, update_config};
+use crate::config::{
+    AppConfig, ConfigManager, WindowPosition, 
+    get_config_value, set_config_value,
+    get_instance_config, update_instance_config, remove_instance_config,
+    reset_config, export_config, import_config
+};
 use std::fs;
 use std::sync::{Mutex, OnceLock};
 
@@ -226,13 +231,12 @@ fn open_folder(path: String) -> Result<String, String> {
 pub fn run() {
     let download_path = &*config::DOWNLOAD_BASE_PATH;
     let instance_path = &*config::DEFAULT_DEAMON_PATH;
-    let config_path = &*config::CONFIG_FILE_PATH;
 
     let download_manager = DownloadManager::new(download_path.to_path_buf().clone());
     let mod_loader_manager = ModLoaderManager::new(download_path.to_path_buf());
     let instance_manager = InstanceManager::new(instance_path.to_path_buf());
 
-    let app_config = AppConfig { base_path: config_path.clone() };
+    let app_config = AppConfig::default();
     let window_config = WindowPosition::default();
     let config_manager: ConfigManager = ConfigManager::new(app_config, window_config);
     let _ = config_manager.load_config_from_disk();
@@ -302,8 +306,17 @@ pub fn run() {
             add_known_path,
             open_url,
             open_folder,
-            get_config,
-            update_config
+            // 配置相关命令
+            config::get_config,
+            config::update_config,
+            get_config_value,
+            set_config_value,
+            get_instance_config,
+            update_instance_config,
+            remove_instance_config,
+            reset_config,
+            export_config,
+            import_config
         ])
         .run(tauri::generate_context!())
         .expect("启动失败！");
