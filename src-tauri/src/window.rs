@@ -9,6 +9,7 @@ pub fn save_window_position(
     width: u32,
     height: u32,
     maximized: bool,
+    cm: State<'_, ConfigManager>,  // ✅ 添加 ConfigManager 参数
 ) -> Result<(), String> {
     let mut position = WindowPosition {
         x,
@@ -19,27 +20,9 @@ pub fn save_window_position(
     };
 
     window_check(&mut position);
-    let mut map = serde_json::Map::new();
-    map.insert(
-        "window_pos".to_string(),
-        serde_json::to_value(&position).unwrap(),
-    );
-    let json = serde_json::to_string_pretty(&map).map_err(|e| e.to_string())?;
-
-    let config_dir = &*config::CONFIG_APPLICATION;
-    if !config_dir.exists() {
-        fs::create_dir_all(config_dir).map_err(|e| e.to_string())?;
-    }
-
-    let pos_file = &*config::CONFIG_FILE_PATH;
-    fs::write(&pos_file, json).map_err(|e| e.to_string())?;
-
-    if let Ok(mut saved) = SAVED_POSITION.lock() {
-        *saved = Some(position);
-    }
-
-    tracing::info!("窗口位置已保存: {:?}", pos_file);
-    Ok(())
+    
+    // ✅ 使用 ConfigManager 更新配置，不再直接写文件
+    cm.update_window_pos(position)
 }
 
 #[tauri::command]

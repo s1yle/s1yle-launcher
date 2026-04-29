@@ -136,6 +136,10 @@ pub struct AppConfig {
     #[serde(default)]
     pub path_config: PathConfig,
     
+    /// 已知文件夹列表
+    #[serde(default)]
+    pub known_folders: Vec<serde_json::Value>,
+    
     /// 实例配置映射（实例 ID -> 配置）
     #[serde(default)]
     pub instance_configs: HashMap<String, InstanceConfig>,
@@ -154,6 +158,7 @@ impl Default for AppConfig {
             preferences: UserPreferences::default(),
             download: DownloadConfig::default(),
             path_config: PathConfig::default(),
+            known_folders: Vec::new(),
             instance_configs: HashMap::new(),
         }
     }

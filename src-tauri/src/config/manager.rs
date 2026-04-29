@@ -130,6 +130,28 @@ impl ConfigManager {
         self.update_config(default)
     }
 
+    /// # 更新窗口位置
+    pub fn update_window_pos(&self, pos: WindowPosition) -> Result<(), String> {
+        let mut config = self.get_config()?;
+        config.window_position = pos;
+        self.update_config(config)
+    }
+
+    /// # 使用动态路径更新配置值
+    pub fn update_value(&self, key_path: &str, value: Value) -> Result<(), String> {
+        let config = self.get_config()?;
+        let mut config_value = serde_json::to_value(&config)
+            .map_err(|e| format!("序列化配置失败：{}", e))?;
+        
+        let path_segments: Vec<&str> = key_path.split('.').collect();
+        set_nested_value(&mut config_value, &path_segments, value)?;
+        
+        let new_config: AppConfig = serde_json::from_value(config_value)
+            .map_err(|e| format!("反序列化配置失败：{}", e))?;
+        
+        self.update_config(new_config)
+    }
+
     /// # 导出配置到文件
     pub fn export_config(&self, target_path: PathBuf) -> Result<(), String> {
         let config = self.get_config()?;
@@ -282,22 +304,5 @@ impl ConfigManager {
     pub fn get_natives_dir(&self, instance_name: &str) -> Result<PathBuf, String> {
         let path_config = self.get_path_config()?;
         Ok(path_config.get_natives_dir(instance_name))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn test_dynamic_config() {
-        let config = AppConfig::default();
-        let window = WindowPosition::default();
-        let manager = ConfigManager::new(config, window);
-        let x = manager.get_value("window_pos.x").unwrap();
-        println!("窗口 X 坐标：{:?}", x);
-        manager.write_config("window_pos.x", 888).unwrap();
-        manager.write_config("window_pos.maximized", true).unwrap();
-        let new_x = manager.get_value("window_pos.x").unwrap();
-        println!("修改后 X 坐标：{:?}", new_x);
     }
 }

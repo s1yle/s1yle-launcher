@@ -1,12 +1,14 @@
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
+use tauri::{Manager, State};
 use uuid::Uuid;
 
 use super::models::{GameInstance, InstanceMeta, KnownPath};
 use super::utils::copy_dir_all;
+use crate::config::{ConfigManager, get_config};
 use crate::modloader::ModLoaderType;
-use crate::{config, log_error, log_info};
+use crate::{APP_HANDLE, config, log_error, log_info};
 
 #[derive(Debug)]
 pub struct InstanceManager {
@@ -559,46 +561,48 @@ impl InstanceManager {
     }
 
     fn load_known_paths(&self) -> Vec<KnownPath> {
-        let config_path = config::get_config_path().unwrap_or_else(|e| {
-            log_error!("获取配置失败: {}", e);
-            (&*config::CONFIG_FILE_PATH).clone()
-        });
-
-        if config_path.exists() {
-            match fs::read_to_string(&config_path) {
-                Ok(content) => {
-                    if let Ok(paths) = serde_json::from_str::<Vec<KnownPath>>(&content) {
-                        return paths;
-                    }
-                }
-                Err(e) => {
-                    eprintln!("读取已知路径文件失败: {}", e);
-                }
-            }
-        } else {
-            let kp: &[KnownPath] = &[];
-            if let Err(e) = self.save_known_paths(kp) {
-                eprintln!("初始化已知路径文件失败: {}", e);
+        // ✅ 通过 APP_HANDLE 获取 ConfigManager
+        let app_handle = match APP_HANDLE.get() {
+            Some(h) => h,
+            None => {
+                log_error!("APP_HANDLE 未初始化");
                 return Vec::new();
             }
-            return Vec::new();
+        };
+        
+        let config_manager = app_handle.state::<crate::config::ConfigManager>();
+        
+        match config_manager.get_config() {
+            Ok(config) => {
+                // 将 serde_json::Value 转换为 KnownPath
+                let mut result = Vec::new();
+                for value in &config.known_folders {
+                    if let Ok(kp) = serde_json::from_value::<KnownPath>(value.clone()) {
+                        result.push(kp);
+                    }
+                }
+                result
+            }
+            Err(e) => {
+                log_error!("加载配置失败: {}", e);
+                Vec::new()
+            }
         }
-        Vec::new()
     }
 
     fn save_known_paths(&self, paths: &[KnownPath]) -> Result<(), String> {
-        let config_path =
-            config::get_config_path().map_err(|e| format!("获取配置目录失败: {}", e))?;
-
-        if let Some(parent) = config_path.parent() {
-            if !parent.exists() {
-                fs::create_dir_all(parent)
-                    .map_err(|e| format!("创建目录失败: {}, path: {:?}", e, parent))?;
-            }
-        }
-        let content =
-            serde_json::to_string_pretty(paths).map_err(|e| format!("序列化失败: {}", e))?;
-        fs::write(config_path, content).map_err(|e| format!("写入失败: {}", e))?;
+        // ✅ 通过 APP_HANDLE 获取 ConfigManager
+        let app_handle = APP_HANDLE.get()
+            .ok_or_else(|| "APP_HANDLE 未初始化".to_string())?;
+        
+        let config_manager = app_handle.state::<crate::config::ConfigManager>();
+        
+        let paths_value = serde_json::to_value(paths)
+            .map_err(|e| format!("序列化 known_paths 失败：{}", e))?;
+        
+        config_manager.update_value("known_folders", paths_value)?;
+        
+        log_info!("已知路径已保存：{} 个文件夹", paths.len());
         Ok(())
     }
 
