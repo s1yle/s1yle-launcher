@@ -1,9 +1,9 @@
-import Download from './Download';
+import DownloadGame from './DownloadGame';
 
 const DownloadWithSidebar = () => {
   return (
     <div className="p-8">
-      <Download />
+      <DownloadGame />
     </div>
   );
 };

@@ -17,7 +17,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { type ReactNode } from 'react';
-import usehAction, { handleAddGameFolder } from './actionHandler';
+import { handleAddGameFolder } from './actionHandler';
 
 export enum SidebarType {
   MAIN = 'main',

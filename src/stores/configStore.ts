@@ -4,7 +4,6 @@ import {
   getConfig,
   updateConfig,
   setConfigValue,
-  getInstanceConfig,
   updateInstanceConfig as updateInstanceConfigApi,
   removeInstanceConfig as removeInstanceConfigApi,
   resetConfig as resetConfigApi,
