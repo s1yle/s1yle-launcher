@@ -146,7 +146,7 @@ impl InstanceManager {
             version,
             loader_type,
             loader_version,
-            path: minecraft_dir.to_string_lossy().to_string(),
+            path: instance_dir.to_string_lossy().to_string(),
             icon_path,
             last_played,
             created_at,
@@ -274,19 +274,19 @@ impl InstanceManager {
     }
 
     pub fn create_instance(&self, name: &str, version: &str) -> Result<GameInstance, String> {
-        let daemon_dir = self.get_minecraft_dir().join(name);
+        let instance_dir = self.get_minecraft_dir().join(name);
         let versions_dir = self.get_versions_dir(name);
         let game_version_dir = versions_dir.join(version);
 
-        if daemon_dir.exists() {
+        if instance_dir.exists() {
             return Err(format!("实例 {} 已存在", name));
         }
         if game_version_dir.exists() {
             return Err(format!("版本 {} 已存在", version));
         }
 
-        fs::create_dir_all(&daemon_dir).map_err(|e| format!("创建实例目录失败: {}", e))?;
-        fs::create_dir_all(&game_version_dir).map_err(|e| format!("创建版本文件失败: {}", e))?;
+        fs::create_dir_all(&instance_dir).map_err(|e| format!("创建实例目录失败：{}", e))?;
+        fs::create_dir_all(&game_version_dir).map_err(|e| format!("创建版本文件失败：{}", e))?;
 
         fs::create_dir_all(game_version_dir.join("libraries")).ok();
         fs::create_dir_all(game_version_dir.join("assets")).ok();
@@ -392,19 +392,16 @@ impl InstanceManager {
                 let path = entry.path();
                 if path.is_dir() {
                     if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                        let minecraft_dir = path.join(".minecraft");
-                        if minecraft_dir.is_dir() {
-                            let versions_dir = minecraft_dir.join("versions");
-                            let has_versions = versions_dir.is_dir()
-                                && fs::read_dir(&versions_dir).map(|e| e.count()).unwrap_or(0) > 0;
+                        let versions_dir = path.join("versions");
+                        let has_versions = versions_dir.is_dir()
+                            && fs::read_dir(&versions_dir).map(|e| e.count()).unwrap_or(0) > 0;
 
-                            if has_versions {
-                                if let Some(mut instance) =
-                                    self.load_instance_from_path(name, &minecraft_dir)
-                                {
-                                    instance.path = minecraft_dir.to_string_lossy().to_string();
-                                    instances.push(instance);
-                                }
+                        if has_versions {
+                            if let Some(mut instance) =
+                                self.load_instance_from_path(name, &path)
+                            {
+                                instance.path = path.to_string_lossy().to_string();
+                                instances.push(instance);
                             }
                         }
                     }
@@ -416,8 +413,8 @@ impl InstanceManager {
         instances
     }
 
-    fn load_instance_from_path(&self, name: &str, minecraft_dir: &PathBuf) -> Option<GameInstance> {
-        let versions_dir = minecraft_dir.join("versions");
+    fn load_instance_from_path(&self, name: &str, instance_dir: &PathBuf) -> Option<GameInstance> {
+        let versions_dir = instance_dir.join("versions");
         let mut versions = Vec::new();
 
         if let Ok(entries) = fs::read_dir(&versions_dir) {
@@ -512,7 +509,7 @@ impl InstanceManager {
             version,
             loader_type,
             loader_version,
-            path: minecraft_dir.to_string_lossy().to_string(),
+            path: instance_dir.to_string_lossy().to_string(),
             icon_path,
             last_played,
             created_at,

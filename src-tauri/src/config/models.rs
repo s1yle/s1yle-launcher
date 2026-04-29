@@ -20,11 +20,12 @@ pub static DEFAULT_DEAMON_PATH: Lazy<PathBuf> =
 /// # 下载路径
 pub static DOWNLOAD_BASE_PATH: Lazy<PathBuf> = Lazy::new(|| CONFIG_APPLICATION.join("download"));
 
+/// # 实例元数据文件名
 pub static INSTANCE_META_FILE_NAME: &str = "instance_meta.json";
 
-/// # InstanceMeta 路径
+/// # InstanceMeta 路径（位于 minecraft 根目录）
 pub static INSTANCE_META_PATH: Lazy<PathBuf> =
-    Lazy::new(|| DEAMON_BASE_PATH.join(PathBuf::from(INSTANCE_META_FILE_NAME)));
+    Lazy::new(|| DEAMON_BASE_PATH.join(INSTANCE_META_FILE_NAME));
 
 /// # 应用配置目录
 pub static CONFIG_APPLICATION: Lazy<PathBuf> = Lazy::new(|| {

@@ -9,6 +9,7 @@ import {
   getDownloadBasePath,
   getVersionDownloadManifest,
   deployVersionFiles,
+  deployVersionToInstance,
   isVersionDeployed,
   getFabricVersions,
   buildFabricLaunchConfig,
@@ -19,6 +20,7 @@ import {
   ModLoaderVersionList,
   ModLoaderInfo,
 } from '../helper/rustInvoke';
+import { useInstanceStore } from '../stores/instanceStore';
 import { logger } from '../helper/logger';
 
 const CONCURRENT_LIMIT = 16;
@@ -386,7 +388,17 @@ export const useDownload = () => {
 
   const deployVersion = useCallback(async (versionId: string) => {
     try {
-      await deployVersionFiles(versionId);
+      const instanceStore = useInstanceStore.getState();
+      const selectedInstance = instanceStore.getSelectedInstance();
+      
+      if (!selectedInstance) {
+        throw new Error('未选择实例');
+      }
+
+      const instancePath = selectedInstance.path;
+      logger.info('部署版本到实例', { versionId, instancePath, instanceName: selectedInstance.name });
+      
+      await deployVersionToInstance(instancePath, versionId);
       logger.info('版本部署成功', versionId);
       await loadInstalledVersions();
     } catch (e) {

@@ -49,7 +49,7 @@ pub async fn get_version_detail(version_id: String) -> Result<serde_json::Value,
     Ok(detail)
 }
 
-async fn parse_version_downloads(
+pub async fn parse_version_downloads(
     version_json: &serde_json::Value,
 ) -> Result<VersionDownloadManifest, String> {
     let version_id = version_json["id"]
