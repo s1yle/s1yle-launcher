@@ -1004,6 +1004,20 @@ export const addKnownPath = async (
   return await invokeRustFunction("add_known_path", { path }, options);
 };
 
+export const removeKnownPath = async (
+  id: string,
+  options?: InvokeOptions,
+): Promise<void> => {
+  return await invokeRustFunction("remove_known_path", { id }, options);
+};
+
+export const setDefaultFolder = async (
+  id: string,
+  options?: InvokeOptions,
+): Promise<void> => {
+  return await invokeRustFunction("set_default_folder", { id }, options);
+};
+
 // ======================== 配置相关类型定义 ========================
 
 export interface AppConfig {

@@ -26,6 +26,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
     "@tauri-apps/cli": "^2",
+    "@types/react": "^19.1.8",
     "@vitejs/plugin-react": "^4.6.0",
     "autoprefixer": "^10.4.24",
     "postcss": "^8.5.6",

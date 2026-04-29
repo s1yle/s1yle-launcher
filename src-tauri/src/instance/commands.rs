@@ -94,6 +94,24 @@ pub fn add_known_path(
     path: String,
     instance_manager: State<'_, InstanceManager>,
 ) -> Result<KnownPath, String> {
-    log_info!("<add_known_path> {:?}, {:?}", path, instance_manager);
+    log_info!("<add_known_path> {:?}", path);
     instance_manager.add_known_path(&path)
+}
+
+#[tauri::command]
+pub fn set_default_folder(
+    id: String,
+    instance_manager: State<'_, InstanceManager>,
+) -> Result<(), String> {
+    log_info!("<set_default_folder> id: {:?}", id);
+    instance_manager.set_default_folder(&id)
+}
+
+#[tauri::command]
+pub fn remove_known_path(
+    id: String,
+    instance_manager: State<'_, InstanceManager>,
+) -> Result<(), String> {
+    log_info!("<remove_known_path> id: {:?}", id);
+    instance_manager.remove_known_path(&id)
 }

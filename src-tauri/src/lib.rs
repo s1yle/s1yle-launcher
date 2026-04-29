@@ -38,7 +38,7 @@ pub use download::{
 };
 
 pub use crate::instance::{
-    add_known_path, copy_instance, create_instance, delete_instance, get_instance,
+    add_known_path, set_default_folder, remove_known_path, copy_instance, create_instance, delete_instance, get_instance,
     get_instances_path, rename_instance, scan_instances, scan_known_mc_paths, update_instance,
     GameInstance, InstanceManager,
 };
@@ -304,6 +304,8 @@ pub fn run() {
             get_instances_path,
             scan_known_mc_paths,
             add_known_path,
+            set_default_folder,
+            remove_known_path,
             open_url,
             open_folder,
             // 配置相关命令

@@ -9,6 +9,8 @@ import {
   getInstancesPath,
   scanKnownMcPaths,
   addKnownPath,
+  removeKnownPath,
+  setDefaultFolder,
   getPathConfig,
 } from '../helper/rustInvoke';
 import type { GameInstance, KnownPath, PathConfig } from '../helper/rustInvoke';
@@ -58,6 +60,8 @@ interface InstanceState {
   refresh: () => Promise<void>;
   refreshKnownFolders: () => Promise<void>;
   addKnownFolder: (path: string) => Promise<void>;
+  removeKnownFolder: (id: string) => Promise<void>;
+  setDefaultFolder: (id: string) => Promise<void>;
   setSelectedFolder: (id: string | null) => void;
   setSelectedInstance: (id: string | null) => void;
   setSelectedSidebarItem: (id: string | null) => void;
@@ -177,6 +181,47 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
       saveFolderId(folder.id);
     } catch (e) {
       set({ error: e instanceof Error ? e.message : 'Failed to add folder' });
+      throw e;
+    }
+  },
+
+  // 删除 Game Folder
+  removeKnownFolder: async (id: string) => {
+    try {
+      await removeKnownPath(id);
+      const { knownFolders, selectedFolderId } = get();
+      const remainingFolders = knownFolders.filter(f => f.id !== id);
+      
+      let newSelectedId = selectedFolderId;
+      if (selectedFolderId === id) {
+        newSelectedId = remainingFolders[0]?.id ?? null;
+        if (newSelectedId) {
+          saveFolderId(newSelectedId);
+        }
+      }
+      
+      set({
+        knownFolders: remainingFolders,
+        selectedFolderId: newSelectedId,
+      });
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : 'Failed to remove folder' });
+      throw e;
+    }
+  },
+
+  // 设为默认 Game Folder
+  setDefaultFolder: async (id: string) => {
+    try {
+      await setDefaultFolder(id);
+      set(prev => ({
+        knownFolders: prev.knownFolders.map(f => ({
+          ...f,
+          is_default: f.id === id,
+        })),
+      }));
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : 'Failed to set default folder' });
       throw e;
     }
   },

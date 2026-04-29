@@ -159,6 +159,21 @@ impl ConfigManager {
         self.update_config(new_config)
     }
 
+    /// # 使用动态路径删除配置值
+    pub fn remove_value(&self, key_path: &str) -> Result<(), String> {
+        let config = self.get_config()?;
+        let mut config_value = serde_json::to_value(&config)
+            .map_err(|e| format!("序列化配置失败：{}", e))?;
+        
+        let path_segments: Vec<&str> = key_path.split('.').collect();
+        remove_nested_value(&mut config_value, &path_segments)?;
+        
+        let new_config: AppConfig = serde_json::from_value(config_value)
+            .map_err(|e| format!("反序列化配置失败：{}", e))?;
+        
+        self.update_config(new_config)
+    }
+
     /// # 导出配置到文件
     pub fn export_config(&self, target_path: PathBuf) -> Result<(), String> {
         let config = self.get_config()?;
@@ -243,6 +258,35 @@ fn set_nested_value(value: &mut Value, path: &[&str], new_val: Value) -> Result<
     
     // 设置最终值
     current[last] = new_val;
+    Ok(())
+}
+
+fn remove_nested_value(value: &mut Value, path: &[&str]) -> Result<(), String> {
+    if path.is_empty() {
+        return Err("空的配置路径".to_string());
+    }
+    
+    let mut current = value;
+    
+    // 遍历到倒数第二个节点
+    for segment in &path[..path.len() - 1] {
+        current = current
+            .get_mut(*segment)
+            .ok_or_else(|| format!("配置路径不存在：{}", segment))?;
+        
+        if !current.is_object() {
+            return Err(format!("配置路径不是对象类型：{}", segment));
+        }
+    }
+    
+    // 删除最后一个节点
+    let last = path.last().ok_or("空的配置路径")?;
+    if let Some(obj) = current.as_object_mut() {
+        obj.remove(*last);
+    } else {
+        return Err(format!("无法删除配置项：{}", last));
+    }
+    
     Ok(())
 }
 

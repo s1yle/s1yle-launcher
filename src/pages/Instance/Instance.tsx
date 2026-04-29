@@ -1,8 +1,9 @@
-import { IconButton } from "@/components/common";
+import { IconButton, useNotification, ConfirmPopup } from "@/components/common";
 import { GameInstance, KnownPath } from "@/helper/rustInvoke";
+import { useInstanceStore } from "@/stores/instanceStore";
 import { t } from "i18next";
-import { Loader2, RefreshCcw, Search, X } from "lucide-react";
-import { JSX, useRef } from "react";
+import { Loader2, RefreshCcw, Search, X, Trash2, Star } from "lucide-react";
+import { JSX, useRef, useState } from "react";
 
 export interface InstanceProps {
     knownFolders: KnownPath[];
@@ -26,14 +27,11 @@ export interface InstanceProps {
 const Instance: React.FC<InstanceProps> = ({
     knownFolders,
     selectedFolderId,
-    refresh,
     searchQuery,
     setSearchQuery,
     filteredInstances,
     instances,
-    error,
     renderContent,
-    instancesPath,
     showDuplicateModal,
     duplicateName,
     setDuplicateName,
@@ -41,8 +39,31 @@ const Instance: React.FC<InstanceProps> = ({
     setShowDuplicateModal,
     setDuplicateTargetId,
 }) => {
-
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const removeKnownFolder = useInstanceStore(s => s.removeKnownFolder);
+    const setDefaultFolder = useInstanceStore(s => s.setDefaultFolder);
+    const { success, error: notifyError } = useNotification();
+
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deletingFolderId, setDeletingFolderId] = useState<string | null>(null);
+    const [deletingFolderName, setDeletingFolderName] = useState('');
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const confirmDeleteFolder = (id: string, name: string) => {
+        setDeletingFolderId(id);
+        setDeletingFolderName(name);
+        setShowDeleteConfirm(true);
+    };
+
+    const handleSetDefault = async (id: string) => {
+        try {
+            await setDefaultFolder(id);
+            success(t('instances.setDefaultSuccess', '设置成功'), t('instances.setDefaultSuccessMsg', '已设为默认游戏文件夹'));
+        } catch (e) {
+            const msg = e instanceof Error ? e.message : t('notification.error');
+            notifyError(t('instances.setDefaultFailed', '设置失败'), msg);
+        }
+    };
 
 
     return (
@@ -55,9 +76,29 @@ const Instance: React.FC<InstanceProps> = ({
                         {(() => {
                             const folder = knownFolders.find(f => f.id === selectedFolderId);
                             return folder ? (
-                                <p className="text-text-tertiary text-xs mt-1 font-mono truncate max-w-md" title={folder.path}>
-                                    {folder.name} → {folder.path}
-                                </p>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <p className="text-text-tertiary text-xs font-mono truncate max-w-md" title={folder.path}>
+                                        {folder.name} → {folder.path}
+                                    </p>
+                                    <div className="flex items-center gap-1">
+                                        {!folder.is_default && (
+                                            <button
+                                                onClick={() => handleSetDefault(folder.id)}
+                                                className="p-1 text-text-tertiary hover:text-primary rounded transition-colors"
+                                                title={t('instances.setAsDefault', '设为默认')}
+                                            >
+                                                <Star className="w-3.5 h-3.5" />
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={() => confirmDeleteFolder(folder.id, folder.name)}
+                                            className="p-1 text-text-tertiary hover:text-error rounded transition-colors"
+                                            title={t('instances.removeGameFolder', '删除游戏文件夹')}
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
+                                </div>
                             ) : null;
                         })()}
                     </div>
@@ -88,12 +129,6 @@ const Instance: React.FC<InstanceProps> = ({
                     </span>
                 </div>
             </div>
-
-            {error && (
-                <div className="mx-6 mt-4 p-4 bg-error-bg border border-error rounded-lg">
-                    <p className="text-error text-sm">{error}</p>
-                </div>
-            )}
 
             <div className="flex-1 overflow-hidden p-6">
                 {renderContent()}
@@ -135,6 +170,44 @@ const Instance: React.FC<InstanceProps> = ({
                         </div>
                     </div>
                 </div>
+            )}
+
+            {showDeleteConfirm && (
+                <ConfirmPopup
+                    isOpen={showDeleteConfirm}
+                    title={t('instances.confirmRemoveFolder', '删除游戏文件夹')}
+                    message={t('instances.confirmRemoveFolderDesc', '确定要删除文件夹 "{{name}}" 吗？此操作仅从列表中移除记录，不会删除实际文件。', { name: deletingFolderName })}
+                    confirmText={t('common.delete', '删除')}
+                    cancelText={t('common.cancel', '取消')}
+                    confirmType="danger"
+                    showIcon
+                    iconType="warning"
+                    loading={isDeleting}
+                    onConfirm={async () => {
+                        if (!deletingFolderId) return;
+                        setIsDeleting(true);
+                        try {
+                            await removeKnownFolder(deletingFolderId);
+                            success(t('instances.folderRemoved', '文件夹已移除'), t('instances.folderRemovedMsg', '"{{name}}" 已从列表中移除', { name: deletingFolderName }));
+                            setShowDeleteConfirm(false);
+                            setDeletingFolderId(null);
+                            setDeletingFolderName('');
+                        } catch (e) {
+                            const msg = e instanceof Error ? e.message : t('notification.error');
+                            notifyError(t('instances.removeFolderFailed', '删除失败'), msg);
+                        } finally {
+                            setIsDeleting(false);
+                        }
+                    }}
+                    onCancel={() => {
+                        setShowDeleteConfirm(false);
+                        setDeletingFolderId(null);
+                    }}
+                    onClose={() => {
+                        setShowDeleteConfirm(false);
+                        setDeletingFolderId(null);
+                    }}
+                />
             )}
 
         </>

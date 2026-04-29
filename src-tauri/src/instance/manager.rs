@@ -694,4 +694,46 @@ impl InstanceManager {
 
         Ok(new_path)
     }
+
+    pub fn set_default_folder(&self, id: &str) -> Result<(), String> {
+        let mut existing = self.load_known_paths();
+        let mut found = false;
+        
+        for folder in &mut existing {
+            if folder.id == id {
+                folder.is_default = true;
+                found = true;
+            } else {
+                folder.is_default = false;
+            }
+        }
+
+        if !found {
+            return Err("文件夹不存在".to_string());
+        }
+
+        self.save_known_paths(&existing)?;
+        Ok(())
+    }
+
+    pub fn remove_known_path(&self, id: &str) -> Result<(), String> {
+        let mut existing = self.load_known_paths();
+        let original_len = existing.len();
+        
+        // 检查是否是默认文件夹
+        if let Some(folder) = existing.iter().find(|p| p.id == id) {
+            if folder.is_default {
+                return Err("不能删除默认游戏文件夹".to_string());
+            }
+        }
+        
+        existing.retain(|p| p.id != id);
+
+        if existing.len() == original_len {
+            return Err("文件夹不存在".to_string());
+        }
+
+        self.save_known_paths(&existing)?;
+        Ok(())
+    }
 }

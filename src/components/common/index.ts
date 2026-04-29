@@ -55,3 +55,6 @@ export type { VirtualListProps } from './VirtualList';
 
 export { default as IconButton } from './IconButton';
 export type { IconButtonProps } from './IconButton';
+
+export { default as ConfirmPopup } from '../popup/ConfirmPopup';
+export type { ConfirmPopupProps } from '../popup/ConfirmPopup';

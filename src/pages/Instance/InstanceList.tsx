@@ -115,16 +115,6 @@ const InstanceList: React.FC = () => {
       );
     }
 
-    // 检查错误
-    if (error) {
-      console.error('[renderContent] 错误:', error);
-      return (
-        <div className="p-4 bg-error-bg border border-error rounded-lg">
-          <p className="text-error text-sm">{error}</p>
-        </div>
-      );
-    }
-
     // 没有实例时
     if (filteredInstances.length === 0) {
       console.log('[renderContent] 没有实例', { 
