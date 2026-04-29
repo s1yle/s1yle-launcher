@@ -57,7 +57,7 @@ impl Default for KnownPath {
             id: String::from("default"),
             name: String::from("default"),
             path: String::new(),
-            is_default: true
+            is_default: true,
         }
     }
 }

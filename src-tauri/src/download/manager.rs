@@ -14,7 +14,6 @@ pub struct DownloadManager {
 
 impl DownloadManager {
     pub fn new(base_path: PathBuf) -> Self {
-        println!("base_path: {:?}", base_path);
         fs::create_dir_all(&base_path).ok();
 
         let client = reqwest::Client::builder()

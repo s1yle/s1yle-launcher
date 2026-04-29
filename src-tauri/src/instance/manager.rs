@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 use std::fs;
-use std::path::{PathBuf};
+use std::path::PathBuf;
 use uuid::Uuid;
 
 use super::models::{GameInstance, InstanceMeta, KnownPath};
 use super::utils::copy_dir_all;
-use crate::{config, log_error};
 use crate::modloader::ModLoaderType;
+use crate::{config, log_error};
 
 #[derive(Debug)]
 pub struct InstanceManager {
@@ -14,30 +14,23 @@ pub struct InstanceManager {
 }
 
 impl InstanceManager {
-    /// ## base_path的路径为 /minecraft
     pub fn new(base_path: PathBuf) -> Self {
-        println!("InstanceManager base_path: {:?}", &base_path);
         fs::create_dir_all(&base_path).ok();
         Self { base_path }
     }
 
-    // 获取mc路径
     fn get_minecraft_dir(&self) -> PathBuf {
         self.base_path.clone()
     }
 
-    // 获取版本路径
-    // /minecraft/{daemon_name}/versions/
     fn get_versions_dir(&self, name: &str) -> PathBuf {
         self.get_minecraft_dir().join(name).join("versions")
     }
 
-    // 获取 InstanceMeta 的 path
     fn get_meta_path(&self) -> PathBuf {
         (*config::INSTANCE_META_PATH).clone()
     }
 
-    // 从文件读取全部 InstanceMeta（HashMap<daemon_name, InstanceMeta>）
     fn read_all_metas(&self) -> HashMap<String, InstanceMeta> {
         let meta_path = self.get_meta_path();
         if meta_path.exists() {
@@ -50,7 +43,6 @@ impl InstanceManager {
         HashMap::new()
     }
 
-    // 将所有 InstanceMeta 写入文件
     fn write_all_metas(&self, metas: &HashMap<String, InstanceMeta>) -> Result<(), String> {
         let meta_path = self.get_meta_path();
         if let Some(parent) = meta_path.parent() {
@@ -62,25 +54,21 @@ impl InstanceManager {
         Ok(())
     }
 
-    // 加载指定 daemon 的 InstanceMeta
     pub fn load_meta(&self, name: &str) -> Option<InstanceMeta> {
         self.read_all_metas().remove(name)
     }
 
-    // 保存指定 daemon 的 InstanceMeta（插入或更新）
     pub fn save_meta(&self, name: &str, meta: &InstanceMeta) -> Result<(), String> {
         let mut all = self.read_all_metas();
         all.insert(name.to_string(), meta.clone());
         self.write_all_metas(&all)
     }
 
-    // 发掘 versions 字符串
     fn discover_versions(&self, name: &str) -> Vec<String> {
         let versions_dir = self.get_versions_dir(name);
         let mut versions = Vec::new();
         if let Ok(entries) = fs::read_dir(&versions_dir) {
             for entry in entries.flatten() {
-                // /minecraft/{daemon_name}/versions/{version_name}/
                 let path = entry.path();
                 if path.is_dir() {
                     if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
@@ -93,15 +81,12 @@ impl InstanceManager {
         versions
     }
 
-    // 加载 GameInstance
     fn load_instance(&self, name: &str) -> Option<GameInstance> {
-        // /minecraft/
         let minecraft_dir = self.get_minecraft_dir();
         if !minecraft_dir.is_dir() {
             return None;
         }
 
-        // /minecraft/{daemon_name}/
         let instance_dir = minecraft_dir.join(name);
         if !instance_dir.is_dir() {
             return None;
@@ -170,12 +155,10 @@ impl InstanceManager {
     }
 
     fn scan_versions(&self, name: &str, instances: &mut Vec<GameInstance>) {
-        // /minecraft/{name}/versions
         let versions_dir = self.get_versions_dir(name);
         if versions_dir.exists() && versions_dir.is_dir() {
             if let Ok(entries) = fs::read_dir(&versions_dir) {
                 for entry in entries.flatten() {
-                    // /minecraft/{name}/versions/
                     let path = entry.path();
                     if path.is_dir() {
                         if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
@@ -267,15 +250,12 @@ impl InstanceManager {
         }
     }
 
-    // 扫描 GameInstance（仅扫描版本级实例，去除了 daemon 级重复）
     pub fn scan_instances(&self) -> Vec<GameInstance> {
-        // /minecraft/
         let daemon_dir = self.get_minecraft_dir();
         let mut instances = Vec::new();
 
         if let Ok(entries) = fs::read_dir(&daemon_dir) {
             for entry in entries.flatten() {
-                // /minecraft/{daemon_name}/
                 let path = entry.path();
                 if path.is_dir() {
                     if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
@@ -289,12 +269,10 @@ impl InstanceManager {
         instances
     }
 
-    // 通过 id 获取 GameInstance
     pub fn get_instance(&self, id: &str) -> Option<GameInstance> {
         self.scan_instances().into_iter().find(|i| i.id == id)
     }
 
-    // 创建 GameInstance
     pub fn create_instance(&self, name: &str, version: &str) -> Result<GameInstance, String> {
         let daemon_dir = self.get_minecraft_dir().join(name);
         let versions_dir = self.get_versions_dir(name);
@@ -303,14 +281,10 @@ impl InstanceManager {
         if daemon_dir.exists() {
             return Err(format!("实例 {} 已存在", name));
         }
-
         if game_version_dir.exists() {
             return Err(format!("版本 {} 已存在", version));
         }
 
-        // 根据版本名称创建 例：minecraft/default/versions/{version}
-        //                    minecraft/default/versions/1.21.11
-        //                    minecraft/default/versions/亡者世界
         fs::create_dir_all(&daemon_dir).map_err(|e| format!("创建实例目录失败: {}", e))?;
         fs::create_dir_all(&game_version_dir).map_err(|e| format!("创建版本文件失败: {}", e))?;
 
@@ -325,7 +299,6 @@ impl InstanceManager {
         Ok(instance)
     }
 
-    // 删除 GameInstance
     pub fn delete_instance(&self, id: &str) -> Result<(), String> {
         let instance = self
             .get_instance(id)
@@ -339,7 +312,6 @@ impl InstanceManager {
         Ok(())
     }
 
-    // 复制 GameInstnace
     pub fn copy_instance(&self, id: &str, new_name: &str) -> Result<GameInstance, String> {
         let instance = self
             .get_instance(id)
@@ -360,7 +332,6 @@ impl InstanceManager {
             .ok_or_else(|| "复制实例后加载失败".to_string())
     }
 
-    // 重命名 GameInstance
     pub fn rename_instance(&self, id: &str, new_name: &str) -> Result<GameInstance, String> {
         let instance = self
             .get_instance(id)
@@ -373,7 +344,6 @@ impl InstanceManager {
             return Err(format!("实例 {} 已存在", new_name));
         }
 
-        // 更新 meta: 删除旧 key，插入新 key
         let mut all = self.read_all_metas();
         if let Some(mut meta) = all.remove(&instance.name) {
             meta.name = new_name.to_string();
@@ -387,7 +357,6 @@ impl InstanceManager {
             .ok_or_else(|| "重命名实例后加载失败".to_string())
     }
 
-    // 指定 GameInstnace 的 id/name/enabled 属性
     pub fn update_instance(
         &self,
         id: &str,
@@ -408,12 +377,10 @@ impl InstanceManager {
         Ok(instance)
     }
 
-    // 获取到 instance 的 path
     pub fn get_instances_path(&self) -> String {
         self.get_minecraft_dir().to_string_lossy().to_string()
     }
 
-    // ---------- 多路径扫描扩展 ----------
     pub fn scan_instances_in_folder(&self, folder_path: &PathBuf) -> Vec<GameInstance> {
         let mut instances = Vec::new();
         if !folder_path.exists() || !folder_path.is_dir() {
@@ -449,7 +416,6 @@ impl InstanceManager {
         instances
     }
 
-    // 通过 path 加载 instance
     fn load_instance_from_path(&self, name: &str, minecraft_dir: &PathBuf) -> Option<GameInstance> {
         let versions_dir = minecraft_dir.join("versions");
         let mut versions = Vec::new();
@@ -554,7 +520,6 @@ impl InstanceManager {
         })
     }
 
-    // 通过 path 加载 InstanceMeta
     fn load_meta_from_path(&self, meta_path: &PathBuf) -> Option<InstanceMeta> {
         if let Ok(content) = fs::read_to_string(meta_path) {
             if let Ok(meta) = serde_json::from_str::<InstanceMeta>(&content) {
@@ -564,7 +529,6 @@ impl InstanceManager {
         None
     }
 
-    // 向 path 保存 InstanceMeta
     fn save_meta_to_path(&self, meta: &InstanceMeta, meta_path: &PathBuf) -> Result<(), String> {
         if let Some(parent) = meta_path.parent() {
             fs::create_dir_all(parent).map_err(|e| format!("创建元数据目录失败: {}", e))?;
@@ -575,14 +539,12 @@ impl InstanceManager {
         Ok(())
     }
 
-    // ---------- 已知路径管理 ----------
-    // 从文件加载自定义路径
     fn load_known_paths(&self) -> Vec<KnownPath> {
         let config_path = config::get_config_path().unwrap_or_else(|e| {
             log_error!("获取配置失败: {}", e);
             (&*config::CONFIG_FILE_PATH).clone()
         });
-                
+
         if config_path.exists() {
             match fs::read_to_string(&config_path) {
                 Ok(content) => {
@@ -595,25 +557,24 @@ impl InstanceManager {
                 }
             }
         } else {
-            // 文件不存在，尝试创建默认空文件
             let kp: &[KnownPath] = &[];
             if let Err(e) = self.save_known_paths(kp) {
                 eprintln!("初始化已知路径文件失败: {}", e);
-                return Vec::new();   // 回退，不要 panic
+                return Vec::new();
             }
-            return Vec::new();       // 刚初始化，空列表
+            return Vec::new();
         }
         Vec::new()
     }
 
-    // 将自定义路径保存到文件
     fn save_known_paths(&self, paths: &[KnownPath]) -> Result<(), String> {
-        let config_path = config::get_config_path()
-                    .map_err(|e| format!("获取配置目录失败: {}", e))?;
+        let config_path =
+            config::get_config_path().map_err(|e| format!("获取配置目录失败: {}", e))?;
 
         if let Some(parent) = config_path.parent() {
             if !parent.exists() {
-                fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {}, path: {:?}", e, parent))?;
+                fs::create_dir_all(parent)
+                    .map_err(|e| format!("创建目录失败: {}, path: {:?}", e, parent))?;
             }
         }
         let content =
@@ -622,11 +583,9 @@ impl InstanceManager {
         Ok(())
     }
 
-    // 扫描已知路径（系统扫描 + 持久化自定义路径）
     pub fn scan_known_paths(&self) -> Vec<KnownPath> {
         let mut paths = Vec::new();
 
-        // Default daemon directory
         let daemon_path = self.get_minecraft_dir();
         if daemon_path.exists() {
             paths.push(KnownPath {
@@ -637,7 +596,6 @@ impl InstanceManager {
             });
         }
 
-        // Official Minecraft launcher directory
         if let Some(data_dir) = dirs_next::data_local_dir() {
             let official_path = data_dir.join(".minecraft");
             if official_path.exists() {
@@ -650,7 +608,6 @@ impl InstanceManager {
             }
         }
 
-        // Home directory .minecraft
         if let Some(home) = dirs_next::home_dir() {
             let home_mc = home.join(".minecraft");
             if home_mc.exists() && !paths.iter().any(|p| p.path == home_mc.to_string_lossy()) {
@@ -663,7 +620,6 @@ impl InstanceManager {
             }
         }
 
-        // 加载持久化的自定义路径
         let custom_paths = self.load_known_paths();
         for cp in custom_paths {
             if !paths.iter().any(|p| p.path == cp.path) {
@@ -674,7 +630,6 @@ impl InstanceManager {
         paths
     }
 
-    // 通过 path 添加 Game Folder（添加后持久化）
     pub fn add_known_path(&self, path: &str) -> Result<KnownPath, String> {
         let p = PathBuf::from(path);
         if !p.exists() {
@@ -704,7 +659,6 @@ impl InstanceManager {
             is_default: false,
         };
 
-        // 持久化
         let mut existing = self.load_known_paths();
         existing.push(new_path.clone());
         self.save_known_paths(&existing)?;

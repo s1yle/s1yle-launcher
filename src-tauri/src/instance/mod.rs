@@ -1,8 +1,8 @@
-pub mod models;
-pub mod manager;
 pub mod commands;
+pub mod manager;
+pub mod models;
 pub(crate) mod utils;
 
-pub use models::{GameInstance, InstanceMeta, KnownPath};
-pub use manager::InstanceManager;
 pub use commands::*;
+pub use manager::InstanceManager;
+pub use models::GameInstance;

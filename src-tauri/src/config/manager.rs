@@ -1,7 +1,11 @@
-use std::{fs, path::PathBuf, sync::Mutex};
-
-use crate::config::{AppConfig, CONFIG_APPLICATION, CONFIG_FILE_PATH, ConfigManager, WindowPosition};
+use crate::config::{
+    AppConfig, ConfigManager, WindowPosition, CONFIG_APPLICATION, CONFIG_FILE_PATH, MIN_HEIGHT,
+    MIN_WIDTH,
+};
 use crate::{log_error, log_info};
+use serde::Serialize;
+use serde_json::Value;
+use std::{fs, path::PathBuf, sync::Mutex};
 use tauri::State;
 
 impl ConfigManager {
@@ -14,10 +18,9 @@ impl ConfigManager {
                 }
             }
         }
-
         Self {
             config: Mutex::new(config),
-            window: Mutex::new(window)
+            window: Mutex::new(window),
         }
     }
 
@@ -61,9 +64,78 @@ impl ConfigManager {
         log_info!("✅ 配置加载成功");
         Ok(())
     }
+
+    pub fn get_window_pos(&self) -> Result<Option<WindowPosition>, String> {
+        let window_guard = self
+            .window
+            .lock()
+            .map_err(|e| format!("获取窗口位置锁失败: {}", e))?;
+        Ok(Some(window_guard.clone()))
+    }
+
+    pub fn get_value(&self, key: &str) -> Result<Option<String>, String> {
+        let config = self.get_config()?;
+        let mut json_val =
+            serde_json::to_value(&config).map_err(|e| format!("配置转JSON失败: {}", e))?;
+        let path = parse_key_path(key);
+        let value = get_nested_value(&mut json_val, &path)?;
+        Ok(value.map(|v| v.to_string()))
+    }
+
+    pub fn write_config<T: Serialize>(&self, key: &str, val: T) -> Result<(), String> {
+        let mut config = self.get_config()?;
+        let mut json_val =
+            serde_json::to_value(&config).map_err(|e| format!("配置转JSON失败: {}", e))?;
+        let path = parse_key_path(key);
+        let new_val = serde_json::to_value(val).map_err(|e| format!("值序列化失败: {}", e))?;
+        set_nested_value(&mut json_val, &path, new_val)?;
+        config =
+            serde_json::from_value(json_val).map_err(|e| format!("JSON转回配置失败: {}", e))?;
+        self.update_config(config)
+    }
 }
 
-// 模块级函数：获取配置文件路径（供 account.rs 等模块使用）
+fn parse_key_path(key: &str) -> Vec<&str> {
+    key.split('.').collect()
+}
+
+fn get_nested_value(value: &mut Value, path: &[&str]) -> Result<Option<Value>, String> {
+    let mut current = value;
+    for segment in path {
+        current = current
+            .get_mut(segment)
+            .ok_or_else(|| format!("配置路径不存在: {}", segment))?;
+    }
+    Ok(Some(current.clone()))
+}
+
+fn set_nested_value(value: &mut Value, path: &[&str], new_val: Value) -> Result<(), String> {
+    let mut current = value;
+    let (last, segments) = path.split_last().ok_or("空的配置路径")?;
+    for segment in segments {
+        current = current
+            .get_mut(segment)
+            .ok_or_else(|| format!("配置路径不存在: {}", segment))?;
+    }
+    current[last] = new_val;
+    Ok(())
+}
+
+pub fn window_check(pos: &mut WindowPosition) {
+    if pos.x <= 0 {
+        pos.x = 1;
+    }
+    if pos.y <= 0 {
+        pos.y = 1;
+    }
+    if pos.height < *MIN_HEIGHT {
+        pos.height = *MIN_HEIGHT;
+    }
+    if pos.width < *MIN_WIDTH {
+        pos.width = *MIN_WIDTH;
+    }
+}
+
 pub fn get_config_path() -> Result<PathBuf, String> {
     let config_dir = &*CONFIG_APPLICATION;
     fs::create_dir_all(config_dir).map_err(|e| format!("创建配置目录失败: {}", e))?;
@@ -81,4 +153,21 @@ pub fn update_config(
     new_config: AppConfig,
 ) -> Result<(), String> {
     config_manager.update_config(new_config)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_dynamic_config() {
+        let config = AppConfig::default();
+        let window = WindowPosition::default();
+        let manager = ConfigManager::new(config, window);
+        let x = manager.get_value("window_pos.x").unwrap();
+        println!("窗口X坐标: {:?}", x);
+        manager.write_config("window_pos.x", 888).unwrap();
+        manager.write_config("window_pos.maximized", true).unwrap();
+        let new_x = manager.get_value("window_pos.x").unwrap();
+        println!("修改后X坐标: {:?}", new_x);
+    }
 }

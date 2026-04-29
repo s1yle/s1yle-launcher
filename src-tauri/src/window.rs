@@ -1,23 +1,6 @@
-use crate::config::{self, SAVED_POSITION, WindowPosition};
-use std::{fs};
-
-fn window_check(pos: &mut WindowPosition) {
-    if pos.x <= 0 {
-        pos.x = 1;
-    }
-
-    if pos.y <= 0 {
-        pos.y = 1;
-    }
-
-    if pos.height < *config::MIN_HEIGHT {
-        pos.height = *config::MIN_HEIGHT;
-    }
-
-    if pos.width < *config::MIN_WIDTH {
-        pos.width = *config::MIN_WIDTH;
-    }
-}
+use crate::config::{self, window_check, ConfigManager, WindowPosition, SAVED_POSITION};
+use std::fs;
+use tauri::State;
 
 #[tauri::command]
 pub fn save_window_position(
@@ -36,10 +19,12 @@ pub fn save_window_position(
     };
 
     window_check(&mut position);
-
-    dbg!(position.clone());
-
-    let json = serde_json::to_string_pretty(&position).map_err(|e| e.to_string())?;
+    let mut map = serde_json::Map::new();
+    map.insert(
+        "window_pos".to_string(),
+        serde_json::to_value(&position).unwrap(),
+    );
+    let json = serde_json::to_string_pretty(&map).map_err(|e| e.to_string())?;
 
     let config_dir = &*config::CONFIG_APPLICATION;
     if !config_dir.exists() {
@@ -58,32 +43,15 @@ pub fn save_window_position(
 }
 
 #[tauri::command]
-pub fn load_window_position() -> Result<Option<WindowPosition>, String> {
-    let pos_file = &*config::CONFIG_APPLICATION;
-
-    if pos_file.exists() {
-        let json = fs::read_to_string(pos_file).map_err(|e| e.to_string())?;
-        let mut position: WindowPosition =
-            serde_json::from_str(&json).map_err(|e| e.to_string())?;
-
-        window_check(&mut position);
-
-        if let Ok(mut saved) = SAVED_POSITION.lock() {
-            *saved = Some(position.clone());
-        }
-
-        tracing::info!("窗口位置已加载: {:?}", position);
-        Ok(Some(position))
-    } else {
-        Ok(None)
-    }
+pub fn load_window_position(
+    cm: State<'_, ConfigManager>,
+) -> Result<Option<WindowPosition>, String> {
+    cm.get_window_pos()
 }
 
 #[tauri::command]
-pub fn get_saved_window_position() -> Result<Option<WindowPosition>, String> {
-    if let Ok(saved) = SAVED_POSITION.lock() {
-        Ok(saved.clone())
-    } else {
-        Ok(None)
-    }
+pub fn get_saved_window_position(
+    cm: State<'_, ConfigManager>,
+) -> Result<Option<WindowPosition>, String> {
+    cm.get_window_pos()
 }
