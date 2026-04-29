@@ -662,6 +662,13 @@ impl InstanceManager {
             return Err("路径不是目录".to_string());
         }
 
+        let normalized_path = p.to_string_lossy().to_lowercase();
+        let mut existing = self.load_known_paths();
+        
+        if existing.iter().any(|kp| kp.path.to_lowercase() == normalized_path) {
+            return Err("该路径已存在".to_string());
+        }
+
         let name = p
             .file_name()
             .and_then(|n| n.to_str())
@@ -682,7 +689,6 @@ impl InstanceManager {
             is_default: false,
         };
 
-        let mut existing = self.load_known_paths();
         existing.push(new_path.clone());
         self.save_known_paths(&existing)?;
 
