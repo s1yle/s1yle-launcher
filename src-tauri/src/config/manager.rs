@@ -196,11 +196,23 @@ fn get_nested_value(value: &mut Value, path: &[&str]) -> Result<Option<Value>, S
 fn set_nested_value(value: &mut Value, path: &[&str], new_val: Value) -> Result<(), String> {
     let mut current = value;
     let (last, segments) = path.split_last().ok_or("空的配置路径")?;
+    
+    // 遍历路径，如果中间节点不存在则创建
     for segment in segments {
-        current = current
-            .get_mut(segment)
-            .ok_or_else(|| format!("配置路径不存在：{}", segment))?;
+        if !current.get(segment).is_some() {
+            // 如果节点不存在，创建一个空对象
+            current[*segment] = Value::Object(serde_json::Map::new());
+        }
+        
+        // 确保当前节点是对象类型
+        if !current[segment].is_object() {
+            return Err(format!("配置路径不是对象类型：{}", segment));
+        }
+        
+        current = current.get_mut(segment).unwrap();
     }
+    
+    // 设置最终值
     current[last] = new_val;
     Ok(())
 }

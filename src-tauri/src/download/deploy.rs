@@ -1,7 +1,7 @@
 use crate::download::manager::DownloadManager;
 use crate::download::models::*;
 use crate::download::version::{get_version_detail, get_version_download_manifest, parse_version_downloads};
-use crate::log_info;
+use crate::{log_error, log_info};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
@@ -175,8 +175,10 @@ pub async fn deploy_version_to_instance(
     version_id: String,
     download_manager: State<'_, DownloadManager>,
 ) -> Result<String, String> {
-    log_info!("开始部署版本 {} 到实例 {}", version_id, instance_path);
-
+    log_info!("==================== 开始部署版本到实例 ====================");
+    log_info!("版本 ID: {}", version_id);
+    log_info!("实例路径：{}", instance_path);
+    
     let version_json = get_version_detail(version_id.clone()).await?;
     
     let version_name = version_json["id"]
@@ -184,24 +186,47 @@ pub async fn deploy_version_to_instance(
         .unwrap_or(&version_id)
         .to_string();
     
-    log_info!("使用版本名称：{}", version_name);
+    log_info!("版本名称：{}", version_name);
 
     let manifest = parse_version_downloads(&version_json).await?;
+    
+    log_info!("下载清单：libraries={}, assets={}, natives={}", 
+        manifest.libraries.len(), manifest.assets.len(), manifest.natives.len());
 
     let instance_dir = PathBuf::from(&instance_path);
-    let versions_dir = instance_dir.join("versions").join(&version_name);
-    let libraries_dir = instance_dir.join("libraries");
-    let assets_dir = instance_dir.join("assets");
-    let natives_dir = instance_dir.join("natives").join(&version_name);
+    // 所有文件都放在 versions/{version_name}/ 目录下
+    let version_base_dir = instance_dir.join("versions").join(&version_name);
+    let libraries_dir = version_base_dir.join("libraries");
+    let assets_dir = version_base_dir.join("assets");
+    let natives_dir = version_base_dir.join("natives");
+    let indexes_dir = version_base_dir.join("indexes");
+    let objects_dir = version_base_dir.join("objects");
 
-    fs::create_dir_all(&versions_dir).map_err(|e| format!("创建 versions 目录失败：{}", e))?;
+    log_info!("目标目录：");
+    log_info!("  版本根目录：{:?}", version_base_dir);
+    log_info!("  libraries: {:?}", libraries_dir);
+    log_info!("  assets: {:?}", assets_dir);
+    log_info!("  natives: {:?}", natives_dir);
+    log_info!("  indexes: {:?}", indexes_dir);
+    log_info!("  objects: {:?}", objects_dir);
+
+    fs::create_dir_all(&version_base_dir).map_err(|e| format!("创建版本目录失败：{}", e))?;
     fs::create_dir_all(&libraries_dir).map_err(|e| format!("创建 libraries 目录失败：{}", e))?;
     fs::create_dir_all(&assets_dir).map_err(|e| format!("创建 assets 目录失败：{}", e))?;
     fs::create_dir_all(&natives_dir).map_err(|e| format!("创建 natives 目录失败：{}", e))?;
+    fs::create_dir_all(&indexes_dir).map_err(|e| format!("创建 indexes 目录失败：{}", e))?;
+    fs::create_dir_all(&objects_dir).map_err(|e| format!("创建 objects 目录失败：{}", e))?;
 
     let base_path = download_manager.base_path.lock().unwrap().clone();
+    log_info!("下载基础路径：{:?}", base_path);
+    log_info!("临时文件路径：{:?}", base_path.join("temp"));
 
+    let mut deployed_count = 0;
+    let mut total_count = 0;
+
+    // 部署库文件
     for lib in &manifest.libraries {
+        total_count += 1;
         let source = base_path.join("temp").join(&lib.path);
         let dest = libraries_dir.join(&lib.path);
 
@@ -211,24 +236,35 @@ pub async fn deploy_version_to_instance(
 
         if source.exists() {
             fs::rename(&source, &dest).map_err(|e| format!("部署库文件失败：{}", e))?;
-            log_info!("部署库：{}", lib.path);
+            log_info!("[{}/{}] 部署库：{}", deployed_count + 1, manifest.libraries.len(), lib.path);
+            deployed_count += 1;
         } else if dest.exists() {
-            log_info!("库已存在：{}", lib.path);
+            log_info!("[{}/{}] 库已存在：{}", deployed_count + 1, manifest.libraries.len(), lib.path);
+            deployed_count += 1;
+        } else {
+            log_error!("库文件不存在：{:?}", source);
         }
     }
 
+    // 部署原生库
     if manifest.natives.first().is_some() {
         for native in &manifest.natives {
+            total_count += 1;
             let source = base_path.join("temp").join(&native.path);
             if source.exists() {
                 extract_jar(&source, &natives_dir)?;
                 fs::remove_file(&source).ok();
                 log_info!("解压原生库：{}", native.path);
+                deployed_count += 1;
+            } else {
+                log_error!("原生库不存在：{:?}", source);
             }
         }
     }
 
+    // 部署资源文件
     for asset in &manifest.assets {
+        total_count += 1;
         let source = base_path.join("temp").join(&asset.path);
         let dest = assets_dir.join(&asset.path);
 
@@ -239,27 +275,45 @@ pub async fn deploy_version_to_instance(
         if source.exists() {
             fs::rename(&source, &dest).map_err(|e| format!("部署资源文件失败：{}", e))?;
             log_info!("部署资源：{}", asset.path);
+            deployed_count += 1;
         } else if dest.exists() {
             log_info!("资源已存在：{}", asset.path);
+            deployed_count += 1;
+        } else {
+            log_error!("资源文件不存在：{:?}", source);
         }
     }
 
+    // 部署客户端 jar
     if let Some(ref client) = manifest.client_jar {
+        total_count += 1;
         let source = base_path.join("temp").join(&client.path);
-        let dest = versions_dir.join(format!("{}.jar", &version_name));
+        let dest = version_base_dir.join(format!("{}.jar", &version_name));
+
+        if let Some(parent) = dest.parent() {
+            fs::create_dir_all(parent).map_err(|e| format!("创建版本目录失败：{}", e))?;
+        }
+
+        log_info!("部署客户端 jar:");
+        log_info!("  源文件：{:?}", source);
+        log_info!("  目标：{:?}", dest);
+        log_info!("  源文件存在：{}", source.exists());
 
         if source.exists() {
             fs::rename(&source, &dest).map_err(|e| format!("部署客户端 jar 失败：{}", e))?;
-            log_info!("部署客户端：{}", dest.display());
+            log_info!("✓ 部署客户端：{}", dest.display());
+            deployed_count += 1;
+        } else {
+            log_error!("客户端 jar 不存在：{:?}", source);
+            return Err(format!("客户端 jar 不存在：{}", source.display()));
         }
     }
 
+    // 部署资源索引
     if let Some(ref index) = manifest.asset_index {
+        total_count += 1;
         let source = base_path.join("temp").join(&index.path);
-        let dest = instance_dir
-            .join("assets")
-            .join("indexes")
-            .join(format!("{}.json", &version_name));
+        let dest = indexes_dir.join(format!("{}.json", &version_name));
 
         if let Some(parent) = dest.parent() {
             fs::create_dir_all(parent).map_err(|e| format!("创建索引目录失败：{}", e))?;
@@ -267,11 +321,16 @@ pub async fn deploy_version_to_instance(
 
         if source.exists() {
             fs::rename(&source, &dest).map_err(|e| format!("部署资源索引失败：{}", e))?;
+            deployed_count += 1;
         }
     }
 
-    log_info!("版本 {} 部署到实例完成", version_id);
-    Ok(format!("版本 {} 已部署到实例", version_id))
+    log_info!("==================== 部署完成 ====================");
+    log_info!("部署进度：{}/{} 文件", deployed_count, total_count);
+    log_info!("实例路径：{}", instance_path);
+    log_info!("版本目录：{:?}", version_base_dir);
+    
+    Ok(format!("版本 {} 已部署到实例 ({} / {} 文件)", version_id, deployed_count, total_count))
 }
 
 #[allow(dead_code)]
