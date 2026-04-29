@@ -41,6 +41,67 @@ pub static CONFIG_FILE_PATH: Lazy<PathBuf> = Lazy::new(|| {
         .join("app_config.json")
 });
 
+/// # 路径配置结构
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct PathConfig {
+    /// 实例根目录（默认：{base}/minecraft）
+    #[serde(default = "default_daemon_base_path")]
+    pub daemon_base_path: PathBuf,
+    
+    /// 下载根目录（默认：{config_app}/download）
+    #[serde(default = "default_download_base_path")]
+    pub download_base_path: PathBuf,
+}
+
+fn default_daemon_base_path() -> PathBuf {
+    BASE_PATH.join("minecraft")
+}
+
+fn default_download_base_path() -> PathBuf {
+    CONFIG_APPLICATION.join("download")
+}
+
+impl Default for PathConfig {
+    fn default() -> Self {
+        Self {
+            daemon_base_path: default_daemon_base_path(),
+            download_base_path: default_download_base_path(),
+        }
+    }
+}
+
+impl PathConfig {
+    /// 获取实例元数据路径（自动计算）
+    pub fn get_instance_meta_path(&self) -> PathBuf {
+        self.daemon_base_path.join(INSTANCE_META_FILE_NAME)
+    }
+    
+    /// 获取指定实例的目录路径
+    pub fn get_instance_dir(&self, instance_name: &str) -> PathBuf {
+        self.daemon_base_path.join(instance_name)
+    }
+    
+    /// 获取指定实例的 versions 目录
+    pub fn get_versions_dir(&self, instance_name: &str) -> PathBuf {
+        self.get_instance_dir(instance_name).join("versions")
+    }
+    
+    /// 获取指定实例的 libraries 目录
+    pub fn get_libraries_dir(&self, instance_name: &str) -> PathBuf {
+        self.get_instance_dir(instance_name).join("libraries")
+    }
+    
+    /// 获取指定实例的 assets 目录
+    pub fn get_assets_dir(&self, instance_name: &str) -> PathBuf {
+        self.get_instance_dir(instance_name).join("assets")
+    }
+    
+    /// 获取指定实例的 natives 目录
+    pub fn get_natives_dir(&self, instance_name: &str) -> PathBuf {
+        self.get_instance_dir(instance_name).join("natives")
+    }
+}
+
 /// # 最小窗口宽度
 pub static MIN_WIDTH: Lazy<u32> = Lazy::new(|| 960);
 
@@ -71,6 +132,10 @@ pub struct AppConfig {
     #[serde(default)]
     pub download: DownloadConfig,
     
+    /// 路径配置
+    #[serde(default)]
+    pub path_config: PathConfig,
+    
     /// 实例配置映射（实例 ID -> 配置）
     #[serde(default)]
     pub instance_configs: HashMap<String, InstanceConfig>,
@@ -88,6 +153,7 @@ impl Default for AppConfig {
             window_position: WindowPosition::default(),
             preferences: UserPreferences::default(),
             download: DownloadConfig::default(),
+            path_config: PathConfig::default(),
             instance_configs: HashMap::new(),
         }
     }

@@ -104,7 +104,9 @@ const InstanceList: React.FC = () => {
 
   // 渲染加载动画
   const renderContent = () => {
-    if (loading && instances.length === 0) {
+    // 优先检查加载状态
+    if (loading) {
+      console.log('[renderContent] 加载中...', { loading, instances: instances.length });
       return (
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -113,8 +115,23 @@ const InstanceList: React.FC = () => {
       );
     }
 
+    // 检查错误
+    if (error) {
+      console.error('[renderContent] 错误:', error);
+      return (
+        <div className="p-4 bg-error-bg border border-error rounded-lg">
+          <p className="text-error text-sm">{error}</p>
+        </div>
+      );
+    }
+
     // 没有实例时
     if (filteredInstances.length === 0) {
+      console.log('[renderContent] 没有实例', { 
+        filteredInstances: filteredInstances.length,
+        instances: instances.length,
+        searchQuery,
+      });
       return (
         <EmptyState
           icon="folder"
@@ -123,6 +140,8 @@ const InstanceList: React.FC = () => {
         />
       );
     }
+
+    console.log('[renderContent] 渲染实例列表', { count: filteredInstances.length });
 
     return (
       <div className="h-full overflow-y-auto">

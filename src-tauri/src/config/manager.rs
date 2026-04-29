@@ -1,5 +1,5 @@
 use crate::config::{
-    AppConfig, ConfigManager, InstanceConfig, WindowPosition, CONFIG_APPLICATION, CONFIG_FILE_PATH, MIN_HEIGHT,
+    AppConfig, ConfigManager, InstanceConfig, PathConfig, WindowPosition, CONFIG_APPLICATION, CONFIG_FILE_PATH, MIN_HEIGHT,
     MIN_WIDTH,
 };
 use crate::{log_error, log_info};
@@ -224,6 +224,53 @@ pub fn get_config_path() -> Result<PathBuf, String> {
     let config_dir = &*CONFIG_APPLICATION;
     fs::create_dir_all(config_dir).map_err(|e| format!("创建配置目录失败：{}", e))?;
     Ok((*CONFIG_FILE_PATH).clone())
+}
+
+// ==================== 路径配置管理方法 ====================
+
+impl ConfigManager {
+    /// 获取路径配置
+    pub fn get_path_config(&self) -> Result<PathConfig, String> {
+        let config = self.get_config()?;
+        Ok(config.path_config)
+    }
+
+    /// 更新路径配置
+    pub fn update_path_config(&self, path_config: PathConfig) -> Result<(), String> {
+        let mut config = self.get_config()?;
+        config.path_config = path_config;
+        self.update_config(config)
+    }
+
+    /// 获取实例目录路径
+    pub fn get_instance_dir(&self, instance_name: &str) -> Result<PathBuf, String> {
+        let path_config = self.get_path_config()?;
+        Ok(path_config.get_instance_dir(instance_name))
+    }
+
+    /// 获取 versions 目录路径
+    pub fn get_versions_dir(&self, instance_name: &str) -> Result<PathBuf, String> {
+        let path_config = self.get_path_config()?;
+        Ok(path_config.get_versions_dir(instance_name))
+    }
+
+    /// 获取 libraries 目录路径
+    pub fn get_libraries_dir(&self, instance_name: &str) -> Result<PathBuf, String> {
+        let path_config = self.get_path_config()?;
+        Ok(path_config.get_libraries_dir(instance_name))
+    }
+
+    /// 获取 assets 目录路径
+    pub fn get_assets_dir(&self, instance_name: &str) -> Result<PathBuf, String> {
+        let path_config = self.get_path_config()?;
+        Ok(path_config.get_assets_dir(instance_name))
+    }
+
+    /// 获取 natives 目录路径
+    pub fn get_natives_dir(&self, instance_name: &str) -> Result<PathBuf, String> {
+        let path_config = self.get_path_config()?;
+        Ok(path_config.get_natives_dir(instance_name))
+    }
 }
 
 #[cfg(test)]

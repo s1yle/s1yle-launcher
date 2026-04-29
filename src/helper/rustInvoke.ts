@@ -1012,7 +1012,13 @@ export interface AppConfig {
   window_position: WindowPosition;
   preferences: UserPreferences;
   download: DownloadConfig;
+  path_config: PathConfig;
   instance_configs: Record<string, InstanceConfig>;
+}
+
+export interface PathConfig {
+  daemon_base_path: string;
+  download_base_path: string;
 }
 
 export interface UserPreferences {
@@ -1177,4 +1183,80 @@ export const importConfig = async (
 ): Promise<void> => {
   logger.info('导入配置', { sourcePath });
   return await invokeRustFunction("import_config", { source_path: sourcePath }, options);
+};
+
+// ======================== 路径配置 API ========================
+
+/**
+ * 获取路径配置
+ */
+export const getPathConfig = async (options?: InvokeOptions): Promise<PathConfig> => {
+  logger.info('获取路径配置');
+  return await invokeRustFunction("get_path_config", {}, options);
+};
+
+/**
+ * 更新路径配置
+ */
+export const updatePathConfig = async (
+  pathConfig: PathConfig,
+  options?: InvokeOptions
+): Promise<void> => {
+  logger.info('更新路径配置', pathConfig);
+  return await invokeRustFunction("update_path_config", { path_config: pathConfig }, options);
+};
+
+/**
+ * 获取实例目录路径
+ */
+export const getInstancePath = async (
+  instanceName: string,
+  options?: InvokeOptions
+): Promise<string> => {
+  logger.info('获取实例路径', { instanceName });
+  return await invokeRustFunction("get_instance_path", { instance_name: instanceName }, options);
+};
+
+/**
+ * 获取 versions 目录路径
+ */
+export const getVersionsPath = async (
+  instanceName: string,
+  options?: InvokeOptions
+): Promise<string> => {
+  logger.info('获取 versions 路径', { instanceName });
+  return await invokeRustFunction("get_versions_path", { instance_name: instanceName }, options);
+};
+
+/**
+ * 获取 libraries 目录路径
+ */
+export const getLibrariesPath = async (
+  instanceName: string,
+  options?: InvokeOptions
+): Promise<string> => {
+  logger.info('获取 libraries 路径', { instanceName });
+  return await invokeRustFunction("get_libraries_path", { instance_name: instanceName }, options);
+};
+
+/**
+ * 获取 assets 目录路径
+ */
+export const getAssetsPath = async (
+  instanceName: string,
+  options?: InvokeOptions
+): Promise<string> => {
+  logger.info('获取 assets 路径', { instanceName });
+  return await invokeRustFunction("get_assets_path", { instance_name: instanceName }, options);
+};
+
+/**
+ * 获取 natives 目录路径
+ */
+export const getNativesPath = async (
+  instanceName: string,
+  options?: InvokeOptions
+): Promise<string> => {
+  logger.info('获取 natives 路径', { instanceName });
+  return await invokeRustFunction("get_natives_path", { instance_name: instanceName }, options);
 };

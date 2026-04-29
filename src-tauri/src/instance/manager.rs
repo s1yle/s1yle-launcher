@@ -6,7 +6,7 @@ use uuid::Uuid;
 use super::models::{GameInstance, InstanceMeta, KnownPath};
 use super::utils::copy_dir_all;
 use crate::modloader::ModLoaderType;
-use crate::{config, log_error};
+use crate::{config, log_error, log_info};
 
 #[derive(Debug)]
 pub struct InstanceManager {
@@ -156,14 +156,20 @@ impl InstanceManager {
 
     fn scan_versions(&self, name: &str, instances: &mut Vec<GameInstance>) {
         let versions_dir = self.get_versions_dir(name);
+        log_info!("扫描实例 {} 的 versions 目录：{:?}", name, versions_dir);
+        
         if versions_dir.exists() && versions_dir.is_dir() {
             if let Ok(entries) = fs::read_dir(&versions_dir) {
+                let mut version_count = 0;
                 for entry in entries.flatten() {
                     let path = entry.path();
                     if path.is_dir() {
-                        if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                            let version_jar = path.join(format!("{}.jar", name));
+                        if let Some(version_name) = path.file_name().and_then(|n| n.to_str()) {
+                            let version_jar = path.join(format!("{}.jar", version_name));
+                            log_info!("检查版本：{}/{} - jar 存在：{}", name, version_name, version_jar.exists());
+                            
                             if version_jar.exists() {
+                                version_count += 1;
                                 let now = path
                                     .metadata()
                                     .ok()
@@ -246,23 +252,39 @@ impl InstanceManager {
                         }
                     }
                 }
+                log_info!("实例 {} 扫描到 {} 个版本", name, version_count);
             }
+        } else {
+            log_error!("versions 目录不存在：{:?}", versions_dir);
         }
     }
 
     pub fn scan_instances(&self) -> Vec<GameInstance> {
         let daemon_dir = self.get_minecraft_dir();
         let mut instances = Vec::new();
+        
+        log_info!("开始扫描实例目录：{:?}", daemon_dir);
+
+        if !daemon_dir.exists() {
+            log_error!("实例目录不存在：{:?}", daemon_dir);
+            return instances;
+        }
 
         if let Ok(entries) = fs::read_dir(&daemon_dir) {
+            let mut count = 0;
             for entry in entries.flatten() {
                 let path = entry.path();
                 if path.is_dir() {
                     if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                        log_info!("发现实例目录：{} -> {:?}", name, path);
                         self.scan_versions(name, &mut instances);
+                        count += 1;
                     }
                 }
             }
+            log_info!("扫描到 {} 个实例目录，最终实例数：{}", count, instances.len());
+        } else {
+            log_error!("读取实例目录失败：{:?}", daemon_dir);
         }
 
         instances.sort_by(|a, b| b.created_at.cmp(&a.created_at));

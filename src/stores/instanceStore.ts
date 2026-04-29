@@ -9,8 +9,9 @@ import {
   getInstancesPath,
   scanKnownMcPaths,
   addKnownPath,
+  getPathConfig,
 } from '../helper/rustInvoke';
-import type { GameInstance, KnownPath } from '../helper/rustInvoke';
+import type { GameInstance, KnownPath, PathConfig } from '../helper/rustInvoke';
 import { ModLoaderType } from '../helper/rustInvoke';
 
 const STORAGE_KEY_FOLDER = 's1yle-selected-folder';
@@ -51,6 +52,7 @@ interface InstanceState {
   searchQuery: string;
   viewMode: 'grid' | 'list';
   instancesPath: string;
+  pathConfig: PathConfig | null;
 
   init: () => Promise<void>;
   refresh: () => Promise<void>;
@@ -81,34 +83,51 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
   searchQuery: '',
   viewMode: 'grid',
   instancesPath: '',
+  pathConfig: null,
 
   init: async () => {
     set({ loading: true, error: null });
     try {
-      const [instances, path, knownFolders] = await Promise.all([
+      console.log('[instanceStore.init] 开始初始化...');
+      
+      const [pathConfig, instances, knownFolders] = await Promise.all([
+        getPathConfig(),
         scanInstances(),
-        getInstancesPath(),
         scanKnownMcPaths(),
       ]);
+
+      console.log('[instanceStore.init] 加载的数据:', {
+        pathConfig,
+        instances: instances.length,
+        knownFolders: knownFolders.length,
+      });
 
       const savedFolderId = getSavedFolderId();
       const defaultFolderId = savedFolderId && knownFolders.find(f => f.id === savedFolderId)
         ? savedFolderId
         : knownFolders.find(f => f.is_default)?.id ?? knownFolders[0]?.id ?? null;
 
+      console.log('[instanceStore.init] 文件夹选择:', { savedFolderId, defaultFolderId });
+
       const savedInstanceId = getSavedInstanceId();
       const validInstanceId = savedInstanceId && instances.find(i => i.id === savedInstanceId)
         ? savedInstanceId
         : instances[0]?.id ?? null;
 
+      console.log('[instanceStore.init] 实例选择:', { savedInstanceId, validInstanceId });
+
       set({
         instances,
-        instancesPath: path,
+        instancesPath: pathConfig.daemon_base_path,
+        pathConfig,
         knownFolders,
         selectedFolderId: defaultFolderId,
         selectedInstanceId: validInstanceId,
       });
+      
+      console.log('[instanceStore.init] 初始化完成');
     } catch (e) {
+      console.error('[instanceStore.init] 初始化失败:', e);
       set({ error: e instanceof Error ? e.message : 'Failed to load instances' });
     } finally {
       set({ loading: false });
@@ -250,22 +269,57 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
 
   getFilteredInstances: () => {
     const { instances, searchQuery, selectedFolderId, knownFolders } = get();
+    
+    // 调试日志
+    console.log('[getFilteredInstances] 输入数据:', {
+      instances: instances.length,
+      selectedFolderId,
+      knownFolders: knownFolders.length,
+      searchQuery,
+    });
+    
     let filtered = instances;
 
-    if (selectedFolderId) {
-      const folder = knownFolders.find(f => f.id === selectedFolderId);
-      if (folder) {
-        filtered = instances.filter(i => i.path.startsWith(folder.path));
-      }
+    // 如果没有选中文件夹，返回所有实例
+    if (!selectedFolderId) {
+      console.log('[getFilteredInstances] 未选中文件夹，返回所有实例');
+      return instances;
     }
 
+    const folder = knownFolders.find(f => f.id === selectedFolderId);
+    
+    // 如果找不到文件夹，返回所有实例
+    if (!folder) {
+      console.warn('[getFilteredInstances] 找不到选中的文件夹:', selectedFolderId);
+      return instances;
+    }
+    
+    console.log('[getFilteredInstances] 选中的文件夹:', folder.name, folder.path);
+
+    // 根据文件夹过滤
+    filtered = instances.filter(i => {
+      const match = i.path.startsWith(folder.path);
+      console.log('[getFilteredInstances] 实例过滤:', { 
+        name: i.name, 
+        path: i.path, 
+        folderPath: folder.path, 
+        match 
+      });
+      return match;
+    });
+
+    console.log('[getFilteredInstances] 文件夹过滤后:', filtered.length);
+
+    // 根据搜索查询过滤
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(
         (i) => i.name.toLowerCase().includes(q) || i.version.toLowerCase().includes(q),
       );
+      console.log('[getFilteredInstances] 搜索过滤后:', filtered.length);
     }
 
+    console.log('[getFilteredInstances] 最终结果:', filtered.length);
     return filtered;
   },
 

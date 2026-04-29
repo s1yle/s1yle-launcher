@@ -8,7 +8,7 @@ import {
   cancelDownload,
   clearCompletedTasks,
   getGameVersions,
-  getDownloadBasePath,
+  getPathConfig,
   setDownloadBasePath,
   getFabricVersions,
   getFabricVersionDetail,
@@ -119,8 +119,8 @@ export const useDownloadStore = create<DownloadState>((set, get) => ({
 
   loadBasePath: async () => {
     try {
-      const path = await getDownloadBasePath();
-      set({ basePath: path });
+      const pathConfig = await getPathConfig();
+      set({ basePath: pathConfig.download_base_path });
     } catch {
       // keep existing
     }

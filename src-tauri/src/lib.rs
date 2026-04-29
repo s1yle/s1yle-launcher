@@ -316,7 +316,15 @@ pub fn run() {
             remove_instance_config,
             reset_config,
             export_config,
-            import_config
+            import_config,
+            // 路径配置命令
+            config::get_path_config,
+            config::update_path_config,
+            config::get_instance_path,
+            config::get_versions_path,
+            config::get_libraries_path,
+            config::get_assets_path,
+            config::get_natives_path,
         ])
         .run(tauri::generate_context!())
         .expect("启动失败！");
