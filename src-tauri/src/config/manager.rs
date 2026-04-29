@@ -59,6 +59,13 @@ impl ConfigManager {
         let loaded: AppConfig =
             serde_json::from_str(&content).map_err(|e| format!("解析配置文件失败：{}", e))?;
         *self.config.lock().map_err(|e| e.to_string())? = loaded;
+        
+        let window_pos = {
+            let config = self.config.lock().map_err(|e| e.to_string())?;
+            config.window_position.clone()
+        };
+        *self.window.lock().map_err(|e| e.to_string())? = window_pos;
+        
         log_info!("✅ 配置加载成功");
         Ok(())
     }
