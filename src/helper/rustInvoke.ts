@@ -503,13 +503,33 @@ export const getVersionDownloadManifest = async (
 export const downloadFile = async (
   url: string,
   filename: string,
-  sha1?: string,
-  skipVerify?: boolean,
-  totalSize?: number,
+  sha1: string | undefined,
+  skipVerify: boolean | undefined,
+  totalSize: number | undefined,
+  versionId: string,  // ← 必填参数
   options?: InvokeOptions
 ): Promise<DownloadProgress> => {
-  logger.info('开始下载文件', { url, filename, sha1, skipVerify, totalSize });
-  return await invokeRustFunction("download_file", { url, filename, sha1, skip_verify: skipVerify, total_size: totalSize }, options);
+  logger.info('开始下载文件', { url, filename, sha1, skipVerify, totalSize, versionId });
+  return await invokeRustFunction("download_file", { 
+    url, 
+    filename, 
+    sha1, 
+    skip_verify: skipVerify, 
+    total_size: totalSize,
+    version_id: versionId
+  }, options);
+};
+
+export const deployVersionFiles = async (
+  versionId: string,
+  instancePath: string,
+  options?: InvokeOptions
+): Promise<string> => {
+  logger.info('部署版本文件到实例', { versionId, instancePath });
+  return await invokeRustFunction("deploy_version_files", { 
+    version_id: versionId,
+    instance_path: instancePath
+  }, options);
 };
 
 export const getDownloadTasks = async (
@@ -562,14 +582,6 @@ export const setDownloadBasePath = async (
 ): Promise<string> => {
   logger.info('设置下载目录路径', { path });
   return await invokeRustFunction("set_download_base_path", { path }, options);
-};
-
-export const deployVersionFiles = async (
-  versionId: string,
-  options?: InvokeOptions
-): Promise<string> => {
-  logger.info('部署版本文件', { versionId });
-  return await invokeRustFunction("deploy_version_files", { versionId }, options);
 };
 
 export const deployVersionToInstance = async (

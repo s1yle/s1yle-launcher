@@ -207,6 +207,7 @@ pub async fn download_file(
     sha1: Option<String>,
     skip_verify: Option<bool>,
     total_size: Option<u64>,
+    version_id: String,
     download_manager: State<'_, DownloadManager>,
 ) -> Result<DownloadProgress, String> {
     let client = reqwest::Client::builder()
@@ -214,7 +215,8 @@ pub async fn download_file(
         .build()
         .map_err(|e| format!("创建 HTTP 客户端失败：{}", e))?;
 
-    let base_path = download_manager.base_path.lock().unwrap().clone();
+    // 文件下载到 /.smcl/download/{version_id}/ 目录
+    let base_path = download_manager.get_version_download_path(&version_id);
     let save_path = base_path.join(&filename);
 
     if let Some(parent) = save_path.parent() {
@@ -254,6 +256,8 @@ pub async fn download_file(
             let mut updated = task.clone();
             updated.status = "completed".to_string();
             download_manager.update_task(updated);
+
+            log_info!("文件下载完成：{}", filename);
 
             Ok(DownloadProgress {
                 task_id: task.id.clone(),

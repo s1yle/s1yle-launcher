@@ -29,6 +29,18 @@ impl DownloadManager {
         }
     }
 
+    /// 获取指定版本的下载目录（/.smcl/download/{version_name}/）
+    pub fn get_version_download_path(&self, version_name: &str) -> PathBuf {
+        let base = self.base_path.lock().unwrap().clone();
+        base.join(version_name)
+    }
+
+    /// 获取临时文件目录（/.smcl/download/temp/）
+    pub fn get_temp_path(&self) -> PathBuf {
+        let base = self.base_path.lock().unwrap().clone();
+        base.join("temp")
+    }
+
     pub fn add_task(&self, task: DownloadTask) {
         let mut tasks = self.tasks.lock().unwrap();
         tasks.insert(task.id.clone(), task);

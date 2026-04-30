@@ -17,7 +17,7 @@ pub static DEAMON_BASE_PATH: Lazy<PathBuf> = Lazy::new(|| BASE_PATH.join("minecr
 pub static DEFAULT_DEAMON_PATH: Lazy<PathBuf> =
     Lazy::new(|| BASE_PATH.join("minecraft").join("default"));
 
-/// # 下载路径
+/// # 下载路径（/.smcl/download/）
 pub static DOWNLOAD_BASE_PATH: Lazy<PathBuf> = Lazy::new(|| CONFIG_APPLICATION.join("download"));
 
 /// # 实例元数据文件名
@@ -27,7 +27,7 @@ pub static INSTANCE_META_FILE_NAME: &str = "instance_meta.json";
 pub static INSTANCE_META_PATH: Lazy<PathBuf> =
     Lazy::new(|| DEAMON_BASE_PATH.join(INSTANCE_META_FILE_NAME));
 
-/// # 应用配置目录
+/// # 应用配置目录（隐藏文件夹）
 pub static CONFIG_APPLICATION: Lazy<PathBuf> = Lazy::new(|| {
     Lazy::<PathBuf>::get(&BASE_PATH)
         .unwrap_or(&PathBuf::new())
@@ -40,6 +40,37 @@ pub static CONFIG_FILE_PATH: Lazy<PathBuf> = Lazy::new(|| {
         .unwrap_or(&PathBuf::from(".smcl"))
         .join("app_config.json")
 });
+
+/// # 隐藏文件夹属性（Windows）
+#[cfg(target_os = "windows")]
+pub fn _set_hidden_attribute(path: &std::path::Path) -> Result<(), String> {
+    use std::os::windows::ffi::OsStrExt;
+    use windows::Win32::Storage::FileSystem::{SetFileAttributesW, FILE_ATTRIBUTE_HIDDEN};
+    use windows::core::PCWSTR;
+    
+    if path.exists() {
+        // 使用 Windows API 设置隐藏属性
+        let wide_path: Vec<u16> = std::ffi::OsStr::new(path)
+            .encode_wide()
+            .chain(Some(0))
+            .collect();
+        
+        unsafe {
+            let result = SetFileAttributesW(PCWSTR(wide_path.as_ptr()), FILE_ATTRIBUTE_HIDDEN);
+            if result.is_err() {
+                return Err(format!("设置隐藏属性失败"));
+            }
+        }
+    }
+    Ok(())
+}
+
+/// # 隐藏文件夹属性（跨平台）
+#[cfg(not(target_os = "windows"))]
+pub fn _set_hidden_attribute(_path: &std::path::Path) -> Result<(), String> {
+    // Unix-like 系统使用 . 前缀已经是隐藏文件夹
+    Ok(())
+}
 
 /// # 路径配置结构
 #[derive(Serialize, Deserialize, Clone, Debug)]

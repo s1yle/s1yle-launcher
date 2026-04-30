@@ -167,10 +167,10 @@ export const useDownloadStore = create<DownloadState>((set, get) => ({
         set({ overallProgress: progress });
       };
 
-      const downloadWithRetry = async (file: { url: string; sha1: string | null; size: number; path: string }, maxRetries = 3) => {
+      const downloadWithRetry = async (file: { url: string; sha1: string | null; size: number; path: string }, versionId: string, maxRetries = 3) => {
         for (let i = 0; i < maxRetries; i++) {
           try {
-            await downloadFile(file.url, file.path, file.sha1 || undefined, false);
+            await downloadFile(file.url, file.path, file.sha1 || undefined, undefined, file.size, versionId);
             completedFiles++;
             updateProgress();
             return;
@@ -208,7 +208,7 @@ export const useDownloadStore = create<DownloadState>((set, get) => ({
                     : c,
                 ),
               }));
-              await downloadWithRetry(file);
+              await downloadWithRetry(file, versionId);
               set(prev => ({
                 categoryProgress: prev.categoryProgress.map(c =>
                   c.category === category.name

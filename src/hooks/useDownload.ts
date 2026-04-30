@@ -222,7 +222,7 @@ export const useDownload = () => {
             return next;
           });
 
-          const result = await downloadFile(file.url, file.path, file.sha1 ?? undefined, undefined, file.size);
+          const result = await downloadFile(file.url, file.path, file.sha1 ?? undefined, undefined, file.size, version.id);
 
           setDownloadQueue(prev => {
             const next = [...prev];
@@ -377,7 +377,7 @@ export const useDownload = () => {
     }
   }, []);
 
-  const startDownloadQueue = useCallback(async (items: DownloadItemState[]) => {
+  const startDownloadQueue = useCallback(async (items: DownloadItemState[], versionId: string) => {
     setDownloadQueue(items);
     setIsDownloading(true);
 
@@ -389,7 +389,7 @@ export const useDownload = () => {
       ));
 
       try {
-        const result = await downloadFile(item.url, item.filename, item.sha1, undefined, item.total);
+        const result = await downloadFile(item.url, item.filename, item.sha1, undefined, item.total, versionId);
         
         setDownloadQueue(prev => prev.map((d, idx) => 
           idx === i ? { ...d, status: 'completed', downloaded: result.total } : d
