@@ -33,6 +33,39 @@ interface VersionDownloadProgress {
   error?: string;
 }
 
+interface ManifestCache {
+  data: VersionManifest;
+  timestamp: number;
+}
+
+const MANIFEST_CACHE_KEY = 's1yle_manifest_cache';
+const MANIFEST_CACHE_DURATION = 5 * 60 * 1000; // 5分钟
+
+const loadManifestFromCache = (): VersionManifest | null => {
+  try {
+    const cached = localStorage.getItem(MANIFEST_CACHE_KEY);
+    if (cached) {
+      const parsed: ManifestCache = JSON.parse(cached);
+      if (Date.now() - parsed.timestamp < MANIFEST_CACHE_DURATION) {
+        return parsed.data;
+      }
+    }
+  } catch {
+  }
+  return null;
+};
+
+const saveManifestToCache = (manifest: VersionManifest) => {
+  try {
+    const cache: ManifestCache = {
+      data: manifest,
+      timestamp: Date.now(),
+    };
+    localStorage.setItem(MANIFEST_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+  }
+};
+
 interface DownloadState {
   manifest: VersionManifest | null;
   installedVersions: string[];
@@ -73,6 +106,11 @@ export const useDownloadStore = create<DownloadState>((set, get) => ({
   error: null,
 
   init: async () => {
+    const cachedManifest = loadManifestFromCache();
+    if (cachedManifest) {
+      set({ manifest: cachedManifest });
+    }
+    
     set({ loading: true, error: null });
     try {
       await Promise.all([
@@ -91,6 +129,7 @@ export const useDownloadStore = create<DownloadState>((set, get) => ({
   loadManifest: async () => {
     try {
       const manifest = await getVersionManifest();
+      saveManifestToCache(manifest);
       set({ manifest });
     } catch {
     }
@@ -199,19 +238,43 @@ export const useDownloadStore = create<DownloadState>((set, get) => ({
       }
 
       const instanceStore = useInstanceStore.getState();
-      const selectedInstance = instanceStore.getSelectedInstance();
+      let selectedInstance = instanceStore.getSelectedInstance();
+
+      // 如果没有选中实例，尝试使用第一个实例或创建默认实例
+      if (!selectedInstance) {
+        const instances = instanceStore.instances;
+        if (instances.length > 0) {
+          selectedInstance = instances[0];
+          console.log('[downloadStore] 使用第一个实例:', selectedInstance.name);
+        } else {
+          // 获取默认实例目录路径
+          const pathConfig = await getPathConfig();
+          const defaultInstancePath = pathConfig.daemon_base_path;
+          selectedInstance = {
+            id: 'default',
+            name: 'default',
+            version: versionId,
+            loader_type: ModLoaderType.Vanilla,
+            loader_version: null,
+            path: defaultInstancePath,
+            icon_path: null,
+            last_played: null,
+            created_at: Date.now(),
+            enabled: true,
+          };
+          console.log('[downloadStore] 创建默认实例路径:', defaultInstancePath);
+        }
+      }
 
       if (selectedInstance) {
         try {
-          console.log('[downloadStore] 部署到实例:', selectedInstance.path);
+          console.log('[downloadStore] 部署到实例:', selectedInstance.path, '版本:', versionId);
           await deployVersionToInstance(selectedInstance.path, versionId);
           await instanceStore.refresh();
           console.log('[downloadStore] 部署成功');
         } catch (deployError) {
           console.error('[downloadStore] 部署失败:', deployError);
         }
-      } else {
-        console.log('[downloadStore] 未选中实例，跳过部署');
       }
 
       await get().loadInstalledVersions();

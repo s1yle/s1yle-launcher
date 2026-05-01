@@ -7,6 +7,7 @@ import { routes, findRouteByPath } from './router/config';
 import { useNavStore } from './stores/navStore';
 import { useThemeStore } from './stores/themeStore';
 import { useAppStore } from './stores/appStore';
+import { useInstanceStore } from './stores/instanceStore';
 import { logger } from './helper/logger';
 import RouterRenderer from './components/RouterRenderer';
 import { useWindowPosition } from './hooks/useWindowPosition';
@@ -79,13 +80,15 @@ const MainLayout = () => {
 function App() {
   const initTheme = useThemeStore((s) => s.init);
   const initApp = useAppStore((s) => s.init);
+  const initInstances = useInstanceStore((s) => s.init);
 
   useWindowPosition();
 
   useEffect(() => {
     initTheme();
     initApp();
-  }, [initTheme, initApp]);
+    initInstances();
+  }, [initTheme, initApp, initInstances]);
 
   return (
     <Router>

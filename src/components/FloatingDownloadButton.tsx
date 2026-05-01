@@ -1,8 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, ChevronUp, Check } from 'lucide-react';
-import { ProgressBar } from './common';
+import { Download, ChevronUp, Check, GripVertical } from 'lucide-react';
 import { useDownloadStore } from '../stores/downloadStore';
 
 const FLOATING_BUTTON_SIZE = 56;
@@ -30,6 +29,12 @@ export const FloatingDownloadButton: React.FC<FloatingDownloadButtonProps> = ({
   const downloadingList = useMemo(() => {
     return Array.from(downloadingVersions.values()).filter(v => v.status === 'downloading');
   }, [downloadingVersions]);
+
+  const totalProgress = useMemo(() => {
+    if (downloadingList.length === 0) return 0;
+    const sum = downloadingList.reduce((acc, v) => acc + v.progress, 0);
+    return sum / downloadingList.length;
+  }, [downloadingList]);
 
   const hasActiveDownloads = downloadingList.length > 0;
   const shouldShow = hasActiveDownloads;
@@ -95,7 +100,7 @@ export const FloatingDownloadButton: React.FC<FloatingDownloadButtonProps> = ({
     newX = Math.max(minX, Math.min(maxX, newX));
 
     const minY = FLOATING_BUTTON_SIZE / 2;
-    const maxY = windowHeight - currentHeight / 2 - 30;
+    const maxY = windowHeight - (isExpanded ? PANEL_MAX_HEIGHT : FLOATING_BUTTON_SIZE) - 10;
     newY = Math.max(minY, Math.min(maxY, newY));
 
     setPosition({ x: newX, y: newY });
@@ -158,6 +163,7 @@ export const FloatingDownloadButton: React.FC<FloatingDownloadButtonProps> = ({
               style={{ borderBottom: '1px solid rgba(60, 60, 70, 0.4)' }}
             >
               <div className="flex items-center gap-2">
+                <GripVertical className="w-4 h-4 text-gray-500" />
                 <Download className="w-4 h-4 text-indigo-400" />
                 <span className="text-sm font-medium text-white select-none">
                   下载进度
@@ -181,7 +187,24 @@ export const FloatingDownloadButton: React.FC<FloatingDownloadButtonProps> = ({
               </button>
             </div>
 
-            <div className="overflow-y-auto" style={{ maxHeight: PANEL_MAX_HEIGHT - 80 }}>
+            {hasActiveDownloads && (
+              <div className="px-4 py-3" style={{ borderBottom: '1px solid rgba(60, 60, 70, 0.4)' }}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-gray-400">总进度</span>
+                  <span className="text-xs font-medium text-white">{totalProgress.toFixed(1)}%</span>
+                </div>
+                <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${totalProgress}%` }}
+                    transition={{ duration: 0.3, ease: 'easeOut' }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="overflow-y-auto" style={{ maxHeight: PANEL_MAX_HEIGHT - 140 }}>
               {downloadingList.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-gray-500">
                   <Download className="w-10 h-10 mb-2 opacity-20" />
@@ -201,9 +224,11 @@ export const FloatingDownloadButton: React.FC<FloatingDownloadButtonProps> = ({
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="flex-1 h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-indigo-500 rounded-full transition-all duration-150"
-                            style={{ width: `${item.progress}%` }}
+                          <motion.div
+                            className="h-full bg-indigo-500 rounded-full"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${item.progress}%` }}
+                            transition={{ duration: 0.2 }}
                           />
                         </div>
                         <span className="text-[10px] text-gray-400 w-12 text-right">
@@ -255,6 +280,10 @@ export const FloatingDownloadButton: React.FC<FloatingDownloadButtonProps> = ({
             }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            whileDrag={{ scale: 1.1, rotate: 5 }}
+            drag
+            dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+            dragElastic={0}
             className="rounded-full shadow-lg cursor-grab active:cursor-grabbing flex items-center justify-center"
             style={{
               width: FLOATING_BUTTON_SIZE,
@@ -279,6 +308,15 @@ export const FloatingDownloadButton: React.FC<FloatingDownloadButtonProps> = ({
                   {downloadingList.length > 9 ? '9+' : downloadingList.length}
                 </span>
               </motion.div>
+            )}
+            
+            {hasActiveDownloads && (
+              <motion.div
+                className="absolute inset-0 rounded-full border-2 border-indigo-300"
+                initial={{ scale: 1, opacity: 0 }}
+                animate={{ scale: 1.3, opacity: 0 }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              />
             )}
           </motion.div>
         )}

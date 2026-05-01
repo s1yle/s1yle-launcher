@@ -159,16 +159,20 @@ impl InstanceManager {
     fn scan_versions(&self, name: &str, instances: &mut Vec<GameInstance>) {
         let minecraft_dir = self.get_minecraft_dir();
         let instance_dir = minecraft_dir.join(name);
-        let versions_dir = instance_dir.join("versions");
-        log_info!("扫描实例 {} 的 versions 目录：{:?}", name, versions_dir);
+        log_info!("扫描实例目录：{:?}", instance_dir);
         
-        if versions_dir.exists() && versions_dir.is_dir() {
-            if let Ok(entries) = fs::read_dir(&versions_dir) {
+        if instance_dir.exists() && instance_dir.is_dir() {
+            if let Ok(entries) = fs::read_dir(&instance_dir) {
                 let mut version_count = 0;
                 for entry in entries.flatten() {
                     let path = entry.path();
                     if path.is_dir() {
                         if let Some(version_name) = path.file_name().and_then(|n| n.to_str()) {
+                            // 跳过特殊目录
+                            if version_name.starts_with('.') || version_name == "libraries" || version_name == "assets" || version_name == "natives" {
+                                continue;
+                            }
+                            
                             let version_jar = path.join(format!("{}.jar", version_name));
                             log_info!("检查版本：{}/{} - jar 存在：{}", name, version_name, version_jar.exists());
                             
@@ -199,8 +203,8 @@ impl InstanceManager {
                                         } else {
                                             let new_meta = InstanceMeta {
                                                 id: Uuid::new_v4().to_string(),
-                                                name: name.to_string(),
-                                                version: name.to_string(),
+                                                name: version_name.to_string(),
+                                                version: version_name.to_string(),
                                                 loader_type: ModLoaderType::Vanilla,
                                                 loader_version: None,
                                                 icon_path: None,
@@ -219,8 +223,8 @@ impl InstanceManager {
                                     } else {
                                         let new_meta = InstanceMeta {
                                             id: Uuid::new_v4().to_string(),
-                                            name: name.to_string(),
-                                            version: name.to_string(),
+                                            name: version_name.to_string(),
+                                            version: version_name.to_string(),
                                             loader_type: ModLoaderType::Vanilla,
                                             loader_version: None,
                                             icon_path: None,
@@ -242,8 +246,8 @@ impl InstanceManager {
 
                                 instances.push(GameInstance {
                                     id,
-                                    name: name.to_string(),
-                                    version: name.to_string(),
+                                    name: version_name.to_string(),
+                                    version: version_name.to_string(),
                                     loader_type,
                                     loader_version,
                                     path: instance_dir.to_string_lossy().to_string(),
@@ -259,7 +263,7 @@ impl InstanceManager {
                 log_info!("实例 {} 扫描到 {} 个版本", name, version_count);
             }
         } else {
-            log_error!("versions 目录不存在：{:?}", versions_dir);
+            log_error!("实例目录不存在：{:?}", instance_dir);
         }
     }
 

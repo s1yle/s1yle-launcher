@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, memo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { useDownloadStore } from '../../stores/downloadStore';
 import { GameVersion, openFolder, openUrl } from '../../helper/rustInvoke';
@@ -25,6 +26,7 @@ const DownloadGame: React.FC = () => {
     downloadVersion,
     loadManifest,
     loadInstalledVersions,
+    loadBasePath,
     downloadingVersions,
     completedVersions,
   } = useDownloadStore();
@@ -39,14 +41,19 @@ const DownloadGame: React.FC = () => {
     if (initializedRef.current) return;
     initializedRef.current = true;
 
+    loadInstalledVersions().catch(e => {
+      console.error('[DownloadGame] 加载已安装版本失败:', e);
+    });
+
+    loadBasePath().catch(e => {
+      console.error('[DownloadGame] 加载下载路径失败:', e);
+    });
+
     if (!manifest) {
       loadManifest().catch(e => {
         console.error('[DownloadGame] 加载版本列表失败:', e);
       });
     }
-    loadInstalledVersions().catch(e => {
-      console.error('[DownloadGame] 加载已安装版本失败:', e);
-    });
   }, []);
 
   useMemo(() => {
@@ -144,6 +151,8 @@ const DownloadGame: React.FC = () => {
     />
   ), [installedSet, completedSet, downloadingSet, handleVersionClick, handleWikiClick, handleDownload]);
 
+  const isLoading = loading && !manifest;
+
   return (
     <div className="flex flex-col h-full min-h-0">
       <div className="p-4 pb-2 border-b border-border flex-shrink-0">
@@ -188,10 +197,15 @@ const DownloadGame: React.FC = () => {
             </div>
           )}
 
-          {loading && !manifest ? (
-            <div className="flex-1 flex items-center justify-center">
-              <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--color-primary)' }} />
-              <span className="ml-3" style={{ color: 'var(--color-text-tertiary)' }}>{t('common.loading')}</span>
+          {isLoading ? (
+            <div className="flex-1 flex flex-col items-center justify-center gap-3">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+              >
+                <Loader2 className="w-10 h-10" style={{ color: 'var(--color-primary)' }} />
+              </motion.div>
+              <span className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>{t('common.loading')}</span>
             </div>
           ) : versionsToShow.length === 0 ? (
             <EmptyState
@@ -219,7 +233,7 @@ const DownloadGame: React.FC = () => {
         dir='download.downloadDir'
         cmdOpen='common.open'
         title='download.openFolder'
-        path= {basePath}
+        path={basePath}
         handleOpenDownloadFolder={handleOpenDownloadFolder}
       />
       

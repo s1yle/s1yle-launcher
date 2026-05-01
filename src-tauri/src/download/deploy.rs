@@ -99,6 +99,7 @@ pub async fn deploy_version_to_instance(
 
     let instance_dir = PathBuf::from(&instance_path);
     // 部署目标：{instance_path}/{version_name}/
+    // 直接在实例目录下创建版本文件夹
     let version_base_dir = instance_dir.join(&version_name);
     let libraries_dir = version_base_dir.join("libraries");
     let assets_dir = version_base_dir.join("assets");
