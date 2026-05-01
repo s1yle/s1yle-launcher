@@ -257,27 +257,20 @@ export const useDownload = () => {
         }
       }
 
-      await deployVersionFiles(version.id);
-      logger.info('版本部署到全局目录成功', version.id);
-      
       // 部署到选中的实例目录
       const instanceStore = useInstanceStore.getState();
       const selectedInstance = instanceStore.getSelectedInstance();
-      
+
       if (selectedInstance) {
-        try {
-          const instancePath = selectedInstance.path;
-          logger.info('开始部署版本到实例', { versionId: version.id, instancePath, instanceName: selectedInstance.name });
-          await deployVersionToInstance(instancePath, version.id);
-          logger.info('版本部署到实例成功', version.id);
-        } catch (deployError) {
-          logger.error('部署到实例失败（非致命）', { versionId: version.id, error: deployError });
-          // 不抛出错误，避免影响主流程
-        }
+        const instancePath = selectedInstance.path;
+        logger.info('开始部署版本到实例', { versionId: version.id, instancePath, instanceName: selectedInstance.name });
+        await deployVersionToInstance(instancePath, version.id);
+        logger.info('版本部署到实例成功', version.id);
+        instanceStore.refresh();
       } else {
-        logger.info('未选中实例，跳过部署到实例', version.id);
+        logger.info('未选中实例，跳过部署', version.id);
       }
-      
+
       await loadInstalledVersions();
       await loadDownloadTasks();
     } catch (e) {
@@ -409,17 +402,18 @@ export const useDownload = () => {
     try {
       const instanceStore = useInstanceStore.getState();
       const selectedInstance = instanceStore.getSelectedInstance();
-      
+
       if (!selectedInstance) {
         throw new Error('未选择实例');
       }
 
       const instancePath = selectedInstance.path;
       logger.info('部署版本到实例', { versionId, instancePath, instanceName: selectedInstance.name });
-      
+
       await deployVersionToInstance(instancePath, versionId);
       logger.info('版本部署成功', versionId);
       await loadInstalledVersions();
+      instanceStore.refresh();
     } catch (e) {
       logger.error('版本部署失败', e);
       throw e;

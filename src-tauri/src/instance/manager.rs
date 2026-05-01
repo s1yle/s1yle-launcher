@@ -157,7 +157,9 @@ impl InstanceManager {
     }
 
     fn scan_versions(&self, name: &str, instances: &mut Vec<GameInstance>) {
-        let versions_dir = self.get_versions_dir(name);
+        let minecraft_dir = self.get_minecraft_dir();
+        let instance_dir = minecraft_dir.join(name);
+        let versions_dir = instance_dir.join("versions");
         log_info!("扫描实例 {} 的 versions 目录：{:?}", name, versions_dir);
         
         if versions_dir.exists() && versions_dir.is_dir() {
@@ -244,7 +246,7 @@ impl InstanceManager {
                                     version: name.to_string(),
                                     loader_type,
                                     loader_version,
-                                    path: versions_dir.to_string_lossy().to_string(),
+                                    path: instance_dir.to_string_lossy().to_string(),
                                     icon_path,
                                     last_played,
                                     created_at: now,

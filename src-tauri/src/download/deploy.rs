@@ -98,8 +98,8 @@ pub async fn deploy_version_to_instance(
         manifest.libraries.len(), manifest.assets.len(), manifest.natives.len());
 
     let instance_dir = PathBuf::from(&instance_path);
-    // 所有文件都放在 versions/{version_name}/ 目录下
-    let version_base_dir = instance_dir.join("versions").join(&version_name);
+    // 部署目标：{instance_path}/{version_name}/
+    let version_base_dir = instance_dir.join(&version_name);
     let libraries_dir = version_base_dir.join("libraries");
     let assets_dir = version_base_dir.join("assets");
     let natives_dir = version_base_dir.join("natives");
@@ -107,6 +107,7 @@ pub async fn deploy_version_to_instance(
     let objects_dir = version_base_dir.join("objects");
 
     log_info!("目标目录：");
+    log_info!("  实例根目录：{:?}", instance_dir);
     log_info!("  版本根目录：{:?}", version_base_dir);
     log_info!("  libraries: {:?}", libraries_dir);
     log_info!("  assets: {:?}", assets_dir);
