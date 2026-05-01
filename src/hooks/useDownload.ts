@@ -222,7 +222,7 @@ export const useDownload = () => {
             return next;
           });
 
-          const result = await downloadFile(file.url, file.path, file.sha1 ?? undefined, undefined, file.size, version.id);
+          const result = await downloadFile(version.id, file.url, file.path, file.sha1 ?? undefined, undefined, file.size);
 
           setDownloadQueue(prev => {
             const next = [...prev];
@@ -389,7 +389,7 @@ export const useDownload = () => {
       ));
 
       try {
-        const result = await downloadFile(item.url, item.filename, item.sha1, undefined, item.total, versionId);
+        const result = await downloadFile(versionId, item.url, item.filename, item.sha1, undefined, item.total);
         
         setDownloadQueue(prev => prev.map((d, idx) => 
           idx === i ? { ...d, status: 'completed', downloaded: result.total } : d

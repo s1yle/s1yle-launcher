@@ -202,12 +202,12 @@ async fn download_attempt(
 
 #[tauri::command]
 pub async fn download_file(
+    version_id: String,             // ← 移到最前面
     url: String,
     filename: String,
     sha1: Option<String>,
     skip_verify: Option<bool>,
     total_size: Option<u64>,
-    version_id: String,
     download_manager: State<'_, DownloadManager>,
 ) -> Result<DownloadProgress, String> {
     let client = reqwest::Client::builder()

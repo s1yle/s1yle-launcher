@@ -74,10 +74,12 @@ export const invokeRustFunction = async (
     // 1. 校验函数名
     const trimmedFnName = fnName.trim();
     if (trimmedFnName.length === 0) {
-      throw new Error("Rust函数名不能为空！");
+      throw new Error("Rust 函数名不能为空！");
     }
 
-    console.debug('调用Tauri的invoke');
+    console.debug('调用 Tauri 的 invoke');
+    console.debug('函数名:', trimmedFnName);
+    console.debug('参数对象:', JSON.stringify(args, null, 2));
     
     // 2. 调用Tauri的invoke，返回Promise
     const result = await invoke(trimmedFnName, args, options);
@@ -501,23 +503,28 @@ export const getVersionDownloadManifest = async (
 };
 
 export const downloadFile = async (
+  versionId: string,
   url: string,
   filename: string,
   sha1: string | undefined,
   skipVerify: boolean | undefined,
   totalSize: number | undefined,
-  versionId: string,  // ← 必填参数
   options?: InvokeOptions
 ): Promise<DownloadProgress> => {
   logger.info('开始下载文件', { url, filename, sha1, skipVerify, totalSize, versionId });
-  return await invokeRustFunction("download_file", { 
-    url, 
-    filename, 
-    sha1, 
-    skip_verify: skipVerify, 
-    total_size: totalSize,
-    version_id: versionId
-  }, options);
+  
+  // 构建参数对象，Option 类型参数为 undefined 时省略
+  const args: any = {
+    versionId,
+    url,
+    filename
+  };
+  
+  if (sha1 !== undefined) args.sha1 = sha1;
+  if (skipVerify !== undefined) args.skip_verify = skipVerify;
+  if (totalSize !== undefined) args.total_size = totalSize;
+  
+  return await invokeRustFunction("download_file", args, options);
 };
 
 export const deployVersionFiles = async (
@@ -527,7 +534,7 @@ export const deployVersionFiles = async (
 ): Promise<string> => {
   logger.info('部署版本文件到实例', { versionId, instancePath });
   return await invokeRustFunction("deploy_version_files", { 
-    version_id: versionId,
+    versionId,
     instance_path: instancePath
   }, options);
 };
