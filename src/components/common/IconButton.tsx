@@ -9,7 +9,7 @@ const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(
 export interface IconButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'> {
   icon: LucideIcon;
   iconSize?: number;
-  variant?: 'default' | 'danger' | 'ghost';
+  variant?: 'default' | 'primary' | 'danger' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   label?: string;
   iconClassName?: string;
@@ -36,6 +36,10 @@ const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(({
       button: 'hover:bg-surface-hover',
       icon: 'group-hover:text-text-primary',
     },
+    primary: {
+      button: 'bg-primary/10 hover:bg-primary/20 text-primary',
+      icon: 'text-primary group-hover:text-primary-hover',
+    },
     danger: {
       button: 'hover:bg-red-500/20',
       icon: 'group-hover:text-red-400',
@@ -47,6 +51,8 @@ const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(({
   };
 
   const currentVariant = variantStyles[variant];
+  console.log('currentVariant: ', currentVariant);
+  console.log('currentVariant.button: ', currentVariant.button);
 
   return (
     <motion.button

@@ -8,6 +8,7 @@ export {
   Search,
   Pencil,
   FolderOpen,
+  FolderPlus,
   MoreVertical,
   Plus,
   ArrowUpRight,

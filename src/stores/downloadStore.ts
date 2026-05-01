@@ -240,29 +240,54 @@ export const useDownloadStore = create<DownloadState>((set, get) => ({
       const instanceStore = useInstanceStore.getState();
       let selectedInstance = instanceStore.getSelectedInstance();
 
-      // 如果没有选中实例，尝试使用第一个实例或创建默认实例
       if (!selectedInstance) {
         const instances = instanceStore.instances;
         if (instances.length > 0) {
           selectedInstance = instances[0];
-          console.log('[downloadStore] 使用第一个实例:', selectedInstance.name);
+          console.log('[downloadStore] 使用第一个实例:', selectedInstance.name, '路径:', selectedInstance.path);
         } else {
-          // 获取默认实例目录路径
+          console.log('[downloadStore] 无可用实例，尝试使用默认实例路径');
+          
           const pathConfig = await getPathConfig();
-          const defaultInstancePath = pathConfig.daemon_base_path;
-          selectedInstance = {
-            id: 'default',
-            name: 'default',
-            version: versionId,
-            loader_type: ModLoaderType.Vanilla,
-            loader_version: null,
-            path: defaultInstancePath,
-            icon_path: null,
-            last_played: null,
-            created_at: Date.now(),
-            enabled: true,
-          };
-          console.log('[downloadStore] 创建默认实例路径:', defaultInstancePath);
+          const minecraftBasePath = pathConfig.daemon_base_path;
+          const defaultInstanceName = 'default';
+          const defaultInstancePath = `${minecraftBasePath}/${defaultInstanceName}`;
+          
+          console.log('[downloadStore] 默认实例路径:', defaultInstancePath);
+          
+          // 确保默认实例目录存在
+          try {
+            await createInstance(
+              defaultInstanceName,
+              versionId,
+              ModLoaderType.Vanilla,
+              undefined,
+              undefined
+            );
+            await instanceStore.refresh();
+            
+            const refreshedInstances = instanceStore.instances;
+            if (refreshedInstances.length > 0) {
+              selectedInstance = refreshedInstances.find(i => i.name === defaultInstanceName) || refreshedInstances[0];
+              console.log('[downloadStore] 创建并获取默认实例成功:', selectedInstance?.name);
+            }
+          } catch (createError) {
+            console.error('[downloadStore] 创建默认实例失败:', createError);
+            
+            selectedInstance = {
+              id: 'default',
+              name: defaultInstanceName,
+              version: versionId,
+              loader_type: ModLoaderType.Vanilla,
+              loader_version: null,
+              path: defaultInstancePath,
+              icon_path: null,
+              last_played: null,
+              created_at: Date.now(),
+              enabled: true,
+            };
+            console.log('[downloadStore] 使用虚拟默认实例');
+          }
         }
       }
 

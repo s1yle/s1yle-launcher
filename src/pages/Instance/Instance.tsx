@@ -1,8 +1,9 @@
 import { IconButton, useNotification, ConfirmPopup } from "@/components/common";
 import { GameInstance, KnownPath } from "@/helper/rustInvoke";
 import { useInstanceStore } from "@/stores/instanceStore";
+import AddFolderDialog from "@/components/instance/AddFolderDialog";
 import { t } from "i18next";
-import { Loader2, RefreshCcw, Search, X, Trash2, Star } from "lucide-react";
+import { Loader2, RefreshCcw, Search, X, Trash2, Star, FolderPlus } from "@/icons";
 import { JSX, useRef, useState } from "react";
 
 export interface InstanceProps {
@@ -39,15 +40,17 @@ const Instance: React.FC<InstanceProps> = ({
     setShowDuplicateModal,
     setDuplicateTargetId,
 }) => {
-    const searchInputRef = useRef<HTMLInputElement>(null);
-    const removeKnownFolder = useInstanceStore(s => s.removeKnownFolder);
-    const setDefaultFolder = useInstanceStore(s => s.setDefaultFolder);
-    const { success, error: notifyError } = useNotification();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const removeKnownFolder = useInstanceStore(s => s.removeKnownFolder);
+  const setDefaultFolder = useInstanceStore(s => s.setDefaultFolder);
+  const { success, error: notifyError } = useNotification();
 
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const [deletingFolderId, setDeletingFolderId] = useState<string | null>(null);
-    const [deletingFolderName, setDeletingFolderName] = useState('');
-    const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingFolderId, setDeletingFolderId] = useState<string | null>(null);
+  const [deletingFolderName, setDeletingFolderName] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const [showAddFolderDialog, setShowAddFolderDialog] = useState(false);
 
     const confirmDeleteFolder = (id: string, name: string) => {
         setDeletingFolderId(id);
@@ -127,6 +130,14 @@ const Instance: React.FC<InstanceProps> = ({
                     <span className="text-text-tertiary text-sm whitespace-nowrap">
                         {filteredInstances.length} / {instances.length} {t('instances.count', '个实例')}
                     </span>
+                    <IconButton
+                        icon={FolderPlus}
+                        onClick={() => setShowAddFolderDialog(true)}
+                        variant="primary"
+                        size="sm"
+                        iconSize={16}
+                        tooltip={t('instances.addFolder', '添加文件夹')}
+                    />
                 </div>
             </div>
 
@@ -209,6 +220,11 @@ const Instance: React.FC<InstanceProps> = ({
                     }}
                 />
             )}
+
+            <AddFolderDialog
+                isOpen={showAddFolderDialog}
+                onClose={() => setShowAddFolderDialog(false)}
+            />
 
         </>
 

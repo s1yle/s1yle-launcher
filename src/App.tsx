@@ -3,7 +3,7 @@ import { BrowserRouter as Router, useLocation, useNavigate } from 'react-router-
 import { AnimatePresence, motion } from 'framer-motion';
 import Header from './components/Header';
 import SmartSidebar from './components/sidebar/SmartSidebar';
-import { routes, findRouteByPath } from './router/config';
+import { routes, findRouteByPath, LayoutMode } from './router/config';
 import { useNavStore } from './stores/navStore';
 import { useThemeStore } from './stores/themeStore';
 import { useAppStore } from './stores/appStore';
@@ -23,6 +23,8 @@ const MainLayout = () => {
   const animLockRef = useRef(false);
 
   const currentRoute = findRouteByPath(location.pathname, routes) || routes[0];
+
+  const isFullscreen = currentRoute.layoutMode === LayoutMode.FULLSCREEN;
 
   const handleMenuClick = (targetPath: string) => {
     if (animLockRef.current || targetPath === location.pathname) return;
@@ -47,9 +49,13 @@ const MainLayout = () => {
 
   return (
     <div className="h-screen flex flex-col " onContextMenu={handleContextMenu}>
-      <Header type={currentRoute.header.type === 'main' ? 'main' : 'sub'} title={currentRoute.header.title} />
+      {!isFullscreen && (
+        <Header type={currentRoute.header.type === 'main' ? 'main' : 'sub'} title={currentRoute.header.title} />
+      )}
       <div className="flex flex-1 overflow-hidden ">
-        <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} />
+        {!isFullscreen && (
+          <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} />
+        )}
         <main
           className="flex-1 overflow-auto relative noise-bg gradient-bg scrollbar-custom"
           style={{ background: 'var(--color-bg-primary)' }}

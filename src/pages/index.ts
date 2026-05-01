@@ -6,6 +6,7 @@ export { default as InstanceManage } from './Instance/InstanceManage';
 export { default as InstanceList } from './Instance/InstanceList';
 export { default as DownloadGame } from './Download/DownloadGame';
 export { default as DownloadModpack } from './Download/DownloadModpack';
+export { default as VersionDetailWithInstall } from './Download/VersionDetailWithInstall';
 export { default as MicrosoftAccount } from './AccountList/MicrosoftAccount';
 export { default as OfflineAccount } from './AccountList/OfflineAccount';
 export { default as Settings } from './Settings';

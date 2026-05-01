@@ -1,3 +1,6 @@
+use crate::config::models::{InstanceConfig, JavaConfig, MemoryConfig, GraphicsConfig};
+use crate::instance::manager::InstanceManager;
+use crate::modloader::ModLoaderType;
 use crate::download::manager::DownloadManager;
 use crate::download::models::*;
 use crate::download::version::{get_version_detail, parse_version_downloads};
@@ -5,7 +8,7 @@ use crate::{log_error, log_info};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
-use tauri::State;
+use tauri::{Emitter, Manager, State};
 use zip;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -258,4 +261,273 @@ fn deploy_file_to_path(base_path: &PathBuf, file: &FileDownload) -> Result<Strin
     }
 
     Ok(dest_path.to_string_lossy().to_string())
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DeployOptions {
+    pub instance_name: String,
+    pub version_id: String,
+    pub loader_type: ModLoaderType,
+    pub loader_version: Option<String>,
+    pub target_existing_instance: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DeployResult {
+    pub success: bool,
+    pub instance_id: String,
+    pub instance_name: String,
+    pub version: String,
+    pub deployed_files_count: usize,
+    pub total_files_count: usize,
+    pub message: String,
+}
+
+#[tauri::command]
+pub async fn download_and_deploy(
+    options: DeployOptions,
+    instance_manager: State<'_, InstanceManager>,
+    download_manager: State<'_, DownloadManager>,
+    app_handle: tauri::AppHandle,
+) -> Result<DeployResult, String> {
+    log_info!("========== 开始下载并部署 ==========");
+    log_info!("目标: {} | 版本: {} | 加载器: {:?}", 
+        options.instance_name, options.version_id, options.loader_type);
+
+    let (instance_id, instance_path) = if let Some(ref existing_id) = options.target_existing_instance {
+        let existing = instance_manager.get_instance(existing_id)
+            .ok_or_else(|| format!("目标实例不存在: {}", existing_id))?;
+        (existing.id.clone(), PathBuf::from(&existing.path))
+    } else {
+        let new_instance = instance_manager.create_instance(&options.instance_name, &options.version_id)
+            .map_err(|e| format!("创建实例失败: {}", e))?;
+        (new_instance.id.clone(), PathBuf::from(&new_instance.path))
+    };
+
+    app_handle.emit("deploy-status", serde_json::json!({
+        "phase": "downloading",
+        "progress": 0
+    })).ok();
+
+    let version_detail = get_version_detail(options.version_id.clone()).await?;
+    let manifest = parse_version_downloads(&version_detail).await?;
+
+    let total_files = manifest.libraries.len() + manifest.assets.len() + manifest.natives.len();
+    let mut completed = 0usize;
+    let dm = download_manager.inner();
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(300))
+        .build()
+        .map_err(|e| format!("创建 HTTP 客户端失败: {}", e))?;
+
+    for lib in &manifest.libraries {
+        let dest_path = dm.get_version_download_path(&options.version_id).join(&lib.path);
+        if let Some(parent) = dest_path.parent() {
+            std::fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {}", e))?;
+        }
+        
+        if !dest_path.exists() {
+            let response = client.get(&lib.url)
+                .send()
+                .await
+                .map_err(|e| format!("下载请求失败 [{}]: {}", lib.url, e))?
+                .error_for_status()
+                .map_err(|e| format!("HTTP 错误 [{}]: {}", lib.url, e))?;
+
+            let data = response.bytes().await.map_err(|e| format!("读取响应体失败: {}", e))?;
+            std::fs::write(&dest_path, &data).map_err(|e| format!("写入文件失败: {}", e))?;
+        }
+        
+        completed += 1;
+        app_handle.emit("deploy-progress", serde_json::json!({
+            "current": completed, "total": total_files, "file": &lib.path
+        })).ok();
+    }
+
+    app_handle.emit("deploy-status", serde_json::json!({ "phase": "deploying", "progress": 50 })).ok();
+
+    let dm = download_manager.inner();
+    let deploy_msg = deploy_version_internal(&instance_path, &options.version_id, dm).await?;
+
+    write_instance_config_to_app_config(&app_handle, &instance_id, &options).await?;
+
+    app_handle.emit("deploy-complete", serde_json::json!({
+        "instance_id": &instance_id,
+        "status": "success"
+    })).ok();
+
+    log_info!("========== 部署完成 ==========");
+
+    Ok(DeployResult {
+        success: true,
+        instance_id,
+        instance_name: options.instance_name,
+        version: options.version_id,
+        deployed_files_count: completed,
+        total_files_count: total_files,
+        message: deploy_msg,
+    })
+}
+
+async fn write_instance_config_to_app_config(
+    app_handle: &tauri::AppHandle,
+    instance_id: &str,
+    options: &DeployOptions,
+) -> Result<(), String> {
+    let config_manager = app_handle.state::<crate::config::ConfigManager>();
+    
+    let instance_config = InstanceConfig {
+        id: instance_id.to_string(),
+        name: options.instance_name.clone(),
+        version: options.version_id.clone(),
+        loader_type: options.loader_type.clone(),
+        loader_version: options.loader_version.clone(),
+        java: JavaConfig {
+            java_path: None,
+            java_args: vec![],
+            use_bundled: true,
+        },
+        memory: MemoryConfig {
+            min_memory: 512,
+            max_memory: 2048,
+        },
+        graphics: GraphicsConfig {
+            width: 854,
+            height: 480,
+            fullscreen: false,
+        },
+        custom_args: vec![],
+        icon_path: None,
+        last_played: None,
+        created_at: chrono::Utc::now().timestamp(),
+        enabled: true,
+    };
+
+    config_manager.update_value(
+        format!("instance_configs.{}", instance_id).as_str(),
+        serde_json::to_value(&instance_config)
+            .map_err(|e| format!("序列化失败: {}", e))?
+    )?;
+
+    log_info!("已写入实例配置到 app_config.json: {}", instance_id);
+    Ok(())
+}
+
+async fn deploy_version_internal(
+    instance_path: &PathBuf,
+    version_id: &str,
+    download_manager: &DownloadManager,
+) -> Result<String, String> {
+    log_info!("==================== 开始部署版本到实例 ====================");
+    log_info!("版本 ID: {}", version_id);
+    log_info!("实例路径：{:?}", instance_path);
+
+    let version_json = get_version_detail(version_id.to_string()).await?;
+
+    let version_name = version_json["id"]
+        .as_str()
+        .unwrap_or(version_id)
+        .to_string();
+
+    log_info!("版本名称：{}", version_name);
+
+    let manifest = parse_version_downloads(&version_json).await?;
+
+    log_info!("下载清单：libraries={}, assets={}, natives={}",
+        manifest.libraries.len(), manifest.assets.len(), manifest.natives.len());
+
+    let version_base_dir = instance_path.join(&version_name);
+    let libraries_dir = version_base_dir.join("libraries");
+    let assets_dir = version_base_dir.join("assets");
+    let natives_dir = version_base_dir.join("natives");
+    let indexes_dir = version_base_dir.join("indexes");
+    let objects_dir = version_base_dir.join("objects");
+
+    fs::create_dir_all(&version_base_dir).map_err(|e| format!("创建版本目录失败：{}", e))?;
+    fs::create_dir_all(&libraries_dir).map_err(|e| format!("创建 libraries 目录失败：{}", e))?;
+    fs::create_dir_all(&assets_dir).map_err(|e| format!("创建 assets 目录失败：{}", e))?;
+    fs::create_dir_all(&natives_dir).map_err(|e| format!("创建 natives 目录失败：{}", e))?;
+    fs::create_dir_all(&indexes_dir).map_err(|e| format!("创建 indexes 目录失败：{}", e))?;
+    fs::create_dir_all(&objects_dir).map_err(|e| format!("创建 objects 目录失败：{}", e))?;
+
+    let version_download_dir = download_manager.get_version_download_path(&version_name);
+    log_info!("版本下载目录：{:?}", version_download_dir);
+
+    let mut deployed_count = 0;
+
+    for lib in &manifest.libraries {
+        let source = version_download_dir.join(&lib.path);
+        let dest = libraries_dir.join(&lib.path);
+
+        if let Some(parent) = dest.parent() {
+            fs::create_dir_all(parent).map_err(|e| format!("创建库目录失败：{}", e))?;
+        }
+
+        if source.exists() {
+            fs::copy(&source, &dest).map_err(|e| format!("复制库文件失败：{}", e))?;
+            deployed_count += 1;
+        } else if dest.exists() {
+            deployed_count += 1;
+        }
+    }
+
+    if manifest.natives.first().is_some() {
+        for native in &manifest.natives {
+            let source = version_download_dir.join(&native.path);
+            if source.exists() {
+                extract_jar(&source, &natives_dir)?;
+                deployed_count += 1;
+            }
+        }
+    }
+
+    for asset in &manifest.assets {
+        let source = version_download_dir.join(&asset.path);
+        let dest = assets_dir.join(&asset.path);
+
+        if let Some(parent) = dest.parent() {
+            fs::create_dir_all(parent).map_err(|e| format!("创建资源目录失败：{}", e))?;
+        }
+
+        if source.exists() {
+            fs::copy(&source, &dest).map_err(|e| format!("复制资源文件失败：{}", e))?;
+            deployed_count += 1;
+        } else if dest.exists() {
+            deployed_count += 1;
+        }
+    }
+
+    if let Some(ref client) = manifest.client_jar {
+        let source = version_download_dir.join(&client.path);
+        let dest = version_base_dir.join(format!("{}.jar", &version_name));
+
+        if let Some(parent) = dest.parent() {
+            fs::create_dir_all(parent).map_err(|e| format!("创建版本目录失败：{}", e))?;
+        }
+
+        if source.exists() {
+            fs::copy(&source, &dest).map_err(|e| format!("复制客户端 jar 失败：{}", e))?;
+            deployed_count += 1;
+        } else {
+            return Err(format!("客户端 jar 不存在：{}", source.display()));
+        }
+    }
+
+    if let Some(ref index) = manifest.asset_index {
+        let source = version_download_dir.join(&index.path);
+        let dest = indexes_dir.join(format!("{}.json", &version_name));
+
+        if let Some(parent) = dest.parent() {
+            fs::create_dir_all(parent).map_err(|e| format!("创建索引目录失败：{}", e))?;
+        }
+
+        if source.exists() {
+            fs::copy(&source, &dest).map_err(|e| format!("复制资源索引失败：{}", e))?;
+            deployed_count += 1;
+        }
+    }
+
+    log_info!("==================== 部署完成 ====================");
+
+    Ok(format!("版本 {} 已部署到实例 ({} 文件)", version_id, deployed_count))
 }

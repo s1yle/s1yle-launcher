@@ -32,7 +32,7 @@ pub use crate::window::{
 
 pub use download::{
     cancel_download, clear_completed_tasks, deploy_version_files, deploy_version_to_instance,
-    download_file, get_download_base_path, get_download_task, get_download_tasks,
+    download_file, download_and_deploy, get_download_base_path, get_download_task, get_download_tasks,
     get_game_versions, get_version_detail, get_version_download_manifest, get_version_manifest,
     is_version_deployed, set_download_base_path,
 };
@@ -40,6 +40,7 @@ pub use download::{
 pub use crate::instance::{
     add_known_path, set_default_folder, remove_known_path, copy_instance, create_instance, delete_instance, get_instance,
     get_instances_path, rename_instance, scan_instances, scan_known_mc_paths, update_instance,
+    validate_folder, add_validated_folder,
     GameInstance, InstanceManager,
 };
 pub use crate::modloader::{
@@ -278,6 +279,7 @@ pub fn run() {
             get_version_detail,
             get_version_download_manifest,
             download_file,
+            download_and_deploy,
             get_download_tasks,
             get_download_task,
             cancel_download,
@@ -306,6 +308,8 @@ pub fn run() {
             add_known_path,
             set_default_folder,
             remove_known_path,
+            validate_folder,
+            add_validated_folder,
             open_url,
             open_folder,
             // 配置相关命令

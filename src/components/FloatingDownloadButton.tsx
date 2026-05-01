@@ -92,7 +92,6 @@ export const FloatingDownloadButton: React.FC<FloatingDownloadButtonProps> = ({
     let newX = dragStartRef.current.x + deltaX;
     let newY = dragStartRef.current.y + deltaY;
 
-    const currentHeight = isExpanded ? PANEL_MAX_HEIGHT : FLOATING_BUTTON_SIZE;
     const halfWidth = FLOATING_BUTTON_SIZE / 2;
 
     const minX = -windowWidth / 2 + halfWidth;
@@ -100,7 +99,7 @@ export const FloatingDownloadButton: React.FC<FloatingDownloadButtonProps> = ({
     newX = Math.max(minX, Math.min(maxX, newX));
 
     const minY = FLOATING_BUTTON_SIZE / 2;
-    const maxY = windowHeight - (isExpanded ? PANEL_MAX_HEIGHT : FLOATING_BUTTON_SIZE) - 10;
+    const maxY = windowHeight - FLOATING_BUTTON_SIZE - 10;
     newY = Math.max(minY, Math.min(maxY, newY));
 
     setPosition({ x: newX, y: newY });

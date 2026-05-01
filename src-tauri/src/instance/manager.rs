@@ -701,6 +701,43 @@ impl InstanceManager {
         Ok(new_path)
     }
 
+    pub async fn add_known_path_with_name(&self, path: &str, display_name: &str) -> Result<KnownPath, String> {
+        let p = PathBuf::from(path);
+        if !p.exists() {
+            return Err(format!("路径不存在: {}", path));
+        }
+        if !p.is_dir() {
+            return Err("路径不是目录".to_string());
+        }
+
+        let normalized_path = p.to_string_lossy().to_lowercase();
+        let mut existing = self.load_known_paths();
+        
+        if existing.iter().any(|kp| kp.path.to_lowercase() == normalized_path) {
+            return Err("该路径已存在".to_string());
+        }
+
+        let new_path = KnownPath {
+            id: format!(
+                "custom-{}",
+                uuid::Uuid::new_v4()
+                    .to_string()
+                    .chars()
+                    .take(8)
+                    .collect::<String>()
+            ),
+            name: display_name.to_string(),
+            path: p.to_string_lossy().to_string(),
+            is_default: false,
+        };
+
+        existing.push(new_path.clone());
+        self.save_known_paths(&existing)?;
+
+        log_info!("已知路径已添加（自定义名称）: {} -> {:?}", display_name, path);
+        Ok(new_path)
+    }
+
     pub fn set_default_folder(&self, id: &str) -> Result<(), String> {
         let mut existing = self.load_known_paths();
         let mut found = false;

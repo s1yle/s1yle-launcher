@@ -1293,3 +1293,81 @@ export const getNativesPath = async (
   logger.info('获取 natives 路径', { instanceName });
   return await invokeRustFunction("get_natives_path", { instance_name: instanceName }, options);
 };
+
+// ======================== 文件夹验证与添加 ========================
+
+export interface FolderValidationResult {
+  is_valid: boolean;
+  path: string;
+  suggested_name: string;
+  instances: DetectedInstance[];
+  format: InstanceFormat;
+  compatibility_score: number;
+  warnings: string[];
+}
+
+export interface DetectedInstance {
+  name: string;
+  version: string;
+  version_dir: string;
+  format: InstanceFormat;
+}
+
+export enum InstanceFormat {
+  Native = "Native",
+  StandardMinecraft = "StandardMinecraft",
+  Custom = "Custom",
+  Invalid = "Invalid",
+}
+
+export const validateFolder = async (
+  path: string,
+  options?: InvokeOptions
+): Promise<FolderValidationResult> => {
+  logger.info('验证文件夹', { path });
+  return await invokeRustFunction("validate_folder", { path }, options);
+};
+
+export const addValidatedFolder = async (
+  path: string,
+  customName?: string,
+  options?: InvokeOptions
+): Promise<KnownPath> => {
+  logger.info('添加已验证的文件夹', { path, customName });
+  return await invokeRustFunction("add_validated_folder", { 
+    path, 
+    custom_name: customName || null 
+  }, options);
+};
+
+// ======================== 下载部署一体化 ========================
+
+export interface DeployOptions {
+  instance_name: string;
+  version_id: string;
+  loader_type: ModLoaderType;
+  loader_version: string | null;
+  target_existing_instance: string | null;
+}
+
+export interface DeployResult {
+  success: boolean;
+  instance_id: string;
+  instance_name: string;
+  version: string;
+  deployed_files_count: number;
+  total_files_count: number;
+  message: string;
+}
+
+export const downloadAndDeploy = async (
+  options: DeployOptions,
+  invokeOptions?: InvokeOptions
+): Promise<DeployResult> => {
+  logger.info('下载并部署实例', options);
+  return await invokeRustFunction("download_and_deploy", {
+    ...options,
+    loader_version: options.loader_version || null,
+    target_existing_instance: options.target_existing_instance || null
+  }, invokeOptions);
+};

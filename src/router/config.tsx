@@ -37,6 +37,11 @@ export enum RoutePosition {
   HIDDEN = 'hidden'
 }
 
+export enum LayoutMode {
+  STANDARD = 'standard',
+  FULLSCREEN = 'fullscreen'
+}
+
 export enum SidebarGroup {
   ACCOUNT = 'account',
   GAME = 'game',
@@ -51,6 +56,7 @@ export interface RouteConfig {
   componentName: string;
   header: HeaderConfig;
   position?: RoutePosition;
+  layoutMode?: LayoutMode;
   children?: RouteConfig[];
   sidebarGroup?: SidebarGroup;
   parentPath?: string;
@@ -203,6 +209,13 @@ export const routes: RouteConfig[] = [
     header: { type: SidebarType.SUB, title: '启动器说明', titleI18nKey: 'sidebar.hint' },
     sidebarGroup: SidebarGroup.COMMON,
     parentPath: '/'
+  },
+  {
+    path: '/download/game/:versionId',
+    componentName: 'VersionDetailWithInstall',
+    header: { type: SidebarType.SECONDARY, title: '安装游戏', titleI18nKey: 'download.install.title' },
+    layoutMode: LayoutMode.FULLSCREEN,
+    parentPath: '/download/game'
   },
 ];
 

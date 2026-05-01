@@ -1,7 +1,9 @@
 use tauri::State;
+use std::path::PathBuf;
 
 use super::manager::InstanceManager;
 use super::models::{GameInstance, KnownPath};
+use super::validator::{FolderValidator, FolderValidationResult};
 use crate::log_info;
 use crate::modloader::ModLoaderType;
 
@@ -114,4 +116,43 @@ pub fn remove_known_path(
 ) -> Result<(), String> {
     log_info!("<remove_known_path> id: {:?}", id);
     instance_manager.remove_known_path(&id)
+}
+
+#[tauri::command]
+pub fn validate_folder(path: String) -> Result<FolderValidationResult, String> {
+    let folder_path = PathBuf::from(&path);
+
+    if !folder_path.exists() {
+        return Err(format!("路径不存在: {}", path));
+    }
+    if !folder_path.is_dir() {
+        return Err(format!("路径不是目录: {}", path));
+    }
+
+    Ok(FolderValidator::validate(&folder_path))
+}
+
+#[tauri::command]
+pub async fn add_validated_folder(
+    path: String,
+    custom_name: Option<String>,
+    instance_manager: State<'_, InstanceManager>,
+) -> Result<KnownPath, String> {
+    let validation = FolderValidator::validate(&PathBuf::from(&path));
+
+    if !validation.is_valid {
+        return Err(format!(
+            "该目录未检测到有效的 Minecraft 实例。{}",
+            if validation.warnings.is_empty() {
+                "未找到 versions 目录或游戏文件".to_string()
+            } else {
+                validation.warnings.join("; ")
+            }
+        ));
+    }
+
+    let display_name = custom_name.unwrap_or_else(|| validation.suggested_name);
+    
+    log_info!("<add_validated_folder> path={}, name={}", path, display_name);
+    instance_manager.add_known_path_with_name(&path, &display_name).await
 }
