@@ -1,8 +1,8 @@
 import { useState, useCallback, useMemo, memo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Loader2, FolderOpen } from 'lucide-react';
-import { useDownload } from '../../hooks/useDownload';
+import { Loader2 } from 'lucide-react';
+import { useDownloadStore } from '../../stores/downloadStore';
 import { GameVersion, openFolder, openUrl } from '../../helper/rustInvoke';
 import { VersionListItem, VersionFilterDropdown, EmptyState, useNotification, VirtualList } from '../../components/common';
 import { useNavStore } from '../../stores/navStore';
@@ -19,22 +19,36 @@ const DownloadGame: React.FC = () => {
   const {
     manifest,
     installedVersions,
-    downloadPath,
+    basePath,
     loading,
     error,
     downloadVersion,
-    deployVersion,
-  } = useDownload();
+    loadManifest,
+    loadInstalledVersions,
+    downloadingVersions,
+    completedVersions,
+  } = useDownloadStore();
 
   const { error: notifyError, success, info } = useNotification();
 
   const [filter, setFilter] = useState<VersionCategory>('release');
   const [searchQuery, setSearchQuery] = useState('');
-  const downloadingVersions = useRef(new Set<string>());
-  const deployingVersions = useRef(new Set<string>());
+  const initializedRef = useRef(false);
 
+  useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
 
-  // Debug: Log version type distribution
+    if (!manifest) {
+      loadManifest().catch(e => {
+        console.error('[DownloadGame] 加载版本列表失败:', e);
+      });
+    }
+    loadInstalledVersions().catch(e => {
+      console.error('[DownloadGame] 加载已安装版本失败:', e);
+    });
+  }, []);
+
   useMemo(() => {
     if (manifest?.versions) {
       console.log('=== Version Types Debug ===');
@@ -42,7 +56,6 @@ const DownloadGame: React.FC = () => {
     }
   }, [manifest?.versions]);
 
-  // Memoized version list to avoid unnecessary recalculations
   const versionsToShow = useMemo(() => {
     if (!manifest?.versions) return [];
     let versions = filterVersionsByCategory(manifest.versions, filter);
@@ -58,12 +71,24 @@ const DownloadGame: React.FC = () => {
     return versions;
   }, [manifest?.versions, filter, searchQuery]);
 
-  // Memoized installed versions set for O(1) lookup
   const installedSet = useMemo(() => 
     new Set(installedVersions),
   [installedVersions]);
 
-  // handle 点击版本列表
+  const downloadingSet = useMemo(() => {
+    const set = new Set<string>();
+    downloadingVersions.forEach((value, key) => {
+      if (value.status === 'downloading') {
+        set.add(key);
+      }
+    });
+    return set;
+  }, [downloadingVersions]);
+
+  const completedSet = useMemo(() => 
+    new Set(completedVersions),
+  [completedVersions]);
+
   const handleVersionClick = useCallback((version: GameVersion) => {
     navigate(`/download/game/${encodeURIComponent(version.id)}`);
     setCurrentPath(`/download/game/${encodeURIComponent(version.id)}`);
@@ -73,37 +98,20 @@ const DownloadGame: React.FC = () => {
     openUrl(getWikiUrl(versionId));
   }, []);
 
-  // handle 下载
   const handleDownload = useCallback(async (version: GameVersion) => {
-    if (downloadingVersions.current.has(version.id)) return;
-    downloadingVersions.current.add(version.id);
+    if (downloadingSet.has(version.id)) {
+      info(t('notification.info'), t('notification.alreadyDownloading'));
+      return;
+    }
 
     try {
-      info(t('notification.downloadStarted'), `${version.id}...`);
-      await downloadVersion(version);
-      success(t('common.success'), `${version.id} ${t('notification.downloadCompleted')}`);
+      info(t('notification.downloadStarted'), `Minecraft ${version.id}...`);
+      await downloadVersion(version.id);
+      success(t('common.success'), `Minecraft ${version.id} ${t('notification.downloadCompleted')}`);
     } catch (e) {
       notifyError(t('notification.error'), e instanceof Error ? e.message : t('notification.downloadFailed'));
-    } finally {
-      downloadingVersions.current.delete(version.id);
     }
-  }, [downloadVersion, info, notifyError, success, t, downloadingVersions]);
-
-  // 部署
-  const handleDeploy = useCallback(async (versionId: string) => {
-    if (deployingVersions.current.has(versionId)) return;
-    deployingVersions.current.add(versionId);
-
-    try {
-      info(t('download.deploying'), `${versionId}...`);
-      await deployVersion(versionId);
-      success(t('common.success'), `${versionId} ${t('notification.deployCompleted')}`);
-    } catch (e) {
-      notifyError(t('notification.error'), e instanceof Error ? e.message : t('notification.deployFailed'));
-    } finally {
-      deployingVersions.current.delete(versionId);
-    }
-  }, [deployVersion, info, notifyError, success, t, deployingVersions]);
+  }, [downloadVersion, info, notifyError, success, t, downloadingSet]);
 
   const notifyErrorRef = useRef(notifyError);
   notifyErrorRef.current = notifyError;
@@ -112,30 +120,29 @@ const DownloadGame: React.FC = () => {
     if (error) {
       notifyErrorRef.current(t('notification.error'), error);
     }
-  }, [error, t]); // 移除 notifyError 依赖
+  }, [error, t]);
 
-  // 打开下载文件夹
   const handleOpenDownloadFolder = useCallback(async () => {
-    if (!downloadPath) return;
+    if (!basePath) return;
     try {
-      await openFolder(downloadPath);
+      await openFolder(basePath);
     } catch (e) {
       notifyError(t('notification.error'), e instanceof Error ? e.message : t('notification.error'));
     }
-  }, [downloadPath, notifyError, t]);
+  }, [basePath, notifyError, t]);
 
   const renderVersionItem = useCallback((version: GameVersion) => (
     <VersionListItem
       version={version}
-      installed={installedSet.has(version.id)}
-      downloading={downloadingVersions.current.has(version.id)}
-      isDeploying={deployingVersions.current.has(version.id)}
+      installed={installedSet.has(version.id) || completedSet.has(version.id)}
+      downloading={downloadingSet.has(version.id)}
+      isDeploying={false}
       onClick={() => handleVersionClick(version)}
       onWikiClick={() => handleWikiClick(version.id)}
       onDownload={() => handleDownload(version)}
-      onDeploy={() => handleDeploy(version.id)}
+      onDeploy={() => {}}
     />
-  ), [installedSet, handleVersionClick, handleWikiClick, handleDownload, handleDeploy]);
+  ), [installedSet, completedSet, downloadingSet, handleVersionClick, handleWikiClick, handleDownload]);
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -168,7 +175,6 @@ const DownloadGame: React.FC = () => {
             />
           </div>
           
-          {/* 最新正式版  和   最新快照 */}
           {manifest?.latest && (
             <div className="p-2 rounded-lg mb-2 flex-shrink-0 px-4"
               style={{ backgroundColor: 'var(--color-primary-bg)', borderColor: 'var(--color-primary)', borderWidth: '1px', borderStyle: 'solid' }}
@@ -209,12 +215,11 @@ const DownloadGame: React.FC = () => {
 
       </div>
 
-      {/* 底部栏 */}
       <BottomBar
         dir='download.downloadDir'
         cmdOpen='common.open'
         title='download.openFolder'
-        path= {downloadPath}
+        path= {basePath}
         handleOpenDownloadFolder={handleOpenDownloadFolder}
       />
       

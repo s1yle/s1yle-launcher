@@ -17,7 +17,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { type ReactNode } from 'react';
-import { handleAddGameFolder } from './actionHandler';
+import { handleAddGameFolder, handleRefreshInstances } from './actionHandler';
 
 export enum SidebarType {
   MAIN = 'main',
@@ -325,7 +325,8 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
             titleI18nKey: 'instances.refresh',
             icon: <RefreshCw className="w-4 h-4" />,
             path: '/instance-list',
-            group: SidebarGroup.GAME
+            group: SidebarGroup.GAME,
+            action: handleRefreshInstances,
           },
         ]
       },

@@ -10,6 +10,7 @@ import { useAppStore } from './stores/appStore';
 import { logger } from './helper/logger';
 import RouterRenderer from './components/RouterRenderer';
 import { useWindowPosition } from './hooks/useWindowPosition';
+import FloatingDownloadButton from './components/FloatingDownloadButton';
 import './helper/i18n';
 
 const PAGE_TRANSITION_DURATION = 0.35;
@@ -89,6 +90,7 @@ function App() {
   return (
     <Router>
       <MainLayout />
+      <FloatingDownloadButton />
     </Router>
   );
 }

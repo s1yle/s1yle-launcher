@@ -2,7 +2,7 @@ import { openUrl } from '../../../helper/rustInvoke';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronDown } from 'lucide-react';
+import { ChevronRight, ChevronDown, RefreshCw } from 'lucide-react';
 import { type SidebarMenuItem } from '../../../router/config';
 
 export interface BaseSidebarContentProps {
@@ -24,6 +24,7 @@ const BaseSidebarContent = ({
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
     new Set(items.filter(item => item.children?.length).map(item => item.id))
   );
+  const [spinningItems, setSpinningItems] = useState<Set<string>>(new Set());
 
   const defaultIsActive = (_path: string) => false;
   const defaultIsParentActive = (_path: string) => false;
@@ -46,6 +47,16 @@ const BaseSidebarContent = ({
     if (item.type === 'route' && item.path) {
       if (onMenuClick) onMenuClick(item);
     } else if (item.type === 'action' && item.action) {
+      if (item.id === 'refresh-instances') {
+        setSpinningItems(prev => new Set(prev).add(item.id));
+        setTimeout(() => {
+          setSpinningItems(prev => {
+            const next = new Set(prev);
+            next.delete(item.id);
+            return next;
+          });
+        }, 1000);
+      }
       item.action();
     } else if (item.type === 'external' && item.url) {
       openUrl(item.url);
@@ -133,7 +144,16 @@ const BaseSidebarContent = ({
               whileHover={{ scale: 1.15 }}
               transition={{ type: 'spring', stiffness: 400, damping: 15 }}
             >
-              {item.icon}
+              {item.id === 'refresh-instances' && spinningItems.has(item.id) ? (
+                <motion.span
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, ease: 'linear', repeat: Infinity }}
+                >
+                  {item.icon}
+                </motion.span>
+              ) : (
+                item.icon
+              )}
             </motion.span>
           )}
           <span className="text-sm text-left flex-1 truncate">

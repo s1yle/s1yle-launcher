@@ -30,6 +30,9 @@ const InstanceList: React.FC = () => {
 
   const { success, error: notifyError } = useNotification();
 
+  const selectedFolder = knownFolders.find(f => f.id === selectedFolderId);
+  const currentPath = selectedFolder?.path || instancesPath;
+
   const filteredInstances = getFilteredInstances();
   console.log("[filteredInstances] 扫描并过滤后的实力列表：", filteredInstances);
 
@@ -179,7 +182,7 @@ const InstanceList: React.FC = () => {
       <BottomBar
         dir='instances.instanceDir'
         cmdOpen='common.open'
-        path= {instancesPath}
+        path= {currentPath}
       />
 
     </div>

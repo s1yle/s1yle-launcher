@@ -15,3 +15,8 @@ export const handleAddGameFolder = async () => {
     if (file) addKnownFolder(file);
 
 };
+
+export const handleRefreshInstances = async () => {
+    const refresh = useInstanceStore.getState().refresh;
+    await refresh();
+};
