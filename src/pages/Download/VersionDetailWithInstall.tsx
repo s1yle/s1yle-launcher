@@ -6,6 +6,7 @@ import { Download, Play, CheckCircle, Loader2, ArrowLeft, Settings, FolderPlus, 
 import { downloadAndDeploy, ModLoaderType } from '@/helper/rustInvoke';
 import { useNotification } from '@/components/common';
 import { listen } from '@tauri-apps/api/event';
+import { useDownloadStore } from '../../stores/downloadStore';
 
 interface DeployPhase {
   key: string;
@@ -20,6 +21,7 @@ const VersionDetailWithInstall: React.FC = () => {
   const { versionId } = useParams<{ versionId: string }>();
 
   const { success, error: notifyError, info } = useNotification();
+  const { startDownloadProgress, updateDownloadProgress, completeDownloadProgress, errorDownloadProgress } = useDownloadStore();
 
   const [installMode, setInstallMode] = useState<'new' | 'existing'>('new');
   const [newInstanceName, setNewInstanceName] = useState('');
@@ -38,7 +40,8 @@ const VersionDetailWithInstall: React.FC = () => {
     if (versionId) setNewInstanceName(`Minecraft ${versionId}`);
 
     const unlistenProgress = listen<any>('deploy-progress', (event) => {
-      setCurrentFile(event.payload.file || '');
+      const { file } = event.payload;
+      setCurrentFile(file || '');
     });
 
     const unlistenStatus = listen<any>('deploy-status', (event) => {
@@ -81,6 +84,8 @@ const VersionDetailWithInstall: React.FC = () => {
 
     try {
       info(t('deploy.starting', '开始安装...'));
+      startDownloadProgress(versionId);
+
       await downloadAndDeploy({
         instance_name: newInstanceName,
         version_id: versionId,
@@ -92,6 +97,7 @@ const VersionDetailWithInstall: React.FC = () => {
       setIsInstalling(false);
       setPhases(prev => prev.map(p => p.status === 'active' ? { ...p, status: 'error' as const } : p));
       notifyError(t('deploy.failed', '安装失败'), e instanceof Error ? e.message : '未知错误');
+      errorDownloadProgress(versionId, e instanceof Error ? e.message : '未知错误');
     }
   };
 

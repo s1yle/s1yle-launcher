@@ -360,7 +360,8 @@ pub async fn download_and_deploy(
         completed += 1;
         app_handle.emit("deploy-progress", serde_json::json!({
             "current": completed, "total": total_files, "file": &lib.path,
-            "phase": "downloading_libraries"
+            "phase": "downloading_libraries",
+            "version_id": &options.version_id
         })).ok();
     }
 
@@ -388,7 +389,8 @@ pub async fn download_and_deploy(
         completed += 1;
         app_handle.emit("deploy-progress", serde_json::json!({
             "current": completed, "total": total_files, "file": &asset.path,
-            "phase": "downloading_assets"
+            "phase": "downloading_assets",
+            "version_id": &options.version_id
         })).ok();
     }
 
@@ -416,7 +418,8 @@ pub async fn download_and_deploy(
         completed += 1;
         app_handle.emit("deploy-progress", serde_json::json!({
             "current": completed, "total": total_files, "file": &native.path,
-            "phase": "downloading_natives"
+            "phase": "downloading_natives",
+            "version_id": &options.version_id
         })).ok();
     }
 
@@ -444,7 +447,8 @@ pub async fn download_and_deploy(
         completed += 1;
         app_handle.emit("deploy-progress", serde_json::json!({
             "current": completed, "total": total_files, "file": &client_jar.path,
-            "phase": "downloading_client"
+            "phase": "downloading_client",
+            "version_id": &options.version_id
         })).ok();
     }
 
@@ -457,6 +461,7 @@ pub async fn download_and_deploy(
 
     app_handle.emit("deploy-complete", serde_json::json!({
         "instance_id": &instance_id,
+        "version_id": &options.version_id,
         "status": "success"
     })).ok();
 
@@ -540,27 +545,20 @@ async fn deploy_version_internal(
     log_info!("下载清单：libraries={}, assets={}, natives={}",
         manifest.libraries.len(), manifest.assets.len(), manifest.natives.len());
 
-    // ✅ 修复：部署到正确的目录结构 {instance_path}/versions/{version_name}/
-    let versions_dir = instance_path.join("versions");
-    let version_base_dir = versions_dir.join(&version_name);
-    let libraries_dir = version_base_dir.join("libraries");
-    let assets_dir = version_base_dir.join("assets");
-    let natives_dir = version_base_dir.join("natives");
-    let indexes_dir = version_base_dir.join("indexes");
-    let objects_dir = version_base_dir.join("objects");
+    let libraries_dir = instance_path.join("libraries");
+    let assets_dir = instance_path.join("assets");
+    let natives_dir = instance_path.join("natives");
+    let indexes_dir = instance_path.join("indexes");
+    let objects_dir = instance_path.join("objects");
 
     log_info!("目标目录：");
     log_info!("  实例根目录：{:?}", instance_path);
-    log_info!("  versions 目录：{:?}", versions_dir);
-    log_info!("  版本根目录：{:?}", version_base_dir);
     log_info!("  libraries: {:?}", libraries_dir);
     log_info!("  assets: {:?}", assets_dir);
     log_info!("  natives: {:?}", natives_dir);
     log_info!("  indexes: {:?}", indexes_dir);
     log_info!("  objects: {:?}", objects_dir);
 
-    fs::create_dir_all(&versions_dir).map_err(|e| format!("创建 versions 目录失败：{}", e))?;
-    fs::create_dir_all(&version_base_dir).map_err(|e| format!("创建版本目录失败：{}", e))?;
     fs::create_dir_all(&libraries_dir).map_err(|e| format!("创建 libraries 目录失败：{}", e))?;
     fs::create_dir_all(&assets_dir).map_err(|e| format!("创建 assets 目录失败：{}", e))?;
     fs::create_dir_all(&natives_dir).map_err(|e| format!("创建 natives 目录失败：{}", e))?;
@@ -616,7 +614,7 @@ async fn deploy_version_internal(
 
     if let Some(ref client) = manifest.client_jar {
         let source = version_download_dir.join(&client.path);
-        let dest = version_base_dir.join(format!("{}.jar", &version_name));
+        let dest = instance_path.join(format!("{}.jar", &version_name));
 
         if let Some(parent) = dest.parent() {
             fs::create_dir_all(parent).map_err(|e| format!("创建版本目录失败：{}", e))?;

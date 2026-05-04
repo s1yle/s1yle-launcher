@@ -1366,8 +1366,10 @@ export const downloadAndDeploy = async (
 ): Promise<DeployResult> => {
   logger.info('下载并部署实例', options);
   return await invokeRustFunction("download_and_deploy", {
-    ...options,
-    loader_version: options.loader_version || null,
-    target_existing_instance: options.target_existing_instance || null
+    options: {
+      ...options,
+      loader_version: options.loader_version || null,
+      target_existing_instance: options.target_existing_instance || null
+    }
   }, invokeOptions);
 };

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { listen } from '@tauri-apps/api/event';
 import {
   getVersionManifest,
   getVersionDownloadManifest,
@@ -91,6 +92,11 @@ interface DownloadState {
   getFabricVersions: (mcVersion: string) => Promise<ModLoaderVersionList>;
   getFabricVersionDetail: (mcVersion: string, loaderVersion: string) => Promise<FabricVersionDetail>;
   buildFabricLaunchConfig: (mcVersion: string, loaderVersion: string, gameDir: string, assetsDir: string, username: string, uuid: string, accessToken?: string, javaPath?: string, memoryMb?: number) => Promise<ModLoaderInfo>;
+  startDownloadProgress: (versionId: string) => void;
+  updateDownloadProgress: (versionId: string, progress: number) => void;
+  completeDownloadProgress: (versionId: string) => void;
+  errorDownloadProgress: (versionId: string, error: string) => void;
+  setupEventListeners: () => () => void;
 }
 
 const CONCURRENT_LIMIT = 16;
@@ -363,5 +369,68 @@ export const useDownloadStore = create<DownloadState>((set, get) => ({
 
   buildFabricLaunchConfig: async (mcVersion: string, loaderVersion: string, gameDir: string, assetsDir: string, username: string, uuid: string, accessToken?: string, javaPath?: string, memoryMb?: number) => {
     return buildFabricLaunchConfig(mcVersion, loaderVersion, gameDir, assetsDir, username, uuid, accessToken, javaPath, memoryMb);
+  },
+
+  startDownloadProgress: (versionId: string) => {
+    set((prev) => {
+      const newMap = new Map(prev.downloadingVersions);
+      newMap.set(versionId, { versionId, progress: 0, status: 'downloading' });
+      return { downloadingVersions: newMap };
+    });
+  },
+
+  updateDownloadProgress: (versionId: string, progress: number) => {
+    set((prev) => {
+      const newMap = new Map(prev.downloadingVersions);
+      const existing = newMap.get(versionId);
+      if (existing) {
+        newMap.set(versionId, { ...existing, progress });
+      }
+      return { downloadingVersions: newMap };
+    });
+  },
+
+  completeDownloadProgress: (versionId: string) => {
+    set((prev) => {
+      const newMap = new Map(prev.downloadingVersions);
+      newMap.delete(versionId);
+      return {
+        downloadingVersions: newMap,
+        completedVersions: [...prev.completedVersions, versionId]
+      };
+    });
+  },
+
+  errorDownloadProgress: (versionId: string, error: string) => {
+    set((prev) => {
+      const newMap = new Map(prev.downloadingVersions);
+      newMap.set(versionId, { versionId, progress: 0, status: 'error', error });
+      return { downloadingVersions: newMap };
+    });
+  },
+
+  setupEventListeners: () => {
+    const unlistenProgress = listen<any>('deploy-progress', (event) => {
+      const { current, total, version_id } = event.payload;
+
+      if (total > 0 && version_id) {
+        const progress = (current / total) * 100;
+        get().updateDownloadProgress(version_id, progress);
+      }
+    });
+
+    const unlistenComplete = listen<any>('deploy-complete', (event) => {
+      if (event.payload.status === 'success') {
+        const versionId = event.payload.version_id;
+        if (versionId) {
+          get().completeDownloadProgress(versionId);
+        }
+      }
+    });
+
+    return () => {
+      unlistenProgress.then(fn => fn());
+      unlistenComplete.then(fn => fn());
+    };
   },
 }));

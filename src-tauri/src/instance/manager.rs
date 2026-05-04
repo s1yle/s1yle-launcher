@@ -161,109 +161,111 @@ impl InstanceManager {
         let instance_dir = minecraft_dir.join(name);
         log_info!("扫描实例目录：{:?}", instance_dir);
         
-        if instance_dir.exists() && instance_dir.is_dir() {
-            if let Ok(entries) = fs::read_dir(&instance_dir) {
-                let mut version_count = 0;
-                for entry in entries.flatten() {
-                    let path = entry.path();
-                    if path.is_dir() {
-                        if let Some(version_name) = path.file_name().and_then(|n| n.to_str()) {
-                            // 跳过特殊目录
-                            if version_name.starts_with('.') || version_name == "libraries" || version_name == "assets" || version_name == "natives" {
-                                continue;
-                            }
-                            
-                            let version_jar = path.join(format!("{}.jar", version_name));
-                            log_info!("检查版本：{}/{} - jar 存在：{}", name, version_name, version_jar.exists());
-                            
-                            if version_jar.exists() {
-                                version_count += 1;
-                                let now = path
-                                    .metadata()
-                                    .ok()
-                                    .and_then(|m| m.created().ok())
-                                    .map(|t| {
-                                        t.duration_since(std::time::UNIX_EPOCH)
-                                            .map(|d| d.as_secs() as i64)
-                                            .unwrap_or(0)
-                                    })
-                                    .unwrap_or(0);
+        if !instance_dir.exists() || !instance_dir.is_dir() {
+            return;
+        }
 
-                                let meta_path = path.join(config::INSTANCE_META_FILE_NAME);
-                                let (id, loader_type, loader_version, icon_path, last_played) =
-                                    if meta_path.exists() {
-                                        if let Some(meta) = self.load_meta_from_path(&meta_path) {
-                                            (
-                                                meta.id,
-                                                meta.loader_type,
-                                                meta.loader_version,
-                                                meta.icon_path,
-                                                meta.last_played,
-                                            )
-                                        } else {
-                                            let new_meta = InstanceMeta {
-                                                id: Uuid::new_v4().to_string(),
-                                                name: version_name.to_string(),
-                                                version: version_name.to_string(),
-                                                loader_type: ModLoaderType::Vanilla,
-                                                loader_version: None,
-                                                icon_path: None,
-                                                created_at: now,
-                                                last_played: None,
-                                            };
-                                            let _ = self.save_meta_to_path(&new_meta, &meta_path);
-                                            (
-                                                new_meta.id,
-                                                new_meta.loader_type,
-                                                new_meta.loader_version,
-                                                new_meta.icon_path,
-                                                new_meta.last_played,
-                                            )
-                                        }
-                                    } else {
-                                        let new_meta = InstanceMeta {
-                                            id: Uuid::new_v4().to_string(),
-                                            name: version_name.to_string(),
-                                            version: version_name.to_string(),
-                                            loader_type: ModLoaderType::Vanilla,
-                                            loader_version: None,
-                                            icon_path: None,
-                                            created_at: now,
-                                            last_played: None,
-                                        };
-                                        if let Some(parent) = meta_path.parent() {
-                                            let _ = fs::create_dir_all(parent);
-                                        }
-                                        let _ = self.save_meta_to_path(&new_meta, &meta_path);
-                                        (
-                                            new_meta.id,
-                                            new_meta.loader_type,
-                                            new_meta.loader_version,
-                                            new_meta.icon_path,
-                                            new_meta.last_played,
-                                        )
-                                    };
-
-                                instances.push(GameInstance {
-                                    id,
-                                    name: version_name.to_string(),
-                                    version: version_name.to_string(),
-                                    loader_type,
-                                    loader_version,
-                                    path: instance_dir.to_string_lossy().to_string(),
-                                    icon_path,
-                                    last_played,
-                                    created_at: now,
-                                    enabled: true,
-                                });
+        let mut version_jar = None;
+        if let Ok(entries) = fs::read_dir(&instance_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_file() {
+                    if let Some(ext) = path.extension() {
+                        if ext == "jar" {
+                            if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
+                                version_jar = Some((stem.to_string(), path));
+                                break;
                             }
                         }
                     }
                 }
-                log_info!("实例 {} 扫描到 {} 个版本", name, version_count);
             }
+        }
+
+        if let Some((version_name, jar_path)) = version_jar {
+            log_info!("检查版本：{} - jar 存在：{}", version_name, jar_path.exists());
+            
+            let now = jar_path
+                .metadata()
+                .ok()
+                .and_then(|m| m.created().ok())
+                .map(|t| {
+                    t.duration_since(std::time::UNIX_EPOCH)
+                        .map(|d| d.as_secs() as i64)
+                        .unwrap_or(0)
+                })
+                .unwrap_or(0);
+
+            let meta_path = instance_dir.join(config::INSTANCE_META_FILE_NAME);
+            let (id, loader_type, loader_version, icon_path, last_played) =
+                if meta_path.exists() {
+                    if let Some(meta) = self.load_meta_from_path(&meta_path) {
+                        (
+                            meta.id,
+                            meta.loader_type,
+                            meta.loader_version,
+                            meta.icon_path,
+                            meta.last_played,
+                        )
+                    } else {
+                        let new_meta = InstanceMeta {
+                            id: Uuid::new_v4().to_string(),
+                            name: name.to_string(),
+                            version: version_name.clone(),
+                            loader_type: ModLoaderType::Vanilla,
+                            loader_version: None,
+                            icon_path: None,
+                            created_at: now,
+                            last_played: None,
+                        };
+                        let _ = self.save_meta_to_path(&new_meta, &meta_path);
+                        (
+                            new_meta.id,
+                            new_meta.loader_type,
+                            new_meta.loader_version,
+                            new_meta.icon_path,
+                            new_meta.last_played,
+                        )
+                    }
+                } else {
+                    let new_meta = InstanceMeta {
+                        id: Uuid::new_v4().to_string(),
+                        name: name.to_string(),
+                        version: version_name.clone(),
+                        loader_type: ModLoaderType::Vanilla,
+                        loader_version: None,
+                        icon_path: None,
+                        created_at: now,
+                        last_played: None,
+                    };
+                    if let Some(parent) = meta_path.parent() {
+                        let _ = fs::create_dir_all(parent);
+                    }
+                    let _ = self.save_meta_to_path(&new_meta, &meta_path);
+                    (
+                        new_meta.id,
+                        new_meta.loader_type,
+                        new_meta.loader_version,
+                        new_meta.icon_path,
+                        new_meta.last_played,
+                    )
+                };
+
+            instances.push(GameInstance {
+                id,
+                name: name.to_string(),
+                version: version_name.to_string(),
+                loader_type,
+                loader_version,
+                path: instance_dir.to_string_lossy().to_string(),
+                icon_path,
+                last_played,
+                created_at: now,
+                enabled: true,
+            });
+            log_info!("实例 {} 扫描到 1 个版本", name);
         } else {
-            log_error!("实例目录不存在：{:?}", instance_dir);
+            log_info!("实例 {} 扫描到 0 个版本", name);
         }
     }
 
@@ -422,11 +424,21 @@ impl InstanceManager {
                 let path = entry.path();
                 if path.is_dir() {
                     if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                        let versions_dir = path.join("versions");
-                        let has_versions = versions_dir.is_dir()
-                            && fs::read_dir(&versions_dir).map(|e| e.count()).unwrap_or(0) > 0;
+                        let has_game_files = {
+                            let libraries_dir = path.join("libraries");
+                            let assets_dir = path.join("assets");
+                            let has_jar = fs::read_dir(&path)
+                                .map(|entries| {
+                                    entries.filter_map(|e| e.ok()).any(|e| {
+                                        e.path().extension().map(|ext| ext == "jar").unwrap_or(false)
+                                    })
+                                })
+                                .unwrap_or(false);
 
-                        if has_versions {
+                            libraries_dir.is_dir() || assets_dir.is_dir() || has_jar
+                        };
+
+                        if has_game_files {
                             if let Some(mut instance) =
                                 self.load_instance_from_path(name, &path)
                             {
@@ -439,33 +451,30 @@ impl InstanceManager {
             }
         }
 
-        instances.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+        instances.sort_by(|a, b| a.created_at.cmp(&b.created_at));
         instances
     }
 
     fn load_instance_from_path(&self, name: &str, instance_dir: &PathBuf) -> Option<GameInstance> {
-        let versions_dir = instance_dir.join("versions");
-        let mut versions = Vec::new();
+        let mut version = None;
 
-        if let Ok(entries) = fs::read_dir(&versions_dir) {
+        if let Ok(entries) = fs::read_dir(instance_dir) {
             for entry in entries.flatten() {
-                if entry.path().is_dir() {
-                    if let Some(fname) = entry.file_name().to_str() {
-                        versions.push(fname.to_string());
+                let path = entry.path();
+                if path.is_file() {
+                    if let Some(ext) = path.extension() {
+                        if ext == "jar" {
+                            if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
+                                version = Some(stem.to_string());
+                                break;
+                            }
+                        }
                     }
                 }
             }
         }
-        versions.sort();
 
-        if versions.is_empty() {
-            return None;
-        }
-
-        let version = versions
-            .first()
-            .cloned()
-            .unwrap_or_else(|| "unknown".to_string());
+        let version = version.unwrap_or_else(|| "unknown".to_string());
 
         let meta_path = self.get_meta_path();
         let (id, loader_type, loader_version, icon_path, created_at, last_played) =

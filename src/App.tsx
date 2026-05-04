@@ -8,6 +8,7 @@ import { useNavStore } from './stores/navStore';
 import { useThemeStore } from './stores/themeStore';
 import { useAppStore } from './stores/appStore';
 import { useInstanceStore } from './stores/instanceStore';
+import { useDownloadStore } from './stores/downloadStore';
 import { logger } from './helper/logger';
 import RouterRenderer from './components/RouterRenderer';
 import { useWindowPosition } from './hooks/useWindowPosition';
@@ -85,6 +86,7 @@ function App() {
   const initTheme = useThemeStore((s) => s.init);
   const initApp = useAppStore((s) => s.init);
   const initInstances = useInstanceStore((s) => s.init);
+  const setupDownloadListeners = useDownloadStore((s) => s.setupEventListeners);
 
   useWindowPosition();
 
@@ -93,6 +95,11 @@ function App() {
     initApp();
     initInstances();
   }, [initTheme, initApp, initInstances]);
+
+  useEffect(() => {
+    const cleanup = setupDownloadListeners();
+    return cleanup;
+  }, [setupDownloadListeners]);
 
   return (
     <Router>
