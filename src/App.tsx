@@ -49,9 +49,7 @@ const MainLayout = () => {
 
   return (
     <div className="h-screen flex flex-col " onContextMenu={handleContextMenu}>
-      {!isFullscreen && (
-        <Header type={currentRoute.header.type === 'main' ? 'main' : 'sub'} title={currentRoute.header.title} />
-      )}
+      <Header type={currentRoute.header.type === 'main' ? 'main' : 'sub'} title={currentRoute.header.title} />
       <div className="flex flex-1 overflow-hidden ">
         {!isFullscreen && (
           <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} />

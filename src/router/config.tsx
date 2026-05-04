@@ -137,13 +137,6 @@ export const routes: RouteConfig[] = [
         parentPath: '/'
       },
       {
-        path: '/download/game/:versionId',
-        componentName: 'VersionInstall',
-        header: { type: SidebarType.SECONDARY, title: '安装新游戏', titleI18nKey: 'download.install.title' },
-        sidebarGroup: SidebarGroup.GAME,
-        parentPath: '/'
-      },
-      {
         path: '/download/modpack',
         componentName: 'DownloadModpack',
         header: { type: SidebarType.SECONDARY, title: '整合包', titleI18nKey: 'sidebar.downloadModpack' },
@@ -501,13 +494,30 @@ export const getSidebarGroups = (): Record<SidebarGroup, SidebarMenuItem[]> => {
 
 export const findRouteByPath = (path: string, routeList: RouteConfig[]): RouteConfig | undefined => {
   for (const route of routeList) {
-    if (route.path === path) return route;
+    if (matchRoutePath(route.path, path)) return route;
     if (route.children) {
       const found = findRouteByPath(path, route.children);
       if (found) return found;
     }
   }
   return undefined;
+};
+
+const matchRoutePath = (routePath: string, actualPath: string): boolean => {
+  const routeSegments = routePath.split('/');
+  const actualSegments = actualPath.split('/');
+
+  if (routeSegments.length !== actualSegments.length) return false;
+
+  for (let i = 0; i < routeSegments.length; i++) {
+    const routeSegment = routeSegments[i];
+    const actualSegment = actualSegments[i];
+
+    if (routeSegment.startsWith(':')) continue;
+    if (routeSegment !== actualSegment) return false;
+  }
+
+  return true;
 };
 
 export const getParentPath = (path: string): string => {
