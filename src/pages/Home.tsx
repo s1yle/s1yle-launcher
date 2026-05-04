@@ -26,7 +26,7 @@ const Home = () => {
               </p>
             </div>
           ) : (
-            <p className="text-lg text-text-secondary">请在实例列表中选择一个游戏实例</p>
+            <p className="text-lg text-text-secondary">请在游戏实例中选择一个游戏实例</p>
           )}
         </div>
       </div>

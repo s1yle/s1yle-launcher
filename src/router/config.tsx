@@ -94,19 +94,19 @@ export const routes: RouteConfig[] = [
       },
     ]
   },
-  // 实例管理
+  // 版本中心
   {
     path: '/instance-manage',
     componentName: 'InstanceManage',
-    header: { type: SidebarType.SUB, title: '实例管理', titleI18nKey: 'sidebar.instanceManage' },
+    header: { type: SidebarType.SUB, title: '版本中心', titleI18nKey: 'sidebar.instanceManage' },
     sidebarGroup: SidebarGroup.GAME,
     parentPath: '/'
   },
-  // 实例列表
+  // 游戏实例
   {
     path: '/instance-list',
     componentName: 'InstanceList',
-    header: { type: SidebarType.SUB, title: '实例列表', titleI18nKey: 'sidebar.instanceList' },
+    header: { type: SidebarType.SUB, title: '游戏实例', titleI18nKey: 'sidebar.instanceList' },
     sidebarGroup: SidebarGroup.GAME,
     parentPath: '/',
     autoNavigateToFirstChild: false,
@@ -114,7 +114,7 @@ export const routes: RouteConfig[] = [
       {
         path: '/instance-list/game-folder:default',
         componentName: 'DownloadGame',
-        header: { type: SidebarType.SECONDARY, title: '游戏文件夹', titleI18nKey: 'instances.gameFolders' },
+        header: { type: SidebarType.SECONDARY, title: '游戏目录', titleI18nKey: 'instances.gameFolders' },
         sidebarGroup: SidebarGroup.GAME,
         parentPath: '/'
       },
@@ -281,7 +281,7 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
       {
         id: 'instance-manage',
         type: 'route',
-        title: '实例管理',
+        title: '版本中心',
         titleI18nKey: 'sidebar.instanceManage',
         icon: <FolderOpen className="w-4 h-4" />,
         path: '/instance-manage',
@@ -290,7 +290,7 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
       {
         id: 'instance-list',
         type: 'route',
-        title: '实例列表',
+        title: '游戏实例',
         titleI18nKey: 'sidebar.instanceList',
         icon: <List className="w-4 h-4" />,
         path: '/instance-list',
@@ -299,7 +299,7 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
           {
             id: 'game-folders',
             type: 'route',
-            title: '游戏文件夹',
+            title: '游戏目录',
             titleI18nKey: 'instances.gameFolders',
             icon: <FolderTree className="w-4 h-4" />,
             path: '/instance-list',
@@ -315,7 +315,7 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
           {
             id: 'add-game-folder',
             type: 'action',
-            title: '添加游戏文件夹',
+            title: '添加游戏目录',
             titleI18nKey: 'instances.addGameFolder',
             icon: <FolderPlus className="w-4 h-4" />,
             path: '/instance-list',

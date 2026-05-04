@@ -1,8 +1,8 @@
 import { openUrl } from '../../../helper/rustInvoke';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Trash2 } from 'lucide-react';
 import { type SidebarMenuItem } from '../../../router/config';
 
 export interface BaseChildrenContentProps {
@@ -14,6 +14,8 @@ export interface BaseChildrenContentProps {
   hasChildrenItems?: (item: SidebarMenuItem) => boolean;
   groupTitle?: string;
   groupTitleI18nKey?: string;
+  onItemDelete?: (id: string) => void;
+  deletableItemIds?: Set<string>;
 }
 
 const BaseChildrenContent = ({
@@ -25,11 +27,15 @@ const BaseChildrenContent = ({
   hasChildrenItems,
   groupTitle,
   groupTitleI18nKey,
+  onItemDelete,
+  deletableItemIds,
 }: BaseChildrenContentProps) => {
   const { t } = useTranslation();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(
     new Set(items.filter(item => item.children?.length).map(item => item.id))
   );
+  const [contextMenu, setContextMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+  const contextMenuRef = useRef<HTMLDivElement>(null);
 
   const defaultIsActive = (_path: string) => false;
   const defaultIsParentActive = (_path: string) => false;
@@ -58,6 +64,32 @@ const BaseChildrenContent = ({
     }
   };
 
+  const handleContextMenu = (e: MouseEvent, itemId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({ id: itemId, x: e.clientX, y: e.clientY });
+  };
+
+  const handleDeleteFromMenu = (itemId: string) => {
+    setContextMenu(null);
+    onItemDelete?.(itemId);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = () => setContextMenu(null);
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setContextMenu(null); };
+    if (contextMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEsc);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [contextMenu]);
+
+  const isDeletable = (itemId: string) => deletableItemIds?.has(itemId) ?? false;
+
   const renderItem = (item: SidebarMenuItem, level: number = 0, index: number = 0) => {
     if (item.type === 'divider') {
       return <div key={item.id} className="my-2 border-t border-[var(--color-border)]" />;
@@ -77,6 +109,8 @@ const BaseChildrenContent = ({
     const itemActive = isItemActive ? isItemActive(item.id) : false;
     const parentActive = !active && !itemActive && item.type === 'route' && item.path ? parentActiveCheck(item.path) : false;
 
+    const canDelete = isDeletable(item.id);
+
     return (
       <motion.div
         key={item.id}
@@ -84,12 +118,14 @@ const BaseChildrenContent = ({
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: index * 0.03, duration: 0.15 }}
         style={{ paddingLeft: level > 0 ? `${level * 0.75}rem` : undefined }}
+        className="group/item"
       >
         <motion.button
           onClick={() => {
             if (hasChildren) toggleExpand(item.id);
             handleItemClick(item);
           }}
+          onContextMenu={canDelete ? (e) => handleContextMenu(e, item.id) : undefined}
           className={`
             w-full flex items-center gap-3 py-2.5 rounded-lg
             border-l-[3px] transition-colors duration-200
@@ -125,6 +161,15 @@ const BaseChildrenContent = ({
               <ChevronRight className="w-3.5 h-3.5 text-[var(--color-text-tertiary)]" />
             </motion.div>
           )}
+          {canDelete && (
+            <button
+              onClick={(e) => { e.stopPropagation(); handleDeleteFromMenu(item.id); }}
+              className="opacity-0 group-hover/item:opacity-100 p-1 text-[var(--color-text-tertiary)] hover:text-error rounded transition-all duration-150 flex-shrink-0"
+              title={t('instances.removeGameFolder', '删除游戏目录')}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
         </motion.button>
 
         <AnimatePresence>
@@ -156,6 +201,22 @@ const BaseChildrenContent = ({
       <div className="space-y-0.5">
         {items.map((item, index) => renderItem(item, 0, index))}
       </div>
+
+      {contextMenu && (
+        <div
+          ref={contextMenuRef}
+          className="fixed z-[9999] bg-context-bg border border-border-hover rounded-lg shadow-xl py-1 min-w-[160px]"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+        >
+          <button
+            onClick={() => handleDeleteFromMenu(contextMenu.id)}
+            className="w-full px-3 py-2 text-left text-sm flex items-center gap-2 text-error hover:bg-error-bg transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+            {t('instances.removeGameFolder', '删除游戏目录')}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

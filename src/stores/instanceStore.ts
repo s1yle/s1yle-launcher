@@ -62,7 +62,7 @@ interface InstanceState {
   addKnownFolder: (path: string) => Promise<void>;
   removeKnownFolder: (id: string) => Promise<void>;
   setDefaultFolder: (id: string) => Promise<void>;
-  setSelectedFolder: (id: string | null) => void;
+  setSelectedFolder: (id: string | null) => Promise<void>;
   setSelectedInstance: (id: string | null) => void;
   setSelectedSidebarItem: (id: string | null) => void;
   createNew: (name: string, version: string, loaderType?: ModLoaderType, loaderVersion?: string, iconPath?: string) => Promise<void>;
@@ -226,11 +226,6 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
     }
   },
 
-  setSelectedFolder: (id: string | null) => {
-    set({ selectedFolderId: id });
-    saveFolderId(id);
-  },
-
   setSelectedInstance: (id: string | null) => {
     set({ selectedInstanceId: id });
     saveInstanceId(id);
@@ -238,6 +233,22 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
 
   setSelectedSidebarItem: (id: string | null) => {
     set({ selectedSidebarItemId: id });
+  },
+
+  setSelectedFolder: async (id: string | null) => {
+    set({ selectedFolderId: id });
+    saveFolderId(id);
+    if (id) {
+      try {
+        await setDefaultFolder(id);
+        set(prev => ({
+          knownFolders: prev.knownFolders.map(f => ({
+            ...f,
+            is_default: f.id === id,
+          })),
+        }));
+      } catch { }
+    }
   },
 
   createNew: async (name: string, version: string, loaderType?: ModLoaderType, loaderVersion?: string, iconPath?: string) => {

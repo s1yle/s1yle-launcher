@@ -763,13 +763,6 @@ impl InstanceManager {
         let mut existing = self.load_known_paths();
         let original_len = existing.len();
         
-        // 检查是否是默认文件夹
-        if let Some(folder) = existing.iter().find(|p| p.id == id) {
-            if folder.is_default {
-                return Err("不能删除默认游戏文件夹".to_string());
-            }
-        }
-        
         existing.retain(|p| p.id != id);
 
         if existing.len() == original_len {

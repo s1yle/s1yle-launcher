@@ -58,7 +58,21 @@ const InstanceListItem: React.FC<InstanceListItemProps> = ({
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const icon = getIconForInstance(instance.name);
+  const renderIcon = () => {
+    if (instance.icon_path) {
+      return (
+        <img
+          src={`asset://localhost/${instance.icon_path}`}
+          alt={instance.name}
+          className="w-8 h-8 rounded-lg object-cover"
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = 'none';
+          }}
+        />
+      );
+    }
+    return <span className="text-2xl">{getIconForInstance(instance.name)}</span>;
+  };
 
   const handleContextAction = (action: string) => {
     setShowMenu(false);
@@ -104,8 +118,8 @@ const InstanceListItem: React.FC<InstanceListItemProps> = ({
         </div>
       </div>
 
-      <div className="flex-shrink-0 mr-4 text-2xl">
-        {icon}
+      <div className="flex-shrink-0 mr-4">
+        {renderIcon()}
       </div>
 
       <div className="flex-1 min-w-0 mr-4">

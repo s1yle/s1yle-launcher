@@ -106,19 +106,9 @@ const DownloadGame: React.FC = () => {
   }, []);
 
   const handleDownload = useCallback(async (version: GameVersion) => {
-    if (downloadingSet.has(version.id)) {
-      info(t('notification.info'), t('notification.alreadyDownloading'));
-      return;
-    }
-
-    try {
-      info(t('notification.downloadStarted'), `Minecraft ${version.id}...`);
-      await downloadVersion(version.id);
-      success(t('common.success'), `Minecraft ${version.id} ${t('notification.downloadCompleted')}`);
-    } catch (e) {
-      notifyError(t('notification.error'), e instanceof Error ? e.message : t('notification.downloadFailed'));
-    }
-  }, [downloadVersion, info, notifyError, success, t, downloadingSet]);
+    navigate(`/download/game/${encodeURIComponent(version.id)}`);
+    setCurrentPath(`/download/game/${encodeURIComponent(version.id)}`);
+  }, [navigate, setCurrentPath]);
 
   const notifyErrorRef = useRef(notifyError);
   notifyErrorRef.current = notifyError;

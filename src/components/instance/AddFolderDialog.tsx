@@ -86,7 +86,7 @@ const AddFolderDialog: React.FC<AddFolderDialogProps> = ({ isOpen, onClose }) =>
       <div className="bg-context-bg border border-border-hover rounded-xl p-6 w-full max-w-lg mx-4 shadow-xl">
         <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
           <FolderOpen className="w-5 h-5" />
-          {t('instances.addFolderTitle', '添加游戏文件夹')}
+          {t('instances.addFolderTitle', '添加游戏目录')}
         </h2>
 
         <div className="space-y-4">

@@ -109,8 +109,8 @@ const InstanceManage: React.FC = () => {
       <div className="p-6 border-b border-border">
         <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-2xl font-bold text-text-primary">实例管理</h1>
-            <p className="text-text-tertiary text-sm">创建、编辑和管理 Minecraft 游戏实例</p>
+            <h1 className="text-2xl font-bold text-text-primary">版本中心</h1>
+            <p className="text-text-tertiary text-sm">管理游戏版本、模组加载器和实例配置</p>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}

@@ -1,5 +1,6 @@
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useState } from 'react';
 import { getSidebarGroups, routes, sidebarMenuItems, type SidebarMenuItem, findRouteByPath, SidebarGroup } from '../../router/config';
 import BaseSidebarLayout from './layouts/BaseSidebarLayout';
 import AccountSidebarContent from './content/AccountSidebarContent';
@@ -10,6 +11,7 @@ import { logger } from '../../helper/logger';
 import { openUrl } from '../../helper/rustInvoke';
 import { useInstanceStore } from '@/stores/instanceStore';
 import { Folder } from 'lucide-react';
+import { ConfirmPopup, useNotification } from '@/components/common';
 
 interface SmartSidebarProps {
   onMenuClick?: (path: string) => void;
@@ -73,6 +75,13 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
   const pagesWithOwnSidebar = ['/account', '/download', '/game-settings', '/instance-list'];
 
   const knownFolders = useInstanceStore(s => s.knownFolders);
+  const removeKnownFolder = useInstanceStore(s => s.removeKnownFolder);
+  const { success, error: notifyError } = useNotification();
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingName, setDeletingName] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   if (pagesWithOwnSidebar.some(path => location.pathname.startsWith(path))) {
     const findMenuItemsByPath = (path: string): { current: SidebarMenuItem | undefined, parent: SidebarMenuItem | undefined } => {
@@ -123,6 +132,41 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
       ...childrenItems.filter(item => item.id !== 'game-folders'),
     ];
 
+    const SYSTEM_FOLDER_IDS = new Set(['default', 'official', 'home-mc']);
+
+    const deletableIds = new Set(
+      folderItems.filter(f => !SYSTEM_FOLDER_IDS.has(f.id.replace('folder-', ''))).map(f => f.id)
+    );
+
+    const handleDeleteFolder = (itemId: string) => {
+      const folderId = itemId.replace('folder-', '');
+      const folder = knownFolders.find(f => f.id === folderId);
+      setDeletingId(itemId);
+      setDeletingName(folder?.name || folderId);
+      setShowDeleteConfirm(true);
+    };
+
+    const handleConfirmDelete = async () => {
+      if (!deletingId) return;
+      setIsDeleting(true);
+      try {
+        const folderId = deletingId.replace('folder-', '');
+        await removeKnownFolder(folderId);
+        success(
+          t('instances.folderRemoved', '目录已移除'),
+          t('instances.folderRemovedMsg', '"{{name}}" 已从列表中移除', { name: deletingName })
+        );
+        setShowDeleteConfirm(false);
+        setDeletingId(null);
+        setDeletingName('');
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : t('notification.error');
+        notifyError(t('instances.removeFolderFailed', '删除失败'), msg);
+      } finally {
+        setIsDeleting(false);
+      }
+    };
+
     return (
       <BaseSidebarLayout>
         <div className="py-8">
@@ -135,8 +179,35 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
             hasChildrenItems={hasChildrenItems}
             groupTitle={currentMenuItem?.title || parentMenuItem?.title || ''}
             groupTitleI18nKey={currentMenuItem?.titleI18nKey || parentMenuItem?.titleI18nKey}
+            onItemDelete={handleDeleteFolder}
+            deletableItemIds={deletableIds}
           />
         </div>
+
+        {showDeleteConfirm && (
+          <ConfirmPopup
+            isOpen={showDeleteConfirm}
+            title={t('instances.confirmRemoveFolder', '删除游戏目录')}
+            message={t('instances.confirmRemoveFolderDesc', '确定要删除目录 "{{name}}" 吗？此操作仅从列表中移除记录，不会删除实际文件。', { name: deletingName })}
+            confirmText={t('common.delete', '删除')}
+            cancelText={t('common.cancel', '取消')}
+            confirmType="danger"
+            showIcon
+            iconType="warning"
+            loading={isDeleting}
+            onConfirm={handleConfirmDelete}
+            onCancel={() => {
+              setShowDeleteConfirm(false);
+              setDeletingId(null);
+              setDeletingName('');
+            }}
+            onClose={() => {
+              setShowDeleteConfirm(false);
+              setDeletingId(null);
+              setDeletingName('');
+            }}
+          />
+        )}
       </BaseSidebarLayout>
     );
   }

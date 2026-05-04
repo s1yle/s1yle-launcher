@@ -45,7 +45,7 @@ export const useInstances = (): UseInstancesReturn => {
     try {
       const data = await scanInstances();
       setInstances(data);
-      logger.info('实例列表加载成功', data.length);
+      logger.info('游戏实例加载成功', data.length);
     } catch (e) {
       const msg = e instanceof Error ? e.message : '加载实例失败';
       setError(msg);

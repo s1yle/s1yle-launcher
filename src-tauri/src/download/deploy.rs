@@ -101,9 +101,9 @@ pub async fn deploy_version_to_instance(
         manifest.libraries.len(), manifest.assets.len(), manifest.natives.len());
 
     let instance_dir = PathBuf::from(&instance_path);
-    // 部署目标：{instance_path}/{version_name}/
-    // 直接在实例目录下创建版本文件夹
-    let version_base_dir = instance_dir.join(&version_name);
+    // ✅ 修复：部署目标：{instance_path}/versions/{version_name}/
+    let versions_dir = instance_dir.join("versions");
+    let version_base_dir = versions_dir.join(&version_name);
     let libraries_dir = version_base_dir.join("libraries");
     let assets_dir = version_base_dir.join("assets");
     let natives_dir = version_base_dir.join("natives");
@@ -112,6 +112,7 @@ pub async fn deploy_version_to_instance(
 
     log_info!("目标目录：");
     log_info!("  实例根目录：{:?}", instance_dir);
+    log_info!("  versions 目录：{:?}", versions_dir);
     log_info!("  版本根目录：{:?}", version_base_dir);
     log_info!("  libraries: {:?}", libraries_dir);
     log_info!("  assets: {:?}", assets_dir);
@@ -119,6 +120,7 @@ pub async fn deploy_version_to_instance(
     log_info!("  indexes: {:?}", indexes_dir);
     log_info!("  objects: {:?}", objects_dir);
 
+    fs::create_dir_all(&versions_dir).map_err(|e| format!("创建 versions 目录失败：{}", e))?;
     fs::create_dir_all(&version_base_dir).map_err(|e| format!("创建版本目录失败：{}", e))?;
     fs::create_dir_all(&libraries_dir).map_err(|e| format!("创建 libraries 目录失败：{}", e))?;
     fs::create_dir_all(&assets_dir).map_err(|e| format!("创建 assets 目录失败：{}", e))?;
@@ -312,15 +314,30 @@ pub async fn download_and_deploy(
     let version_detail = get_version_detail(options.version_id.clone()).await?;
     let manifest = parse_version_downloads(&version_detail).await?;
 
-    let total_files = manifest.libraries.len() + manifest.assets.len() + manifest.natives.len();
-    let mut completed = 0usize;
     let dm = download_manager.inner();
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(300))
         .build()
         .map_err(|e| format!("创建 HTTP 客户端失败: {}", e))?;
 
-    for lib in &manifest.libraries {
+    let total_libraries = manifest.libraries.len();
+    let total_assets = manifest.assets.len();
+    let total_natives = manifest.natives.len();
+    let has_client_jar = manifest.client_jar.is_some();
+    let mut completed = 0usize;
+    let total_files = total_libraries + total_assets + total_natives + if has_client_jar { 1 } else { 0 };
+
+    app_handle.emit("deploy-status", serde_json::json!({
+        "phase": "downloading",
+        "progress": 0,
+        "total": total_files
+    })).ok();
+
+    log_info!("开始下载: libraries={}, assets={}, natives={}, client_jar={}", 
+        total_libraries, total_assets, total_natives, has_client_jar);
+
+    // ====== Phase 1: 下载所有库文件 ======
+    for (idx, lib) in manifest.libraries.iter().enumerate() {
         let dest_path = dm.get_version_download_path(&options.version_id).join(&lib.path);
         if let Some(parent) = dest_path.parent() {
             std::fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {}", e))?;
@@ -336,11 +353,98 @@ pub async fn download_and_deploy(
 
             let data = response.bytes().await.map_err(|e| format!("读取响应体失败: {}", e))?;
             std::fs::write(&dest_path, &data).map_err(|e| format!("写入文件失败: {}", e))?;
+            
+            log_info!("[{}/{}] 已下载: {}", idx + 1, total_libraries, lib.path);
         }
         
         completed += 1;
         app_handle.emit("deploy-progress", serde_json::json!({
-            "current": completed, "total": total_files, "file": &lib.path
+            "current": completed, "total": total_files, "file": &lib.path,
+            "phase": "downloading_libraries"
+        })).ok();
+    }
+
+    // ====== Phase 2: 下载资源文件 ======
+    for (idx, asset) in manifest.assets.iter().enumerate() {
+        let dest_path = dm.get_version_download_path(&options.version_id).join(&asset.path);
+        if let Some(parent) = dest_path.parent() {
+            std::fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {}", e))?;
+        }
+        
+        if !dest_path.exists() {
+            let response = client.get(&asset.url)
+                .send()
+                .await
+                .map_err(|e| format!("下载资源失败 [{}]: {}", asset.url, e))?
+                .error_for_status()
+                .map_err(|e| format!("HTTP 错误 [{}]: {}", asset.url, e))?;
+
+            let data = response.bytes().await.map_err(|e| format!("读取响应体失败: {}", e))?;
+            std::fs::write(&dest_path, &data).map_err(|e| format!("写入文件失败: {}", e))?;
+            
+            log_info!("[{}/{}] 已下载资源: {}", idx + 1, total_assets, asset.path);
+        }
+        
+        completed += 1;
+        app_handle.emit("deploy-progress", serde_json::json!({
+            "current": completed, "total": total_files, "file": &asset.path,
+            "phase": "downloading_assets"
+        })).ok();
+    }
+
+    // ====== Phase 3: 下载原生库 ======
+    for (idx, native) in manifest.natives.iter().enumerate() {
+        let dest_path = dm.get_version_download_path(&options.version_id).join(&native.path);
+        if let Some(parent) = dest_path.parent() {
+            std::fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {}", e))?;
+        }
+        
+        if !dest_path.exists() {
+            let response = client.get(&native.url)
+                .send()
+                .await
+                .map_err(|e| format!("下载原生库失败 [{}]: {}", native.url, e))?
+                .error_for_status()
+                .map_err(|e| format!("HTTP 错误 [{}]: {}", native.url, e))?;
+
+            let data = response.bytes().await.map_err(|e| format!("读取响应体失败: {}", e))?;
+            std::fs::write(&dest_path, &data).map_err(|e| format!("写入文件失败: {}", e))?;
+            
+            log_info!("[{}/{}] 已下载原生库: {}", idx + 1, total_natives, native.path);
+        }
+        
+        completed += 1;
+        app_handle.emit("deploy-progress", serde_json::json!({
+            "current": completed, "total": total_files, "file": &native.path,
+            "phase": "downloading_natives"
+        })).ok();
+    }
+
+    // ====== Phase 4: 下载客户端 jar ======
+    if let Some(ref client_jar) = manifest.client_jar {
+        let dest_path = dm.get_version_download_path(&options.version_id).join(&client_jar.path);
+        if let Some(parent) = dest_path.parent() {
+            std::fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {}", e))?;
+        }
+
+        if !dest_path.exists() {
+            let response = client.get(&client_jar.url)
+                .send()
+                .await
+                .map_err(|e| format!("下载客户端jar失败 [{}]: {}", client_jar.url, e))?
+                .error_for_status()
+                .map_err(|e| format!("HTTP 错误 [{}]: {}", client_jar.url, e))?;
+
+            let data = response.bytes().await.map_err(|e| format!("读取响应体失败: {}", e))?;
+            std::fs::write(&dest_path, &data).map_err(|e| format!("写入文件失败: {}", e))?;
+
+            log_info!("已下载客户端 jar: {}", client_jar.path);
+        }
+
+        completed += 1;
+        app_handle.emit("deploy-progress", serde_json::json!({
+            "current": completed, "total": total_files, "file": &client_jar.path,
+            "phase": "downloading_client"
         })).ok();
     }
 
@@ -436,13 +540,26 @@ async fn deploy_version_internal(
     log_info!("下载清单：libraries={}, assets={}, natives={}",
         manifest.libraries.len(), manifest.assets.len(), manifest.natives.len());
 
-    let version_base_dir = instance_path.join(&version_name);
+    // ✅ 修复：部署到正确的目录结构 {instance_path}/versions/{version_name}/
+    let versions_dir = instance_path.join("versions");
+    let version_base_dir = versions_dir.join(&version_name);
     let libraries_dir = version_base_dir.join("libraries");
     let assets_dir = version_base_dir.join("assets");
     let natives_dir = version_base_dir.join("natives");
     let indexes_dir = version_base_dir.join("indexes");
     let objects_dir = version_base_dir.join("objects");
 
+    log_info!("目标目录：");
+    log_info!("  实例根目录：{:?}", instance_path);
+    log_info!("  versions 目录：{:?}", versions_dir);
+    log_info!("  版本根目录：{:?}", version_base_dir);
+    log_info!("  libraries: {:?}", libraries_dir);
+    log_info!("  assets: {:?}", assets_dir);
+    log_info!("  natives: {:?}", natives_dir);
+    log_info!("  indexes: {:?}", indexes_dir);
+    log_info!("  objects: {:?}", objects_dir);
+
+    fs::create_dir_all(&versions_dir).map_err(|e| format!("创建 versions 目录失败：{}", e))?;
     fs::create_dir_all(&version_base_dir).map_err(|e| format!("创建版本目录失败：{}", e))?;
     fs::create_dir_all(&libraries_dir).map_err(|e| format!("创建 libraries 目录失败：{}", e))?;
     fs::create_dir_all(&assets_dir).map_err(|e| format!("创建 assets 目录失败：{}", e))?;

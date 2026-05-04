@@ -161,9 +161,9 @@ const Hint = () => {
             </div>
 
 
-            {/* 实例管理功能说明 */}
+            {/* 版本中心功能说明 */}
             <div className="mt-8 pt-8 border-t border-border-hover">
-                <h3 className="text-xl font-bold text-text-primary mb-4">实例管理功能规划</h3>
+                <h3 className="text-xl font-bold text-text-primary mb-4">版本中心功能规划</h3>
                 <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-text-secondary">
                 <li>• 创建自定义游戏实例</li>
                 <li>• 导入/导出实例配置</li>
@@ -175,9 +175,9 @@ const Hint = () => {
             </div>
 
 
-            {/* 实例列表功能说明 */}
+            {/* 游戏实例功能说明 */}
             <div className="mt-8 pt-8 border-t border-border-hover">
-                <h3 className="text-xl font-bold text-text-primary mb-4">实例列表功能规划</h3>
+                <h3 className="text-xl font-bold text-text-primary mb-4">游戏实例功能规划</h3>
                 <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-text-secondary">
                 <li>• 快速启动游戏实例</li>
                 <li>• 实例状态监控</li>

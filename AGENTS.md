@@ -430,8 +430,11 @@ s1yle-launcher/
 | `get_instances_path`  | `getInstancesPath` | -                                                              | `string`               |
 | `scan_known_mc_paths` | `scanKnownMcPaths` | -                                                              | `KnownPath[]`          |
 | `add_known_path`      | `addKnownPath`     | `path`                                                         | `KnownPath`            |
+| `remove_known_path`   | `removeKnownPath`  | `id`                                                           | `void`                 |
 | `open_folder`         | `openFolder`       | `path`                                                         | `string`               |
 | `open_url`            | `openUrl`          | `url`                                                          | `string`               |
+
+> **注意**: `remove_known_path` 不限制任何目录的删除（包括系统内置的 `default`、`official`、`home-mc`），前端通过 `SYSTEM_FOLDER_IDS` 过滤来控制是否显示删除按钮。
 
 ### 5.6 配置管理 (config/)
 
@@ -582,6 +585,28 @@ interface SidebarMenuItem {
   children?: SidebarMenuItem[];
 }
 ```
+
+**BaseChildrenContent 组件 Props**（侧边栏子项渲染器）：
+
+```typescript
+interface BaseChildrenContentProps {
+  items: SidebarMenuItem[];                    // 菜单项列表
+  onMenuClick?: (item: SidebarMenuItem) => void;  // 点击回调
+  isActive?: (path: string) => boolean;        // 当前路径匹配
+  isItemActive?: (id: string) => boolean;      // 当前选中项 ID 匹配（用于高亮）
+  isParentActive?: (path: string) => boolean;   // 父级激活状态
+  hasChildrenItems?: (item: SidebarMenuItem) => boolean;  // 是否有子项
+  groupTitle?: string;                         // 分组标题
+  groupTitleI18nKey?: string;                  // 分组标题 i18n key
+  onItemDelete?: (itemId: string) => void;     // 删除回调（可选）
+  deletableItemIds?: Set<string>;              // 可删除的 item ID 集合
+}
+```
+
+> **删除功能说明**: `BaseChildrenContent` 支持两种删除交互方式：
+> - **Hover 删除按钮**: 可删除项在 hover 时显示 `Trash2` 图标按钮，点击触发 `onItemDelete`
+> - **右键上下文菜单**: 可删除项支持右键弹出菜单，包含"删除游戏目录"选项
+> - 系统内置目录（`default`、`official`、`home-mc`）通过 `deletableItemIds` 排除，不显示删除入口
 
 ### 6.5 主题相关
 
@@ -805,8 +830,8 @@ enum SidebarGroup {
 - `/account` - 账户列表
 - `/account/microsoft` - 微软账号
 - `/account/offline` - 离线账号
-- `/instance-manage` - 实例管理
-- `/instance-list` - 实例列表（带独立二级侧边栏）
+- `/instance-manage` - 版本中心（原"实例管理"，管理具体游戏版本）
+- `/instance-list` - 游戏实例（原"实例列表"，带独立二级侧边栏，展示游戏目录下的实例）
 - `/download` - 下载
 - `/download/game` - 游戏下载
 - `/download/modpack` - 整合包下载
@@ -819,6 +844,14 @@ enum SidebarGroup {
 - `/multiplayer` - 多人联机
 - `/feedback` - 反馈
 - `/hint` - 启动器说明
+
+> **术语对照表**:
+>
+| 旧术语 | 新术语 | 说明 |
+|--------|--------|------|
+| 游戏文件夹 | **游戏目录** | 指不同的 `{base}` 路径 |
+| 实例列表 | **游戏实例** | 指 `{base}/minecraft/{daemon_name}` 中的实例 |
+| 实例管理 | **版本中心** | 管理具体的游戏版本，显示版本图标 |
 
 **侧边栏菜单项** (`SidebarMenuItem`) 使用 lucide-react 图标组件（`ReactNode`），不再使用 emoji 字符串。每个菜单项包含 `titleI18nKey` 用于国际化。
 
@@ -1029,6 +1062,10 @@ pnpm tauri build
 - 微交互：按压缩放、图标悬停弹簧、交错入场、Chevron 旋转 ✅
 - 左侧激活色条 + focus-visible 键盘导航反馈 ✅
 - 上下文切换模式（侧边栏随页面变化） ✅
+- **右键菜单**: 可删除项支持 `onContextMenu` 弹出上下文菜单，ESC/点击外部自动关闭 ✅
+- **Hover 删除按钮**: 可删除项 hover 时显示 `Trash2` 图标按钮，`opacity` 过渡动画 ✅
+- **删除确认弹框**: SmartSidebar 集成 `ConfirmPopup`，删除前弹出确认对话框 ✅
+- **系统目录保护**: `default`/`official`/`home-mc` 不显示删除入口，通过 `deletableItemIds` Set 控制 ✅
 
 ### 12.9 实例系统
 
@@ -1036,6 +1073,10 @@ pnpm tauri build
 - 已知文件夹扫描（daemon + 官方启动器 + 主目录） ✅
 - 选中文件夹持久化到 localStorage ✅
 - 实例列表根据选中文件夹过滤 ✅
+- **自动设默认**: 点击游戏目录项时，`setSelectedFolder` 自动调用 `setDefaultFolder` 将该目录设为默认，无需手动操作 ⭐图标 ✅
+- **侧边栏删除**: 游戏目录的删除按钮从 Instance 页面头部移至侧边栏每个目录项上，支持 hover 按钮和右键菜单两种方式 ✅
+- **Instance.tsx 精简**: 移除了删除相关代码（Trash2 按钮、ConfirmPopup、showDeleteConfirm 状态），删除逻辑统一在 SmartSidebar 中处理 ✅
+- **版本图标显示**: InstanceCard 和 InstanceListItem 集成 `LoaderIcon` 组件，根据 `loader_type` 显示 Fabric/Forge/NeoForge 图标 ✅
 
 ***
 
@@ -1054,5 +1095,9 @@ pnpm tauri build
 - 实例目录位于 `{base}/minecraft/{name}/versions/{version}/`，无 instance.json 元数据文件
 - 配色必须使用 CSS 变量语义化类名，禁止硬编码 `bg-white/XX`、`text-white/XX` 等
 - **配置管理**: 更新配置时必须使用 `ConfigManager.update_value()` 增量更新，**禁止**使用 `update_config()` 完整覆盖，否则会导致配置丢失
-- **APP\_HANDLE**: 可通过 `APP_HANDLE.get().state::<ConfigManager>()` 获取 ConfigManager 实例
+- **APP_HANDLE**: 可通过 `APP_HANDLE.get().state::<ConfigManager>()` 获取 ConfigManager 实例
+- **BASE_PATH**: 使用 `std::env::current_exe().parent()` 获取可执行文件所在目录（非工作目录），确保安装后路径正确指向 SMCL 根目录
+- **游戏目录术语**: 前端统一使用"游戏目录"（指 `{base}` 路径），"游戏实例"（指 `{base}/minecraft/{daemon_name}`），"版本中心"（管理具体游戏版本）
+- **删除功能架构**: 游戏目录删除入口在侧边栏（SmartSidebar → BaseChildrenContent），确认弹框使用 ConfirmPopup，后端 remove_known_path 不做限制，前端通过 SYSTEM_FOLDER_IDS 控制可见性
+- **setSelectedFolder 行为**: 选中游戏目录时自动调用 setDefaultFolder 设为默认，同时更新 knownFolders 的 is_default 字段
 

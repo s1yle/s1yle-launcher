@@ -84,6 +84,22 @@ const InstanceCard: React.FC<InstanceCardProps> = ({
     return parts[parts.length - 1] || path;
   };
 
+  const getInstanceIcon = (): React.ReactNode => {
+    if (instance.icon_path) {
+      return (
+        <img
+          src={`asset://localhost/${instance.icon_path}`}
+          alt={instance.name}
+          className="w-full h-full object-cover rounded-lg"
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = 'none';
+          }}
+        />
+      );
+    }
+    return <Gamepad2 className="w-6 h-6 text-primary" />;
+  };
+
   const handleDoubleClick = () => {
     if (!isRunning && instance.enabled) {
       onLaunch?.();
@@ -136,8 +152,8 @@ const InstanceCard: React.FC<InstanceCardProps> = ({
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <div className="w-10 h-10 bg-primary-bg rounded-lg flex items-center justify-center flex-shrink-0 mr-3">
-          <Gamepad2 className="w-5 h-5 text-primary" />
+        <div className="w-10 h-10 bg-primary-bg rounded-lg flex items-center justify-center flex-shrink-0 mr-3 overflow-hidden">
+          {getInstanceIcon()}
         </div>
 
         <div className="flex-1 min-w-0">
@@ -213,8 +229,8 @@ const InstanceCard: React.FC<InstanceCardProps> = ({
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="flex items-start gap-3">
-        <div className="w-12 h-12 bg-primary-bg rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-500/30 transition-colors">
-          <Gamepad2 className="w-6 h-6 text-primary" />
+        <div className="w-12 h-12 bg-primary-bg rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-500/30 transition-colors overflow-hidden">
+          {getInstanceIcon()}
         </div>
 
         <div className="flex-1 min-w-0">

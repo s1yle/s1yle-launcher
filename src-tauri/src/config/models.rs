@@ -6,9 +6,14 @@ use serde::{Deserialize, Serialize};
 /// # 配置文件版本
 pub const CONFIG_VERSION: u32 = 1;
 
-/// # BASE_PATH
+/// # BASE_PATH (使用 exe 所在目录而非当前工作目录)
 pub static BASE_PATH: Lazy<PathBuf> =
-    Lazy::new(|| std::env::current_dir().unwrap_or(PathBuf::from("")));
+    Lazy::new(|| {
+        std::env::current_exe()
+            .ok()
+            .and_then(|p| p.parent().map(|d| d.to_path_buf()))
+            .unwrap_or_else(|| PathBuf::from(""))
+    });
 
 /// # minecraft 根目录
 pub static DEAMON_BASE_PATH: Lazy<PathBuf> = Lazy::new(|| BASE_PATH.join("minecraft"));
