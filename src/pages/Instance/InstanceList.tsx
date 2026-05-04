@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { listen } from '@tauri-apps/api/event';
 import { Loader2, Search, X } from 'lucide-react';
 import { useInstanceStore } from '../../stores/instanceStore';
 import { openFolder } from '../../helper/rustInvoke';
@@ -10,6 +12,7 @@ import { logger } from '@/helper/logger';
 
 const InstanceList: React.FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const selectedFolderId = useInstanceStore(s => s.selectedFolderId);
   const knownFolders = useInstanceStore(s => s.knownFolders);
   const selectedInstanceId = useInstanceStore(s => s.selectedInstanceId);
@@ -40,6 +43,19 @@ const InstanceList: React.FC = () => {
   const [duplicateName, setDuplicateName] = useState('');
 
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+
+  useEffect(() => {
+    const unlisten = listen('deploy-complete', async (event) => {
+      if ((event.payload as any).status === 'success') {
+        logger.info('下载完成，刷新实例列表');
+        await refresh();
+      }
+    });
+
+    return () => {
+      unlisten.then(fn => fn());
+    };
+  }, [refresh]);
 
   const handleDuplicate = (id: string) => {
     const instance = instances.find((i) => i.id === id);
@@ -81,8 +97,8 @@ const InstanceList: React.FC = () => {
 
   const handleSelect = (id: string) => {
     setSelectedInstance(id);
+    navigate('/');
   };
-
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(t('instances.confirmDelete', '确定要删除实例 "{{name}}" 吗？', { name }))) return;
@@ -104,10 +120,7 @@ const InstanceList: React.FC = () => {
     }
   };
 
-
-  // 渲染加载动画
   const renderContent = () => {
-    // 优先检查加载状态
     if (loading) {
       console.log('[renderContent] 加载中...', { loading, instances: instances.length });
       return (
@@ -118,7 +131,6 @@ const InstanceList: React.FC = () => {
       );
     }
 
-    // 没有实例时
     if (filteredInstances.length === 0) {
       console.log('[renderContent] 没有实例', { 
         filteredInstances: filteredInstances.length,
@@ -144,9 +156,7 @@ const InstanceList: React.FC = () => {
             instance={instance}
             selected={instance.id === selectedInstanceId}
             onSelect={() => handleSelect(instance.id)}
-            onLaunch={() => { }}
-            onRename={() => { }}
-            onDuplicate={() => handleDuplicate(instance.id)}
+            onRename={() => {}}
             onDelete={() => handleDelete(instance.id, instance.name)}
             onOpenFolder={() => handleOpenFolder(instance.path)}
           />
@@ -155,10 +165,8 @@ const InstanceList: React.FC = () => {
     );
   };
 
-
   return (
     <div className="flex flex-col h-full">
-
       <Instance
         knownFolders={knownFolders}
         selectedFolderId={selectedFolderId}
@@ -178,13 +186,11 @@ const InstanceList: React.FC = () => {
         setDuplicateTargetId={setDuplicateTargetId}
       />
 
-      {/* 底部栏 */}
       <BottomBar
         dir='instances.instanceDir'
         cmdOpen='common.open'
-        path= {currentPath}
+        path={currentPath}
       />
-
     </div>
   );
 };

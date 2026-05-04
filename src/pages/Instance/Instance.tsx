@@ -42,54 +42,9 @@ const Instance: React.FC<InstanceProps> = ({
 
     return (
         <>
-            <div className="p-6 border-b border-border">
-                <div className="flex items-center justify-between mb-4">
-                    <div>
-                        <h1 className="text-2xl font-bold text-text-primary">{t('instances.title', '游戏实例')}</h1>
-                        <p className="text-text-tertiary text-sm">{t('instances.subtitle', '选择和管理 Minecraft 游戏实例')}</p>
-                        {(() => {
-                            const folder = knownFolders.find(f => f.id === selectedFolderId);
-                            return folder ? (
-                                <div className="flex items-center gap-2 mt-1">
-                                    <p className="text-text-tertiary text-xs font-mono truncate max-w-md" title={folder.path}>
-                                        {folder.name} → {folder.path}
-                                    </p>
-                                </div>
-                            ) : null;
-                        })()}
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-4">
-                    <div className="flex-1 relative max-w-md">
-                        <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
-                        <input
-                            ref={searchInputRef}
-                            type="text"
-                            placeholder={t('instances.searchPlaceholder', '搜索实例 (支持名称、版本)...')}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 bg-surface border border-border rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:border-primary transition-colors"
-                        />
-                        {searchQuery && (
-                            <button
-                                onClick={() => { setSearchQuery(''); searchInputRef.current?.focus(); }}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-primary"
-                            >
-                                <X className="w-4 h-4" />
-                            </button>
-                        )}
-                    </div>
-                    <span className="text-text-tertiary text-sm whitespace-nowrap">
-                        {filteredInstances.length} / {instances.length} {t('instances.count', '个实例')}
-                    </span>
-                </div>
-            </div>
-
-            <div className="flex-1 overflow-hidden p-6">
+            <div className="flex-1 overflow-hidden">
                 {renderContent()}
             </div>
-
 
             {showDuplicateModal && (
                 <div className="fixed inset-0 bg-overlay flex items-center justify-center z-50">
