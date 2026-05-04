@@ -44,3 +44,40 @@ export const getVersionTypeBgColor = (type: string): string => {
   };
   return colors[type] || 'bg-gray-500';
 };
+
+export const inferVersionType = (versionId: string): string => {
+  const version = versionId.toLowerCase();
+  
+  if (version.includes('infinite') || 
+      version.includes('_or_b') || 
+      version.includes('20w14') ||
+      version.includes('23w13') ||
+      version.includes('3d shareware') ||
+      version.includes('combat') ||
+      version.includes('valentines') ||
+      version.includes('love and hugs')) {
+    return '愚人节版';
+  }
+  
+  if (version.includes('-pre') || version.includes('-rc')) {
+    return '预发布版';
+  }
+  
+  if (version.match(/\d{2}w\d{2}[a-z]/)) {
+    return '快照版';
+  }
+  
+  if (version.match(/^1\.\d+(\.\d+)?$/)) {
+    return '正式版';
+  }
+  
+  if (version.includes('alpha') || version.includes('a1.') || version.includes('a0.')) {
+    return '旧Alpha版';
+  }
+  
+  if (version.includes('beta') || version.includes('b1.')) {
+    return '旧测试版';
+  }
+  
+  return '正式版';
+};

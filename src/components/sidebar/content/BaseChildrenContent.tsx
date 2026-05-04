@@ -64,7 +64,7 @@ const BaseChildrenContent = ({
     }
   };
 
-  const handleContextMenu = (e: MouseEvent, itemId: string) => {
+  const handleContextMenu = (e: React.MouseEvent, itemId: string) => {
     e.preventDefault();
     e.stopPropagation();
     setContextMenu({ id: itemId, x: e.clientX, y: e.clientY });
@@ -127,7 +127,7 @@ const BaseChildrenContent = ({
           }}
           onContextMenu={canDelete ? (e) => handleContextMenu(e, item.id) : undefined}
           className={`
-            w-full flex items-center gap-3 py-2.5 rounded-lg
+            w-full flex items-center gap-3 py-2.5 rounded-lg cursor-pointer
             border-l-[3px] transition-colors duration-200
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--color-bg-secondary)]
             ${active || itemActive

@@ -125,7 +125,7 @@ const BaseSidebarContent = ({
         <motion.button
           onClick={() => handleItemClick(item)}
           className={`
-            w-full flex items-center gap-3 py-2.5 rounded-lg
+            w-full flex items-center gap-3 py-2.5 rounded-lg cursor-pointer
             border-l-[3px] transition-colors duration-200
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--color-bg-secondary)]
             ${active

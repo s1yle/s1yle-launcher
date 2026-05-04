@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { GameInstance, ModLoaderType } from '../../helper/rustInvoke';
 import {
   Settings,
@@ -7,6 +8,9 @@ import {
   FolderOpen,
   Edit3,
 } from 'lucide-react';
+import ContextMenu, { useContextMenu, ContextMenuItemData } from './ContextMenu';
+import { listItem, transitions } from '../../utils/animations';
+import { inferVersionType } from '../../utils/format';
 
 interface InstanceListItemProps {
   instance: GameInstance;
@@ -18,6 +22,7 @@ interface InstanceListItemProps {
   onDelete?: () => void;
   onOpenFolder?: () => void;
   onSettings?: () => void;
+  index?: number;
 }
 
 const getLoaderLabel = (type: ModLoaderType): string => {
@@ -48,13 +53,14 @@ const InstanceListItem: React.FC<InstanceListItemProps> = ({
   onOpenFolder,
   onRename,
   onSettings,
+  index = 0,
 }) => {
   const navigate = useNavigate();
-  const [showContextMenu, setShowContextMenu] = useState(false);
-  const [contextMenuPos, setContextMenuPos] = useState({ x: 0, y: 0 });
   const [iconSrc, setIconSrc] = useState<string | null>(null);
   const [iconError, setIconError] = useState(false);
-  const contextMenuRef = useRef<HTMLDivElement>(null);
+  const [isHovered, setIsHovered] = useState(false);
+  
+  const { contextMenuState, showContextMenu, hideContextMenu } = useContextMenu();
 
   useEffect(() => {
     const loadIcon = async () => {
@@ -89,34 +95,12 @@ const InstanceListItem: React.FC<InstanceListItemProps> = ({
     loadIcon();
   }, [instance]);
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
-        setShowContextMenu(false);
-      }
-    };
-    if (showContextMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showContextMenu]);
-
   const handleClick = () => {
     onSelect?.();
   };
 
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setContextMenuPos({ x: e.clientX, y: e.clientY });
-    setShowContextMenu(true);
-  };
-
-  const handleContextAction = (action: string) => {
-    setShowContextMenu(false);
-    switch (action) {
+  const handleContextMenuAction = (id: string) => {
+    switch (id) {
       case 'settings':
         onSettings?.();
         navigate(`/instance/${instance.id}/settings`);
@@ -127,19 +111,41 @@ const InstanceListItem: React.FC<InstanceListItemProps> = ({
     }
   };
 
+  const contextMenuItems: ContextMenuItemData[] = [
+    { id: 'settings', label: '实例管理', icon: Settings },
+    { id: 'divider1', label: '', divider: true },
+    { id: 'rename', label: '重命名', icon: Edit3 },
+    { id: 'delete', label: '删除', icon: Trash2, danger: true },
+    { id: 'divider2', label: '', divider: true },
+    { id: 'openFolder', label: '打开所在文件夹', icon: FolderOpen },
+  ];
+
   return (
     <>
-      <div
+      <motion.div
+        variants={listItem}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        whileHover="hover"
+        whileTap="tap"
+        transition={{ ...transitions.normal, delay: index * 0.03 }}
         className={`flex items-center px-4 py-3 cursor-pointer transition-all border-l-4 ${
           selected
-            ? 'bg-primary/15 border-l-primary shadow-md'
-            : 'bg-surface hover:bg-surface-hover border-l-transparent'
+            ? 'bg-primary/25 border-l-primary shadow-lg shadow-primary/25'
+            : 'bg-surface-hover border-l-transparent hover:bg-surface-active'
         }`}
         onClick={handleClick}
-        onContextMenu={handleContextMenu}
+        onContextMenu={showContextMenu}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
-        <div className="flex-shrink-0 mr-4">
-          <div className="w-12 h-12 rounded-lg overflow-hidden bg-primary-bg flex items-center justify-center">
+        <motion.div 
+          className="flex-shrink-0 mr-4"
+          whileHover={{ scale: 1.1, rotate: 5 }}
+          transition={transitions.spring}
+        >
+          <div className="w-12 h-12 rounded-lg overflow-hidden bg-primary-bg flex items-center justify-center shadow-md">
             {iconSrc && !iconError ? (
               <img
                 src={iconSrc}
@@ -153,30 +159,50 @@ const InstanceListItem: React.FC<InstanceListItemProps> = ({
               </div>
             )}
           </div>
-        </div>
+        </motion.div>
 
         <div className="flex-1 min-w-0 mr-4">
-          <h3 className="text-text-primary font-medium truncate text-base">{instance.name}</h3>
-          <p className="text-text-tertiary text-sm truncate">
-            {instance.version}
+          <motion.h3 
+            className="text-text-primary font-medium truncate text-base"
+            animate={{ x: isHovered ? 4 : 0 }}
+            transition={transitions.fast}
+          >
+            {instance.name}
+          </motion.h3>
+          <div className="flex items-center gap-2 text-text-tertiary text-sm">
+            <span className="px-2 py-0.5 rounded text-xs bg-surface-active text-text-secondary">
+              {inferVersionType(instance.version)}
+            </span>
+            <span>{instance.version}</span>
             {instance.loader_type !== ModLoaderType.Vanilla && (
-              <span className="ml-2 px-2 py-0.5 rounded text-xs bg-primary-bg text-primary">
+              <motion.span 
+                className="px-2 py-0.5 rounded text-xs bg-primary-bg text-primary"
+                whileHover={{ scale: 1.05 }}
+              >
                 {getLoaderLabel(instance.loader_type)}
                 {instance.loader_version && ` ${instance.loader_version}`}
-              </span>
+              </motion.span>
             )}
-          </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <button
+        <motion.div 
+          className="flex items-center gap-2 flex-shrink-0"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: isHovered ? 1 : 0.7, x: 0 }}
+          transition={transitions.fast}
+        >
+          <motion.button
             onClick={(e) => { e.stopPropagation(); onDelete?.(); }}
             className="p-2 rounded-lg hover:bg-error-bg text-text-tertiary hover:text-error transition-colors"
             title="删除"
+            whileHover={{ scale: 1.15, rotate: -5 }}
+            whileTap={{ scale: 0.9 }}
+            transition={transitions.spring}
           >
             <Trash2 className="w-4 h-4" />
-          </button>
-          <button
+          </motion.button>
+          <motion.button
             onClick={(e) => {
               e.stopPropagation();
               onSettings?.();
@@ -184,51 +210,22 @@ const InstanceListItem: React.FC<InstanceListItemProps> = ({
             }}
             className="p-2 rounded-lg hover:bg-primary-bg text-text-tertiary hover:text-primary transition-colors"
             title="设置"
+            whileHover={{ scale: 1.15, rotate: 5 }}
+            whileTap={{ scale: 0.9 }}
+            transition={transitions.spring}
           >
             <Settings className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+          </motion.button>
+        </motion.div>
+      </motion.div>
 
-      {showContextMenu && (
-        <div
-          ref={contextMenuRef}
-          className="fixed z-50 bg-context-bg border border-context-border rounded-lg shadow-xl py-1 min-w-[180px]"
-          style={{ left: contextMenuPos.x, top: contextMenuPos.y }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            onClick={() => handleContextAction('settings')}
-            className="w-full px-3 py-2 text-left text-sm flex items-center gap-2 text-text-secondary hover:bg-surface-hover"
-          >
-            <Settings className="w-4 h-4" />
-            <span>实例管理</span>
-          </button>
-          <div className="my-1 border-t border-border" />
-          <button
-            onClick={() => handleContextAction('rename')}
-            className="w-full px-3 py-2 text-left text-sm flex items-center gap-2 text-text-secondary hover:bg-surface-hover"
-          >
-            <Edit3 className="w-4 h-4" />
-            <span>重命名</span>
-          </button>
-          <button
-            onClick={() => handleContextAction('delete')}
-            className="w-full px-3 py-2 text-left text-sm flex items-center gap-2 text-error hover:bg-error-bg"
-          >
-            <Trash2 className="w-4 h-4" />
-            <span>删除</span>
-          </button>
-          <div className="my-1 border-t border-border" />
-          <button
-            onClick={() => handleContextAction('openFolder')}
-            className="w-full px-3 py-2 text-left text-sm flex items-center gap-2 text-text-secondary hover:bg-surface-hover"
-          >
-            <FolderOpen className="w-4 h-4" />
-            <span>打开所在文件夹</span>
-          </button>
-        </div>
-      )}
+      <ContextMenu
+        items={contextMenuItems}
+        position={contextMenuState.position}
+        visible={contextMenuState.visible}
+        onClose={hideContextMenu}
+        onItemClick={handleContextMenuAction}
+      />
     </>
   );
 };

@@ -197,6 +197,313 @@ export const useFeature = () => {
 - 7 种强调色可独立切换，通过 `--color-primary` 等变量映射
 - 主题类名通过 `document.documentElement.classList` 切换
 
+### 3.8 UI 设计风格统一规范
+
+#### 3.8.1 设计理念
+
+**核心原则**：简洁、现代、和谐、流畅
+
+- **简洁**：去除冗余装饰，专注核心功能
+- **现代**：采用现代设计语言，圆角、阴影、渐变
+- **和谐**：色彩搭配协调，视觉层次分明
+- **流畅**：动画过渡自然，交互反馈及时
+
+#### 3.8.2 色彩系统
+
+**背景色层级**：
+
+| 层级 | CSS 变量 | 用途 | 示例 |
+|------|---------|------|------|
+| 主背景 | `--bg-base` | 页面主背景 | `#0f0f12` (暗色) |
+| 表面层 | `--bg-surface` | 卡片、列表项背景 | `#1a1a1f` |
+| 悬浮层 | `--bg-surface-hover` | 悬浮状态背景 | `#242429` |
+| 激活层 | `--bg-surface-active` | 激活/选中状态 | `#2a2a30` |
+
+**强调色系统**：
+
+- 主色（Primary）：`--color-primary` - 主要操作、选中状态
+- 成功（Success）：`--color-success` - 成功状态、已安装
+- 警告（Warning）：`--color-warning` - 警告提示
+- 错误（Error）：`--color-error` - 错误状态、危险操作
+
+**列表项背景规范**：
+
+```css
+/* 未选中状态 */
+background: var(--bg-surface-hover);  /* 不透明，略深于背景 */
+
+/* 悬浮状态 */
+background: var(--bg-surface-active);  /* 更深一层 */
+
+/* 选中状态 */
+background: rgba(var(--color-primary-rgb), 0.25);  /* 主色半透明 */
+box-shadow: 0 10px 30px rgba(var(--color-primary-rgb), 0.25);
+```
+
+#### 3.8.3 边框与圆角
+
+**边框规范**：
+
+- **无边框设计**：列表项、卡片采用无边框或极淡边框
+- **选中指示**：使用左侧彩色边框（`border-left: 4px solid`）而非四周边框
+- **分隔线**：使用 `border-top/bottom` 而非 `border`，颜色为 `--border-color`
+
+**圆角规范**：
+
+| 元素类型 | 圆角大小 | Tailwind 类 |
+|---------|---------|------------|
+| 小按钮、标签 | 4px | `rounded` |
+| 按钮、输入框 | 8px | `rounded-lg` |
+| 卡片、列表项 | 8px | `rounded-lg` |
+| 弹窗、面板 | 12px | `rounded-xl` |
+| 大型容器 | 16px | `rounded-2xl` |
+
+#### 3.8.4 阴影系统
+
+**阴影层级**：
+
+```css
+/* 轻微阴影 - 悬浮状态 */
+box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+/* 中等阴影 - 卡片、列表项 */
+box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+/* 强调阴影 - 选中状态 */
+box-shadow: 0 10px 30px rgba(var(--color-primary-rgb), 0.25);
+
+/* 弹窗阴影 */
+box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+```
+
+#### 3.8.5 动画系统
+
+**动画配置文件**：`src/utils/animations.ts`
+
+**过渡时间**：
+
+| 类型 | 时长 | 使用场景 |
+|------|------|---------|
+| fast | 0.15s | 快速反馈（按钮悬浮） |
+| normal | 0.25s | 常规过渡（列表项展开） |
+| slow | 0.4s | 慢速过渡（页面切换） |
+| spring | 弹性 | 弹跳效果（按钮点击） |
+
+**动画类型**：
+
+1. **淡入淡出**：`fadeIn`, `fadeInUp`, `fadeInScale`
+2. **滑动**：`slideInLeft`, `slideInRight`
+3. **缩放**：`scaleIn`, `cardHover`
+4. **交错**：`staggerContainer`, `staggerItem`
+
+**列表项动画规范**：
+
+```typescript
+// 入场动画
+variants={listItem}
+initial="initial"
+animate="animate"
+exit="exit"
+
+// 交互动画
+whileHover="hover"  // 悬浮放大 1.02 倍
+whileTap="tap"      // 点击缩小 0.98 倍
+
+// 交错延迟
+transition={{ delay: index * 0.02 }}
+```
+
+#### 3.8.6 组件设计规范
+
+**列表项（InstanceListItem, VersionListItem）**：
+
+```tsx
+// 背景色
+未选中: bg-surface-hover
+悬浮: hover:bg-surface-active
+选中: bg-primary/25
+
+// 边框
+未选中: 无边框或左侧透明边框
+选中: 左侧主色边框（border-l-4 border-l-primary）
+
+// 阴影
+未选中: 无阴影
+悬浮: hover:shadow-lg
+选中: shadow-lg shadow-primary/25
+
+// 动画
+入场: 从左侧滑入 + 淡入
+悬浮: 放大 1.02 倍 + 图标旋转
+点击: 缩小 0.98 倍
+```
+
+**卡片（VersionCard, InstanceCard）**：
+
+```tsx
+// 背景
+未选中: bg-surface
+悬浮: hover:bg-surface-hover
+
+// 边框
+未选中: border border-border
+悬浮: hover:border-primary/50
+选中: border-primary
+
+// 阴影
+未选中: 无阴影
+悬浮: hover:shadow-lg hover:shadow-primary/10
+选中: shadow-lg shadow-primary/10
+
+// 动画
+悬浮: 上浮 4px + 放大 1.02 倍
+点击: 缩小 0.98 倍
+```
+
+**按钮**：
+
+```tsx
+// 主按钮
+bg-primary hover:bg-primary-hover
+shadow-md hover:shadow-lg
+whileHover={{ scale: 1.05, y: -2 }}
+whileTap={{ scale: 0.95 }}
+
+// 图标按钮
+hover:bg-surface-hover
+whileHover={{ scale: 1.15, rotate: 5 }}
+whileTap={{ scale: 0.9 }}
+```
+
+**右键菜单（ContextMenu）**：
+
+```tsx
+// 背景
+bg-context-bg backdrop-blur-sm
+
+// 边框
+border border-context-border
+
+// 阴影
+shadow-2xl
+
+// 动画
+入场: 淡入 + 缩放 0.95 → 1
+菜单项悬浮: 向右移动 4px
+```
+
+#### 3.8.7 间距系统
+
+**内边距（Padding）**：
+
+| 元素类型 | 内边距 | Tailwind 类 |
+|---------|--------|------------|
+| 列表项 | 12px 16px | `px-4 py-3` |
+| 卡片 | 16px | `p-4` |
+| 按钮（小） | 6px 12px | `px-3 py-1.5` |
+| 按钮（中） | 8px 16px | `px-4 py-2` |
+| 按钮（大） | 12px 24px | `px-6 py-3` |
+
+**外边距（Margin）**：
+
+| 元素关系 | 间距 | Tailwind 类 |
+|---------|------|------------|
+| 列表项之间 | 0px（紧贴） | 无 |
+| 卡片之间 | 16px | `gap-4` |
+| 组件之间 | 24px | `gap-6` |
+| 区块之间 | 32px | `gap-8` |
+
+#### 3.8.8 图标规范
+
+**图标大小**：
+
+| 场景 | 大小 | Tailwind 类 |
+|------|------|------------|
+| 小图标（标签内） | 12px | `w-3 h-3` |
+| 常规图标 | 16px | `w-4 h-4` |
+| 中等图标 | 20px | `w-5 h-5` |
+| 大图标 | 24px | `w-6 h-6` |
+| 特大图标（空状态） | 64px | `w-16 h-16` |
+
+**图标颜色**：
+
+- 默认：`text-text-secondary`
+- 悬浮：`hover:text-text-primary`
+- 主色：`text-primary`
+- 成功：`text-success`
+- 错误：`text-error`
+
+#### 3.8.9 文字规范
+
+**字体大小**：
+
+| 类型 | 大小 | Tailwind 类 | 用途 |
+|------|------|------------|------|
+| 特大标题 | 24px | `text-2xl` | 页面标题 |
+| 大标题 | 20px | `text-xl` | 区块标题 |
+| 中标题 | 18px | `text-lg` | 卡片标题 |
+| 正文 | 14px | `text-base` | 常规文本 |
+| 小字 | 12px | `text-sm` | 辅助文本 |
+| 极小 | 10px | `text-xs` | 标签、时间 |
+
+**字体颜色**：
+
+- 主文本：`text-text-primary`
+- 次要文本：`text-text-secondary`
+- 辅助文本：`text-text-tertiary`
+- 禁用文本：`text-text-disabled`
+
+#### 3.8.10 状态反馈
+
+**加载状态**：
+
+- 使用 `Loader2` 图标 + `animate-spin`
+- 配合文字提示："加载中..."、"正在扫描..."
+- 使用 `SpinnerOverlay` 覆盖组件
+
+**空状态**：
+
+- 使用 `EmptyState` 组件
+- 图标浮动动画（上下 10px，3秒循环）
+- 文字依次淡入
+- 操作按钮弹出动画
+
+**成功状态**：
+
+- 绿色背景 `bg-success-bg`
+- 绿色边框 `border-success`
+- 绿色图标 `text-success`
+- 弹出动画
+
+**错误状态**：
+
+- 红色背景 `bg-error-bg`
+- 红色边框 `border-error`
+- 红色图标 `text-error`
+- 抖动动画
+
+#### 3.8.11 响应式设计
+
+**断点**：
+
+- 移动端：< 640px (`sm:`)
+- 平板：640px - 1024px (`md:`, `lg:`)
+- 桌面：> 1024px (`xl:`)
+
+**适配策略**：
+
+- 列表项：移动端隐藏次要信息
+- 卡片：移动端单列，桌面多列
+- 侧边栏：移动端可折叠
+
+#### 3.8.12 无障碍设计
+
+- 所有按钮必须有 `title` 或 `aria-label`
+- 图标按钮必须有文字说明
+- 键盘导航支持（Tab、Enter、Escape）
+- 焦点状态明显（`focus-visible:ring-2`）
+- 颜色对比度符合 WCAG AA 标准
+
 ***
 
 ## 4. 目录结构

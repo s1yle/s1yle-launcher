@@ -58,7 +58,7 @@ function VirtualListInner<T>({
     <div
       ref={containerRef}
       onScroll={handleScroll}
-      className={`${className || ''} scrollbar-custom pt-3`}
+      className={`${className || ''} scrollbar-hide-x pt-3`}
       style={{
         height,
         overflow: 'auto',

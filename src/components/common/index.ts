@@ -56,5 +56,8 @@ export type { VirtualListProps } from './VirtualList';
 export { default as IconButton } from './IconButton';
 export type { IconButtonProps } from './IconButton';
 
+export { default as ContextMenu, useContextMenu } from './ContextMenu';
+export type { ContextMenuProps, ContextMenuItemData } from './ContextMenu';
+
 export { default as ConfirmPopup } from '../popup/ConfirmPopup';
 export type { ConfirmPopupProps } from '../popup/ConfirmPopup';

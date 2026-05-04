@@ -1,5 +1,7 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { Inbox, Download, FolderOpen, Search, AlertTriangle, CheckCircle } from 'lucide-react';
+import { fadeInUp, transitions } from '../../utils/animations';
 
 export interface EmptyStateProps {
   icon?: 'default' | 'download' | 'folder' | 'search' | 'error' | 'success';
@@ -29,27 +31,60 @@ const EmptyState: React.FC<EmptyStateProps> = ({
   };
 
   return (
-    <div className={`flex flex-col items-center justify-center py-12 px-4 text-center ${className}`}>
-      <div className="mb-4 opacity-50">
+    <motion.div 
+      className={`flex flex-col items-center justify-center py-12 px-4 text-center ${className}`}
+      variants={fadeInUp}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      transition={transitions.normal}
+    >
+      <motion.div 
+        className="mb-4 opacity-50"
+        animate={{ 
+          y: [0, -10, 0],
+          opacity: [0.5, 0.7, 0.5]
+        }}
+        transition={{ 
+          duration: 3,
+          repeat: Infinity,
+          ease: 'easeInOut'
+        }}
+      >
         {icons[icon]}
-      </div>
-      <h3 className="text-lg font-medium text-text-secondary mb-2">
+      </motion.div>
+      <motion.h3 
+        className="text-lg font-medium text-text-secondary mb-2"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, ...transitions.normal }}
+      >
         {title}
-      </h3>
+      </motion.h3>
       {description && (
-        <p className="text-sm text-text-tertiary mb-4 max-w-sm">
+        <motion.p 
+          className="text-sm text-text-tertiary mb-4 max-w-sm"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, ...transitions.normal }}
+        >
           {description}
-        </p>
+        </motion.p>
       )}
       {action && (
-        <button
+        <motion.button
           onClick={action.onClick}
-          className="px-4 py-2 bg-primary hover:bg-primary-hover text-text-primary text-sm font-medium rounded-lg transition-colors"
+          className="px-4 py-2 bg-primary hover:bg-primary-hover text-text-primary text-sm font-medium rounded-lg transition-colors shadow-md"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3, ...transitions.spring }}
+          whileHover={{ scale: 1.05, y: -2 }}
+          whileTap={{ scale: 0.95 }}
         >
           {action.label}
-        </button>
+        </motion.button>
       )}
-    </div>
+    </motion.div>
   );
 };
 

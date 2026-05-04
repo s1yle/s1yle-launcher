@@ -112,6 +112,34 @@ select {
   display: none;
 }
 
+.scrollbar-hide-x {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.scrollbar-hide-x::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollbar-hide-x::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 4px;
+}
+
+.scrollbar-hide-x::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.4);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.scrollbar-hide-x::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.7);
+}
+
+.scrollbar-hide-x::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 .bg-success {
   background-color: chartreuse;
 }

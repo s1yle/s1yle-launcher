@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { listen } from '@tauri-apps/api/event';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Search, X } from 'lucide-react';
 import { useInstanceStore } from '../../stores/instanceStore';
 import { openFolder } from '../../helper/rustInvoke';
@@ -9,6 +10,7 @@ import { InstanceListItem, EmptyState, useNotification, IconButton } from '../..
 import Instance from './Instance';
 import BottomBar from '@/components/BottomBar/BottomBar';
 import { logger } from '@/helper/logger';
+import { staggerContainer, staggerItem } from '../../utils/animations';
 
 const InstanceList: React.FC = () => {
   const { t } = useTranslation();
@@ -149,19 +151,33 @@ const InstanceList: React.FC = () => {
     console.log('[renderContent] 渲染实例列表', { count: filteredInstances.length });
 
     return (
-      <div className="h-full overflow-y-auto">
-        {filteredInstances.map((instance) => (
-          <InstanceListItem
-            key={instance.id}
-            instance={instance}
-            selected={instance.id === selectedInstanceId}
-            onSelect={() => handleSelect(instance.id)}
-            onRename={() => {}}
-            onDelete={() => handleDelete(instance.id, instance.name)}
-            onOpenFolder={() => handleOpenFolder(instance.path)}
-          />
-        ))}
-      </div>
+      <motion.div 
+        className="h-full overflow-y-auto scrollbar-hide-x"
+        variants={staggerContainer}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+      >
+        <AnimatePresence mode="popLayout">
+          {filteredInstances.map((instance, index) => (
+            <motion.div
+              key={instance.id}
+              variants={staggerItem}
+              layout
+            >
+              <InstanceListItem
+                instance={instance}
+                selected={instance.id === selectedInstanceId}
+                onSelect={() => handleSelect(instance.id)}
+                onRename={() => {}}
+                onDelete={() => handleDelete(instance.id, instance.name)}
+                onOpenFolder={() => handleOpenFolder(instance.path)}
+                index={index}
+              />
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </motion.div>
     );
   };
 
