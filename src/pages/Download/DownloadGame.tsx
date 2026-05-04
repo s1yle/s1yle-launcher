@@ -145,10 +145,6 @@ const DownloadGame: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      <div className="p-4 pb-2 border-b border-border flex-shrink-0">
-        <h1 className="text-2xl font-bold text-text-primary mb-2">{t('download.gameTitle')}</h1>
-        <p className="text-text-tertiary text-sm">{t('download.gameDesc')}</p>
-      </div>
 
       <div className="flex-1 min-h-0 px-0 py-2 overflow-hidden">
         <div className="h-full min-h-0 flex flex-col">
@@ -204,7 +200,7 @@ const DownloadGame: React.FC = () => {
               description={t('download.noVersionDesc')}
             />
           ) : (
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0 px-4">
               <VirtualList
                 items={versionsToShow}
                 height="100%"

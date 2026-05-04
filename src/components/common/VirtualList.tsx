@@ -61,7 +61,8 @@ function VirtualListInner<T>({
       className={`${className || ''} scrollbar-hide-x pt-3`}
       style={{
         height,
-        overflow: 'auto',
+        overflowY: 'auto',
+        overflowX: 'hidden',
         position: 'relative',
         ...style,
       }}

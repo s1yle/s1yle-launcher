@@ -42,7 +42,7 @@ const Instance: React.FC<InstanceProps> = ({
 
     return (
         <>
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-hidden p-4">
                 {renderContent()}
             </div>
 

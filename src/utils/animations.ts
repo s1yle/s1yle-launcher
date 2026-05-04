@@ -1,11 +1,11 @@
 import { Variants, Transition } from 'framer-motion';
 
 export const transitions = {
-  fast: { duration: 0.15, ease: 'easeOut' } as Transition,
-  normal: { duration: 0.25, ease: 'easeOut' } as Transition,
-  slow: { duration: 0.4, ease: 'easeOut' } as Transition,
-  spring: { type: 'spring', stiffness: 400, damping: 25 } as Transition,
-  springBouncy: { type: 'spring', stiffness: 600, damping: 15 } as Transition,
+  fast: { duration: 0.1, ease: 'easeOut' } as Transition,
+  normal: { duration: 0.15, ease: 'easeOut' } as Transition,
+  slow: { duration: 0.25, ease: 'easeOut' } as Transition,
+  spring: { type: 'spring', stiffness: 500, damping: 30 } as Transition,
+  springBouncy: { type: 'spring', stiffness: 700, damping: 20 } as Transition,
 };
 
 export const fadeIn: Variants = {
@@ -54,19 +54,19 @@ export const listItem: Variants = {
   initial: { opacity: 0, x: -20 },
   animate: { opacity: 1, x: 0 },
   exit: { opacity: 0, x: 20 },
-  hover: { scale: 1.02, transition: transitions.fast },
-  tap: { scale: 0.98 },
+  hover: { scale: 1.01, transition: { duration: 0.08 } },
+  tap: { scale: 0.99, transition: { duration: 0.05 } },
 };
 
 export const cardHover: Variants = {
   initial: { scale: 1 },
   hover: { 
-    scale: 1.02, 
-    y: -4,
+    scale: 1.01, 
+    y: -2,
     boxShadow: '0 10px 40px -15px rgba(0, 0, 0, 0.3)',
-    transition: transitions.fast 
+    transition: { duration: 0.1 } 
   },
-  tap: { scale: 0.98 },
+  tap: { scale: 0.99, transition: { duration: 0.05 } },
 };
 
 export const buttonHover: Variants = {

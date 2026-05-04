@@ -7,6 +7,7 @@ import {
   Trash2,
   FolderOpen,
   Edit3,
+  Gamepad2,
 } from 'lucide-react';
 import ContextMenu, { useContextMenu, ContextMenuItemData } from './ContextMenu';
 import { listItem, transitions } from '../../utils/animations';
@@ -132,13 +133,26 @@ const InstanceListItem: React.FC<InstanceListItemProps> = ({
         transition={{ ...transitions.normal, delay: index * 0.03 }}
         className={`flex items-center px-4 py-3 cursor-pointer transition-all border-l-4 ${
           selected
-            ? 'bg-primary/25 border-l-primary shadow-lg shadow-primary/25'
-            : 'bg-surface-hover border-l-transparent hover:bg-surface-active'
+            ? 'border-l-primary shadow-md shadow-primary/15'
+            : 'border-l-transparent hover:shadow-sm'
         }`}
+        style={{
+          backgroundColor: selected ? 'rgba(99, 102, 241, 0.15)' : 'var(--color-surface-solid)',
+        }}
+        onMouseEnter={(e) => {
+          if (!selected) {
+            e.currentTarget.style.backgroundColor = 'rgba(99, 102, 241, 0.1)';
+          }
+          setIsHovered(true);
+        }}
+        onMouseLeave={(e) => {
+          if (!selected) {
+            e.currentTarget.style.backgroundColor = 'var(--color-surface-solid)';
+          }
+          setIsHovered(false);
+        }}
         onClick={handleClick}
         onContextMenu={showContextMenu}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
       >
         <motion.div 
           className="flex-shrink-0 mr-4"
@@ -155,7 +169,7 @@ const InstanceListItem: React.FC<InstanceListItemProps> = ({
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
-                <span className="text-2xl">🎮</span>
+                <Gamepad2 className="w-6 h-6 text-primary" />
               </div>
             )}
           </div>

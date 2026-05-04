@@ -36,6 +36,8 @@ const VersionListItem: React.FC<VersionListItemProps> = ({
   deployProgress,
   index = 0,
 }) => {
+  const [isHovered, setIsHovered] = React.useState(false);
+
   return (
     <motion.div
       variants={listItem}
@@ -48,10 +50,19 @@ const VersionListItem: React.FC<VersionListItemProps> = ({
       className={cn(
         'flex items-center gap-3 p-3 rounded-lg transition-all duration-200',
         installed 
-          ? 'bg-success/10 shadow-md shadow-success/15' 
-          : 'bg-surface-hover hover:bg-surface-active hover:shadow-lg hover:shadow-primary/15'
+          ? 'shadow-sm shadow-success/10' 
+          : 'hover:shadow-sm'
       )}
+      style={{
+        backgroundColor: installed 
+          ? 'rgba(34, 197, 94, 0.08)' 
+          : isHovered 
+            ? 'rgba(99, 102, 241, 0.1)' 
+            : 'var(--color-surface-solid)',
+      }}
       onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <motion.div
         className="w-9 h-9 bg-primary-bg rounded-lg flex items-center justify-center flex-shrink-0 cursor-pointer shadow-sm"

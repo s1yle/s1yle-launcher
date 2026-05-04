@@ -56,7 +56,7 @@ const MainLayout = () => {
           <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} />
         )}
         <main
-          className="flex-1 overflow-auto relative noise-bg gradient-bg scrollbar-custom"
+          className="flex-1 overflow-y-auto overflow-x-hidden relative noise-bg gradient-bg scrollbar-custom"
           style={{ background: 'var(--color-bg-primary)' }}
         >
           <AnimatePresence mode="sync">

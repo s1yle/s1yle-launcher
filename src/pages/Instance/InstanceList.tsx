@@ -152,7 +152,7 @@ const InstanceList: React.FC = () => {
 
     return (
       <motion.div 
-        className="h-full overflow-y-auto scrollbar-hide-x"
+        className="h-full overflow-y-auto scrollbar-hide-x space-y-2"
         variants={staggerContainer}
         initial="initial"
         animate="animate"
