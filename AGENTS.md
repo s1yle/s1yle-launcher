@@ -226,18 +226,39 @@ export const useFeature = () => {
 - 警告（Warning）：`--color-warning` - 警告提示
 - 错误（Error）：`--color-error` - 错误状态、危险操作
 
+**透明度变体系统**：
+
+所有语义色和强调色都支持透明度变体，用于悬浮、选中、背景等场景：
+
+| 变体 | 用途 | 示例 |
+|------|------|------|
+| `-5` | 极淡背景 | `--color-primary-5` |
+| `-8` | 淡背景（成功色专用） | `--color-success-8` |
+| `-10` | 悬浮背景 | `--color-primary-10` |
+| `-15` | 选中背景 | `--color-primary-15` |
+| `-20` | 强调背景、阴影 | `--color-primary-20` |
+
+**使用规范**：
+- 列表项悬浮：`var(--color-primary-10)`
+- 列表项选中：`var(--color-primary-15)`
+- 已安装状态背景：`var(--color-success-8)`
+- 右键菜单悬浮：`var(--color-primary-10)` / `var(--color-error-10)`（危险项）
+
 **列表项背景规范**：
 
 ```css
 /* 未选中状态 */
-background: var(--bg-surface-hover);  /* 不透明，略深于背景 */
+background: var(--color-surface-solid);
 
 /* 悬浮状态 */
-background: var(--bg-surface-active);  /* 更深一层 */
+background: var(--color-primary-10);
 
 /* 选中状态 */
-background: rgba(var(--color-primary-rgb), 0.25);  /* 主色半透明 */
-box-shadow: 0 10px 30px rgba(var(--color-primary-rgb), 0.25);
+background: var(--color-primary-15);
+box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+
+/* 已安装状态 */
+background: var(--color-success-8);
 ```
 
 #### 3.8.3 边框与圆角
@@ -378,19 +399,63 @@ whileTap={{ scale: 0.9 }}
 **右键菜单（ContextMenu）**：
 
 ```tsx
-// 背景
-bg-context-bg backdrop-blur-sm
+// 统一右键菜单组件: src/components/common/ContextMenu.tsx
+// 使用 useContextMenu hook 管理状态
 
-// 边框
-border border-context-border
+// 样式规范
+backgroundColor: var(--color-surface-solid)
+border: 1px solid var(--color-border)
+borderRadius: 6px
+boxShadow: 0 8px 32px rgba(0, 0, 0, 0.2)
+minWidth: 140px
+padding: 4px 0
 
-// 阴影
-shadow-2xl
+// 菜单项样式
+padding: 6px 12px (py-1.5 px-3)
+fontSize: 14px (text-sm)
+gap: 8px (gap-2)
+
+// 悬浮效果
+普通项: backgroundColor = var(--color-primary-10)
+危险项: backgroundColor = var(--color-error-10)
+位移: whileHover={{ x: 2 }}
 
 // 动画
 入场: 淡入 + 缩放 0.95 → 1
-菜单项悬浮: 向右移动 4px
+鼠标指针: cursor-pointer
+
+// 菜单项数据结构
+interface ContextMenuItemData {
+  id: string;
+  label: string;
+  icon?: LucideIcon;
+  danger?: boolean;      // 危险操作（删除）显示红色
+  disabled?: boolean;    // 禁用状态
+  divider?: boolean;     // 分隔线
+}
+
+// 使用示例
+const { contextMenuState, showContextMenu, hideContextMenu } = useContextMenu();
+
+<ContextMenu
+  items={[
+    { id: 'settings', label: '实例管理', icon: Settings },
+    { id: 'divider1', label: '', divider: true },
+    { id: 'rename', label: '重命名', icon: Edit3 },
+    { id: 'delete', label: '删除', icon: Trash2, danger: true },
+    { id: 'divider2', label: '', divider: true },
+    { id: 'openFolder', label: '打开所在文件夹', icon: FolderOpen },
+  ]}
+  position={contextMenuState.position}
+  visible={contextMenuState.visible}
+  onClose={hideContextMenu}
+  onItemClick={handleContextMenuAction}
+/>
 ```
+
+**右键菜单统一使用场景**：
+- 实例列表项（InstanceListItem）：实例管理、重命名、删除、打开所在文件夹
+- 侧边栏游戏文件夹（BaseChildrenContent）：删除游戏文件夹、打开所在文件夹
 
 #### 3.8.7 间距系统
 
@@ -1370,6 +1435,7 @@ pnpm tauri build
 - 左侧激活色条 + focus-visible 键盘导航反馈 ✅
 - 上下文切换模式（侧边栏随页面变化） ✅
 - **右键菜单**: 可删除项支持 `onContextMenu` 弹出上下文菜单，ESC/点击外部自动关闭 ✅
+- **右键菜单统一**: 使用 `ContextMenu` 组件 + `useContextMenu` hook，菜单项包括：实例管理、重命名、删除、打开所在文件夹 ✅
 - **Hover 删除按钮**: 可删除项 hover 时显示 `Trash2` 图标按钮，`opacity` 过渡动画 ✅
 - **删除确认弹框**: SmartSidebar 集成 `ConfirmPopup`，删除前弹出确认对话框 ✅
 - **系统目录保护**: `default`/`official`/`home-mc` 不显示删除入口，通过 `deletableItemIds` Set 控制 ✅
@@ -1384,6 +1450,25 @@ pnpm tauri build
 - **侧边栏删除**: 游戏目录的删除按钮从 Instance 页面头部移至侧边栏每个目录项上，支持 hover 按钮和右键菜单两种方式 ✅
 - **Instance.tsx 精简**: 移除了删除相关代码（Trash2 按钮、ConfirmPopup、showDeleteConfirm 状态），删除逻辑统一在 SmartSidebar 中处理 ✅
 - **版本图标显示**: InstanceCard 和 InstanceListItem 集成 `LoaderIcon` 组件，根据 `loader_type` 显示 Fabric/Forge/NeoForge 图标 ✅
+
+### 12.10 窗口位置管理
+
+- **窗口位置保存**: 使用 `useWindowPosition` hook 监听窗口移动和调整事件 ✅
+- **最小化保护**: 保存位置前检查 `isMinimized()` 状态，避免保存最小化时的错误坐标 (-32000, -32000) ✅
+- **坐标验证**: 检查坐标是否小于 -10000，过滤无效坐标 ✅
+- **持久化存储**: 窗口位置保存到 `app_config.json`，通过 `ConfigManager` 管理 ✅
+
+### 12.11 游戏下载列表项
+
+- **简化设计**: 移除下载按钮和部署按钮，点击列表项进入详情页进行操作 ✅
+- **已安装状态**: 显示 `CheckCircle` 图标 + 绿色背景 ✅
+- **Wiki 链接**: 保留 Wiki 按钮，可快速跳转到 Minecraft Wiki ✅
+
+### 12.12 配色系统优化
+
+- **透明度变体**: 所有语义色和强调色支持 5%/8%/10%/15%/20% 透明度变体 ✅
+- **CSS 变量替换**: 所有硬编码颜色替换为 CSS 变量，支持主题切换 ✅
+- **themeStore 增强**: `applyToDom` 函数应用透明度变体到 DOM ✅
 
 ***
 
@@ -1401,6 +1486,9 @@ pnpm tauri build
 - 外部链接使用 Tauri `openUrl` API（`tauri_plugin_opener::open_url`）
 - 实例目录位于 `{base}/minecraft/{name}/versions/{version}/`，无 instance.json 元数据文件
 - 配色必须使用 CSS 变量语义化类名，禁止硬编码 `bg-white/XX`、`text-white/XX` 等
+- **窗口位置保存**: 最小化时不保存位置，避免保存 -32000 坐标
+- **Webview 右键菜单**: 已禁用，在 `App.tsx` 中通过 `e.preventDefault()` 实现
+- **游戏下载列表项**: 点击进入详情页操作，无下载/部署按钮
 - **配置管理**: 更新配置时必须使用 `ConfigManager.update_value()` 增量更新，**禁止**使用 `update_config()` 完整覆盖，否则会导致配置丢失
 - **APP_HANDLE**: 可通过 `APP_HANDLE.get().state::<ConfigManager>()` 获取 ConfigManager 实例
 - **BASE_PATH**: 使用 `std::env::current_exe().parent()` 获取可执行文件所在目录（非工作目录），确保安装后路径正确指向 SMCL 根目录

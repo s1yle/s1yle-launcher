@@ -1,9 +1,10 @@
-import { openUrl } from '../../../helper/rustInvoke';
-import { useState, useRef, useEffect } from 'react';
+import { openUrl, openFolder } from '../../../helper/rustInvoke';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, Trash2 } from 'lucide-react';
+import { ChevronRight, Trash2, FolderOpen } from 'lucide-react';
 import { type SidebarMenuItem } from '../../../router/config';
+import ContextMenu, { useContextMenu, ContextMenuItemData } from '../../common/ContextMenu';
 
 export interface BaseChildrenContentProps {
   items: SidebarMenuItem[];
@@ -15,6 +16,7 @@ export interface BaseChildrenContentProps {
   groupTitle?: string;
   groupTitleI18nKey?: string;
   onItemDelete?: (id: string) => void;
+  onItemOpenFolder?: (id: string) => void;
   deletableItemIds?: Set<string>;
 }
 
@@ -28,14 +30,15 @@ const BaseChildrenContent = ({
   groupTitle,
   groupTitleI18nKey,
   onItemDelete,
+  onItemOpenFolder,
   deletableItemIds,
 }: BaseChildrenContentProps) => {
   const { t } = useTranslation();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(
     new Set(items.filter(item => item.children?.length).map(item => item.id))
   );
-  const [contextMenu, setContextMenu] = useState<{ id: string; x: number; y: number } | null>(null);
-  const contextMenuRef = useRef<HTMLDivElement>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const { contextMenuState, showContextMenu, hideContextMenu } = useContextMenu();
 
   const defaultIsActive = (_path: string) => false;
   const defaultIsParentActive = (_path: string) => false;
@@ -67,26 +70,28 @@ const BaseChildrenContent = ({
   const handleContextMenu = (e: React.MouseEvent, itemId: string) => {
     e.preventDefault();
     e.stopPropagation();
-    setContextMenu({ id: itemId, x: e.clientX, y: e.clientY });
+    setSelectedItemId(itemId);
+    showContextMenu(e);
   };
 
-  const handleDeleteFromMenu = (itemId: string) => {
-    setContextMenu(null);
-    onItemDelete?.(itemId);
-  };
-
-  useEffect(() => {
-    const handleClickOutside = () => setContextMenu(null);
-    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setContextMenu(null); };
-    if (contextMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('keydown', handleEsc);
+  const handleContextMenuAction = (id: string) => {
+    if (!selectedItemId) return;
+    
+    switch (id) {
+      case 'delete':
+        onItemDelete?.(selectedItemId);
+        break;
+      case 'openFolder':
+        onItemOpenFolder?.(selectedItemId);
+        break;
     }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleEsc);
-    };
-  }, [contextMenu]);
+  };
+
+  const contextMenuItems: ContextMenuItemData[] = [
+    { id: 'delete', label: t('contextMenu.deleteFolder', '删除游戏文件夹'), icon: Trash2, danger: true },
+    { id: 'divider1', label: '', divider: true },
+    { id: 'openFolder', label: t('contextMenu.openFolder', '打开所在文件夹'), icon: FolderOpen },
+  ];
 
   const isDeletable = (itemId: string) => deletableItemIds?.has(itemId) ?? false;
 
@@ -163,7 +168,7 @@ const BaseChildrenContent = ({
           )}
           {canDelete && (
             <button
-              onClick={(e) => { e.stopPropagation(); handleDeleteFromMenu(item.id); }}
+              onClick={(e) => { e.stopPropagation(); onItemDelete?.(item.id); }}
               className="opacity-0 group-hover/item:opacity-100 p-1 text-[var(--color-text-tertiary)] hover:text-error rounded transition-all duration-150 flex-shrink-0"
               title={t('instances.removeGameFolder', '删除游戏目录')}
             >
@@ -202,21 +207,13 @@ const BaseChildrenContent = ({
         {items.map((item, index) => renderItem(item, 0, index))}
       </div>
 
-      {contextMenu && (
-        <div
-          ref={contextMenuRef}
-          className="fixed z-[9999] bg-context-bg border border-border-hover rounded-lg shadow-xl py-1 min-w-[160px]"
-          style={{ left: contextMenu.x, top: contextMenu.y }}
-        >
-          <button
-            onClick={() => handleDeleteFromMenu(contextMenu.id)}
-            className="w-full px-3 py-2 text-left text-sm flex items-center gap-2 text-error hover:bg-error-bg transition-colors"
-          >
-            <Trash2 className="w-4 h-4" />
-            {t('instances.removeGameFolder', '删除游戏目录')}
-          </button>
-        </div>
-      )}
+      <ContextMenu
+        items={contextMenuItems}
+        position={contextMenuState.position}
+        visible={contextMenuState.visible}
+        onClose={hideContextMenu}
+        onItemClick={handleContextMenuAction}
+      />
     </div>
   );
 };

@@ -45,7 +45,7 @@ const MainLayout = () => {
   }, [location.pathname, setCurrentPath]);
 
   const handleContextMenu = (e: React.MouseEvent) => {
-    if (!true) e.preventDefault();
+    e.preventDefault();
   };
 
   return (

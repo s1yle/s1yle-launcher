@@ -132,14 +132,10 @@ const DownloadGame: React.FC = () => {
     <VersionListItem
       version={version}
       installed={installedSet.has(version.id) || completedSet.has(version.id)}
-      downloading={downloadingSet.has(version.id)}
-      isDeploying={false}
       onClick={() => handleVersionClick(version)}
       onWikiClick={() => handleWikiClick(version.id)}
-      onDownload={() => handleDownload(version)}
-      onDeploy={() => {}}
     />
-  ), [installedSet, completedSet, downloadingSet, handleVersionClick, handleWikiClick, handleDownload]);
+  ), [installedSet, completedSet, handleVersionClick, handleWikiClick]);
 
   const isLoading = loading && !manifest;
 

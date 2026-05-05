@@ -42,6 +42,7 @@ const InstanceCard: React.FC<InstanceCardProps> = ({
   onDuplicate,
   onRename,
   onExport,
+  onOpenConfigFolder,
   onOpenConfig,
   isRunning = false,
   showPath = false,

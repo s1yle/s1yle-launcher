@@ -96,13 +96,20 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
           initial="initial"
           animate="animate"
           exit="exit"
-          className={`fixed z-[9999] bg-context-bg border border-context-border rounded-lg shadow-2xl py-1 min-w-[180px] backdrop-blur-sm ${className}`}
-          style={{ left: adjustedPosition.x, top: adjustedPosition.y }}
+          className={`fixed z-[9999] backdrop-blur-md py-1 min-w-[140px] ${className}`}
+          style={{ 
+            left: adjustedPosition.x, 
+            top: adjustedPosition.y,
+            backgroundColor: 'var(--color-surface-solid)',
+            border: '1px solid var(--color-border)',
+            borderRadius: '6px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
+          }}
           onClick={(e) => e.stopPropagation()}
         >
           {items.map((item, index) => {
             if (item.divider) {
-              return <div key={`divider-${index}`} className="my-1 border-t border-border" />;
+              return <div key={`divider-${index}`} className="my-1 border-t" style={{ borderColor: 'var(--color-border)' }} />;
             }
 
             const Icon = item.icon;
@@ -112,12 +119,23 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                 key={item.id}
                 onClick={() => handleItemClick(item.id, item.disabled)}
                 disabled={item.disabled}
-                className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 transition-colors ${
-                  item.danger
-                    ? 'text-error hover:bg-error-bg'
-                    : 'text-text-secondary hover:bg-surface-hover'
-                } ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-                whileHover={{ x: 4 }}
+                className={`w-full px-3 py-1.5 text-left text-sm flex items-center gap-2 transition-colors ${
+                  item.disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                }`}
+                style={{
+                  color: item.danger ? 'var(--color-error)' : 'var(--color-text-secondary)',
+                }}
+                whileHover={{ x: 2 }}
+                onMouseEnter={(e) => {
+                  if (!item.disabled) {
+                    e.currentTarget.style.backgroundColor = item.danger 
+                      ? 'var(--color-error-10)' 
+                      : 'var(--color-primary-10)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
                 transition={transitions.fast}
               >
                 {Icon && <Icon className="w-4 h-4 flex-shrink-0" />}
