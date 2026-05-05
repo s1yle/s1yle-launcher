@@ -137,11 +137,11 @@ const InstanceListItem: React.FC<InstanceListItemProps> = ({
             : 'border-l-transparent hover:shadow-sm'
         }`}
         style={{
-          backgroundColor: selected ? 'rgba(99, 102, 241, 0.15)' : 'var(--color-surface-solid)',
+          backgroundColor: selected ? 'var(--color-primary-15)' : 'var(--color-surface-solid)',
         }}
         onMouseEnter={(e) => {
           if (!selected) {
-            e.currentTarget.style.backgroundColor = 'rgba(99, 102, 241, 0.1)';
+            e.currentTarget.style.backgroundColor = 'var(--color-primary-10)';
           }
           setIsHovered(true);
         }}

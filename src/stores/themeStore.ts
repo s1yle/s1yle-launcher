@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useConfigStore } from './configStore';
 
 export type ThemeMode = 'dark' | 'light' | 'system';
 export type AccentColor = 'indigo' | 'blue' | 'green' | 'purple' | 'red' | 'orange' | 'pink';
@@ -47,14 +48,86 @@ export const accentColors: Record<AccentColor, { name: string; nameI18nKey: stri
   pink: { name: '粉色', nameI18nKey: 'theme.accent.pink', hex: '#ec4899' },
 };
 
-const accentMap: Record<AccentColor, { primary: string; hover: string; active: string; bg: string }> = {
-  indigo: { primary: 'var(--accent-indigo)', hover: 'var(--accent-indigo-hover)', active: 'var(--accent-indigo-active)', bg: 'var(--accent-indigo-bg)' },
-  blue: { primary: 'var(--accent-blue)', hover: 'var(--accent-blue-hover)', active: 'var(--accent-blue-active)', bg: 'var(--accent-blue-bg)' },
-  green: { primary: 'var(--accent-green)', hover: 'var(--accent-green-hover)', active: 'var(--accent-green-active)', bg: 'var(--accent-green-bg)' },
-  purple: { primary: 'var(--accent-purple)', hover: 'var(--accent-purple-hover)', active: 'var(--accent-purple-active)', bg: 'var(--accent-purple-bg)' },
-  red: { primary: 'var(--accent-red)', hover: 'var(--accent-red-hover)', active: 'var(--accent-red-active)', bg: 'var(--accent-red-bg)' },
-  orange: { primary: 'var(--accent-orange)', hover: 'var(--accent-orange-hover)', active: 'var(--accent-orange-active)', bg: 'var(--accent-orange-bg)' },
-  pink: { primary: 'var(--accent-pink)', hover: 'var(--accent-pink-hover)', active: 'var(--accent-pink-active)', bg: 'var(--accent-pink-bg)' },
+const accentMap: Record<AccentColor, { 
+  primary: string; 
+  hover: string; 
+  active: string; 
+  bg: string;
+  '5': string;
+  '10': string;
+  '15': string;
+  '20': string;
+}> = {
+  indigo: { 
+    primary: 'var(--accent-indigo)', 
+    hover: 'var(--accent-indigo-hover)', 
+    active: 'var(--accent-indigo-active)', 
+    bg: 'var(--accent-indigo-bg)',
+    '5': 'var(--accent-indigo-5)',
+    '10': 'var(--accent-indigo-10)',
+    '15': 'var(--accent-indigo-15)',
+    '20': 'var(--accent-indigo-20)',
+  },
+  blue: { 
+    primary: 'var(--accent-blue)', 
+    hover: 'var(--accent-blue-hover)', 
+    active: 'var(--accent-blue-active)', 
+    bg: 'var(--accent-blue-bg)',
+    '5': 'var(--accent-blue-5)',
+    '10': 'var(--accent-blue-10)',
+    '15': 'var(--accent-blue-15)',
+    '20': 'var(--accent-blue-20)',
+  },
+  green: { 
+    primary: 'var(--accent-green)', 
+    hover: 'var(--accent-green-hover)', 
+    active: 'var(--accent-green-active)', 
+    bg: 'var(--accent-green-bg)',
+    '5': 'var(--accent-green-5)',
+    '10': 'var(--accent-green-10)',
+    '15': 'var(--accent-green-15)',
+    '20': 'var(--accent-green-20)',
+  },
+  purple: { 
+    primary: 'var(--accent-purple)', 
+    hover: 'var(--accent-purple-hover)', 
+    active: 'var(--accent-purple-active)', 
+    bg: 'var(--accent-purple-bg)',
+    '5': 'var(--accent-purple-5)',
+    '10': 'var(--accent-purple-10)',
+    '15': 'var(--accent-purple-15)',
+    '20': 'var(--accent-purple-20)',
+  },
+  red: { 
+    primary: 'var(--accent-red)', 
+    hover: 'var(--accent-red-hover)', 
+    active: 'var(--accent-red-active)', 
+    bg: 'var(--accent-red-bg)',
+    '5': 'var(--accent-red-5)',
+    '10': 'var(--accent-red-10)',
+    '15': 'var(--accent-red-15)',
+    '20': 'var(--accent-red-20)',
+  },
+  orange: { 
+    primary: 'var(--accent-orange)', 
+    hover: 'var(--accent-orange-hover)', 
+    active: 'var(--accent-orange-active)', 
+    bg: 'var(--accent-orange-bg)',
+    '5': 'var(--accent-orange-5)',
+    '10': 'var(--accent-orange-10)',
+    '15': 'var(--accent-orange-15)',
+    '20': 'var(--accent-orange-20)',
+  },
+  pink: { 
+    primary: 'var(--accent-pink)', 
+    hover: 'var(--accent-pink-hover)', 
+    active: 'var(--accent-pink-active)', 
+    bg: 'var(--accent-pink-bg)',
+    '5': 'var(--accent-pink-5)',
+    '10': 'var(--accent-pink-10)',
+    '15': 'var(--accent-pink-15)',
+    '20': 'var(--accent-pink-20)',
+  },
 };
 
 interface ThemeConfig {
@@ -70,8 +143,6 @@ interface ThemeState extends ThemeConfig {
   init: () => void;
 }
 
-const STORAGE_KEY = 's1yle-theme-config';
-
 export const useThemeStore = create<ThemeState>((set, get) => ({
   mode: 'dark',
   accentColor: 'indigo',
@@ -83,13 +154,15 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
       : mode;
     set({ mode, activeTheme: actualTheme });
     applyToDom(actualTheme, get().accentColor);
-    saveConfig({ ...get(), mode, activeTheme: actualTheme });
+    
+    useConfigStore.getState().setPreference('theme', mode);
   },
 
   setAccentColor: (accentColor: AccentColor) => {
     set({ accentColor });
     applyToDom(get().activeTheme, accentColor);
-    saveConfig({ ...get(), accentColor });
+    
+    useConfigStore.getState().setPreference('accent_color', accentColor);
   },
 
   applyPreset: (preset: ThemePreset) => {
@@ -103,23 +176,30 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     };
     set(config);
     applyToDom(actualTheme, preset.accentColor);
-    saveConfig(config);
+    
+    useConfigStore.getState().updateGlobalConfig({
+      preferences: {
+        ...useConfigStore.getState().config?.preferences,
+        theme: preset.mode,
+        accent_color: preset.accentColor,
+      } as any,
+    });
   },
 
   init: () => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const config: ThemeConfig = JSON.parse(saved);
-        const actualTheme = config.mode === 'system'
-          ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-          : config.mode;
-        set({ ...config, activeTheme: actualTheme });
-        applyToDom(actualTheme, config.accentColor);
-      } else {
-        applyToDom('dark', 'indigo');
-      }
-    } catch {
+    const config = useConfigStore.getState().config;
+    
+    if (config?.preferences) {
+      const theme = (config.preferences.theme as ThemeMode) || 'dark';
+      const accentColor = (config.preferences.accent_color as AccentColor) || 'indigo';
+      
+      const actualTheme = theme === 'system'
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : theme;
+      
+      set({ mode: theme, accentColor, activeTheme: actualTheme });
+      applyToDom(actualTheme, accentColor);
+    } else {
       applyToDom('dark', 'indigo');
     }
 
@@ -144,12 +224,8 @@ function applyToDom(theme: 'dark' | 'light', accentColor: AccentColor) {
   root.style.setProperty('--color-primary-hover', colors.hover);
   root.style.setProperty('--color-primary-active', colors.active);
   root.style.setProperty('--color-primary-bg', colors.bg);
-}
-
-function saveConfig(config: ThemeConfig) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-  } catch {
-    // storage not available
-  }
+  root.style.setProperty('--color-primary-5', colors['5']);
+  root.style.setProperty('--color-primary-10', colors['10']);
+  root.style.setProperty('--color-primary-15', colors['15']);
+  root.style.setProperty('--color-primary-20', colors['20']);
 }

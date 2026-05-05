@@ -32,9 +32,19 @@ export const useWindowPosition = () => {
   const saveCurrentPosition = useCallback(async () => {
     try {
       const window = getCurrentWindow();
+      
+      const isMinimized = await window.isMinimized();
+      if (isMinimized) {
+        return;
+      }
+      
       const position = await window.outerPosition();
       const size = await window.outerSize();
       const isMaximized = await window.isMaximized();
+
+      if (position.x < -10000 || position.y < -10000) {
+        return;
+      }
 
       await saveWindowPosition(
         position.x,

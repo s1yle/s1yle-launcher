@@ -55,9 +55,9 @@ const VersionListItem: React.FC<VersionListItemProps> = ({
       )}
       style={{
         backgroundColor: installed 
-          ? 'rgba(34, 197, 94, 0.08)' 
+          ? 'var(--color-success-8)' 
           : isHovered 
-            ? 'rgba(99, 102, 241, 0.1)' 
+            ? 'var(--color-primary-10)' 
             : 'var(--color-surface-solid)',
       }}
       onClick={onClick}

@@ -5,6 +5,7 @@ import NotificationProvider from "./components/common/NotificationProvider";
 import { invokeAccInit } from "./helper/rustInvoke";
 import { logger } from "./helper/logger";
 import { useThemeStore } from "./stores/themeStore";
+import { useConfigStore } from "./stores/configStore";
 import { window } from "@tauri-apps/api";
 
 import './styles/themes/dark.css';
@@ -16,7 +17,13 @@ async function initApp() {
   try {
     logger.info("应用初始化开始...");
     await invokeAccInit();
+    
+    await useConfigStore.getState().init();
+    logger.info("配置加载完成");
+    
     useThemeStore.getState().init();
+    logger.info("主题初始化完成");
+    
     logger.info("应用初始化完成...");
   } catch (e) {
     logger.error("应用初始化失败：", e);

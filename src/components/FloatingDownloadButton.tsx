@@ -251,8 +251,8 @@ export const FloatingDownloadButton: React.FC<FloatingDownloadButtonProps> = ({
                             key={`${version}-${index}`}
                             className="p-2 rounded-lg flex items-center gap-2"
                             style={{
-                              backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                              border: '1px solid rgba(34, 197, 94, 0.2)',
+                              backgroundColor: 'var(--color-success-10)',
+                              border: '1px solid var(--color-success-20)',
                             }}
                           >
                             <Check className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
@@ -288,7 +288,7 @@ export const FloatingDownloadButton: React.FC<FloatingDownloadButtonProps> = ({
               width: FLOATING_BUTTON_SIZE,
               height: FLOATING_BUTTON_SIZE,
               background: 'linear-gradient(135deg, rgb(99, 102, 241) 0%, rgb(79, 70, 229) 100%)',
-              boxShadow: '0 4px 20px rgba(99, 102, 241, 0.4)',
+              boxShadow: '0 4px 20px var(--color-primary-20)',
             }}
             onMouseDown={handleButtonMouseDown}
             onClick={handleButtonClick}
