@@ -83,4 +83,6 @@ export {
   SortAsc,
   SortDesc,
   HelpCircle,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';

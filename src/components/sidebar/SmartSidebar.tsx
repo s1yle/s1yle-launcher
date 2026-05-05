@@ -1,6 +1,7 @@
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { getSidebarGroups, routes, sidebarMenuItems, type SidebarMenuItem, findRouteByPath, SidebarGroup } from '../../router/config';
 import BaseSidebarLayout from './layouts/BaseSidebarLayout';
 import AccountSidebarContent from './content/AccountSidebarContent';
@@ -16,9 +17,10 @@ import { ConfirmPopup, useNotification } from '@/components/common';
 interface SmartSidebarProps {
   onMenuClick?: (path: string) => void;
   showAllGroups?: boolean;
+  footer?: React.ReactNode;
 }
 
-const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps) => {
+const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer }: SmartSidebarProps) => {
   const location = useLocation();
   const { t } = useTranslation();
   const groups = getSidebarGroups();
@@ -181,22 +183,31 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
     };
 
     return (
-      <BaseSidebarLayout>
-        <div className="py-8">
-          <BaseChildrenContent
-            items={allChildrenItems}
-            onMenuClick={handleItemClick}
-            isActive={isActive}
-            isItemActive={(id) => id === `folder-${selectedFolderId}` }
-            isParentActive={isParentOfActive}
-            hasChildrenItems={hasChildrenItems}
-            groupTitle={currentMenuItem?.title || parentMenuItem?.title || ''}
-            groupTitleI18nKey={currentMenuItem?.titleI18nKey || parentMenuItem?.titleI18nKey}
-            onItemDelete={handleDeleteFolder}
-            onItemOpenFolder={handleOpenFolder}
-            deletableItemIds={deletableIds}
-          />
-        </div>
+      <BaseSidebarLayout footer={footer}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`sidebar-instance-${selectedFolderId || 'default'}`}
+            className="py-8"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 10 }}
+            transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+          >
+            <BaseChildrenContent
+              items={allChildrenItems}
+              onMenuClick={handleItemClick}
+              isActive={isActive}
+              isItemActive={(id) => id === `folder-${selectedFolderId}` }
+              isParentActive={isParentOfActive}
+              hasChildrenItems={hasChildrenItems}
+              groupTitle={currentMenuItem?.title || parentMenuItem?.title || ''}
+              groupTitleI18nKey={currentMenuItem?.titleI18nKey || parentMenuItem?.titleI18nKey}
+              onItemDelete={handleDeleteFolder}
+              onItemOpenFolder={handleOpenFolder}
+              deletableItemIds={deletableIds}
+            />
+          </motion.div>
+        </AnimatePresence>
 
         {showDeleteConfirm && (
           <ConfirmPopup
@@ -227,17 +238,73 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
   }
 
   return (
-    <BaseSidebarLayout>
-      {currentGroup === 'all' && (
-        <>
-          <AccountSidebarContent
-            items={groups.account}
-            onMenuClick={handleItemClick}
-            isActive={isActive}
-            isParentActive={isParentOfActive}
-            hasChildrenItems={hasChildrenItems}
-          />
-          <div className="mt-8">
+    <BaseSidebarLayout footer={footer}>
+      <AnimatePresence mode="wait">
+        {currentGroup === 'all' && (
+          <motion.div
+            key="sidebar-all"
+            className="flex flex-col"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 10 }}
+            transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+          >
+            <AccountSidebarContent
+              items={groups.account}
+              onMenuClick={handleItemClick}
+              isActive={isActive}
+              isParentActive={isParentOfActive}
+              hasChildrenItems={hasChildrenItems}
+            />
+            <div className="mt-8">
+              <GameSidebarContent
+                items={groups.game}
+                onMenuClick={handleItemClick}
+                isActive={isActive}
+                isParentActive={isParentOfActive}
+                hasChildrenItems={hasChildrenItems}
+              />
+            </div>
+            <div className="mt-8">
+              <CommonSidebarContent
+                items={groups.common}
+                onMenuClick={handleItemClick}
+                isActive={isActive}
+                isParentActive={isParentOfActive}
+                hasChildrenItems={hasChildrenItems}
+              />
+            </div>
+          </motion.div>
+        )}
+
+        {currentGroup === 'account' && (
+          <motion.div
+            key="sidebar-account"
+            className="flex flex-col"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 10 }}
+            transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+          >
+            <AccountSidebarContent
+              items={groups.account}
+              onMenuClick={handleItemClick}
+              isActive={isActive}
+              isParentActive={isParentOfActive}
+              hasChildrenItems={hasChildrenItems}
+            />
+          </motion.div>
+        )}
+
+        {currentGroup === 'game' && (
+          <motion.div
+            key="sidebar-game"
+            className="flex flex-col"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 10 }}
+            transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+          >
             <GameSidebarContent
               items={groups.game}
               onMenuClick={handleItemClick}
@@ -245,8 +312,18 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
               isParentActive={isParentOfActive}
               hasChildrenItems={hasChildrenItems}
             />
-          </div>
-          <div className="mt-8">
+          </motion.div>
+        )}
+
+        {currentGroup === 'common' && (
+          <motion.div
+            key="sidebar-common"
+            className="flex flex-col"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 10 }}
+            transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+          >
             <CommonSidebarContent
               items={groups.common}
               onMenuClick={handleItemClick}
@@ -254,45 +331,22 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
               isParentActive={isParentOfActive}
               hasChildrenItems={hasChildrenItems}
             />
-          </div>
-        </>
-      )}
+          </motion.div>
+        )}
 
-      {currentGroup === 'account' && (
-        <AccountSidebarContent
-          items={groups.account}
-          onMenuClick={handleItemClick}
-          isActive={isActive}
-          isParentActive={isParentOfActive}
-          hasChildrenItems={hasChildrenItems}
-        />
-      )}
-
-      {currentGroup === 'game' && (
-        <GameSidebarContent
-          items={groups.game}
-          onMenuClick={handleItemClick}
-          isActive={isActive}
-          isParentActive={isParentOfActive}
-          hasChildrenItems={hasChildrenItems}
-        />
-      )}
-
-      {currentGroup === 'common' && (
-        <CommonSidebarContent
-          items={groups.common}
-          onMenuClick={handleItemClick}
-          isActive={isActive}
-          isParentActive={isParentOfActive}
-          hasChildrenItems={hasChildrenItems}
-        />
-      )}
-
-      {currentGroup === 'none' && (
-        <div className="text-center py-8">
-          <p className="text-text-tertiary text-sm">{t('sidebar.noSidebar', '当前页面无侧边栏')}</p>
-        </div>
-      )}
+        {currentGroup === 'none' && (
+          <motion.div
+            key="sidebar-none"
+            className="text-center py-8"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 10 }}
+            transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+          >
+            <p className="text-text-tertiary text-sm">{t('sidebar.noSidebar', '当前页面无侧边栏')}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </BaseSidebarLayout>
   );
 };
