@@ -117,12 +117,16 @@ const InputDialog = ({
             maxLength={maxLength}
             disabled={disabled || loading}
             className={cn(
-              'w-full px-3 py-2 rounded-lg bg-surface border text-text-primary text-sm',
-              'placeholder:text-text-tertiary focus:outline-none focus:ring-2 transition-all',
-              hasError
-                ? 'border-error focus:ring-error'
-                : 'border-border focus:ring-primary focus:border-primary',
+              'w-full px-3 py-2 rounded-md text-sm',
+              'placeholder:text-text-tertiary focus:outline-none focus:ring-2 transition-all cursor-text',
             )}
+            style={{
+              backgroundColor: 'var(--color-surface)',
+              color: 'var(--color-text-primary)',
+              border: hasError 
+                ? '1px solid var(--color-error)' 
+                : '1px solid var(--color-border)',
+            }}
           />
           {hasError && (
             <p className="text-xs text-error">{internalError || externalError}</p>
@@ -133,14 +137,39 @@ const InputDialog = ({
           <button
             onClick={onCancel}
             disabled={loading}
-            className="px-4 py-2 rounded-lg text-sm text-text-secondary bg-surface hover:bg-surface-hover transition-colors disabled:opacity-50"
+            className="px-4 py-2 rounded-md text-sm transition-colors disabled:opacity-50 cursor-pointer"
+            style={{ 
+              backgroundColor: 'var(--color-surface-hover)',
+              color: 'var(--color-text-secondary)',
+            }}
+            onMouseEnter={(e) => {
+              if (!loading) {
+                e.currentTarget.style.backgroundColor = 'var(--color-surface-active)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-surface-hover)';
+            }}
           >
             取消
           </button>
           <button
             onClick={handleConfirm}
             disabled={loading || disabled || !!hasError}
-            className="px-4 py-2 rounded-lg text-sm text-text-primary bg-primary hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 rounded-md text-sm text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            style={{ 
+              backgroundColor: 'var(--color-primary)',
+            }}
+            onMouseEnter={(e) => {
+              if (!loading && !disabled && !hasError) {
+                e.currentTarget.style.opacity = '0.9';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = '1';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
           >
             {loading ? '处理中...' : '确认'}
           </button>

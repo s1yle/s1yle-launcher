@@ -61,15 +61,22 @@ const ConfirmPopup: React.FC<ConfirmPopupProps> = ({
   };
 
   const confirmTypeClasses = {
-    primary: 'bg-info hover:bg-info text-text-primary',
-    danger: 'bg-error hover:bg-error text-text-primary',
-    success: 'bg-success hover:bg-success text-text-primary',
-    warning: 'bg-warning hover:bg-warning text-text-primary',
+    primary: 'text-white',
+    danger: 'text-white',
+    success: 'text-white',
+    warning: 'text-white',
+  };
+
+  const confirmBgClasses = {
+    primary: 'var(--color-primary)',
+    danger: 'var(--color-error)',
+    success: 'var(--color-success)',
+    warning: 'var(--color-warning)',
   };
 
   const cancelTypeClasses = {
-    default: 'bg-surface hover:bg-surface-hover text-text-primary',
-    outline: 'bg-transparent border border-white/20 text-text-secondary hover:bg-surface',
+    default: 'text-text-secondary',
+    outline: 'text-text-secondary',
   };
 
   const icons = {
@@ -96,7 +103,19 @@ const ConfirmPopup: React.FC<ConfirmPopupProps> = ({
             type="button"
             onClick={handleCancel}
             disabled={disableCancel}
-            className={`px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${cancelTypeClasses[cancelType]} ${cancelClassName}`}
+            className={`px-4 py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${cancelTypeClasses[cancelType]} ${cancelClassName}`}
+            style={{ 
+              backgroundColor: 'var(--color-surface-hover)',
+              color: 'var(--color-text-secondary)',
+            }}
+            onMouseEnter={(e) => {
+              if (!disableCancel) {
+                e.currentTarget.style.backgroundColor = 'var(--color-surface-active)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-surface-hover)';
+            }}
           >
             {cancelText}
           </button>
@@ -104,7 +123,20 @@ const ConfirmPopup: React.FC<ConfirmPopupProps> = ({
             type="button"
             onClick={handleConfirm}
             disabled={disableConfirm || loading}
-            className={`px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${confirmTypeClasses[confirmType]} ${confirmClassName}`}
+            className={`px-4 py-2 rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer ${confirmTypeClasses[confirmType]} ${confirmClassName}`}
+            style={{ 
+              backgroundColor: confirmBgClasses[confirmType],
+            }}
+            onMouseEnter={(e) => {
+              if (!disableConfirm && !loading) {
+                e.currentTarget.style.opacity = '0.9';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = '1';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             {confirmText}
@@ -112,14 +144,14 @@ const ConfirmPopup: React.FC<ConfirmPopupProps> = ({
         </div>
       }
     >
-      <div className="space-y-4">
+      <div className="space-y-3">
         {showIcon && (
           <div className="flex justify-center mb-2">
             {icons[iconType]}
           </div>
         )}
-        <div className="text-text-primary text-center">
-          {typeof message === 'string' ? <p className="text-lg">{message}</p> : message}
+        <div className="text-center" style={{ color: 'var(--color-text-primary)' }}>
+          {typeof message === 'string' ? <p className="text-base">{message}</p> : message}
         </div>
       </div>
     </Popup>

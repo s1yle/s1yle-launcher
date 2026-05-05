@@ -156,8 +156,13 @@ const Popup: React.FC<PopupProps> = ({
           >
             <motion.div
               key="popup-content"
-              className={`bg-surface backdrop-blur-sm rounded-xl border border-border-hover w-full ${sizeClasses[size]} pointer-events-auto ${className}`}
-              style={{ paddingLeft: '10px', paddingRight: '10px' }}
+              className={`backdrop-blur-md w-full ${sizeClasses[size]} pointer-events-auto ${className}`}
+              style={{ 
+                backgroundColor: 'var(--color-surface-solid)',
+                border: '1px solid var(--color-border)',
+                borderRadius: '8px',
+                boxShadow: '0 12px 48px rgba(0, 0, 0, 0.25)',
+              }}
               initial={variant.initial}
               animate={variant.animate}
               exit={variant.exit}
@@ -168,17 +173,24 @@ const Popup: React.FC<PopupProps> = ({
               onClick={(e) => e.stopPropagation()}
             >
               {(title || showCloseButton) && (
-                <div className="flex items-center justify-between p-6 border-b border-border">
+                <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--color-border)' }}>
                   {title && (
-                    <div className="text-2xl font-bold text-text-primary">
+                    <div className="text-lg font-semibold" style={{ color: 'var(--color-text-primary)' }}>
                       {typeof title === 'string' ? <h2>{title}</h2> : title}
                     </div>
                   )}
                   {showCloseButton && (
                     <button
                       onClick={onClose}
-                      className="text-text-secondary hover:text-text-primary text-2xl font-bold leading-none p-2 transition-colors"
+                      className="text-text-secondary hover:text-text-primary text-xl leading-none p-1.5 transition-colors rounded-md cursor-pointer"
+                      style={{ color: 'var(--color-text-secondary)' }}
                       aria-label="关闭弹窗"
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--color-primary-10)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
                     >
                       ×
                     </button>
@@ -186,12 +198,12 @@ const Popup: React.FC<PopupProps> = ({
                 </div>
               )}
 
-              <div className={`p-6 ${contentClassName}`}>
+              <div className={`px-5 py-4 ${contentClassName}`}>
                 {children}
               </div>
 
               {footer && (
-                <div className="p-6 border-t border-border">
+                <div className="px-5 py-4 border-t" style={{ borderColor: 'var(--color-border)' }}>
                   {footer}
                 </div>
               )}

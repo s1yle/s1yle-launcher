@@ -89,11 +89,19 @@ const AlertPopup: React.FC<AlertPopupProps> = ({
   const typeConfig = getTypeConfig();
 
   const confirmTypeClasses = {
-    primary: 'bg-info hover:bg-info text-text-primary',
-    success: 'bg-success hover:bg-success text-text-primary',
-    warning: 'bg-warning hover:bg-warning text-text-primary',
-    error: 'bg-error hover:bg-error text-text-primary',
-    info: 'bg-info hover:bg-info text-text-primary',
+    primary: 'text-white',
+    success: 'text-white',
+    warning: 'text-white',
+    error: 'text-white',
+    info: 'text-white',
+  };
+
+  const confirmBgClasses = {
+    primary: 'var(--color-primary)',
+    success: 'var(--color-success)',
+    warning: 'var(--color-warning)',
+    error: 'var(--color-error)',
+    info: 'var(--color-primary)',
   };
 
   return (
@@ -112,7 +120,20 @@ const AlertPopup: React.FC<AlertPopupProps> = ({
             type="button"
             onClick={handleConfirm}
             disabled={disableConfirm || loading}
-            className={`px-6 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${confirmTypeClasses[typeConfig.confirmType]} ${confirmClassName}`}
+            className={`px-6 py-2 rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer ${confirmTypeClasses[typeConfig.confirmType]} ${confirmClassName}`}
+            style={{ 
+              backgroundColor: confirmBgClasses[typeConfig.confirmType],
+            }}
+            onMouseEnter={(e) => {
+              if (!disableConfirm && !loading) {
+                e.currentTarget.style.opacity = '0.9';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = '1';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             {confirmText}
@@ -120,17 +141,17 @@ const AlertPopup: React.FC<AlertPopupProps> = ({
         </div>
       }
     >
-      <div className="space-y-4">
+      <div className="space-y-3">
         {showIcon && (
           <div className="flex justify-center mb-2">
             {typeConfig.icon}
           </div>
         )}
-        <div className="text-text-primary text-center">
-          {typeof message === 'string' ? <p className="text-lg">{message}</p> : message}
+        <div className="text-center" style={{ color: 'var(--color-text-primary)' }}>
+          {typeof message === 'string' ? <p className="text-base">{message}</p> : message}
         </div>
         {autoClose > 0 && (
-          <div className="text-text-tertiary text-sm text-center">
+          <div className="text-sm text-center" style={{ color: 'var(--color-text-tertiary)' }}>
             {Math.ceil(autoClose / 1000)}秒后自动关闭
           </div>
         )}
