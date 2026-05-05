@@ -139,7 +139,7 @@ impl PathConfig {
 }
 
 /// # 最小窗口宽度
-pub static MIN_WIDTH: Lazy<u32> = Lazy::new(|| 960);
+pub static MIN_WIDTH: Lazy<u32> = Lazy::new(|| 800);
 
 /// # 最小窗口高度
 pub static MIN_HEIGHT: Lazy<u32> = Lazy::new(|| 600);
