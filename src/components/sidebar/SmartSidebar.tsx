@@ -8,7 +8,7 @@ import GameSidebarContent from './content/GameSidebarContent';
 import CommonSidebarContent from './content/CommonSidebarContent';
 import BaseChildrenContent from './content/BaseChildrenContent';
 import { logger } from '../../helper/logger';
-import { openUrl } from '../../helper/rustInvoke';
+import { openUrl, openFolder } from '../../helper/rustInvoke';
 import { useInstanceStore } from '@/stores/instanceStore';
 import { Folder } from 'lucide-react';
 import { ConfirmPopup, useNotification } from '@/components/common';
@@ -146,6 +146,19 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
       setShowDeleteConfirm(true);
     };
 
+    const handleOpenFolder = async (itemId: string) => {
+      const folderId = itemId.replace('folder-', '');
+      const folder = knownFolders.find(f => f.id === folderId);
+      if (folder?.path) {
+        try {
+          await openFolder(folder.path);
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : t('notification.error');
+          notifyError(t('instances.openFolderFailed', '打开文件夹失败'), msg);
+        }
+      }
+    };
+
     const handleConfirmDelete = async () => {
       if (!deletingId) return;
       setIsDeleting(true);
@@ -174,12 +187,13 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false }: SmartSidebarProps)
             items={allChildrenItems}
             onMenuClick={handleItemClick}
             isActive={isActive}
-            isItemActive={(id) => id === `folder-${selectedFolderId}` } // ← 高亮匹配
+            isItemActive={(id) => id === `folder-${selectedFolderId}` }
             isParentActive={isParentOfActive}
             hasChildrenItems={hasChildrenItems}
             groupTitle={currentMenuItem?.title || parentMenuItem?.title || ''}
             groupTitleI18nKey={currentMenuItem?.titleI18nKey || parentMenuItem?.titleI18nKey}
             onItemDelete={handleDeleteFolder}
+            onItemOpenFolder={handleOpenFolder}
             deletableItemIds={deletableIds}
           />
         </div>
