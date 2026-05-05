@@ -15,7 +15,8 @@ import { useWindowPosition } from './hooks/useWindowPosition';
 import FloatingDownloadButton from './components/FloatingDownloadButton';
 import './helper/i18n';
 
-const PAGE_TRANSITION_DURATION = 0.35;
+const PAGE_TRANSITION_DURATION = 0.15;
+const SIDEBAR_TRANSITION_DURATION = 0.25;
 
 const MainLayout = () => {
   const location = useLocation();
@@ -36,7 +37,7 @@ const MainLayout = () => {
     setTimeout(() => {
       animLockRef.current = false;
       setNavigating(false);
-    }, PAGE_TRANSITION_DURATION * 1000 + 100);
+    }, (Math.max(PAGE_TRANSITION_DURATION, SIDEBAR_TRANSITION_DURATION) * 1000) + 100);
   };
 
   useEffect(() => {
@@ -52,30 +53,29 @@ const MainLayout = () => {
     <div className="h-screen flex flex-col " onContextMenu={handleContextMenu}>
       <Header type={currentRoute.header.type === 'main' ? 'main' : 'sub'} title={currentRoute.header.title} />
       <div className="flex flex-1 overflow-hidden ">
-        {!isFullscreen && (
-          <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} />
-        )}
+        <AnimatePresence>
+          {!isFullscreen && (
+            <motion.div
+              key="sidebar"
+              className="flex-shrink-0"
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 'auto', opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{
+                duration: SIDEBAR_TRANSITION_DURATION,
+                ease: [0.25, 0.1, 0.25, 1],
+              }}
+              style={{ overflow: 'hidden' }}
+            >
+              <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} />
+            </motion.div>
+          )}
+        </AnimatePresence>
         <main
           className="flex-1 overflow-y-auto overflow-x-hidden relative noise-bg gradient-bg scrollbar-custom"
           style={{ background: 'var(--color-bg-primary)' }}
         >
-          <AnimatePresence mode="sync">
-            <motion.div
-              key={location.pathname}
-              className="absolute inset-0"
-              initial={{ opacity: 0, x: 30, scale: 0.98 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: -20, scale: 0.98 }}
-              transition={{
-                duration: PAGE_TRANSITION_DURATION,
-                ease: [0.25, 0.1, 0.25, 1],
-              }}
-            >
-              <div className="absolute inset-0 ">
-                <RouterRenderer />
-              </div>
-            </motion.div>
-          </AnimatePresence>
+          <RouterRenderer />
         </main>
       </div>
     </div>

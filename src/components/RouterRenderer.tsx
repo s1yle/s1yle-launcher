@@ -1,6 +1,7 @@
-import React from 'react';
-import { Route, Routes } from "react-router-dom";
-import { routes, RouteConfig } from "../router/config";
+import { useLocation } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
+import React from "react";
+import { routes, findRouteByPath } from "../router/config";
 import {
     Home,
     AccountList,
@@ -23,7 +24,8 @@ import {
     VersionInstall
 } from '../pages';
 
-// 组件映射
+const PAGE_TRANSITION_DURATION = 0.15;
+
 const componentMap: Record<string, React.FC> = {
     Home,
     AccountList,
@@ -46,47 +48,39 @@ const componentMap: Record<string, React.FC> = {
     VersionInstall
 };
 
-// 递归渲染所有路由（平级，不嵌套）
-const renderAllRoutes = (routeList: RouteConfig[]): React.ReactNode[] => {
-    const result: React.ReactNode[] = [];
-    
-    const processRoutes = (routesToProcess: RouteConfig[]) => {
-        routesToProcess.forEach((route) => {
-            const Component = componentMap[route.componentName];
-            if (!Component) {
-                console.warn(`Component ${route.componentName} not found in componentMap`);
-                return;
-            }
-
-            // 添加当前路由
-            result.push(
-                <Route 
-                    key={route.path} 
-                    path={route.path} 
-                    element={<Component />} 
-                />
-            );
-            
-            // 递归处理子路由
-            if (route.children) {
-                processRoutes(route.children);
-            }
-        });
-    };
-    
-    processRoutes(routeList);
-    return result;
+const findComponentForPath = (pathname: string): React.FC | null => {
+    const route = findRouteByPath(pathname, routes);
+    if (!route) return null;
+    return componentMap[route.componentName] || null;
 };
 
-// 这个组件专门负责根据路由配置渲染对应的页面组件
 const RouterRenderer = () => {
+    const location = useLocation();
+    const currentPathname = location.pathname;
+
+    const Component = findComponentForPath(currentPathname);
+
+    if (!Component) return null;
+
     return (
-        <div className="h-full pl-3 pr-3 ">
-            <Routes>
-                {renderAllRoutes(routes)}
-            </Routes>
+        <div className="h-full pl-3 pr-3 relative">
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={currentPathname}
+                    className="absolute inset-0"
+                    initial={{ opacity: 0, x: 30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -30 }}
+                    transition={{
+                        duration: PAGE_TRANSITION_DURATION,
+                        ease: [0.25, 0.1, 0.25, 1],
+                    }}
+                >
+                    <Component />
+                </motion.div>
+            </AnimatePresence>
         </div>
     );
-}
+};
 
 export default RouterRenderer;
