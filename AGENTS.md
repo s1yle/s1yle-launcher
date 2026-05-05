@@ -457,6 +457,11 @@ const { contextMenuState, showContextMenu, hideContextMenu } = useContextMenu();
 - 实例列表项（InstanceListItem）：实例管理、重命名、删除、打开所在文件夹
 - 侧边栏游戏文件夹（BaseChildrenContent）：删除游戏文件夹、打开所在文件夹
 
+**"打开所在文件夹"功能实现**：
+- 侧边栏游戏文件夹：通过 `SmartSidebar.tsx` 中的 `handleOpenFolder` 函数实现
+- 从 `knownFolders` 中查找文件夹路径，调用 `openFolder(path)` API
+- 实例列表项：通过 `InstanceListItem.tsx` 中的 `handleContextMenuAction` 实现
+
 #### 3.8.7 间距系统
 
 **内边距（Padding）**：
@@ -1423,7 +1428,7 @@ pnpm tauri build
 | Popup        | AnimatePresence 进出动画（fade/slide/scale）    | ✅  |
 | Notification | Toast 弹簧进出动画 + 自动位移                       | ✅  |
 | TabBar       | 内容切换 exit 动画 + layoutId 滑动指示器             | ✅  |
-| 页面过渡         | opacity + x + scale 微变形 + cubic-bezier 缓动 | ✅  |
+| 页面过渡         | opacity + x 位移 + 250ms 缓动，AnimatePresence mode="wait" | ✅  |
 | Spinner      | 统一使用 Loader2 lucide 图标                    | ✅  |
 
 ### 12.8 侧边栏系统
@@ -1495,4 +1500,47 @@ pnpm tauri build
 - **游戏目录术语**: 前端统一使用"游戏目录"（指 `{base}` 路径），"游戏实例"（指 `{base}/minecraft/{daemon_name}`），"版本中心"（管理具体游戏版本）
 - **删除功能架构**: 游戏目录删除入口在侧边栏（SmartSidebar → BaseChildrenContent），确认弹框使用 ConfirmPopup，后端 remove_known_path 不做限制，前端通过 SYSTEM_FOLDER_IDS 控制可见性
 - **setSelectedFolder 行为**: 选中游戏目录时自动调用 setDefaultFolder 设为默认，同时更新 knownFolders 的 is_default 字段
+
+### 12.13 页面切换动画优化
+
+- **动画时间**: 从 350ms 减少到 250ms，提升响应速度 ✅
+- **AnimatePresence mode**: 从 `sync` 改为 `wait`，避免新旧组件同时渲染 ✅
+- **动画变体**: 提取到 `utils/animations.ts`，便于统一管理 ✅
+- **移除缩放效果**: 移除 `scale: 0.98`，使动画更流畅 ✅
+- **减少位移距离**: 从 30px/-20px 减少到 15px/-10px ✅
+
+### 12.14 弹窗 UI 优化
+
+- **背景**: 使用 `var(--color-surface-solid)` 替代硬编码类名 ✅
+- **边框**: `1px solid var(--color-border)` ✅
+- **圆角**: 统一为 `8px`（按钮 `6px`） ✅
+- **阴影**: `0 12px 48px rgba(0, 0, 0, 0.25)` ✅
+- **内边距**: `px-5 py-4` 替代 `p-6` ✅
+- **按钮悬浮效果**: 添加 `translateY(-1px)` 上浮动画 ✅
+- **关闭按钮**: 添加 `var(--color-primary-10)` 悬浮背景 ✅
+
+**弹窗样式规范**：
+
+```css
+/* 弹窗容器 */
+backgroundColor: var(--color-surface-solid);
+border: 1px solid var(--color-border);
+borderRadius: 8px;
+boxShadow: 0 12px 48px rgba(0, 0, 0, 0.25);
+
+/* 确认按钮 */
+backgroundColor: var(--color-primary);
+borderRadius: 6px;
+/* 悬浮: opacity: 0.9; transform: translateY(-1px); */
+
+/* 取消按钮 */
+backgroundColor: var(--color-surface-hover);
+color: var(--color-text-secondary);
+borderRadius: 6px;
+/* 悬浮: backgroundColor: var(--color-surface-active); */
+```
+
+### 12.15 窗口配置
+
+- **最小窗口尺寸**: 800×600（从 960×600 调整） ✅
 
