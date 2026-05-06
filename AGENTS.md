@@ -186,6 +186,13 @@ export const useFeature = () => {
 - 所有图标统一从 `src/icons/index.ts` 导出
 - 禁止使用内联 SVG 或 emoji 作为 UI 图标
 - 图标组件支持 `className`、`size`、`strokeWidth` 等 props
+- **重要：图标在配置中的使用规范**：
+  - 在 `router/config.tsx` 的 `sidebarMenuItems` 中，`icon` 属性应使用 JSX 元素格式：`icon: <FolderOpen className="w-4 h-4" />`
+  - 在 `ContextMenuChildItem` 配置中，`icon` 属性也应使用 JSX 元素格式
+  - `ContextMenu` 组件期望 `icon` 是 `LucideIcon` 类型（组件本身），而不是 JSX 元素
+  - 在 `BaseChildrenContent.tsx` 的 `getContextMenuItems` 中，需要使用 `typeof child.icon === 'function'` 检查来过滤 JSX 元素
+  - **错误示例**：`icon: FolderOpen`（直接导出组件）会导致 "Element type is invalid" 错误
+  - **正确示例**：`icon: <FolderOpen className="w-4 h-4" />`（JSX 元素）
 
 ### 3.7 主题系统
 
@@ -1207,20 +1214,23 @@ enum SidebarGroup {
 - `/account` - 账户列表
 - `/account/microsoft` - 微软账号
 - `/account/offline` - 离线账号
-- `/instance-manage` - 版本中心（原"实例管理"，管理具体游戏版本）
-- `/instance-list` - 游戏实例（原"实例列表"，带独立二级侧边栏，展示游戏目录下的实例）
+- `/instance-manage` - 游戏管理（带独立二级侧边栏，自动导航到第一个子项）
+- `/instance-manage/game-settings` - 游戏设置
+- `/instance-manage/auto-install` - 自动安装
+- `/instance-manage/mods` - 模组
+- `/instance-manage/resource-packs` - 材质包
+- `/instance-manage/worlds` - 世界
+- `/instance-list` - 游戏列表（原"实例列表"，带独立二级侧边栏，展示游戏目录下的实例）
 - `/download` - 下载
 - `/download/game` - 游戏下载
 - `/download/modpack` - 整合包下载
-- `/game-settings` - 全局游戏设置（带独立二级侧边栏）
-- `/game-settings/java` - Java 管理
-- `/game-settings/general` - 通用设置
-- `/game-settings/appearance` - 外观设置
-- `/game-settings/download` - 下载设置
-- `/settings` - 设置
-- `/multiplayer` - 多人联机
-- `/feedback` - 反馈
 - `/hint` - 启动器说明
+
+> **已移除的页面**：
+> - ~~`/game-settings`~~ - 全局游戏设置（已移除）
+> - ~~`/settings`~~ - 设置（已移除）
+> - ~~`/multiplayer`~~ - 多人联机（已移除）
+> - ~~`/feedback`~~ - 反馈（已移除）
 
 > **术语对照表**:
 >
@@ -1232,13 +1242,42 @@ enum SidebarGroup {
 
 **侧边栏菜单项** (`SidebarMenuItem`) 使用 lucide-react 图标组件（`ReactNode`），不再使用 emoji 字符串。每个菜单项包含 `titleI18nKey` 用于国际化。
 
-**侧边栏类型系统**:
+**侧边栏类型系统**：
 
 - `route` - 跳转页面（`path` 指定目标路由）
-- `action` - 执行功能（`action` 回调函数）
+- `action` - 执行功能（`action` 回调函数），**支持 `children` 时显示右键菜单**
 - `external` - 打开外部链接（`url` 指定链接，使用 Tauri `openUrl`）
 - `divider` - 视觉分隔线
 - `header` - 分组标题（可折叠）
+
+**右键上下文菜单**：
+- 当 `action` 类型的菜单项带有 `children` 属性时，点击会显示右键上下文菜单
+- 配置位置：`router/contextMenuConfigs.ts`
+- 使用位置：`BaseChildrenContent.tsx` 的 `getContextMenuItems` 函数
+- 处理函数：`useContextMenuAction` 封装了所有菜单项的处理逻辑
+- **重要**：`ContextMenuChildItem` 的 `icon` 属性必须使用 JSX 元素格式（如 `<FolderOpen className="w-4 h-4" />`），而不是组件本身
+
+**游戏管理侧边栏结构**：
+```typescript
+{
+  id: 'instance-manage',
+  type: 'route',
+  path: '/instance-manage',
+  autoNavigateToFirstChild: true, // 自动导航到第一个子项
+  children: [
+    // route 类型：游戏设置、自动安装、模组、材质包、世界
+    { id: 'gm-game-settings', type: 'route', path: '/instance-manage/game-settings' },
+    { id: 'gm-auto-install', type: 'route', path: '/instance-manage/auto-install' },
+    { id: 'gm-mods', type: 'route', path: '/instance-manage/mods' },
+    { id: 'gm-resource-packs', type: 'route', path: '/instance-manage/resource-packs' },
+    { id: 'gm-worlds', type: 'route', path: '/instance-manage/worlds' },
+    
+    // action 类型 + children：点击显示右键菜单
+    { id: 'gm-browse', type: 'action', children: [...] }, // 浏览菜单
+    { id: 'gm-manage', type: 'action', children: [...] }  // 管理菜单
+  ]
+}
+```
 
 **独立侧边栏页面**:
 
@@ -1543,4 +1582,41 @@ borderRadius: 6px;
 ### 12.15 窗口配置
 
 - **最小窗口尺寸**: 800×600（从 960×600 调整） ✅
+
+### 12.16 游戏管理重构（2026-05-06）
+
+**新增页面**：
+- `src/pages/Instance/InstanceSettings/` 目录下的 5 个新页面：
+  - `InstanceGameSettings.tsx` - 游戏设置
+  - `InstanceAutoInstall.tsx` - 自动安装
+  - `InstanceMods.tsx` - 模组
+  - `InstanceResourcePacks.tsx` - 材质包
+  - `InstanceWorlds.tsx` - 世界
+
+**配置文件**：
+- `src/router/contextMenuConfigs.ts` - 右键菜单配置和处理逻辑
+  - `browseMenuConfig` - 浏览菜单（版本目录、模组文件夹等 8 项）
+  - `manageMenuConfig` - 管理菜单（生成脚本、重命名等 5 项）
+  - `useContextMenuAction` - 统一处理函数
+
+**移除页面**：
+- `/game-settings` - 全局游戏设置
+- `/settings` - 设置
+- `/multiplayer` - 多人联机
+- `/feedback` - 反馈
+
+**侧边栏更新**：
+- `/instance-manage` 设置 `autoNavigateToFirstChild: true`
+- 游戏管理的 5 个一级菜单从 `action` 改为 `route` 类型
+- 浏览和管理改为 `action` + `children`，点击显示右键菜单
+
+**解耦设计**：
+- 配置与逻辑分离：菜单结构定义在 `contextMenuConfigs.ts`
+- 统一处理函数：`useContextMenuAction` 封装所有菜单项处理
+- 可扩展：支持为每个菜单项自定义 `handler` 函数
+
+**图标使用规范**：
+- `ContextMenuChildItem` 的 `icon` 必须使用 JSX 元素格式
+- 正确示例：`icon: <FolderOpen className="w-4 h-4" />`
+- 错误示例：`icon: FolderOpen`（会导致 "Element type is invalid" 错误）
 

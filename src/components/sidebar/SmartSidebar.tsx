@@ -13,6 +13,7 @@ import { openUrl, openFolder } from '../../helper/rustInvoke';
 import { useInstanceStore } from '@/stores/instanceStore';
 import { Folder } from 'lucide-react';
 import { ConfirmPopup, useNotification } from '@/components/common';
+import { useContextMenuAction } from '../../router/contextMenuConfigs';
 
 interface SmartSidebarProps {
   onMenuClick?: (path: string) => void;
@@ -187,53 +188,18 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer }: SmartSideb
 
     const handleContextMenuAction = (parentId: string, actionId: string) => {
       logger.info(`Context menu action: parent=${parentId}, action=${actionId}`);
-
-      if (parentId === 'gm-browse') {
-        switch (actionId) {
-          case 'ctx-version':
-            success(t('gameManage.browse'), t('gameManage.browseVersionDir'));
-            break;
-          case 'ctx-mods':
-            success(t('gameManage.browse'), t('gameManage.browseModsDir'));
-            break;
-          case 'ctx-resourcepacks':
-            success(t('gameManage.browse'), t('gameManage.browseResourcePacksDir'));
-            break;
-          case 'ctx-saves':
-            success(t('gameManage.browse'), t('gameManage.browseSavesDir'));
-            break;
-          case 'ctx-shaders':
-            success(t('gameManage.browse'), t('gameManage.browseShadersDir'));
-            break;
-          case 'ctx-screenshots':
-            success(t('gameManage.browse'), t('gameManage.browseScreenshotsDir'));
-            break;
-          case 'ctx-config':
-            success(t('gameManage.browse'), t('gameManage.browseConfigDir'));
-            break;
-          case 'ctx-logs':
-            success(t('gameManage.browse'), t('gameManage.browseLogsDir'));
-            break;
-        }
-      } else if (parentId === 'gm-manage') {
-        switch (actionId) {
-          case 'ctx-script':
-            success(t('gameManage.manage'), t('gameManage.manageGenerateScript'));
-            break;
-          case 'ctx-rename':
-            success(t('gameManage.manage'), t('gameManage.manageRename'));
-            break;
-          case 'ctx-copy':
-            success(t('gameManage.manage'), t('gameManage.manageCopy'));
-            break;
-          case 'ctx-delete':
-            success(t('gameManage.manage'), t('gameManage.manageDelete'));
-            break;
-          case 'ctx-export':
-            success(t('gameManage.manage'), t('gameManage.manageExport'));
-            break;
-        }
-      }
+      useContextMenuAction(parentId, actionId, t, {
+        success,
+        error: notifyError,
+        warning: (title: string, message?: string) => {
+          // TODO: implement warning
+          return '';
+        },
+        info: (title: string, message?: string) => {
+          // TODO: implement info
+          return '';
+        },
+      });
     };
 
     return (

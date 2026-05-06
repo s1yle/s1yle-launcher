@@ -21,6 +21,7 @@ import {
   Copy,
   Trash2,
   FileDown,
+  type LucideIcon,
 } from 'lucide-react';
 import { type ReactNode } from 'react';
 import { handleAddGameFolder, handleRefreshInstances } from './actionHandler';
@@ -215,6 +216,16 @@ export interface SidebarMenuItem {
   danger?: boolean;
 }
 
+export interface ContextMenuChildItem {
+  id: string;
+  type: 'action';
+  title: string;
+  titleI18nKey: string;
+  icon: ReactNode;
+  group: SidebarGroup;
+  danger?: boolean;
+}
+
 export const sidebarMenuItems: SidebarMenuItem[] = [
   {
     id: 'account',
@@ -324,14 +335,14 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
             path: '/instance-manage',
             group: SidebarGroup.GAME,
             children: [
-              { id: 'ctx-version', type: 'action' as const, title: '版本目录', titleI18nKey: 'gameManage.browseVersionDir', icon: FolderOpen, group: SidebarGroup.GAME },
-              { id: 'ctx-mods', type: 'action' as const, title: '模组文件夹', titleI18nKey: 'gameManage.browseModsDir', icon: Puzzle, group: SidebarGroup.GAME },
-              { id: 'ctx-resourcepacks', type: 'action' as const, title: '材质包文件夹', titleI18nKey: 'gameManage.browseResourcePacksDir', icon: PackageOpen, group: SidebarGroup.GAME },
-              { id: 'ctx-saves', type: 'action' as const, title: '世界文件夹', titleI18nKey: 'gameManage.browseSavesDir', icon: Map, group: SidebarGroup.GAME },
-              { id: 'ctx-shaders', type: 'action' as const, title: '光影文件夹', titleI18nKey: 'gameManage.browseShadersDir', icon: FolderSearch, group: SidebarGroup.GAME },
-              { id: 'ctx-screenshots', type: 'action' as const, title: '截图文件夹', titleI18nKey: 'gameManage.browseScreenshotsDir', icon: FolderSearch, group: SidebarGroup.GAME },
-              { id: 'ctx-config', type: 'action' as const, title: '配置文件夹', titleI18nKey: 'gameManage.browseConfigDir', icon: FolderSearch, group: SidebarGroup.GAME },
-              { id: 'ctx-logs', type: 'action' as const, title: '日志文件夹', titleI18nKey: 'gameManage.browseLogsDir', icon: FolderSearch, group: SidebarGroup.GAME },
+              { id: 'ctx-version', type: 'action' as const, title: '版本目录', titleI18nKey: 'gameManage.browseVersionDir', icon: <FolderOpen className="w-4 h-4" />, group: SidebarGroup.GAME },
+              { id: 'ctx-mods', type: 'action' as const, title: '模组文件夹', titleI18nKey: 'gameManage.browseModsDir', icon: <Puzzle className="w-4 h-4" />, group: SidebarGroup.GAME },
+              { id: 'ctx-resourcepacks', type: 'action' as const, title: '材质包文件夹', titleI18nKey: 'gameManage.browseResourcePacksDir', icon: <PackageOpen className="w-4 h-4" />, group: SidebarGroup.GAME },
+              { id: 'ctx-saves', type: 'action' as const, title: '世界文件夹', titleI18nKey: 'gameManage.browseSavesDir', icon: <Map className="w-4 h-4" />, group: SidebarGroup.GAME },
+              { id: 'ctx-shaders', type: 'action' as const, title: '光影文件夹', titleI18nKey: 'gameManage.browseShadersDir', icon: <FolderSearch className="w-4 h-4" />, group: SidebarGroup.GAME },
+              { id: 'ctx-screenshots', type: 'action' as const, title: '截图文件夹', titleI18nKey: 'gameManage.browseScreenshotsDir', icon: <FolderSearch className="w-4 h-4" />, group: SidebarGroup.GAME },
+              { id: 'ctx-config', type: 'action' as const, title: '配置文件夹', titleI18nKey: 'gameManage.browseConfigDir', icon: <FolderSearch className="w-4 h-4" />, group: SidebarGroup.GAME },
+              { id: 'ctx-logs', type: 'action' as const, title: '日志文件夹', titleI18nKey: 'gameManage.browseLogsDir', icon: <FolderSearch className="w-4 h-4" />, group: SidebarGroup.GAME },
             ]
           },
           {
@@ -343,11 +354,11 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
             path: '/instance-manage',
             group: SidebarGroup.GAME,
             children: [
-              { id: 'ctx-script', type: 'action' as const, title: '生成启动脚本', titleI18nKey: 'gameManage.manageGenerateScript', icon: FileText, group: SidebarGroup.GAME },
-              { id: 'ctx-rename', type: 'action' as const, title: '重命名该实例', titleI18nKey: 'gameManage.manageRename', icon: Edit3, group: SidebarGroup.GAME },
-              { id: 'ctx-copy', type: 'action' as const, title: '复制游戏实例', titleI18nKey: 'gameManage.manageCopy', icon: Copy, group: SidebarGroup.GAME },
-              { id: 'ctx-delete', type: 'action' as const, title: '删除该实例', titleI18nKey: 'gameManage.manageDelete', icon: Trash2, danger: true, group: SidebarGroup.GAME },
-              { id: 'ctx-export', type: 'action' as const, title: '导出整合包', titleI18nKey: 'gameManage.manageExport', icon: FileDown, group: SidebarGroup.GAME },
+              { id: 'ctx-script', type: 'action' as const, title: '生成启动脚本', titleI18nKey: 'gameManage.manageGenerateScript', icon: <FileText className="w-4 h-4" />, group: SidebarGroup.GAME },
+              { id: 'ctx-rename', type: 'action' as const, title: '重命名该实例', titleI18nKey: 'gameManage.manageRename', icon: <Edit3 className="w-4 h-4" />, group: SidebarGroup.GAME },
+              { id: 'ctx-copy', type: 'action' as const, title: '复制游戏实例', titleI18nKey: 'gameManage.manageCopy', icon: <Copy className="w-4 h-4" />, group: SidebarGroup.GAME },
+              { id: 'ctx-delete', type: 'action' as const, title: '删除该实例', titleI18nKey: 'gameManage.manageDelete', icon: <Trash2 className="w-4 h-4" />, danger: true, group: SidebarGroup.GAME },
+              { id: 'ctx-export', type: 'action' as const, title: '导出整合包', titleI18nKey: 'gameManage.manageExport', icon: <FileDown className="w-4 h-4" />, group: SidebarGroup.GAME },
             ]
           }
         ]
