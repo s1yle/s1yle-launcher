@@ -127,7 +127,7 @@ const BaseChildrenContent = ({
         return parentItem.children.map((child: SidebarMenuItem) => ({
           id: child.id,
           label: t(child.titleI18nKey, child.title) as string,
-          icon: typeof child.icon === 'function' ? child.icon as LucideIcon : undefined,
+          icon: child.icon ? (() => child.icon as React.ReactNode) : undefined,
           danger: child.danger,
         }));
       }

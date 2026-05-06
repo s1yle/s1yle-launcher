@@ -7,7 +7,7 @@ import { dropdown, transitions } from '../../utils/animations';
 export interface ContextMenuItemData {
   id: string;
   label: string;
-  icon?: LucideIcon;
+  icon?: LucideIcon | React.ReactNode;
   danger?: boolean;
   disabled?: boolean;
   divider?: boolean;
@@ -111,8 +111,6 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
             if (item.divider) {
               return <div key={`divider-${index}`} className="my-1 border-t" style={{ borderColor: 'var(--color-border)' }} />;
             }
-
-            const Icon = item.icon;
             
             return (
               <motion.button
@@ -138,7 +136,11 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                 }}
                 transition={transitions.fast}
               >
-                {Icon && <Icon className="w-4 h-4 flex-shrink-0" />}
+                {item.icon && (
+                  <span className="w-4 h-4 flex-shrink-0 flex items-center justify-center">
+                    {typeof item.icon === 'function' ? <item.icon className="w-4 h-4" /> : item.icon}
+                  </span>
+                )}
                 <span>{item.label}</span>
               </motion.button>
             );
