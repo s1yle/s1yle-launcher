@@ -203,30 +203,31 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer }: SmartSideb
     };
 
     return (
+      
       <BaseSidebarLayout footer={footer}>
         <AnimatePresence mode="wait">
           <motion.div
             key={`sidebar-instance-${selectedFolderId || 'default'}`}
-            className="py-8"
+            className="py-2"
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 10 }}
             transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
           >
-            <BaseChildrenContent
-              items={allChildrenItems}
-              onMenuClick={handleItemClick}
-              isActive={isActive}
-              isItemActive={(id) => id === `folder-${selectedFolderId}` }
-              isParentActive={isParentOfActive}
-              hasChildrenItems={hasChildrenItems}
-              groupTitle={currentMenuItem?.title || parentMenuItem?.title || ''}
-              groupTitleI18nKey={currentMenuItem?.titleI18nKey || parentMenuItem?.titleI18nKey}
-              onItemDelete={handleDeleteFolder}
-              onItemOpenFolder={handleOpenFolder}
-              deletableItemIds={deletableIds}
-              onContextMenuAction={handleContextMenuAction}
-            />
+                <BaseChildrenContent
+                  items={allChildrenItems}
+                  onMenuClick={handleItemClick}
+                  isActive={isActive}
+                  isItemActive={(id) => id === `folder-${selectedFolderId}` }
+                  isParentActive={isParentOfActive}
+                  hasChildrenItems={hasChildrenItems}
+                  groupTitle={currentMenuItem?.title || parentMenuItem?.title || ''}
+                  groupTitleI18nKey={currentMenuItem?.titleI18nKey || parentMenuItem?.titleI18nKey}
+                  onItemDelete={handleDeleteFolder}
+                  onItemOpenFolder={handleOpenFolder}
+                  deletableItemIds={deletableIds}
+                  onContextMenuAction={handleContextMenuAction}
+                />
           </motion.div>
         </AnimatePresence>
 

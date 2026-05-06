@@ -169,7 +169,6 @@ const BaseChildrenContent = ({
         initial={{ opacity: 0, x: -8 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: index * 0.03, duration: 0.15 }}
-        style={{ paddingLeft: level > 0 ? `${level * 0.75}rem` : undefined }}
         className="group/item"
       >
         <motion.button

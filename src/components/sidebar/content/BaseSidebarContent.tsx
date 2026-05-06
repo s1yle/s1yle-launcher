@@ -114,13 +114,56 @@ const BaseSidebarContent = ({
     const active = item.type === 'route' && item.path ? activeCheck(item.path) : false;
     const parentActive = !active && item.type === 'route' && item.path ? parentActiveCheck(item.path) : false;
 
+    // 如果有 customRender，使用自定义渲染
+    if (item.customRender) {
+      const CustomComponent = item.customRender;
+      return (
+        <motion.div
+          key={item.id}
+          initial={{ opacity: 0, x: -8 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: index * 0.03, duration: 0.15 }}
+          style={{
+             padding: level > 0 ? `${level * 0.75}rem` : `0.75rem`,
+          }}
+        >
+          <CustomComponent
+            item={item}
+            isActive={active}
+            isExpanded={isExpanded}
+            onToggle={hasChildren ? () => toggleGroup(item.id) : undefined}
+            onNavigate={(path) => {
+              if (onMenuClick) {
+                const menuItem = { ...item, path } as SidebarMenuItem;
+                onMenuClick(menuItem);
+              }
+            }}
+          />
+          <AnimatePresence>
+            {hasChildren && isExpanded && item.children && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="space-y-0.5 mt-0.5">
+                  {item.children.map((child, i) => renderItem(child, level + 1, index + i + 1))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      );
+    }
+
     return (
       <motion.div
         key={item.id}
         initial={{ opacity: 0, x: -8 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: index * 0.03, duration: 0.15 }}
-        style={{ paddingLeft: level > 0 ? `${level * 0.75}rem` : undefined }}
       >
         <motion.button
           onClick={() => handleItemClick(item)}

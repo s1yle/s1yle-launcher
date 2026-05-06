@@ -346,6 +346,11 @@
       "title": "预览"
     }
   },
+  "instanceInfo": {
+    "noInstance": "暂无实例",
+    "selectInstance": "选择实例",
+    "changeIcon": "更换图标"
+  },
   "instances": {
     "title": "实例列表",
     "subtitle": "查看和管理所有 Minecraft 游戏实例",

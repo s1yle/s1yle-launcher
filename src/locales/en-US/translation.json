@@ -346,6 +346,11 @@
       "title": "Preview"
     }
   },
+  "instanceInfo": {
+    "noInstance": "No instance",
+    "selectInstance": "Select instance",
+    "changeIcon": "Change icon"
+  },
   "instances": {
     "title": "Instance List",
     "subtitle": "View and manage all Minecraft game instances",

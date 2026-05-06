@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { type ReactNode } from 'react';
 import { handleAddGameFolder, handleRefreshInstances } from './actionHandler';
+import InstanceManageButton from '../components/sidebar/InstanceManageButton';
 
 export enum SidebarType {
   MAIN = 'main',
@@ -221,6 +222,13 @@ export interface SidebarMenuItem {
   group: SidebarGroup;
   children?: SidebarMenuItem[];
   danger?: boolean;
+  customRender?: React.ComponentType<{
+    item: SidebarMenuItem;
+    isActive: boolean;
+    isExpanded?: boolean;
+    onToggle?: () => void;
+    onNavigate?: (path: string) => void;
+  }>;
 }
 
 export interface ContextMenuChildItem {
@@ -287,6 +295,7 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
         icon: <FolderOpen className="w-4 h-4" />,
         path: '/instance-manage',
         group: SidebarGroup.GAME,
+        customRender: InstanceManageButton,
         children: [
           {
             id: 'gm-game-settings',
