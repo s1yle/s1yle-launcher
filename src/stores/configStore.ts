@@ -19,6 +19,7 @@ interface ConfigState {
   config: AppConfig | null;
   loading: boolean;
   error: string | null;
+  initialized: boolean;
 
   // 初始化
   init: () => Promise<void>;
@@ -47,17 +48,19 @@ export const useConfigStore = create<ConfigState>()(
     config: null,
     loading: false,
     error: null,
+    initialized: false,
 
     // 初始化配置
     init: async () => {
       set({ loading: true, error: null });
       try {
         const config = await getConfig();
-        set({ config, loading: false });
+        set({ config, loading: false, initialized: true });
       } catch (e) {
         set({
           error: e instanceof Error ? e.message : '加载配置失败',
           loading: false,
+          initialized: true,
         });
       }
     },
@@ -85,7 +88,12 @@ export const useConfigStore = create<ConfigState>()(
     // 设置用户偏好
     setPreference: async (key, value) => {
       const current = get().config;
-      if (!current) return;
+      
+      // 配置未加载时，延迟保存
+      if (!current || !get().initialized) {
+        setTimeout(() => get().setPreference(key, value), 100);
+        return;
+      }
 
       const updated = {
         ...current,

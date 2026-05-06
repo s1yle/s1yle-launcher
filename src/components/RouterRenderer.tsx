@@ -17,10 +17,6 @@ import {
     Multiplayer,
     Feedback,
     Hint,
-    GameSettingsJava,
-    GameSettingsGeneral,
-    GameSettingsAppearance,
-    GameSettingsDownload,
     VersionInstall
 } from '../pages';
 
@@ -41,10 +37,6 @@ const componentMap: Record<string, React.FC> = {
     Multiplayer,
     Feedback,
     Hint,
-    GameSettingsJava,
-    GameSettingsGeneral,
-    GameSettingsAppearance,
-    GameSettingsDownload,
     VersionInstall
 };
 

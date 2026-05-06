@@ -194,6 +194,13 @@ export const routes: RouteConfig[] = [
     parentPath: '/'
   },
   {
+    path: '/settings',
+    componentName: 'Settings',
+    header: { type: SidebarType.SUB, title: '设置', titleI18nKey: 'sidebar.settings' },
+    sidebarGroup: SidebarGroup.COMMON,
+    parentPath: '/'
+  },
+  {
     path: '/download/game/:versionId',
     componentName: 'VersionDetailWithInstall',
     header: { type: SidebarType.SECONDARY, title: '安装游戏', titleI18nKey: 'download.install.title' },
@@ -464,6 +471,15 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
         titleI18nKey: 'sidebar.hint',
         icon: <FileText className="w-4 h-4" />,
         path: '/hint',
+        group: SidebarGroup.COMMON
+      },
+      {
+        id: 'settings',
+        type: 'route',
+        title: '设置',
+        titleI18nKey: 'sidebar.settings',
+        icon: <Settings className="w-4 h-4" />,
+        path: '/settings',
         group: SidebarGroup.COMMON
       }
     ]

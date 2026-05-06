@@ -13,10 +13,6 @@ export { default as Settings } from './Settings';
 export { default as Multiplayer } from './Multiplayer';
 export { default as Feedback } from './Feedback/Feedback';
 export { default as Hint } from './Feedback/Hint'
-export { default as GameSettingsJava } from './GameSettings/GameSettingsJava';
-export { default as GameSettingsGeneral } from './GameSettings/GameSettingsGeneral';
-export { default as GameSettingsAppearance } from './GameSettings/GameSettingsAppearance';
-export { default as GameSettingsDownload } from './GameSettings/GameSettingsDownload';
 export { default as InstanceGameSettings } from './Instance/InstanceSettings/InstanceGameSettings';
 export { default as InstanceAutoInstall } from './Instance/InstanceSettings/InstanceAutoInstall';
 export { default as InstanceMods } from './Instance/InstanceSettings/InstanceMods';
