@@ -2,8 +2,6 @@ import {
   UserMinus,
   User,
   Settings,
-  Globe,
-  MessageCircle,
   FileText,
   FolderOpen,
   List,
@@ -11,10 +9,18 @@ import {
   Gamepad2,
   Package,
   Monitor,
-  ExternalLink,
   FolderTree,
   FolderPlus,
   RefreshCw,
+  Sparkles,
+  Puzzle,
+  PackageOpen,
+  Map,
+  FolderSearch,
+  Edit3,
+  Copy,
+  Trash2,
+  FileDown,
 } from 'lucide-react';
 import { type ReactNode } from 'react';
 import { handleAddGameFolder, handleRefreshInstances } from './actionHandler';
@@ -70,7 +76,6 @@ export const routes: RouteConfig[] = [
     header: { type: SidebarType.MAIN, title: 'Hello Minecraft! Launcher', titleI18nKey: 'header.title' },
     sidebarGroup: SidebarGroup.NONE
   },
-  // 账号 account
   {
     path: '/account',
     componentName: 'AccountListWithSidebar',
@@ -94,19 +99,55 @@ export const routes: RouteConfig[] = [
       },
     ]
   },
-  // 版本中心
   {
     path: '/instance-manage',
-    componentName: 'InstanceManage',
-    header: { type: SidebarType.SUB, title: '版本中心', titleI18nKey: 'sidebar.instanceManage' },
+    componentName: '',
+    header: { type: SidebarType.SUB, title: '游戏管理', titleI18nKey: 'sidebar.instanceManage' },
     sidebarGroup: SidebarGroup.GAME,
-    parentPath: '/'
+    autoNavigateToFirstChild: true,
+    parentPath: '/',
+    children: [
+      {
+        path: '/instance-manage/game-settings',
+        componentName: 'InstanceGameSettings',
+        header: { type: SidebarType.SECONDARY, title: '游戏设置', titleI18nKey: 'gameManage.gameSettings' },
+        sidebarGroup: SidebarGroup.GAME,
+        parentPath: '/'
+      },
+      {
+        path: '/instance-manage/auto-install',
+        componentName: 'InstanceAutoInstall',
+        header: { type: SidebarType.SECONDARY, title: '自动安装', titleI18nKey: 'gameManage.autoInstall' },
+        sidebarGroup: SidebarGroup.GAME,
+        parentPath: '/'
+      },
+      {
+        path: '/instance-manage/mods',
+        componentName: 'InstanceMods',
+        header: { type: SidebarType.SECONDARY, title: '模组', titleI18nKey: 'gameManage.mods' },
+        sidebarGroup: SidebarGroup.GAME,
+        parentPath: '/'
+      },
+      {
+        path: '/instance-manage/resource-packs',
+        componentName: 'InstanceResourcePacks',
+        header: { type: SidebarType.SECONDARY, title: '材质包', titleI18nKey: 'gameManage.resourcePacks' },
+        sidebarGroup: SidebarGroup.GAME,
+        parentPath: '/'
+      },
+      {
+        path: '/instance-manage/worlds',
+        componentName: 'InstanceWorlds',
+        header: { type: SidebarType.SECONDARY, title: '世界', titleI18nKey: 'gameManage.worlds' },
+        sidebarGroup: SidebarGroup.GAME,
+        parentPath: '/'
+      },
+    ]
   },
-  // 游戏实例
   {
     path: '/instance-list',
     componentName: 'InstanceList',
-    header: { type: SidebarType.SUB, title: '游戏实例', titleI18nKey: 'sidebar.instanceList' },
+    header: { type: SidebarType.SUB, title: '游戏列表', titleI18nKey: 'sidebar.instanceList' },
     sidebarGroup: SidebarGroup.GAME,
     parentPath: '/',
     autoNavigateToFirstChild: false,
@@ -120,7 +161,6 @@ export const routes: RouteConfig[] = [
       },
     ]
   },
-  // 下载 download
   {
     path: '/download',
     componentName: 'DownloadGame',
@@ -144,57 +184,6 @@ export const routes: RouteConfig[] = [
         parentPath: '/'
       },
     ]
-  },
-  {
-    path: '/game-settings',
-    componentName: 'GameSettingsJava',
-    header: { type: SidebarType.SUB, title: '全局游戏设置', titleI18nKey: 'gameSettings.title' },
-    sidebarGroup: SidebarGroup.COMMON,
-    parentPath: '/',
-    autoNavigateToFirstChild: true,
-    children: [
-      {
-        path: '/game-settings/java', componentName: 'GameSettingsJava',
-        header: { type: SidebarType.SECONDARY, title: 'Java 管理', titleI18nKey: 'gameSettings.java' },
-        sidebarGroup: SidebarGroup.COMMON, parentPath: '/'
-      },
-      {
-        path: '/game-settings/general', componentName: 'GameSettingsGeneral',
-        header: { type: SidebarType.SECONDARY, title: '通用', titleI18nKey: 'gameSettings.general' },
-        sidebarGroup: SidebarGroup.COMMON, parentPath: '/'
-      },
-      {
-        path: '/game-settings/appearance', componentName: 'GameSettingsAppearance',
-        header: { type: SidebarType.SECONDARY, title: '外观', titleI18nKey: 'gameSettings.appearance' },
-        sidebarGroup: SidebarGroup.COMMON, parentPath: '/'
-      },
-      {
-        path: '/game-settings/download', componentName: 'GameSettingsDownload',
-        header: { type: SidebarType.SECONDARY, title: '下载', titleI18nKey: 'gameSettings.download' },
-        sidebarGroup: SidebarGroup.COMMON, parentPath: '/'
-      },
-    ]
-  },
-  {
-    path: '/settings',
-    componentName: 'Settings',
-    header: { type: SidebarType.SUB, title: '设置', titleI18nKey: 'sidebar.settings' },
-    sidebarGroup: SidebarGroup.COMMON,
-    parentPath: '/'
-  },
-  {
-    path: '/multiplayer',
-    componentName: 'Multiplayer',
-    header: { type: SidebarType.SUB, title: '多人联机', titleI18nKey: 'sidebar.multiplayer' },
-    sidebarGroup: SidebarGroup.COMMON,
-    parentPath: '/'
-  },
-  {
-    path: '/feedback',
-    componentName: 'Feedback',
-    header: { type: SidebarType.SUB, title: '反馈与群组', titleI18nKey: 'sidebar.feedback' },
-    sidebarGroup: SidebarGroup.COMMON,
-    parentPath: '/'
   },
   {
     path: '/hint',
@@ -223,6 +212,7 @@ export interface SidebarMenuItem {
   action?: () => void;
   group: SidebarGroup;
   children?: SidebarMenuItem[];
+  danger?: boolean;
 }
 
 export const sidebarMenuItems: SidebarMenuItem[] = [
@@ -274,16 +264,98 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
       {
         id: 'instance-manage',
         type: 'route',
-        title: '版本中心',
+        title: '游戏管理',
         titleI18nKey: 'sidebar.instanceManage',
         icon: <FolderOpen className="w-4 h-4" />,
         path: '/instance-manage',
-        group: SidebarGroup.GAME
+        group: SidebarGroup.GAME,
+        children: [
+          {
+            id: 'gm-game-settings',
+            type: 'route',
+            title: '游戏设置',
+            titleI18nKey: 'gameManage.gameSettings',
+            icon: <Settings className="w-4 h-4" />,
+            path: '/instance-manage/game-settings',
+            group: SidebarGroup.GAME
+          },
+          {
+            id: 'gm-auto-install',
+            type: 'route',
+            title: '自动安装',
+            titleI18nKey: 'gameManage.autoInstall',
+            icon: <Sparkles className="w-4 h-4" />,
+            path: '/instance-manage/auto-install',
+            group: SidebarGroup.GAME
+          },
+          {
+            id: 'gm-mods',
+            type: 'route',
+            title: '模组',
+            titleI18nKey: 'gameManage.mods',
+            icon: <Puzzle className="w-4 h-4" />,
+            path: '/instance-manage/mods',
+            group: SidebarGroup.GAME
+          },
+          {
+            id: 'gm-resource-packs',
+            type: 'route',
+            title: '材质包',
+            titleI18nKey: 'gameManage.resourcePacks',
+            icon: <PackageOpen className="w-4 h-4" />,
+            path: '/instance-manage/resource-packs',
+            group: SidebarGroup.GAME
+          },
+          {
+            id: 'gm-worlds',
+            type: 'route',
+            title: '世界',
+            titleI18nKey: 'gameManage.worlds',
+            icon: <Map className="w-4 h-4" />,
+            path: '/instance-manage/worlds',
+            group: SidebarGroup.GAME
+          },
+          {
+            id: 'gm-browse',
+            type: 'action',
+            title: '浏览',
+            titleI18nKey: 'gameManage.browse',
+            icon: <FolderSearch className="w-4 h-4" />,
+            path: '/instance-manage',
+            group: SidebarGroup.GAME,
+            children: [
+              { id: 'ctx-version', type: 'action' as const, title: '版本目录', titleI18nKey: 'gameManage.browseVersionDir', icon: FolderOpen, group: SidebarGroup.GAME },
+              { id: 'ctx-mods', type: 'action' as const, title: '模组文件夹', titleI18nKey: 'gameManage.browseModsDir', icon: Puzzle, group: SidebarGroup.GAME },
+              { id: 'ctx-resourcepacks', type: 'action' as const, title: '材质包文件夹', titleI18nKey: 'gameManage.browseResourcePacksDir', icon: PackageOpen, group: SidebarGroup.GAME },
+              { id: 'ctx-saves', type: 'action' as const, title: '世界文件夹', titleI18nKey: 'gameManage.browseSavesDir', icon: Map, group: SidebarGroup.GAME },
+              { id: 'ctx-shaders', type: 'action' as const, title: '光影文件夹', titleI18nKey: 'gameManage.browseShadersDir', icon: FolderSearch, group: SidebarGroup.GAME },
+              { id: 'ctx-screenshots', type: 'action' as const, title: '截图文件夹', titleI18nKey: 'gameManage.browseScreenshotsDir', icon: FolderSearch, group: SidebarGroup.GAME },
+              { id: 'ctx-config', type: 'action' as const, title: '配置文件夹', titleI18nKey: 'gameManage.browseConfigDir', icon: FolderSearch, group: SidebarGroup.GAME },
+              { id: 'ctx-logs', type: 'action' as const, title: '日志文件夹', titleI18nKey: 'gameManage.browseLogsDir', icon: FolderSearch, group: SidebarGroup.GAME },
+            ]
+          },
+          {
+            id: 'gm-manage',
+            type: 'action',
+            title: '管理',
+            titleI18nKey: 'gameManage.manage',
+            icon: <Settings className="w-4 h-4" />,
+            path: '/instance-manage',
+            group: SidebarGroup.GAME,
+            children: [
+              { id: 'ctx-script', type: 'action' as const, title: '生成启动脚本', titleI18nKey: 'gameManage.manageGenerateScript', icon: FileText, group: SidebarGroup.GAME },
+              { id: 'ctx-rename', type: 'action' as const, title: '重命名该实例', titleI18nKey: 'gameManage.manageRename', icon: Edit3, group: SidebarGroup.GAME },
+              { id: 'ctx-copy', type: 'action' as const, title: '复制游戏实例', titleI18nKey: 'gameManage.manageCopy', icon: Copy, group: SidebarGroup.GAME },
+              { id: 'ctx-delete', type: 'action' as const, title: '删除该实例', titleI18nKey: 'gameManage.manageDelete', icon: Trash2, danger: true, group: SidebarGroup.GAME },
+              { id: 'ctx-export', type: 'action' as const, title: '导出整合包', titleI18nKey: 'gameManage.manageExport', icon: FileDown, group: SidebarGroup.GAME },
+            ]
+          }
+        ]
       },
       {
         id: 'instance-list',
         type: 'route',
-        title: '游戏实例',
+        title: '游戏列表',
         titleI18nKey: 'sidebar.instanceList',
         icon: <List className="w-4 h-4" />,
         path: '/instance-list',
@@ -374,96 +446,6 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
     titleI18nKey: 'sidebar.group.common',
     group: SidebarGroup.COMMON,
     children: [
-      {
-        id: 'game-settings',
-        type: 'route',
-        title: '全局游戏设置',
-        titleI18nKey: 'gameSettings.title',
-        icon: <Settings className="w-4 h-4" />,
-        path: '/game-settings',
-        group: SidebarGroup.COMMON,
-        children: [
-          {
-            id: 'gs-java',
-            type: 'route',
-            title: 'Java 管理',
-            titleI18nKey: 'gameSettings.java',
-            icon: <Settings className="w-4 h-4" />,
-            path: '/game-settings/java',
-            group: SidebarGroup.COMMON
-          },
-          {
-            id: 'gs-general',
-            type: 'route',
-            title: '通用',
-            titleI18nKey: 'gameSettings.general',
-            icon: <Settings className="w-4 h-4" />,
-            path: '/game-settings/general',
-            group: SidebarGroup.COMMON
-          },
-          {
-            id: 'gs-appearance',
-            type: 'route',
-            title: '外观',
-            titleI18nKey: 'gameSettings.appearance',
-            icon: <Settings className="w-4 h-4" />,
-            path: '/game-settings/appearance',
-            group: SidebarGroup.COMMON
-          },
-          {
-            id: 'gs-download',
-            type: 'route',
-            title: '下载',
-            titleI18nKey: 'gameSettings.download',
-            icon: <Settings className="w-4 h-4" />,
-            path: '/game-settings/download',
-            group: SidebarGroup.COMMON
-          }
-        ]
-      },
-      {
-        id: 'settings',
-        type: 'route',
-        title: '设置',
-        titleI18nKey: 'sidebar.settings',
-        icon: <Settings className="w-4 h-4" />,
-        path: '/settings',
-        group: SidebarGroup.COMMON
-      },
-      {
-        id: 'multiplayer',
-        type: 'route',
-        title: '多人联机',
-        titleI18nKey: 'sidebar.multiplayer',
-        icon: <Globe className="w-4 h-4" />,
-        path: '/multiplayer',
-        group: SidebarGroup.COMMON
-      },
-      {
-        id: 'divider-1',
-        type: 'divider',
-        title: '',
-        titleI18nKey: '',
-        group: SidebarGroup.COMMON
-      },
-      {
-        id: 'discord',
-        type: 'external',
-        title: 'Discord',
-        titleI18nKey: 'sidebar.discord',
-        icon: <ExternalLink className="w-4 h-4" />,
-        url: 'https://discord.gg/s1yle-launcher',
-        group: SidebarGroup.COMMON
-      },
-      {
-        id: 'feedback',
-        type: 'route',
-        title: '反馈与群组',
-        titleI18nKey: 'sidebar.feedback',
-        icon: <MessageCircle className="w-4 h-4" />,
-        path: '/feedback',
-        group: SidebarGroup.COMMON
-      },
       {
         id: 'hint',
         type: 'route',

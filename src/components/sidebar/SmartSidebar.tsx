@@ -1,4 +1,4 @@
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -22,6 +22,7 @@ interface SmartSidebarProps {
 
 const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer }: SmartSidebarProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const groups = getSidebarGroups();
   const selectedFolderId = useInstanceStore(s => s.selectedFolderId);
@@ -33,7 +34,9 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer }: SmartSideb
       return currentRoute.sidebarGroup;
     }
     if (location.pathname.startsWith('/account')) return 'account';
-    if (location.pathname.startsWith('/download') || location.pathname.startsWith('/instance')) return 'game';
+    if (location.pathname.startsWith('/download')) return 'game';
+    if (location.pathname.startsWith('/instance-list')) return 'game';
+    if (location.pathname.startsWith('/instance-manage')) return 'game';
     return 'none';
   };
 
@@ -74,7 +77,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer }: SmartSideb
   const currentGroup = getCurrentSidebarGroup();
 
   // 带独立侧边栏的渲染逻辑
-  const pagesWithOwnSidebar = ['/account', '/download', '/game-settings', '/instance-list'];
+  const pagesWithOwnSidebar = ['/account', '/download', '/game-settings', '/instance-list', '/instance-manage'];
 
   const knownFolders = useInstanceStore(s => s.knownFolders);
   const removeKnownFolder = useInstanceStore(s => s.removeKnownFolder);
@@ -182,6 +185,57 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer }: SmartSideb
       }
     };
 
+    const handleContextMenuAction = (parentId: string, actionId: string) => {
+      logger.info(`Context menu action: parent=${parentId}, action=${actionId}`);
+
+      if (parentId === 'gm-browse') {
+        switch (actionId) {
+          case 'ctx-version':
+            success(t('gameManage.browse'), t('gameManage.browseVersionDir'));
+            break;
+          case 'ctx-mods':
+            success(t('gameManage.browse'), t('gameManage.browseModsDir'));
+            break;
+          case 'ctx-resourcepacks':
+            success(t('gameManage.browse'), t('gameManage.browseResourcePacksDir'));
+            break;
+          case 'ctx-saves':
+            success(t('gameManage.browse'), t('gameManage.browseSavesDir'));
+            break;
+          case 'ctx-shaders':
+            success(t('gameManage.browse'), t('gameManage.browseShadersDir'));
+            break;
+          case 'ctx-screenshots':
+            success(t('gameManage.browse'), t('gameManage.browseScreenshotsDir'));
+            break;
+          case 'ctx-config':
+            success(t('gameManage.browse'), t('gameManage.browseConfigDir'));
+            break;
+          case 'ctx-logs':
+            success(t('gameManage.browse'), t('gameManage.browseLogsDir'));
+            break;
+        }
+      } else if (parentId === 'gm-manage') {
+        switch (actionId) {
+          case 'ctx-script':
+            success(t('gameManage.manage'), t('gameManage.manageGenerateScript'));
+            break;
+          case 'ctx-rename':
+            success(t('gameManage.manage'), t('gameManage.manageRename'));
+            break;
+          case 'ctx-copy':
+            success(t('gameManage.manage'), t('gameManage.manageCopy'));
+            break;
+          case 'ctx-delete':
+            success(t('gameManage.manage'), t('gameManage.manageDelete'));
+            break;
+          case 'ctx-export':
+            success(t('gameManage.manage'), t('gameManage.manageExport'));
+            break;
+        }
+      }
+    };
+
     return (
       <BaseSidebarLayout footer={footer}>
         <AnimatePresence mode="wait">
@@ -205,6 +259,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer }: SmartSideb
               onItemDelete={handleDeleteFolder}
               onItemOpenFolder={handleOpenFolder}
               deletableItemIds={deletableIds}
+              onContextMenuAction={handleContextMenuAction}
             />
           </motion.div>
         </AnimatePresence>

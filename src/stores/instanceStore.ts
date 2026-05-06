@@ -65,6 +65,7 @@ interface InstanceState {
   setSelectedFolder: (id: string | null) => Promise<void>;
   setSelectedInstance: (id: string | null) => void;
   setSelectedSidebarItem: (id: string | null) => void;
+  getInstance: (id: string) => GameInstance | null;
   createNew: (name: string, version: string, loaderType?: ModLoaderType, loaderVersion?: string, iconPath?: string) => Promise<void>;
   remove: (id: string) => Promise<void>;
   duplicate: (id: string, newName: string) => Promise<void>;
@@ -229,6 +230,11 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
   setSelectedInstance: (id: string | null) => {
     set({ selectedInstanceId: id });
     saveInstanceId(id);
+  },
+
+  getInstance: (id: string) => {
+    const { instances } = get();
+    return instances.find(i => i.id === id) || null;
   },
 
   setSelectedSidebarItem: (id: string | null) => {

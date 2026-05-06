@@ -1,10 +1,19 @@
-import { openUrl, openFolder } from '../../../helper/rustInvoke';
-import { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, Trash2, FolderOpen } from 'lucide-react';
-import { type SidebarMenuItem } from '../../../router/config';
-import ContextMenu, { useContextMenu, ContextMenuItemData } from '../../common/ContextMenu';
+import { type SidebarMenuItem, type SidebarItemType } from '../../../router/config';
+import ContextMenu, { useContextMenu, type ContextMenuItemData } from '../../common/ContextMenu';
+
+import { type LucideIcon } from 'lucide-react';
+
+interface ContextMenuChildItem {
+  id: string;
+  title: string;
+  titleI18nKey: string;
+  icon?: React.ReactNode;
+  danger?: boolean;
+}
 
 export interface BaseChildrenContentProps {
   items: SidebarMenuItem[];
@@ -18,6 +27,7 @@ export interface BaseChildrenContentProps {
   onItemDelete?: (id: string) => void;
   onItemOpenFolder?: (id: string) => void;
   deletableItemIds?: Set<string>;
+  onContextMenuAction?: (parentId: string, actionId: string) => void;
 }
 
 const BaseChildrenContent = ({
@@ -32,12 +42,14 @@ const BaseChildrenContent = ({
   onItemDelete,
   onItemOpenFolder,
   deletableItemIds,
+  onContextMenuAction,
 }: BaseChildrenContentProps) => {
   const { t } = useTranslation();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(
     new Set(items.filter(item => item.children?.length).map(item => item.id))
   );
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [contextMenuTarget, setContextMenuTarget] = useState<string | null>(null);
   const { contextMenuState, showContextMenu, hideContextMenu } = useContextMenu();
 
   const defaultIsActive = (_path: string) => false;
@@ -60,10 +72,24 @@ const BaseChildrenContent = ({
   const handleItemClick = (item: SidebarMenuItem) => {
     if (item.type === 'route' && item.path) {
       if (onMenuClick) onMenuClick(item);
-    } else if (item.type === 'action' && item.action) {
-      item.action();
-    } else if (item.type === 'external' && item.url) {
-      openUrl(item.url);
+    } else if (item.type === 'action') {
+      if (item.children && item.children.length > 0) {
+        return;
+      }
+      if (item.action) {
+        item.action();
+      }
+    }
+  };
+
+  const handleActionWithContext = (e: React.MouseEvent, item: SidebarMenuItem) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (item.type === 'action' && item.children && item.children.length > 0) {
+      setContextMenuTarget(item.id);
+      showContextMenu(e);
+    } else {
+      handleItemClick(item);
     }
   };
 
@@ -75,8 +101,15 @@ const BaseChildrenContent = ({
   };
 
   const handleContextMenuAction = (id: string) => {
+    if (contextMenuTarget && onContextMenuAction) {
+      onContextMenuAction(contextMenuTarget, id);
+      hideContextMenu();
+      setContextMenuTarget(null);
+      return;
+    }
+
     if (!selectedItemId) return;
-    
+
     switch (id) {
       case 'delete':
         onItemDelete?.(selectedItemId);
@@ -87,11 +120,24 @@ const BaseChildrenContent = ({
     }
   };
 
-  const contextMenuItems: ContextMenuItemData[] = [
-    { id: 'delete', label: t('contextMenu.deleteFolder', '删除游戏文件夹'), icon: Trash2, danger: true },
-    { id: 'divider1', label: '', divider: true },
-    { id: 'openFolder', label: t('contextMenu.openFolder', '打开所在文件夹'), icon: FolderOpen },
-  ];
+  const getContextMenuItems = (): ContextMenuItemData[] => {
+    if (contextMenuTarget) {
+      const parentItem = items.find(i => i.id === contextMenuTarget);
+      if (parentItem?.children) {
+        return parentItem.children.map((child: SidebarMenuItem) => ({
+          id: child.id,
+          label: t(child.titleI18nKey, child.title) as string,
+          icon: child.icon as LucideIcon | undefined,
+          danger: child.danger,
+        }));
+      }
+    }
+    return [
+      { id: 'delete', label: t('contextMenu.deleteFolder', '删除游戏文件夹') as string, icon: Trash2, danger: true },
+      { id: 'divider1', label: '', divider: true },
+      { id: 'openFolder', label: t('contextMenu.openFolder', '打开所在文件夹') as string, icon: FolderOpen },
+    ];
+  };
 
   const isDeletable = (itemId: string) => deletableItemIds?.has(itemId) ?? false;
 
@@ -113,6 +159,7 @@ const BaseChildrenContent = ({
     const active = item.type === 'route' && item.path ? activeCheck(item.path) : false;
     const itemActive = isItemActive ? isItemActive(item.id) : false;
     const parentActive = !active && !itemActive && item.type === 'route' && item.path ? parentActiveCheck(item.path) : false;
+    const isActionWithContext = item.type === 'action' && item.children && item.children.length > 0;
 
     const canDelete = isDeletable(item.id);
 
@@ -126,20 +173,26 @@ const BaseChildrenContent = ({
         className="group/item"
       >
         <motion.button
-          onClick={() => {
-            if (hasChildren) toggleExpand(item.id);
-            handleItemClick(item);
+          onClick={(e) => {
+            if (isActionWithContext) {
+              handleActionWithContext(e, item);
+            } else {
+              if (hasChildren) toggleExpand(item.id);
+              handleItemClick(item);
+            }
           }}
           onContextMenu={canDelete ? (e) => handleContextMenu(e, item.id) : undefined}
           className={`
             w-full flex items-center gap-3 py-2.5 rounded-lg cursor-pointer
             border-l-[3px] transition-colors duration-200
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--color-bg-secondary)]
-            ${active || itemActive
-              ? 'bg-[var(--color-surface-active)] text-[var(--color-text-primary)] font-semibold border-l-[var(--color-primary)]'
-              : parentActive
-                ? 'bg-[var(--color-surface)] text-[var(--color-text-primary)] border-l-[var(--color-primary)] border-l-opacity-50'
-                : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] border-l-transparent'
+            ${item.danger && !active && !itemActive
+              ? 'text-[var(--color-error)] hover:bg-[var(--color-error-10)] border-l-transparent'
+              : active || itemActive
+                ? 'bg-[var(--color-surface-active)] text-[var(--color-text-primary)] font-semibold border-l-[var(--color-primary)]'
+                : parentActive
+                  ? 'bg-[var(--color-surface)] text-[var(--color-text-primary)] border-l-[var(--color-primary)] border-l-opacity-50'
+                  : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] border-l-transparent'
             }
           `}
           whileTap={{ scale: 0.97 }}
@@ -157,7 +210,16 @@ const BaseChildrenContent = ({
           <span className="text-sm text-left flex-1 truncate">
             {t(item.titleI18nKey, item.title)}
           </span>
-          {hasChildren && (
+          {hasChildren && !isActionWithContext && (
+            <motion.div
+              animate={{ rotate: isExpanded ? 90 : 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex-shrink-0"
+            >
+              <ChevronRight className="w-3.5 h-3.5 text-[var(--color-text-tertiary)]" />
+            </motion.div>
+          )}
+          {isActionWithContext && (
             <motion.div
               animate={{ rotate: isExpanded ? 90 : 0 }}
               transition={{ duration: 0.2 }}
@@ -178,7 +240,7 @@ const BaseChildrenContent = ({
         </motion.button>
 
         <AnimatePresence>
-          {hasChildren && isExpanded && item.children && (
+          {hasChildren && !isActionWithContext && isExpanded && item.children && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
@@ -208,10 +270,13 @@ const BaseChildrenContent = ({
       </div>
 
       <ContextMenu
-        items={contextMenuItems}
+        items={getContextMenuItems()}
         position={contextMenuState.position}
         visible={contextMenuState.visible}
-        onClose={hideContextMenu}
+        onClose={() => {
+          hideContextMenu();
+          setContextMenuTarget(null);
+        }}
         onItemClick={handleContextMenuAction}
       />
     </div>
