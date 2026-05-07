@@ -186,13 +186,70 @@ export const useFeature = () => {
 - 所有图标统一从 `src/icons/index.ts` 导出
 - 禁止使用内联 SVG 或 emoji 作为 UI 图标
 - 图标组件支持 `className`、`size`、`strokeWidth` 等 props
-- **重要：图标在配置中的使用规范**：
-  - 在 `router/config.tsx` 的 `sidebarMenuItems` 中，`icon` 属性应使用 JSX 元素格式：`icon: <FolderOpen className="w-4 h-4" />`
-  - 在 `ContextMenuChildItem` 配置中，`icon` 属性也应使用 JSX 元素格式
-  - `ContextMenu` 组件期望 `icon` 是 `LucideIcon` 类型（组件本身），而不是 JSX 元素
-  - 在 `BaseChildrenContent.tsx` 的 `getContextMenuItems` 中，需要使用 `typeof child.icon === 'function'` 检查来过滤 JSX 元素
-  - **错误示例**：`icon: FolderOpen`（直接导出组件）会导致 "Element type is invalid" 错误
-  - **正确示例**：`icon: <FolderOpen className="w-4 h-4" />`（JSX 元素）
+
+**重要：图标渲染统一规范**：
+
+1. **使用统一的图标渲染工具** (`src/utils/iconRenderer.ts`)：
+   - `renderIcon(icon, className, size)` - 图标渲染函数（推荐）
+   - `Icon` - React 组件版本
+   - `isValidIcon(icon)` - 图标验证函数
+
+2. **正确的使用方式**：
+   ```typescript
+   import { renderIcon } from '@/utils/iconRenderer';
+   import { Settings } from 'lucide-react';
+   
+   // ✅ 推荐：使用 renderIcon 函数
+   {renderIcon(icon, 'text-primary', 'md')}
+   
+   // ✅ 推荐：直接使用 Lucide 组件
+   <Settings className="w-4 h-4 text-primary" />
+   
+   // ✅ 推荐：使用 Icon 组件
+   <Icon icon={Settings} className="text-primary" size="md" />
+   ```
+
+3. **错误的使用方式**：
+   ```typescript
+   // ❌ 错误：直接渲染图标对象
+   {icon}  // 会导致 "Objects are not valid as a React child" 错误
+   
+   // ❌ 错误：使用 React.isValidElement 判断 Lucide 图标
+   if (React.isValidElement(icon)) { ... }  // 对函数类型返回 false
+   
+   // ❌ 错误：图标调用时加括号
+   icon={Settings()}  // 会立即执行函数而不是传递组件
+   ```
+
+4. **类型定义**：
+   ```typescript
+   import { type LucideIcon } from 'lucide-react';
+   
+   interface MyProps {
+     icon?: LucideIcon | React.ReactNode;
+   }
+   ```
+
+5. **核心原理**：
+   - Lucide 图标是函数类型组件：`type LucideIcon = (props: LucideProps) => JSX.Element`
+   - 判断顺序：**先检查 `typeof icon === 'function'`，再检查 `React.isValidElement`**
+   - `renderIcon` 函数自动处理 className 和 size
+
+6. **ContextMenu 中的图标使用**：
+   ```typescript
+   import { Settings, Trash2 } from 'lucide-react';
+   import { ContextMenuItemData } from '@/components/common/ContextMenu';
+   
+   // ✅ 正确：直接传递图标组件
+   const items: ContextMenuItemData[] = [
+     { id: 'settings', label: '设置', icon: Settings },
+     { id: 'delete', label: '删除', icon: Trash2, danger: true },
+   ];
+   
+   // ContextMenu 组件内部会自动使用 renderIcon 渲染
+   ```
+
+**详细文档**：参考 `docs/Lucide 图标使用最佳实践.md`
 
 ### 3.7 主题系统
 

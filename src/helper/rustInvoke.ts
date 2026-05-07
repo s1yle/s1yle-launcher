@@ -862,6 +862,40 @@ export const installWithLoaders = async (
 
 // ======================== 实例管理相关类型定义 ========================
 
+export enum IsolationMode {
+  Global = 'global',
+  Version = 'version',
+  Instance = 'instance',
+}
+
+export interface GameSettings {
+  // 基础设置
+  use_instance_settings?: boolean;
+  
+  // Java 配置
+  java_path?: string;
+  java_version?: string;
+  min_memory?: number;
+  max_memory?: number;
+  jvm_args?: string[];
+  
+  // 版本隔离
+  isolation_mode?: IsolationMode;
+  
+  // 窗口配置
+  width?: number;
+  height?: number;
+  fullscreen?: boolean;
+  maximized?: boolean;
+  vsync?: boolean;
+  
+  // 高级设置
+  launcher_visible?: boolean;
+  player_name?: string;
+  server_address?: string;
+  server_port?: number;
+}
+
 export interface GameInstance {
   id: string;
   name: string;
@@ -873,6 +907,7 @@ export interface GameInstance {
   last_played: number | null;
   created_at: number;
   enabled: boolean;
+  game_settings?: GameSettings;
 }
 
 export interface InstanceFormData {
@@ -888,8 +923,36 @@ export interface InstanceFormData {
 export const scanInstances = async (
   options?: InvokeOptions
 ): Promise<GameInstance[]> => {
-  logger.info('扫描实例列表');
-  return await invokeRustFunction("scan_instances", {}, options);
+  return invokeRustFunction('scan_instances', {}, options);
+};
+
+// ======================== 游戏设置相关函数 ========================
+
+export const getInstanceSettings = async (
+  instanceId: string,
+  options?: InvokeOptions
+): Promise<GameSettings> => {
+  return invokeRustFunction('get_instance_settings', { instanceId }, options);
+};
+
+export const updateInstanceSettings = async (
+  instanceId: string,
+  settings: GameSettings,
+  options?: InvokeOptions
+): Promise<GameInstance> => {
+  return invokeRustFunction('update_instance_settings', { instanceId, settings }, options);
+};
+
+export const getSystemMemory = async (
+  options?: InvokeOptions
+): Promise<number> => {
+  return invokeRustFunction('get_system_memory', {}, options);
+};
+
+export const selectJavaPath = async (
+  options?: InvokeOptions
+): Promise<string | null> => {
+  return invokeRustFunction('select_java_path', {}, options);
 };
 
 export const getInstance = async (

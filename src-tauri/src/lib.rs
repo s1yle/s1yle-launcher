@@ -42,6 +42,7 @@ pub use crate::instance::{
     get_instances_path, rename_instance, scan_instances, scan_known_mc_paths, update_instance,
     validate_folder, add_validated_folder,
     GameInstance, InstanceManager,
+    get_instance_settings, update_instance_settings, get_system_memory, select_java_path,
 };
 pub use crate::modloader::{
     build_fabric_launch_config, build_forge_launch_config, get_fabric_version_detail,
@@ -310,6 +311,11 @@ pub fn run() {
             remove_known_path,
             validate_folder,
             add_validated_folder,
+            // 游戏设置相关命令
+            get_instance_settings,
+            update_instance_settings,
+            get_system_memory,
+            select_java_path,
             open_url,
             open_folder,
             // 配置相关命令

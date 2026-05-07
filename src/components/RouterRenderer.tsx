@@ -17,7 +17,8 @@ import {
     Multiplayer,
     Feedback,
     Hint,
-    VersionInstall
+    VersionInstall,
+    InstanceGameSettings
 } from '../pages';
 
 const PAGE_TRANSITION_DURATION = 0.15;
@@ -37,7 +38,8 @@ const componentMap: Record<string, React.FC> = {
     Multiplayer,
     Feedback,
     Hint,
-    VersionInstall
+    VersionInstall,
+    InstanceGameSettings
 };
 
 const findComponentForPath = (pathname: string): React.FC | null => {

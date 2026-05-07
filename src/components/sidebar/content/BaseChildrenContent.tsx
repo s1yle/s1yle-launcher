@@ -4,8 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, Trash2, FolderOpen } from 'lucide-react';
 import { type SidebarMenuItem, type SidebarItemType } from '../../../router/config';
 import ContextMenu, { useContextMenu, type ContextMenuItemData } from '../../common/ContextMenu';
-
-import { type LucideIcon } from 'lucide-react';
+import { renderIcon } from '../../../utils/iconRenderer';
 
 interface ContextMenuChildItem {
   id: string;
@@ -127,7 +126,7 @@ const BaseChildrenContent = ({
         return parentItem.children.map((child: SidebarMenuItem) => ({
           id: child.id,
           label: t(child.titleI18nKey, child.title) as string,
-          icon: child.icon ? (() => child.icon as React.ReactNode) : undefined,
+          icon: child.icon,
           danger: child.danger,
         }));
       }
@@ -203,7 +202,7 @@ const BaseChildrenContent = ({
               whileHover={{ scale: 1.15 }}
               transition={{ type: 'spring', stiffness: 400, damping: 15 }}
             >
-              {item.icon}
+              {renderIcon(item.icon, '', 'lg')}
             </motion.span>
           )}
           <span className="text-sm text-left flex-1 truncate">
@@ -228,13 +227,15 @@ const BaseChildrenContent = ({
             </motion.div>
           )}
           {canDelete && (
-            <button
+            <motion.div
               onClick={(e) => { e.stopPropagation(); onItemDelete?.(item.id); }}
-              className="opacity-0 group-hover/item:opacity-100 p-1 text-[var(--color-text-tertiary)] hover:text-error rounded transition-all duration-150 flex-shrink-0"
+              className="opacity-0 group-hover/item:opacity-100 p-1 text-[var(--color-text-tertiary)] hover:text-error rounded transition-all duration-150 flex-shrink-0 cursor-pointer"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               title={t('instances.removeGameFolder', '删除游戏目录')}
             >
               <Trash2 className="w-3.5 h-3.5" />
-            </button>
+            </motion.div>
           )}
         </motion.button>
 

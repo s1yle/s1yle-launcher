@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LucideIcon } from 'lucide-react';
 import { dropdown, transitions } from '../../utils/animations';
+import { renderIcon } from '../../utils/iconRenderer';
 
 export interface ContextMenuItemData {
   id: string;
@@ -136,11 +137,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                 }}
                 transition={transitions.fast}
               >
-                {item.icon && (
-                  <span className="w-4 h-4 flex-shrink-0 flex items-center justify-center">
-                    {typeof item.icon === 'function' ? <item.icon className="w-4 h-4" /> : item.icon}
-                  </span>
-                )}
+                {item.icon && renderIcon(item.icon)}
                 <span>{item.label}</span>
               </motion.button>
             );

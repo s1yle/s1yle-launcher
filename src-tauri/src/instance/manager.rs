@@ -1,14 +1,13 @@
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
-use tauri::{Manager, State};
+use tauri::Manager;
 use uuid::Uuid;
 
 use super::models::{GameInstance, InstanceMeta, KnownPath};
 use super::utils::copy_dir_all;
-use crate::config::{ConfigManager, get_config};
 use crate::modloader::ModLoaderType;
-use crate::{APP_HANDLE, config, log_error, log_info};
+use crate::{config, APP_HANDLE, log_error, log_info};
 
 #[derive(Debug)]
 pub struct InstanceManager {
@@ -153,6 +152,7 @@ impl InstanceManager {
             last_played,
             created_at,
             enabled: !versions.is_empty(),
+            game_settings: None,
         })
     }
 
@@ -262,6 +262,7 @@ impl InstanceManager {
                 last_played,
                 created_at: now,
                 enabled: true,
+                game_settings: None,
             });
             log_info!("实例 {} 扫描到 1 个版本", name);
         } else {
@@ -553,6 +554,7 @@ impl InstanceManager {
             last_played,
             created_at,
             enabled: true,
+            game_settings: None,
         })
     }
 

@@ -75,7 +75,7 @@ export const routes: RouteConfig[] = [
   {
     path: '/',
     componentName: 'Home',
-    header: { type: SidebarType.MAIN, title: 'Hello Minecraft! Launcher', titleI18nKey: 'header.title' },
+    header: { type: SidebarType.MAIN, title: 's1yle Minecraft! Launcher', titleI18nKey: 'header.title' },
     sidebarGroup: SidebarGroup.NONE
   },
   {

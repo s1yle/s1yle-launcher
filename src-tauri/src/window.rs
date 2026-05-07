@@ -1,5 +1,4 @@
-use crate::config::{self, window_check, ConfigManager, WindowPosition, SAVED_POSITION};
-use std::fs;
+use crate::config::{window_check, ConfigManager, WindowPosition};
 use tauri::State;
 
 #[tauri::command]
