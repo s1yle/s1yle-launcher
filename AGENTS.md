@@ -3102,7 +3102,261 @@ setNestedValue(config, 'preferences.language', 'zh-CN');
 **modLoaderCompat** - 模组加载器兼容性工具  
 📁 `src/utils/modLoaderCompat.ts`
 
-### 12.2 已提取的工具函数
+---
+
+### Helper 工具
+
+**rustInvoke** - Rust API 调用封装  
+📁 `src/helper/rustInvoke.ts`
+
+**核心函数**：
+```typescript
+invokeRustFunction(fnName, args?, options?) - 通用调用函数
+invokeAddAccount(name, type, accessToken?, refreshToken?) - 添加账户
+getAccountList() - 获取账户列表
+getCurrentAccount() - 获取当前账户
+deleteAccount(uuid) - 删除账户
+setCurrentAccount(uuid) - 设为当前账户
+getConfig() - 获取配置
+updateConfig(config) - 更新配置
+selectJavaPath() - 选择 Java 路径
+getSystemMemory() - 获取系统内存
+scanInstances() - 扫描实例
+createInstance(name, version, loaderType, loaderVersion?) - 创建实例
+deleteInstance(id, deleteFiles?) - 删除实例
+renameInstance(id, newName) - 重命名实例
+getVersionManifest() - 获取版本列表
+getGameVersions() - 获取已安装版本
+downloadFile(url, dest, sha1?) - 下载文件
+saveWindowPosition(x, y, width, height, maximized) - 保存窗口位置
+loadWindowPosition() - 加载窗口位置
+```
+
+**类型定义**：
+```typescript
+AccountType - 账户类型枚举（Microsoft/Offline）
+AccountInfo - 账户信息接口
+Account - 账户接口（含敏感信息）
+LaunchStatus - 启动状态枚举
+LaunchConfig - 启动配置接口
+```
+
+**使用示例**：
+```tsx
+import {
+  getConfig,
+  updateConfig,
+  type AppConfig,
+} from '@/helper/rustInvoke';
+
+const config: AppConfig = await getConfig();
+await updateConfig(config);
+```
+
+---
+
+**popupUtils** - 弹窗配置工具  
+📁 `src/helper/popupUtils.ts`
+
+**配置接口**：
+```typescript
+ConfirmPopupConfig - 确认弹窗配置
+AlertPopupConfig - 提示弹窗配置
+LoadingPopupConfig - 加载弹窗配置
+```
+
+**配置生成器**：
+```typescript
+createConfirmConfig(message, options?) - 创建确认弹窗配置
+createDangerConfirmConfig(message, options?) - 创建危险确认弹窗配置
+createSuccessAlertConfig(message, options?) - 创建成功提示弹窗配置
+createErrorAlertConfig(message, options?) - 创建错误提示弹窗配置
+createWarningAlertConfig(message, options?) - 创建警告提示弹窗配置
+createInfoAlertConfig(message, options?) - 创建信息提示弹窗配置
+createLoadingConfig(message, options?) - 创建加载弹窗配置
+```
+
+**使用示例**：
+```tsx
+import { createDangerConfirmConfig } from '@/helper/popupUtils';
+
+const config = createDangerConfirmConfig(
+  '确定要删除吗？此操作不可撤销',
+  { title: '危险操作' }
+);
+
+<ConfirmPopup
+  isOpen={showConfirm}
+  onClose={handleClose}
+  onConfirm={handleConfirm}
+  {...config}
+/>
+```
+
+---
+
+**logger** - 统一日志工具  
+📁 `src/helper/logger.ts`
+
+```typescript
+logger.debug(message, ...args) - 调试日志
+logger.info(message, ...args) - 普通信息
+logger.warn(message, ...args) - 警告
+logger.error(message, ...args) - 错误
+```
+
+**功能特性**：
+- 所有日志转发到 Rust 端（tracing）
+- 失败时降级到 console
+- 支持多参数（自动 JSON 序列化）
+
+**使用示例**：
+```tsx
+logger.info('实例加载成功', instances.length);
+logger.error('下载失败', error);
+```
+
+---
+
+**i18n** - 国际化初始化  
+📁 `src/helper/i18n.ts`
+
+**功能特性**：
+- 初始化 i18next
+- 配置中英文资源
+- 设置默认语言为中文
+
+**使用示例**：
+```tsx
+// main.tsx 中导入
+import './helper/i18n';
+
+// 组件中使用
+const { t } = useTranslation();
+<h1>{t('welcome', '欢迎')}</h1>
+```
+
+---
+
+### Router 相关
+
+**config** - 路由配置  
+📁 `src/router/config.tsx`
+
+**枚举类型**：
+```typescript
+SidebarType - 侧边栏类型（MAIN/SUB/SECONDARY）
+SidebarGroup - 侧边栏分组（ACCOUNT/GAME/COMMON/NONE）
+RoutePosition - 路由位置（TOP/BOTTOM/HIDDEN）
+LayoutMode - 布局模式（STANDARD/FULLSCREEN）
+SidebarItemType - 侧边栏项类型（route/action/external/divider/header）
+```
+
+**接口定义**：
+```typescript
+HeaderConfig - 头部配置
+RouteConfig - 路由配置
+SidebarMenuItem - 侧边栏菜单项
+```
+
+**路由配置**：
+```typescript
+routes - 路由配置数组
+  - / - 主页
+  - /account - 账户列表（带子菜单）
+  - /instance-manage - 游戏管理（带子菜单，自动导航）
+  - /instance-list - 游戏实例列表
+  - /download - 下载（带子菜单）
+  - /hint - 启动器说明
+
+工具函数：
+- getSidebarGroups() - 获取侧边栏分组
+- findRouteByPath(path, routes) - 查找路由
+- getParentPath(path) - 获取父级路由
+```
+
+**侧边栏菜单项配置**：
+```typescript
+sidebarMenuItems - 侧边栏菜单项数组
+  - 主页
+  - 账户列表（分组标题）
+  - 游戏管理（分组标题）
+  - 游戏列表
+  - 下载
+  - 启动器说明
+```
+
+**使用示例**：
+```tsx
+import { routes, findRouteByPath } from '@/router/config';
+
+const route = findRouteByPath('/account', routes);
+```
+
+---
+
+**actionHandler** - 路由动作处理器  
+📁 `src/router/actionHandler.tsx`
+
+**主要函数**：
+```typescript
+handleAddGameFolder() - 添加游戏目录
+  - 打开文件夹选择对话框
+  - 调用 addKnownFolder 添加到已知文件夹
+
+handleRefreshInstances() - 刷新实例列表
+  - 调用 refresh 刷新实例数据
+```
+
+**使用示例**：
+```tsx
+import { handleAddGameFolder, handleRefreshInstances } from '@/router/actionHandler';
+
+// 在侧边栏菜单项中使用
+{
+  id: 'add-folder',
+  type: 'action',
+  action: handleAddGameFolder,
+}
+```
+
+---
+
+### Pages 页面组件
+
+**主页面组件**：
+
+| 页面 | 路由 | 说明 |
+|------|------|------|
+| Home | `/` | 主页 |
+| AccountList | `/account` | 账户列表 |
+| AccountListWithSidebar | `/account` (带侧边栏) | 账户列表（带子菜单） |
+| MicrosoftAccount | `/account/microsoft` | 微软账号 |
+| OfflineAccount | `/account/offline` | 离线账号 |
+| InstanceList | `/instance-list` | 游戏实例列表 |
+| InstanceManage | `/instance-manage` | 版本中心 |
+| DownloadGame | `/download/game` | 游戏下载 |
+| DownloadModpack | `/download/modpack` | 整合包下载 |
+| VersionDetailWithInstall | `/download/game/:versionId` | 版本详情（全屏） |
+| VersionInstall | `/version-install` | 版本安装 |
+| InstanceGameSettings | `/instance-manage/game-settings` | 游戏设置 |
+| InstanceAutoInstall | `/instance-manage/auto-install` | 自动安装 |
+| InstanceMods | `/instance-manage/mods` | 模组 |
+| InstanceResourcePacks | `/instance-manage/resource-packs` | 材质包 |
+| InstanceWorlds | `/instance-manage/worlds` | 世界 |
+| Hint | `/hint` | 启动器说明 |
+
+**已移除的页面**：
+- ~~Settings~~ - 设置（已移除）
+- ~~Multiplayer~~ - 多人联机（已移除）
+- ~~Feedback~~ - 反馈（已移除）
+
+**页面组件特性**：
+- 所有页面都通过 RouterRenderer 动态渲染
+- 支持页面切换动画（淡入 + 位移，250ms）
+- 支持 AnimatePresence wait 模式
+- 页面头部通过 Header 组件统一管理
+- 部分页面带独立侧边栏（/account、/download、/instance-list、/instance-manage）
 
 | 函数/模块                 | 位置     | 说明        |
 | --------------------- | ------ | --------- |
