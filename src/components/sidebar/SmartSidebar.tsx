@@ -89,6 +89,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer }: SmartSideb
   const [deletingName, setDeletingName] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // 渲染子侧边栏
   if (pagesWithOwnSidebar.some(path => location.pathname.startsWith(path))) {
     const findMenuItemsByPath = (path: string): { current: SidebarMenuItem | undefined, parent: SidebarMenuItem | undefined } => {
       let foundParent: SidebarMenuItem | undefined = undefined;

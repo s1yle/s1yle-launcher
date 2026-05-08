@@ -8,6 +8,7 @@ interface SettingsSectionProps {
   className?: string;
 }
 
+// 设置项容器
 const SettingsSection: React.FC<SettingsSectionProps> = ({
   title,
   icon,

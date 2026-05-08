@@ -49,7 +49,7 @@ export function renderIcon(
   if (typeof icon === 'function') {
     const IconComponent = icon as React.ComponentType<{ className?: string }>;
     const combinedClassName = `${sizeClass} ${className}`.trim();
-    return <IconComponent className={combinedClassName} />;
+    return React.createElement(IconComponent, { className: combinedClassName });
   }
 
   // 2. 检查是否是 React element
@@ -74,7 +74,7 @@ export const Icon: React.FC<IconRendererProps> = ({
   className = '', 
   size = 'md' 
 }) => {
-  return <>{renderIcon(icon, className, size)}</>;
+  return React.createElement(React.Fragment, null, renderIcon(icon, className, size));
 };
 
 /**

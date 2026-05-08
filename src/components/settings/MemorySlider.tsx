@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getSystemMemory } from '../../helper/rustInvoke';
-import SettingItem from './SettingItem';
 
 interface MemorySliderProps {
-  minMemory: number;
-  maxMemory: number;
+  minMemory?: number;
+  maxMemory?: number;
   autoMemory: boolean;
   onMinChange: (value: number) => void;
   onMaxChange: (value: number) => void;
@@ -14,8 +13,8 @@ interface MemorySliderProps {
 }
 
 const MemorySlider: React.FC<MemorySliderProps> = ({
-  minMemory,
-  maxMemory,
+  minMemory = 4096,
+  maxMemory = 4096,
   autoMemory,
   onMinChange,
   onMaxChange,
@@ -24,99 +23,103 @@ const MemorySlider: React.FC<MemorySliderProps> = ({
 }) => {
   const { t } = useTranslation();
   const [systemMemory, setSystemMemory] = useState<number>(0);
+  const [usedMemory, setUsedMemory] = useState<number>(0);
 
   useEffect(() => {
-    getSystemMemory().then(setSystemMemory).catch(console.error);
+    getSystemMemory().then((total) => {
+      setSystemMemory(total);
+      // 模拟已使用内存（实际应该从系统获取）
+      setUsedMemory(Math.floor(total * 0.85));
+    }).catch(console.error);
   }, []);
 
   const handleAutoMemoryChange = (checked: boolean) => {
     if (checked && systemMemory > 0) {
-      // 自动计算最优内存（系统内存的 50%）
+      // 自动分配：设置为系统内存的 50%
       const optimal = Math.floor(systemMemory * 0.5);
       onMinChange(optimal);
-      onMaxChange(Math.min(optimal * 2, systemMemory));
+      onMaxChange(optimal);
     }
     onAutoChange(checked);
   };
 
   const formatMemory = (mb: number) => {
     if (mb >= 1024) {
-      return `${(mb / 1024).toFixed(1)} GB`;
+      return `${(mb / 1024).toFixed(1)} GiB`;
     }
-    return `${mb} MB`;
+    return `${mb} MiB`;
   };
+
+  const availableMemory = systemMemory - usedMemory;
+  const minMemoryGB = (minMemory / 1024).toFixed(1);
+  const maxMemoryGB = (maxMemory / 1024).toFixed(1);
+  const availableGB = (availableMemory / 1024).toFixed(1);
 
   return (
     <div className="space-y-4">
-      <SettingItem
-        label={t('settings.memory.auto', '自动分配内存')}
-        description={t('settings.memory.autoDesc', '根据系统内存自动分配最优值')}
-      >
-        <label className="relative inline-flex items-center cursor-pointer">
-          <input
-            type="checkbox"
-            checked={autoMemory}
-            onChange={(e) => handleAutoMemoryChange(e.target.checked)}
-            disabled={disabled}
-            className="sr-only peer"
-          />
-          <div className="w-11 h-6 bg-[var(--color-input)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[var(--color-primary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-primary)]" />
-        </label>
-      </SettingItem>
+      {/* 自动分配复选框 */}
+      <div className="flex items-center gap-3">
+        <input
+          type="checkbox"
+          checked={autoMemory}
+          onChange={(e) => handleAutoMemoryChange(e.target.checked)}
+          disabled={disabled}
+          className="w-4 h-4 rounded bg-[var(--color-input)] border-[var(--color-border)] text-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]"
+        />
+        <span className="text-sm text-[var(--color-text-primary)]">
+          {t('settings.memory.auto', '自动分配内存')}
+        </span>
+      </div>
 
       {!autoMemory && (
         <>
-          <SettingItem
-            label={t('settings.memory.min', '最小内存')}
-            description={t('settings.memory.minDesc', 'JVM 启动时分配的最小内存 (-Xms)')}
-          >
-            <div className="flex items-center gap-3">
-              <input
-                type="range"
-                min="512"
-                max={systemMemory || 16384}
-                step="256"
-                value={minMemory}
-                onChange={(e) => onMinChange(Number(e.target.value))}
-                disabled={disabled}
-                className="w-48 h-2 bg-[var(--color-input)] rounded-lg appearance-none cursor-pointer"
-              />
-              <span className="text-sm text-[var(--color-text-secondary)] min-w-[80px] text-right">
+          {/* 内存滑块 */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-[var(--color-text-secondary)]">
+                {t('settings.memory.min', '最低内存分配')}
+              </span>
+              <span className="px-3 py-1 bg-[var(--color-surface-active)] rounded text-sm text-[var(--color-text-primary)]">
                 {formatMemory(minMemory)}
               </span>
             </div>
-          </SettingItem>
+            
+            <input
+              type="range"
+              min="512"
+              max={systemMemory || 16384}
+              step="256"
+              value={minMemory}
+              onChange={(e) => {
+                const value = Number(e.target.value);
+                onMinChange(value);
+                onMaxChange(Math.max(value, maxMemory));
+              }}
+              disabled={disabled}
+              className="w-full h-2 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary)] rounded-lg appearance-none cursor-pointer"
+              style={{
+                background: `linear-gradient(to right, var(--color-primary) 0%, var(--color-primary) ${((minMemory - 512) / (systemMemory - 512)) * 100}%, var(--color-input) ${((minMemory - 512) / (systemMemory - 512)) * 100}%, var(--color-input) 100%)`
+              }}
+            />
+          </div>
 
-          <SettingItem
-            label={t('settings.memory.max', '最大内存')}
-            description={t('settings.memory.maxDesc', 'JVM 运行时允许使用的最大内存 (-Xmx)')}
-          >
-            <div className="flex items-center gap-3">
-              <input
-                type="range"
-                min={minMemory}
-                max={systemMemory || 16384}
-                step="256"
-                value={maxMemory}
-                onChange={(e) => onMaxChange(Number(e.target.value))}
-                disabled={disabled}
-                className="w-48 h-2 bg-[var(--color-input)] rounded-lg appearance-none cursor-pointer"
-              />
-              <span className="text-sm text-[var(--color-text-secondary)] min-w-[80px] text-right">
-                {formatMemory(maxMemory)}
-              </span>
-            </div>
-          </SettingItem>
+          {/* 内存信息条 */}
+          <div className="w-full h-2 bg-[var(--color-input)] rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-hover)] transition-all duration-300"
+              style={{ width: `${(maxMemory / systemMemory) * 100}%` }}
+            />
+          </div>
 
-          {systemMemory > 0 && (
-            <div className="text-xs text-[var(--color-text-tertiary)] bg-[var(--color-surface)] p-3 rounded border border-[var(--color-border)]">
-              {t('settings.memory.tip', '系统总内存：{total} | 已分配：最小 {min} / 最大 {max}', {
-                total: formatMemory(systemMemory),
-                min: formatMemory(minMemory),
-                max: formatMemory(maxMemory),
-              })}
-            </div>
-          )}
+          {/* 内存状态信息 */}
+          <div className="flex items-center justify-between text-xs text-[var(--color-text-tertiary)]">
+            <span>
+              {t('settings.memory.used', '已使用')} {formatMemory(usedMemory)} / {t('settings.memory.total', '总内存')} {formatMemory(systemMemory)}
+            </span>
+            <span>
+              {t('settings.memory.minAlloc', '最低分配')} {minMemoryGB} GiB / {t('settings.memory.actualAlloc', '实际分配')} {maxMemoryGB} GiB ({availableGB} GiB {t('settings.memory.available', '可用')})
+            </span>
+          </div>
         </>
       )}
     </div>

@@ -2,11 +2,27 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, Play, CheckCircle, Loader2, ArrowLeft, Settings, FolderPlus, Sparkles, Box, Gamepad2 } from 'lucide-react';
+import { 
+  Download, 
+  CheckCircle, 
+  Loader2, 
+  ArrowLeft, 
+  Settings, 
+  FolderPlus, 
+  Sparkles, 
+  Box, 
+  Gamepad2,
+  HardDrive,
+  User,
+} from 'lucide-react';
 import { downloadAndDeploy, ModLoaderType } from '@/helper/rustInvoke';
 import { useNotification } from '@/components/common';
 import { listen } from '@tauri-apps/api/event';
 import { useDownloadStore } from '../../stores/downloadStore';
+import SettingsSection from '@/components/settings/SettingsSection';
+import SettingItem from '@/components/settings/SettingItem';
+import ListItem from '@/components/common/ListItem';
+import ProgressBar from '@/components/common/ProgressBar';
 
 interface DeployPhase {
   key: string;
@@ -38,6 +54,9 @@ const VersionDetailWithInstall: React.FC = () => {
 
   useEffect(() => {
     if (versionId) setNewInstanceName(`Minecraft ${versionId}`);
+    
+    // 滚动到顶部
+    window.scrollTo(0, 0);
 
     const unlistenProgress = listen<any>('deploy-progress', (event) => {
       const { file } = event.payload;
@@ -101,213 +120,217 @@ const VersionDetailWithInstall: React.FC = () => {
     }
   };
 
+  const handleBack = useCallback(() => {
+    navigate('/download/game');
+  }, [navigate]);
+
   return (
     <div className="min-h-[calc(100vh-60px)] bg-[var(--color-bg-primary)] flex flex-col">
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto px-8 py-10 space-y-10">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-center space-y-3"
+        <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
+          {/* 安装方式选择 */}
+          <SettingsSection
+            title="安装方式"
+            titleI18nKey="deploy.installMode"
+            icon={<Sparkles className="w-5 h-5" />}
           >
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30 mb-4">
-              <Gamepad2 className="w-10 h-10 text-emerald-400" />
-            </div>
-            <h1 className="text-3xl font-bold text-text-primary tracking-tight">
-              Minecraft <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">{versionId}</span>
-            </h1>
-            <p className="text-text-tertiary text-lg">准备开始安装游戏</p>
-          </motion.div>
-
-          <section className="space-y-4">
-            <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wider flex items-center gap-2">
-              <Sparkles className="w-4 h-4" />
-              安装方式
-            </h2>
-
             <div className="grid grid-cols-2 gap-4">
-              <motion.button
+              <ListItem
+                title="新建实例"
+                subtitle="创建全新的独立游戏环境"
+                icon={<FolderPlus className="w-5 h-5" />}
+                selected={installMode === 'new'}
                 onClick={() => setInstallMode('new')}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`relative p-6 rounded-2xl border-2 transition-all text-left ${
-                  installMode === 'new'
-                    ? 'border-emerald-500 bg-gradient-to-br from-emerald-500/10 to-cyan-500/5 shadow-lg shadow-emerald-500/10'
-                    : 'border-border hover:border-border-hover bg-surface'
-                }`}
-              >
-                {installMode === 'new' && (
-                  <motion.div
-                    layoutId="activeIndicator"
-                    className="absolute top-3 right-3 w-3 h-3 rounded-full bg-emerald-500"
-                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  />
-                )}
-                <FolderPlus className={`w-8 h-8 mb-3 ${installMode === 'new' ? 'text-emerald-400' : 'text-text-tertiary'}`} />
-                <p className="font-bold text-text-primary text-lg">新建实例</p>
-                <p className="text-sm text-text-tertiary mt-1">创建全新的独立游戏环境</p>
-              </motion.button>
-
-              <motion.button
+                size="lg"
+                className="min-h-[100px] flex flex-col justify-center"
+              />
+              <ListItem
+                title="已有实例"
+                subtitle="安装到现有的实例目录"
+                icon={<Settings className="w-5 h-5" />}
+                selected={installMode === 'existing'}
                 onClick={() => setInstallMode('existing')}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`relative p-6 rounded-2xl border-2 transition-all text-left ${
-                  installMode === 'existing'
-                    ? 'border-emerald-500 bg-gradient-to-br from-emerald-500/10 to-cyan-500/5 shadow-lg shadow-emerald-500/10'
-                    : 'border-border hover:border-border-hover bg-surface'
-                }`}
-              >
-                {installMode === 'existing' && (
-                  <motion.div
-                    layoutId="activeIndicator"
-                    className="absolute top-3 right-3 w-3 h-3 rounded-full bg-emerald-500"
-                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  />
-                )}
-                <Settings className={`w-8 h-8 mb-3 ${installMode === 'existing' ? 'text-emerald-400' : 'text-text-tertiary'}`} />
-                <p className="font-bold text-text-primary text-lg">已有实例</p>
-                <p className="text-sm text-text-tertiary mt-1">安装到现有的实例目录</p>
-              </motion.button>
+                size="lg"
+                className="min-h-[100px] flex flex-col justify-center"
+              />
             </div>
-          </section>
+          </SettingsSection>
 
+          {/* 实例名称输入 */}
           <AnimatePresence mode="wait">
             {installMode === 'new' && (
-              <motion.section
+              <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.3 }}
-                className="space-y-3"
               >
-                <label className="text-sm font-semibold text-text-secondary uppercase tracking-wider flex items-center gap-2">
-                  <Box className="w-4 h-4" />
-                  实例名称
-                </label>
-                <input
-                  type="text"
-                  value={newInstanceName}
-                  onChange={(e) => setNewInstanceName(e.target.value)}
-                  placeholder={`Minecraft ${versionId}`}
-                  className="w-full px-5 py-4 bg-surface border-2 border-border rounded-xl text-text-primary text-lg font-medium focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-text-tertiary/50"
-                />
-              </motion.section>
+                <SettingsSection
+                  title="实例配置"
+                  titleI18nKey="deploy.instanceConfig"
+                  icon={<Box className="w-5 h-5" />}
+                >
+                  <SettingItem
+                    label="实例名称"
+                    labelI18nKey="deploy.instanceName"
+                    description={`默认：Minecraft ${versionId}`}
+                  >
+                    <input
+                      type="text"
+                      value={newInstanceName}
+                      onChange={(e) => setNewInstanceName(e.target.value)}
+                      placeholder={`Minecraft ${versionId}`}
+                      className="px-4 py-2 w-64 bg-[var(--color-input)] border border-[var(--color-border)] rounded text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                    />
+                  </SettingItem>
+                </SettingsSection>
+              </motion.div>
+            )}
+
+            {installMode === 'existing' && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <SettingsSection
+                  title="选择实例"
+                  titleI18nKey="deploy.selectInstance"
+                  icon={<User className="w-5 h-5" />}
+                >
+                  <SettingItem
+                    label="目标实例"
+                    labelI18nKey="deploy.targetInstance"
+                    description="选择要安装到的现有实例"
+                  >
+                    <select
+                      value={targetInstanceId}
+                      onChange={(e) => setTargetInstanceId(e.target.value)}
+                      className="px-4 py-2 w-64 bg-[var(--color-input)] border border-[var(--color-border)] rounded text-sm text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                    >
+                      <option value="">请选择实例...</option>
+                      {/* TODO: 从 store 获取实例列表 */}
+                    </select>
+                  </SettingItem>
+                </SettingsSection>
+              </motion.div>
             )}
           </AnimatePresence>
 
-          <motion.button
-            onClick={handleInstall}
-            disabled={isInstalling}
-            whileHover={!isInstalling ? { scale: 1.01 } : {}}
-            whileTap={!isInstalling ? { scale: 0.99 } : {}}
-            className="w-full py-5 bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40"
+          {/* 磁盘空间信息 */}
+          <SettingsSection
+            title="存储信息"
+            titleI18nKey="deploy.storage"
+            icon={<HardDrive className="w-5 h-5" />}
           >
-            {isInstalling ? (
-              <>
-                <Loader2 className="w-6 h-6 animate-spin" />
-                正在安装...
-              </>
-            ) : (
-              <>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-[var(--color-text-secondary)]">预计占用空间</span>
+                <span className="text-[var(--color-text-primary)] font-medium">~200 MB</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-[var(--color-text-secondary)]">可用空间</span>
+                <span className="text-[var(--color-text-primary)] font-medium">~50 GB</span>
+              </div>
+            </div>
+          </SettingsSection>
+
+          {/* 安装按钮 */}
+          {!isInstalling && (
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              <button
+                onClick={handleInstall}
+                className="w-full py-4 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-hover)] hover:from-[var(--color-primary-hover)] hover:to-[var(--color-primary)] text-white rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all shadow-lg hover:shadow-xl active:scale-[0.98]"
+              >
                 <Download className="w-6 h-6" />
                 开始下载并安装
-              </>
-            )}
-          </motion.button>
+              </button>
+            </motion.div>
+          )}
 
+          {/* 安装进度 */}
           <AnimatePresence>
             {isInstalling && (
-              <motion.section
+              <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="bg-surface border-2 border-border rounded-2xl p-8 space-y-6"
               >
-                <h3 className="font-bold text-text-primary text-lg flex items-center gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin text-emerald-400" />
-                  安装进度
-                </h3>
-
-                <div className="space-y-3">
-                  {phases.map((phase, idx) => (
-                    <motion.div
-                      key={phase.key}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.1 }}
-                      className="flex items-center gap-4 group"
-                    >
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
-                        phase.status === 'completed'
-                          ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30'
-                          : phase.status === 'active'
-                          ? 'bg-gradient-to-br from-emerald-500 to-cyan-500 text-white shadow-md shadow-emerald-500/30 animate-pulse'
-                          : phase.status === 'error'
-                          ? 'bg-red-500 text-white shadow-md shadow-red-500/30'
-                          : 'bg-border text-text-tertiary'
-                      }`}>
-                        {phase.status === 'completed' ? (
-                          <CheckCircle className="w-4 h-4" />
-                        ) : phase.status === 'active' ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <span className="text-xs font-bold">{idx + 1}</span>
-                        )}
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <p className={`font-medium transition-colors ${
+                <SettingsSection
+                  title="安装进度"
+                  titleI18nKey="deploy.progress"
+                  icon={<Loader2 className="w-5 h-5 animate-spin" />}
+                >
+                  <div className="space-y-4">
+                    {phases.map((phase, idx) => (
+                      <div key={phase.key} className="flex items-center gap-4">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
                           phase.status === 'completed'
-                            ? 'text-text-tertiary line-through'
+                            ? 'bg-[var(--color-success)] text-white'
                             : phase.status === 'active'
-                            ? 'text-emerald-400 font-semibold'
+                            ? 'bg-[var(--color-primary)] text-white animate-pulse'
                             : phase.status === 'error'
-                            ? 'text-red-400'
-                            : 'text-text-secondary'
+                            ? 'bg-[var(--color-error)] text-white'
+                            : 'bg-[var(--color-surface-active)] text-[var(--color-text-tertiary)]'
                         }`}>
-                          {phase.label}
-                        </p>
+                          {phase.status === 'completed' ? (
+                            <CheckCircle className="w-4 h-4" />
+                          ) : phase.status === 'active' ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <span className="text-xs font-bold">{idx + 1}</span>
+                          )}
+                        </div>
 
-                        {phase.status === 'active' && phase.progress !== undefined && (
-                          <div className="mt-2 h-1.5 bg-border rounded-full overflow-hidden">
-                            <motion.div
-                              className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full"
-                              initial={{ width: 0 }}
-                              animate={{ width: `${phase.progress}%` }}
-                              transition={{ duration: 0.3, ease: 'easeOut' }}
-                            />
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className={`text-sm font-medium ${
+                              phase.status === 'active'
+                                ? 'text-[var(--color-primary)]'
+                                : phase.status === 'error'
+                                ? 'text-[var(--color-error)]'
+                                : 'text-[var(--color-text-secondary)]'
+                            }`}>
+                              {phase.label}
+                            </span>
+                            {phase.status === 'active' && (
+                              <span className="text-xs text-[var(--color-text-tertiary)] animate-pulse">
+                                进行中...
+                              </span>
+                            )}
                           </div>
+                          
+                          {phase.status === 'active' && phase.progress !== undefined && (
+                            <ProgressBar 
+                              progress={phase.progress} 
+                              size="sm"
+                              showPercentage={false}
+                              barClassName="bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-hover)]"
+                            />
+                          )}
+                        </div>
+
+                        {phase.status === 'completed' && (
+                          <CheckCircle className="w-5 h-5 text-[var(--color-success)] flex-shrink-0" />
                         )}
                       </div>
+                    ))}
 
-                      {phase.status === 'active' && (
-                        <span className="text-xs text-emerald-400 font-mono animate-pulse">
-                          进行中...
-                        </span>
-                      )}
-
-                      {phase.status === 'completed' && (
-                        <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
-                      )}
-                    </motion.div>
-                  ))}
-                </div>
-
-                {currentFile && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mt-4 px-4 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg"
-                  >
-                    <p className="text-xs text-emerald-400 font-mono truncate flex items-center gap-2">
-                      <Download className="w-3 h-3 flex-shrink-0" />
-                      {currentFile}
-                    </p>
-                  </motion.div>
-                )}
-              </motion.section>
+                    {currentFile && (
+                      <div className="mt-4 pt-4 border-t border-[var(--color-border)]">
+                        <div className="text-xs text-[var(--color-text-tertiary)] font-mono truncate">
+                          当前文件：{currentFile}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </SettingsSection>
+              </motion.div>
             )}
           </AnimatePresence>
         </div>

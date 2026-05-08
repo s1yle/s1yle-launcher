@@ -61,3 +61,6 @@ export type { ContextMenuProps, ContextMenuItemData } from './ContextMenu';
 
 export { default as ConfirmPopup } from '../popup/ConfirmPopup';
 export type { ConfirmPopupProps } from '../popup/ConfirmPopup';
+
+export { default as Toggle } from './Toggle';
+export type { ToggleProps } from './Toggle';
