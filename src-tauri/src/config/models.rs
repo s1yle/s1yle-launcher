@@ -32,6 +32,29 @@ pub static INSTANCE_META_FILE_NAME: &str = "instance_meta.json";
 pub static INSTANCE_META_PATH: Lazy<PathBuf> =
     Lazy::new(|| DEAMON_BASE_PATH.join(INSTANCE_META_FILE_NAME));
 
+/// # 元数据存储模式
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum MetaMode {
+    /// 分布式模式（默认）：minecraft/{instance_name}/{version}.json
+    Distributed,
+    /// 集中式模式（兼容）：minecraft/instance_meta.json
+    Centralized,
+}
+
+impl Default for MetaMode {
+    fn default() -> Self {
+        MetaMode::Distributed
+    }
+}
+
+/// # 元数据存储模式（运行时配置）
+pub static INSTANCE_META_MODE: Lazy<MetaMode> = Lazy::new(|| {
+    // 默认使用分布式模式
+    // 后续可以从配置文件读取
+    MetaMode::Distributed
+});
+
 /// # 应用配置目录（隐藏文件夹）
 pub static CONFIG_APPLICATION: Lazy<PathBuf> = Lazy::new(|| {
     Lazy::<PathBuf>::get(&BASE_PATH)

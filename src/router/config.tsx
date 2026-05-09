@@ -102,7 +102,7 @@ export const routes: RouteConfig[] = [
     ]
   },
   {
-    path: '/instance-manage',
+    path: '/instance-manage/:instanceId',
     componentName: '',
     header: { type: SidebarType.SUB, title: '游戏管理', titleI18nKey: 'sidebar.instanceManage' },
     sidebarGroup: SidebarGroup.GAME,
@@ -110,35 +110,35 @@ export const routes: RouteConfig[] = [
     parentPath: '/',
     children: [
       {
-        path: '/instance-manage/game-settings',
+        path: '/instance-manage/:instanceId/game-settings',
         componentName: 'InstanceGameSettings',
         header: { type: SidebarType.SECONDARY, title: '游戏设置', titleI18nKey: 'gameManage.gameSettings' },
         sidebarGroup: SidebarGroup.GAME,
         parentPath: '/'
       },
       {
-        path: '/instance-manage/auto-install',
+        path: '/instance-manage/:instanceId/auto-install',
         componentName: 'InstanceAutoInstall',
         header: { type: SidebarType.SECONDARY, title: '自动安装', titleI18nKey: 'gameManage.autoInstall' },
         sidebarGroup: SidebarGroup.GAME,
         parentPath: '/'
       },
       {
-        path: '/instance-manage/mods',
+        path: '/instance-manage/:instanceId/mods',
         componentName: 'InstanceMods',
         header: { type: SidebarType.SECONDARY, title: '模组', titleI18nKey: 'gameManage.mods' },
         sidebarGroup: SidebarGroup.GAME,
         parentPath: '/'
       },
       {
-        path: '/instance-manage/resource-packs',
+        path: '/instance-manage/:instanceId/resource-packs',
         componentName: 'InstanceResourcePacks',
         header: { type: SidebarType.SECONDARY, title: '材质包', titleI18nKey: 'gameManage.resourcePacks' },
         sidebarGroup: SidebarGroup.GAME,
         parentPath: '/'
       },
       {
-        path: '/instance-manage/worlds',
+        path: '/instance-manage/:instanceId/worlds',
         componentName: 'InstanceWorlds',
         header: { type: SidebarType.SECONDARY, title: '世界', titleI18nKey: 'gameManage.worlds' },
         sidebarGroup: SidebarGroup.GAME,
@@ -303,7 +303,7 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
             title: '游戏设置',
             titleI18nKey: 'gameManage.gameSettings',
             icon: <Settings className="w-4 h-4" />,
-            path: '/instance-manage/game-settings',
+            path: '/instance-manage/:instanceId/game-settings',
             group: SidebarGroup.GAME
           },
           {
@@ -312,7 +312,7 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
             title: '自动安装',
             titleI18nKey: 'gameManage.autoInstall',
             icon: <Sparkles className="w-4 h-4" />,
-            path: '/instance-manage/auto-install',
+            path: '/instance-manage/:instanceId/auto-install',
             group: SidebarGroup.GAME
           },
           {
@@ -321,7 +321,7 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
             title: '模组',
             titleI18nKey: 'gameManage.mods',
             icon: <Puzzle className="w-4 h-4" />,
-            path: '/instance-manage/mods',
+            path: '/instance-manage/:instanceId/mods',
             group: SidebarGroup.GAME
           },
           {
@@ -330,7 +330,7 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
             title: '材质包',
             titleI18nKey: 'gameManage.resourcePacks',
             icon: <PackageOpen className="w-4 h-4" />,
-            path: '/instance-manage/resource-packs',
+            path: '/instance-manage/:instanceId/resource-packs',
             group: SidebarGroup.GAME
           },
           {
@@ -339,7 +339,7 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
             title: '世界',
             titleI18nKey: 'gameManage.worlds',
             icon: <Map className="w-4 h-4" />,
-            path: '/instance-manage/worlds',
+            path: '/instance-manage/:instanceId/worlds',
             group: SidebarGroup.GAME
           },
           {

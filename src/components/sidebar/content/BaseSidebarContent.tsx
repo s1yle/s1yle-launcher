@@ -1,9 +1,11 @@
 import { openUrl } from '../../../helper/rustInvoke';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronDown, RefreshCw } from 'lucide-react';
 import { type SidebarMenuItem } from '../../../router/config';
+import { useInstanceStore } from '../../../stores/instanceStore';
 
 export interface BaseSidebarContentProps {
   items: SidebarMenuItem[];
@@ -21,10 +23,50 @@ const BaseSidebarContent = ({
   hasChildrenItems,
 }: BaseSidebarContentProps) => {
   const { t } = useTranslation();
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
-    new Set(items.filter(item => item.children?.length).map(item => item.id))
-  );
+  const location = useLocation();
+  const instance = useInstanceStore(s => s.getSelectedInstance());
+  
+  // 初始化展开状态
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => {
+    const expanded = new Set<string>();
+    let hasMatchedPath = false;
+    
+    items.forEach(item => {
+      if (item.children?.length) {
+        if (item.path && location.pathname.startsWith(item.path + '/')) {
+          expanded.add(item.id);
+          hasMatchedPath = true;
+        }
+      }
+    });
+    
+    // 如果没有匹配的路径（如在主页），展开所有顶级菜单项
+    if (!hasMatchedPath) {
+      items.forEach(item => {
+        if (item.children?.length) {
+          expanded.add(item.id);
+        }
+      });
+    }
+    
+    return expanded;
+  });
   const [spinningItems, setSpinningItems] = useState<Set<string>>(new Set());
+
+  // 监听路由变化，自动展开对应的菜单项
+  useEffect(() => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      items.forEach(item => {
+        if (item.children?.length) {
+          if (item.path && location.pathname.startsWith(item.path + '/')) {
+            next.add(item.id);
+          }
+        }
+      });
+      return next;
+    });
+  }, [location, items]);
 
   const defaultIsActive = (_path: string) => false;
   const defaultIsParentActive = (_path: string) => false;
@@ -45,7 +87,10 @@ const BaseSidebarContent = ({
 
   const handleItemClick = (item: SidebarMenuItem) => {
     if (item.type === 'route' && item.path) {
-      if (onMenuClick) onMenuClick(item);
+      if (onMenuClick) {
+        // 不要提前替换 :instanceId，让 React Router 自己处理
+        onMenuClick(item.path);
+      }
     } else if (item.type === 'action' && item.action) {
       if (item.id === 'refresh-instances') {
         setSpinningItems(prev => new Set(prev).add(item.id));
@@ -134,7 +179,11 @@ const BaseSidebarContent = ({
             onToggle={hasChildren ? () => toggleGroup(item.id) : undefined}
             onNavigate={(path) => {
               if (onMenuClick) {
-                const menuItem = { ...item, path } as SidebarMenuItem;
+                let finalPath = path;
+                if (instance && path.includes(':instanceId')) {
+                  finalPath = path.replace(':instanceId', instance.id);
+                }
+                const menuItem = { ...item, path: finalPath } as SidebarMenuItem;
                 onMenuClick(menuItem);
               }
             }}

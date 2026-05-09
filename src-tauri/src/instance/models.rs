@@ -12,6 +12,8 @@ pub struct InstanceMeta {
     pub icon_path: Option<String>,
     pub created_at: i64,
     pub last_played: Option<i64>,
+    #[serde(default)]
+    pub game_settings: Option<GameSettings>,
 }
 
 impl Default for InstanceMeta {
@@ -25,6 +27,7 @@ impl Default for InstanceMeta {
             icon_path: None,
             created_at: 0,
             last_played: None,
+            game_settings: None,
         }
     }
 }

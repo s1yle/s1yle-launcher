@@ -1,7 +1,7 @@
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
 
-use super::models::{GameInstance, GameSettings};
+use super::models::{GameInstance, GameSettings, InstanceMeta};
 use super::manager::InstanceManager;
 
 /// 获取实例的游戏设置
@@ -24,17 +24,40 @@ pub fn update_instance_settings(
     settings: GameSettings,
     instance_manager: State<'_, InstanceManager>,
 ) -> Result<GameInstance, String> {
-    let mut instance = instance_manager
+    let instance = instance_manager
         .get_instance(&instance_id)
         .ok_or_else(|| format!("实例不存在：{}", instance_id))?;
     
-    instance.game_settings = Some(settings);
+    // 加载或创建 InstanceMeta
+    let mut meta = if let Some(existing_meta) = instance_manager.load_meta(&instance.name) {
+        existing_meta
+    } else {
+        // 如果元数据不存在，创建一个新的
+        InstanceMeta {
+            id: instance.id.clone(),
+            name: instance.name.clone(),
+            version: instance.version.clone(),
+            loader_type: instance.loader_type,
+            loader_version: instance.loader_version.clone(),
+            icon_path: instance.icon_path.clone(),
+            created_at: instance.created_at,
+            last_played: instance.last_played,
+            game_settings: None,
+        }
+    };
     
-    // 注意：当前实现中，GameInstance 的修改不会持久化到磁盘
-    // 后续需要实现实例配置的持久化存储
-    // 暂时返回更新后的实例（内存中）
+    // 更新配置
+    meta.game_settings = Some(settings);
     
-    Ok(instance)
+    // 保存到磁盘
+    instance_manager.save_meta(&instance.name, &meta)?;
+    
+    // 重新获取实例（包含更新后的配置）
+    let updated_instance = instance_manager
+        .get_instance(&instance_id)
+        .ok_or_else(|| format!("实例不存在：{}", instance_id))?;
+    
+    Ok(updated_instance)
 }
 
 /// 获取系统总内存（MB）

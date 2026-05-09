@@ -55,10 +55,22 @@ const MainLayout = () => {
 
   const handleMenuClick = (targetPath: string) => {
     if (animLockRef.current || targetPath === location.pathname) return;
+    
+    let finalPath = targetPath;
+    if (finalPath.includes(':instanceId')) {
+      const instance = useInstanceStore.getState().getSelectedInstance();
+      if (instance) {
+        finalPath = finalPath.replace(':instanceId', instance.id);
+      } else {
+        logger.warn('No instance selected for instance-specific route');
+        return;
+      }
+    }
+    
     animLockRef.current = true;
     setNavigating(true);
-    setCurrentPath(targetPath);
-    navigate(targetPath);
+    setCurrentPath(finalPath);
+    navigate(finalPath);
     setTimeout(() => {
       animLockRef.current = false;
       setNavigating(false);

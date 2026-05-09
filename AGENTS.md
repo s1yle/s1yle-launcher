@@ -1005,7 +1005,82 @@ interface KnownPath {
 }
 ```
 
-### 6.4 侧边栏菜单项
+---
+
+## 7. 核心概念与命名规范
+
+> **⚠️ 重要：理解项目中的命名逻辑，避免混淆**
+
+### 7.1 概念区分
+
+| 概念 | 英文 | ID 字段 | 说明 | 示例 |
+|------|------|--------|------|------|
+| **游戏实例** | Game Instance | `instanceId` | 每个独立的游戏版本配置 | `id: "1b50c1a9-5fdc-41bb-b2fe-1af21450cb52"`<br>`name: "Minecraft 1.2.1"`<br>`version: "1.2.1"` |
+| **游戏文件夹** | Game Folder / Known Folder | `folderId` | 实例所在的目录分组 | `id: "default"`<br>`name: "默认文件夹"`<br>`path: "C:/.../minecraft"` |
+| **实例路径** | Instance Path | - | 游戏实例在文件系统中的路径 | `path: "C:/.../minecraft/1.2.1"` |
+
+### 7.2 关键命名说明
+
+#### **instanceId**
+- **指的是游戏实例的 UUID**，不是文件夹 ID
+- 每个游戏版本（如 1.21.1、1.2.1）都是一个独立的 GameInstance
+- 即使两个实例版本相同（都是 1.2.1），它们的 `instanceId` 也不同
+- 用于路由参数：`/instance-manage/:instanceId/game-settings`
+
+#### **selectedFolderId**
+- 指的是选中的游戏文件夹（KnownFolder）的 ID
+- 用于过滤显示哪些游戏实例
+- 一个文件夹可以包含多个游戏实例
+
+#### **selectedInstanceId**
+- 指的是当前选中的游戏实例的 UUID
+- 存储在 localStorage 中持久化
+- 用于确定启动哪个游戏、修改哪个实例的配置
+
+### 7.3 路由参数规范
+
+```typescript
+// ✅ 正确：instanceId 是游戏实例的 UUID
+/instance-manage/:instanceId/game-settings
+// 实际路径：/instance-manage/1b50c1a9-5fdc-41bb-b2fe-1af21450cb52/game-settings
+
+// ❌ 错误：instanceId 不是文件夹 ID
+/instance-manage/default/game-settings  // 这是错误的！
+```
+
+### 7.4 组件使用示例
+
+```typescript
+// 获取当前游戏实例
+const { instanceId } = useRouteParams();  // 从路由参数获取
+const instance = getInstance(instanceId);  // 从 store 获取实例对象
+
+// 获取选中的文件夹
+const selectedFolderId = useInstanceStore(s => s.selectedFolderId);
+const filteredInstances = useInstanceStore(s => s.getFilteredInstances());
+
+// 获取选中的实例
+const selectedInstanceId = useInstanceStore(s => s.selectedInstanceId);
+const selectedInstance = useInstanceStore(s => s.getSelectedInstance());
+```
+
+### 7.5 常见错误
+
+```typescript
+// ❌ 错误：混淆 instanceId 和 folderId
+const folder = getInstance(instanceId);  // 错误！getInstance 需要游戏实例 ID
+
+// ❌ 错误：用文件夹 ID 替换路由参数
+path.replace(':instanceId', folderId);  // 错误！应该用游戏实例 ID
+
+// ✅ 正确：使用游戏实例的 UUID
+const instance = useInstanceStore.getState().getSelectedInstance();
+path.replace(':instanceId', instance.id);  // 正确！
+```
+
+---
+
+## 8. 侧边栏组件
 
 ```typescript
 type SidebarItemType = 'route' | 'action' | 'external' | 'divider' | 'header';

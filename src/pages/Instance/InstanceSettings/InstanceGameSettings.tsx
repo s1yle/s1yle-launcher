@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Settings, 
@@ -16,12 +17,15 @@ import { Toggle, useNotification } from '../../../components/common';
 import { SettingsSection, SettingItem } from '../../../components/settings';
 import MemorySlider from '../../../components/settings/MemorySlider';
 import Mask from '../../../components/common/Mask';
+import { useRouteParams } from '../../../components/RouterRenderer';
 
 const InstanceGameSettings: React.FC = () => {
   const { t } = useTranslation();
+  const { instanceId } = useRouteParams();
+  const navigate = useNavigate();
+  const setSelectedInstance = useInstanceStore(s => s.setSelectedInstance);
+  const getInstance = useInstanceStore(s => s.getInstance);
   const storeLoading = useInstanceStore(s => s.loading);
-  const selectedInstanceId = useInstanceStore(s => s.selectedInstanceId);
-  const instance = useInstanceStore(s => s.getSelectedInstance());
   const instances = useInstanceStore(s => s.instances);
   const { success, error: notifyError } = useNotification();
 
@@ -29,6 +33,19 @@ const InstanceGameSettings: React.FC = () => {
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [javaPaths, setJavaPaths] = useState<Array<{ version: string; path: string }>>([]);
   const [javaExpanded, setJavaExpanded] = useState(false);
+
+  const instance = instanceId ? getInstance(instanceId) : null;
+
+  useEffect(() => {
+    if (instanceId) {
+      const inst = getInstance(instanceId);
+      if (inst) {
+        setSelectedInstance(instanceId);
+      } else {
+        navigate('/instance-list');
+      }
+    }
+  }, [instanceId]);
 
   // 加载实例设置
   useEffect(() => {

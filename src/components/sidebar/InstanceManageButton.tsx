@@ -56,7 +56,17 @@ const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
 
   const handleMainClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (item.path && onNavigate) {
+    if (!instance) return;
+    
+    // 如果有子项，自动导航到第一个子项
+    if (item.children && item.children.length > 0 && onNavigate) {
+      const firstChild = item.children[0];
+      if (firstChild.path) {
+        // 不要提前替换 :instanceId，让 React Router 自己处理
+        onNavigate(firstChild.path);
+      }
+    } else if (item.path && onNavigate) {
+      // 没有子项，直接导航到 path
       onNavigate(item.path);
     }
   };

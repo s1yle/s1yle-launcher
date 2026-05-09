@@ -51,11 +51,9 @@ const Toggle: React.FC<ToggleProps> = ({
       <div
         className={cn(
           // 基础样式
-          'w-11 h-6 bg-[var(--color-input)] rounded-full peer transition-colors',
+          'bg-[var(--color-surface)] w-11 h-6 rounded-full peer transition-colors',
           // 选中状态
           'peer-checked:bg-[var(--color-primary)]',
-          // 聚焦状态
-          'peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[var(--color-primary)]',
           // 滑块伪元素
           'after:content-[""] after:absolute after:top-[2px] after:left-[2px]',
           'after:bg-white after:border after:border-gray-300 after:rounded-full after:h-5 after:w-5',

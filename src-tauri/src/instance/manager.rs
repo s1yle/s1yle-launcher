@@ -32,6 +32,52 @@ impl InstanceManager {
         (*config::INSTANCE_META_PATH).clone()
     }
 
+    /// 获取实例元数据文件路径（分布式模式）
+    fn get_instance_meta_path(&self, instance_name: &str, version: &str) -> PathBuf {
+        self.get_minecraft_dir()
+            .join(instance_name)
+            .join(format!("{}.json", version))
+    }
+
+    /// 读取单个实例元数据（分布式）
+    fn read_instance_meta(&self, instance_name: &str, version: &str) -> Option<InstanceMeta> {
+        let meta_path = self.get_instance_meta_path(instance_name, version);
+        if meta_path.exists() {
+            if let Ok(content) = fs::read_to_string(&meta_path) {
+                if let Ok(meta) = serde_json::from_str::<InstanceMeta>(&content) {
+                    return Some(meta);
+                }
+            }
+        }
+        None
+    }
+
+    /// 写入单个实例元数据（分布式）
+    fn write_instance_meta(&self, instance_name: &str, version: &str, meta: &InstanceMeta) -> Result<(), String> {
+        let meta_path = self.get_instance_meta_path(instance_name, version);
+        if let Some(parent) = meta_path.parent() {
+            fs::create_dir_all(parent)
+                .map_err(|e| format!("创建元数据目录失败：{}", e))?;
+        }
+        let content = serde_json::to_string_pretty(meta)
+            .map_err(|e| format!("序列化元数据失败：{}", e))?;
+        fs::write(&meta_path, content)
+            .map_err(|e| format!("写入元数据失败：{}", e))?;
+        Ok(())
+    }
+
+    /// 读取集中式元数据（兼容模式）
+    fn read_central_meta(&self, name: &str) -> Option<InstanceMeta> {
+        self.read_all_metas().remove(name)
+    }
+
+    /// 保存到集中式元数据文件
+    fn save_to_central_meta(&self, name: &str, meta: &InstanceMeta) -> Result<(), String> {
+        let mut all = self.read_all_metas();
+        all.insert(name.to_string(), meta.clone());
+        self.write_all_metas(&all)
+    }
+
     fn read_all_metas(&self) -> HashMap<String, InstanceMeta> {
         let meta_path = self.get_meta_path();
         if meta_path.exists() {
@@ -55,14 +101,63 @@ impl InstanceManager {
         Ok(())
     }
 
+    /// 加载实例元数据（支持双模式）
     pub fn load_meta(&self, name: &str) -> Option<InstanceMeta> {
-        self.read_all_metas().remove(name)
+        match *config::INSTANCE_META_MODE {
+            config::MetaMode::Distributed => {
+                // 分布式模式：优先读取分布式元数据
+                // 需要先获取 version，所以先尝试从集中式读取基本信息
+                if let Some(central_meta) = self.read_central_meta(name) {
+                    // 尝试读取分布式版本
+                    if let Some(dist_meta) = self.read_instance_meta(name, &central_meta.version) {
+                        return Some(dist_meta);
+                    }
+                    
+                    // 分布式不存在，尝试扫描实例目录获取 version
+                    let versions = self.discover_versions(name);
+                    if let Some(version) = versions.first() {
+                        if let Some(dist_meta) = self.read_instance_meta(name, version) {
+                            return Some(dist_meta);
+                        }
+                    }
+                    
+                    // 分布式不存在，返回集中式（兼容旧数据）
+                    return Some(central_meta);
+                }
+                
+                // 集中式也没有，尝试从实例目录推断
+                let versions = self.discover_versions(name);
+                if let Some(version) = versions.first() {
+                    if let Some(dist_meta) = self.read_instance_meta(name, version) {
+                        return Some(dist_meta);
+                    }
+                }
+                
+                None
+            }
+            config::MetaMode::Centralized => {
+                // 集中式模式
+                self.read_central_meta(name)
+            }
+        }
     }
 
+    /// 保存实例元数据（支持双模式）
     pub fn save_meta(&self, name: &str, meta: &InstanceMeta) -> Result<(), String> {
-        let mut all = self.read_all_metas();
-        all.insert(name.to_string(), meta.clone());
-        self.write_all_metas(&all)
+        match *config::INSTANCE_META_MODE {
+            config::MetaMode::Distributed => {
+                // 分布式模式：写入独立文件
+                self.write_instance_meta(name, &meta.version, meta)?;
+                
+                // 同时更新集中式文件（保持同步，用于兼容和快速扫描）
+                self.save_to_central_meta(name, meta)?;
+            }
+            config::MetaMode::Centralized => {
+                // 集中式模式：只写入集中式文件
+                self.save_to_central_meta(name, meta)?;
+            }
+        }
+        Ok(())
     }
 
     fn discover_versions(&self, name: &str) -> Vec<String> {
@@ -99,7 +194,7 @@ impl InstanceManager {
             .cloned()
             .unwrap_or_else(|| "unknown".to_string());
 
-        let (id, loader_type, loader_version, icon_path, created_at, last_played) =
+        let (id, loader_type, loader_version, icon_path, created_at, last_played, game_settings) =
             if let Some(meta) = self.load_meta(name) {
                 (
                     meta.id,
@@ -108,6 +203,7 @@ impl InstanceManager {
                     meta.icon_path,
                     meta.created_at,
                     meta.last_played,
+                    meta.game_settings,
                 )
             } else {
                 let now = instance_dir
@@ -129,6 +225,7 @@ impl InstanceManager {
                     icon_path: None,
                     created_at: now,
                     last_played: None,
+                    game_settings: None,
                 };
                 let _ = self.save_meta(name, &new_meta);
                 (
@@ -138,6 +235,7 @@ impl InstanceManager {
                     new_meta.icon_path,
                     new_meta.created_at,
                     new_meta.last_played,
+                    new_meta.game_settings,
                 )
             };
 
@@ -152,7 +250,7 @@ impl InstanceManager {
             last_played,
             created_at,
             enabled: !versions.is_empty(),
-            game_settings: None,
+            game_settings,
         })
     }
 
@@ -217,6 +315,7 @@ impl InstanceManager {
                             icon_path: None,
                             created_at: now,
                             last_played: None,
+                            game_settings: None,
                         };
                         let _ = self.save_meta_to_path(&new_meta, &meta_path);
                         (
@@ -237,6 +336,7 @@ impl InstanceManager {
                         icon_path: None,
                         created_at: now,
                         last_played: None,
+                        game_settings: None,
                     };
                     if let Some(parent) = meta_path.parent() {
                         let _ = fs::create_dir_all(parent);
@@ -503,6 +603,7 @@ impl InstanceManager {
                         icon_path: None,
                         created_at: now,
                         last_played: None,
+                        game_settings: None,
                     };
                     let _ = self.save_meta_to_path(&new_meta, &meta_path);
                     (
@@ -528,6 +629,7 @@ impl InstanceManager {
                     icon_path: None,
                     created_at: now,
                     last_played: None,
+                    game_settings: None,
                 };
                 if let Some(parent) = meta_path.parent() {
                     let _ = fs::create_dir_all(parent);

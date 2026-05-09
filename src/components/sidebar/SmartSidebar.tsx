@@ -69,7 +69,12 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer }: SmartSideb
     return location.pathname.startsWith(itemPath + '/');
   };
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    // 支持动态参数匹配（如 /instance-manage/:instanceId/game-settings）
+    const normalizedPath = path.replace(/:instanceId/g, '[^/]+');
+    const pathRegex = new RegExp(`^${normalizedPath}$`);
+    return path === location.pathname || pathRegex.test(location.pathname);
+  };
 
   const hasChildrenItems = (item: SidebarMenuItem): boolean => {
     return !!(item.children && item.children.length > 0);
@@ -78,7 +83,10 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer }: SmartSideb
   const currentGroup = getCurrentSidebarGroup();
 
   // 带独立侧边栏的渲染逻辑
-  const pagesWithOwnSidebar = ['/account', '/download', '/game-settings', '/instance-list', '/instance-manage'];
+  const pagesWithOwnSidebar = ['/account', '/download', '/game-settings', '/instance-list'];
+  
+  // 判断当前是否在 instance-manage 页面（支持动态参数）
+  const isInstanceManagePage = location.pathname.startsWith('/instance-manage/');
 
   const knownFolders = useInstanceStore(s => s.knownFolders);
   const removeKnownFolder = useInstanceStore(s => s.removeKnownFolder);
@@ -90,12 +98,15 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer }: SmartSideb
   const [isDeleting, setIsDeleting] = useState(false);
 
   // 渲染子侧边栏
-  if (pagesWithOwnSidebar.some(path => location.pathname.startsWith(path))) {
+  if (pagesWithOwnSidebar.some(path => location.pathname.startsWith(path)) || isInstanceManagePage) {
     const findMenuItemsByPath = (path: string): { current: SidebarMenuItem | undefined, parent: SidebarMenuItem | undefined } => {
       let foundParent: SidebarMenuItem | undefined = undefined;
       const findInItems = (items: SidebarMenuItem[], parent?: SidebarMenuItem): SidebarMenuItem | undefined => {
         for (const item of items) {
-          if (item.path === path) {
+          // 支持动态参数匹配（如 /instance-manage/:instanceId/game-settings）
+          const normalizedItemPath = item.path?.replace(/:instanceId/g, '[^/]+');
+          const pathRegex = new RegExp(`^${normalizedItemPath}$`);
+          if ((item.path === path || pathRegex.test(path))) {
             foundParent = parent;
             return item;
           }
