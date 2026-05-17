@@ -28,7 +28,7 @@ const InstanceInfoHeader: React.FC<InstanceInfoHeaderProps> = ({
   const [showDropdown, setShowDropdown] = useState(false);
 
   const formatVersionInfo = (inst: GameInstance): string => {
-    const parts: string[] = [inst.version];
+    const parts: string[] = [inst.version_id];
     
     if (inst.loader_type !== ModLoaderType.Vanilla) {
       if (inst.loader_version) {

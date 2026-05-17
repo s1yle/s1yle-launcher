@@ -31,7 +31,7 @@ pub use crate::window::{
 };
 
 pub use download::{
-    cancel_download, clear_completed_tasks, deploy_version_files, deploy_version_to_instance,
+    cancel_download, clear_completed_tasks, deploy_version_files, deploy_version_global, deploy_version_to_instance,
     download_file, download_and_deploy, get_download_base_path, get_download_task, get_download_tasks,
     get_game_versions, get_version_detail, get_version_download_manifest, get_version_manifest,
     is_version_deployed, set_download_base_path,
@@ -40,7 +40,7 @@ pub use download::{
 pub use crate::instance::{
     add_known_path, set_default_folder, remove_known_path, copy_instance, create_instance, delete_instance, get_instance,
     get_instances_path, rename_instance, scan_instances, scan_known_mc_paths, update_instance,
-    validate_folder, add_validated_folder,
+    validate_folder, add_validated_folder, migrate_directory_structure,
     GameInstance, InstanceManager,
     get_instance_settings, update_instance_settings, get_system_memory, select_java_path,
 };
@@ -232,11 +232,10 @@ fn open_folder(path: String) -> Result<String, String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let download_path = &*config::DOWNLOAD_BASE_PATH;
-    let instance_path = &*config::DEFAULT_DEAMON_PATH;
 
     let download_manager = DownloadManager::new(download_path.to_path_buf().clone());
     let mod_loader_manager = ModLoaderManager::new(download_path.to_path_buf());
-    let instance_manager = InstanceManager::new(instance_path.to_path_buf());
+    let instance_manager = InstanceManager::new();
 
     let app_config = AppConfig::default();
     let window_config = WindowPosition::default();
@@ -289,6 +288,7 @@ pub fn run() {
             get_download_base_path,
             set_download_base_path,
             deploy_version_files,
+            deploy_version_global,
             deploy_version_to_instance,
             is_version_deployed,
             get_fabric_versions,
@@ -311,6 +311,7 @@ pub fn run() {
             remove_known_path,
             validate_folder,
             add_validated_folder,
+            migrate_directory_structure,
             // 游戏设置相关命令
             get_instance_settings,
             update_instance_settings,

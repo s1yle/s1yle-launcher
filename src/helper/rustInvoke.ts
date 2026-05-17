@@ -539,6 +539,30 @@ export const deployVersionFiles = async (
   }, options);
 };
 
+export const deployVersionHmcl = async (
+  versionId: string,
+  options?: InvokeOptions
+): Promise<string> => {
+  logger.info('部署版本（全局资源）', { versionId });
+  return await invokeRustFunction("deploy_version_global", { 
+    version_id: versionId
+  }, options);
+};
+
+export interface MigrationResult {
+  migrated_versions: string[];
+  migrated_libraries: number;
+  migrated_assets: number;
+  errors: string[];
+}
+
+export const migrateDirectoryStructure = async (
+  options?: InvokeOptions
+): Promise<MigrationResult> => {
+  logger.info('迁移目录结构');
+  return await invokeRustFunction("migrate_directory_structure", {}, options);
+};
+
 export const getDownloadTasks = async (
   options?: InvokeOptions
 ): Promise<DownloadTask[]> => {
@@ -899,7 +923,7 @@ export interface GameSettings {
 export interface GameInstance {
   id: string;
   name: string;
-  version: string;
+  version_id: string;
   loader_type: ModLoaderType;
   loader_version: string | null;
   path: string;
@@ -912,7 +936,7 @@ export interface GameInstance {
 
 export interface InstanceFormData {
   name: string;
-  version: string;
+  version_id: string;
   loader_type: ModLoaderType;
   loader_version?: string;
   icon_path?: string;

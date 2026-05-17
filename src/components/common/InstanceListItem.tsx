@@ -185,9 +185,9 @@ const InstanceListItem: React.FC<InstanceListItemProps> = ({
           </motion.h3>
           <div className="flex items-center gap-2 text-text-tertiary text-sm">
             <span className="px-2 py-0.5 rounded text-xs bg-surface-active text-text-secondary">
-              {inferVersionType(instance.version)}
+              {inferVersionType(instance.version_id)}
             </span>
-            <span>{instance.version}</span>
+            <span>{instance.version_id}</span>
             {instance.loader_type !== ModLoaderType.Vanilla && (
               <motion.span 
                 className="px-2 py-0.5 rounded text-xs bg-primary-bg text-primary"

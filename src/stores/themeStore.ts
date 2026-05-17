@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { configManager } from './configManager';
+import { config } from '@/config';
 
 export type ThemeMode = 'dark' | 'light' | 'system';
 export type AccentColor = 'indigo' | 'blue' | 'green' | 'purple' | 'red' | 'orange' | 'pink';
@@ -151,51 +151,52 @@ export const useThemeStore = create<ThemeState>()(
       accentColor: 'indigo',
       activeTheme: 'dark',
 
-      setMode: (mode: ThemeMode) => {
+      setMode: async (mode: ThemeMode) => {
         const actualTheme = mode === 'system'
           ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
           : mode;
         set({ mode, activeTheme: actualTheme });
         applyToDom(actualTheme, get().accentColor);
         
-        // L2: 异步备份到配置文件
-        configManager.setPreference('theme', mode);
-        configManager.setPreference('accent_color', get().accentColor);
+        // 保存到统一配置
+        await config.setConfigValue('preferences.theme', mode);
+        await config.setConfigValue('preferences.accent_color', get().accentColor);
       },
 
-      setAccentColor: (accentColor: AccentColor) => {
+      setAccentColor: async (accentColor: AccentColor) => {
         set({ accentColor });
         applyToDom(get().activeTheme, accentColor);
         
-        // L2: 异步备份到配置文件
-        configManager.setPreference('accent_color', accentColor);
+        // 保存到统一配置
+        await config.setConfigValue('preferences.accent_color', accentColor);
       },
 
-      applyPreset: (preset: ThemePreset) => {
+      applyPreset: async (preset: ThemePreset) => {
         const actualTheme = preset.mode === 'system'
           ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
           : preset.mode;
-        const config: ThemeConfig = {
+        const configState: ThemeConfig = {
           mode: preset.mode,
           accentColor: preset.accentColor,
           activeTheme: actualTheme,
         };
-        set(config);
+        set(configState);
         applyToDom(actualTheme, preset.accentColor);
         
-        // L2: 异步备份到配置文件
-        configManager.setPreference('theme', preset.mode);
-        configManager.setPreference('accent_color', preset.accentColor);
+        // 保存到统一配置
+        await config.setConfigValue('preferences.theme', preset.mode);
+        await config.setConfigValue('preferences.accent_color', preset.accentColor);
       },
 
-      init: () => {
+      init: async () => {
         // L1: localStorage 已自动加载（通过 persist 中间件）
         const { activeTheme, accentColor } = get();
         applyToDom(activeTheme, accentColor);
         
-        // L2: 从配置文件同步（可选，用于多端同步）
-        const configTheme = configManager.getPreference<ThemeMode>('theme');
-        const configAccent = configManager.getPreference<AccentColor>('accent_color');
+        // 从统一配置同步
+        await config.whenReady();
+        const configTheme = config.getConfigValue('preferences.theme');
+        const configAccent = config.getConfigValue('preferences.accent_color');
         
         if (configTheme && configAccent) {
           const actualTheme = configTheme === 'system'

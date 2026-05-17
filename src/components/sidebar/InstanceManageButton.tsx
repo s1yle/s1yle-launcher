@@ -36,7 +36,7 @@ const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
 
   const formatVersionInfo = (inst: GameInstance): string => {
-    const parts: string[] = [inst.version];
+    const parts: string[] = [inst.version_id];
 
     if (inst.loader_type !== ModLoaderType.Vanilla) {
       if (inst.loader_version) {

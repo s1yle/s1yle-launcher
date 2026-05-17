@@ -1,8 +1,7 @@
 # S1yle Launcher - AI Agent 开发指南
 
-> **最后更新**: 2026-05-07  
-> **项目版本**: 0.1.3  
-> **架构状态**: 生产就绪 ✅
+> **最后更新**: 2026-05-17  
+> **项目版本**: 0.2.0  
 
 ## 0. Agent 操作规范
 
@@ -29,7 +28,7 @@ S1yle Launcher 是一个现代化的 Minecraft 启动器，采用 Tauri 2 + Reac
 - 跨平台支持（Windows、Linux、macOS）
 - 国际化支持（中文、英文）
 - 主题系统（暗色/亮色预设 + 7 种强调色 + SVG 噪点纹理背景）
-- 实例管理（daemon 目录结构，无元数据文件，自动发现）
+- 实例管理（版本化目录结构，全局资源共享，实例配置独立存储）
 - 分层配置管理系统（L1 localStorage + L2 配置文件 + L3 加密存储）
 - 智能侧边栏导航系统（路由感知、右键菜单、动态内容）
 
@@ -780,6 +779,37 @@ s1yle-launcher/
 └── AGENTS.md                      # 本文件
 ```
 
+### 4.1 运行时目录结构
+
+启动器运行时会创建以下目录结构：
+
+```
+{BASE_PATH}/                          # exe 所在目录
+├── .minecraft/                       # Minecraft 根目录（新版）
+│   ├── versions/                     # 版本库
+│   │   └── {version_id}/            # 版本目录
+│   │       ├── {version_id}.jar     # 游戏客户端
+│   │       ├── {version_id}.json    # 版本清单
+│   │       └── natives/              # 原生库
+│   ├── libraries/                    # 全局共享库文件
+│   └── assets/                       # 全局共享资源文件
+│       ├── indexes/
+│       └── objects/
+├── minecraft/                        # 旧版实例目录（兼容）
+│   └── default/                      # 默认实例
+└── .smcl/                            # 启动器配置目录
+    ├── app_config.json               # 应用配置
+    ├── instance_configs/             # 实例配置（独立存储）
+    │   └── {version_id}.json        # 每个版本的配置
+    └── download/                     # 下载缓存
+        └── versions/
+```
+
+**关键设计**：
+- `version_id` 作为实例唯一标识，同时用于版本目录和配置文件名
+- `libraries/` 和 `assets/` 全局共享，避免重复存储
+- 实例配置独立存储在 `.smcl/instance_configs/` 中
+
 ***
 
 ## 5. 核心 API 定义
@@ -811,6 +841,7 @@ s1yle-launcher/
 | `get_version_download_manifest` | `getVersionDownloadManifest` | `versionId`                               | `VersionDownloadManifest` |
 | `download_file`                 | `downloadFile`               | `url`, `filename`, `sha1?`, `skipVerify?` | `DownloadProgress`        |
 | `deploy_version_files`          | `deployVersionFiles`         | `versionId`                               | `string`                  |
+| `deploy_version_global`        | `deployVersionGlobal`       | `versionId`                               | `string`                  |
 | `is_version_deployed`           | `isVersionDeployed`          | `versionId`                               | `boolean`                 |
 | `get_download_tasks`            | `getDownloadTasks`           | -                                         | `DownloadTask[]`          |
 | `cancel_download`               | `cancelDownload`             | `taskId`                                  | `string`                  |
@@ -821,9 +852,14 @@ s1yle-launcher/
 
 **部署路径说明**：
 
-- 下载完成后，通过 `deployVersionFiles` 部署到实例目录
-- 部署路径格式：`{base}/minecraft/{instance_name}/versions/{version_name}/`
-- 内部结构：`versions/{version_name}/{version_name}.jar`、`libraries/`、`assets/`、`natives/`
+- **实例部署** (`deployVersionFiles`)：部署到旧版实例目录
+  - 路径格式：`{base}/minecraft/{instance_name}/versions/{version_name}/`
+  - 内部结构：`versions/{version_name}/{version_name}.jar`、`libraries/`、`assets/`、`natives/`
+
+- **全局部署** (`deployVersionGlobal`)：部署到新版目录结构（推荐）
+  - 版本路径：`.minecraft/versions/{version_id}/`
+  - 库文件路径：`.minecraft/libraries/`（全局共享）
+  - 资源路径：`.minecraft/assets/`（全局共享）
 
 ### 5.4 模组加载器 (modloader.rs)
 
@@ -838,23 +874,29 @@ s1yle-launcher/
 
 ### 5.5 实例管理 (instance.rs)
 
-**实例存储结构**（无元数据文件，纯目录扫描）：
+**实例存储结构**（版本化目录 + 独立配置）：
 
 ```
-{base}/minecraft/
-  └── {instance_name}/
-      └── versions/
-          └── {version_name}/
-              ├── {version_name}.jar
-              ├── {version_name}.json
-              ├── libraries/
-              ├── assets/
-              │   ├── indexes/
-              │   └── objects/
-              └── natives/
+{base}/
+├── .minecraft/                    # Minecraft 根目录（新版）
+│   ├── versions/                  # 版本库
+│   │   └── {version_id}/         # 版本目录
+│   │       ├── {version_id}.jar  # 游戏客户端
+│   │       ├── {version_id}.json # 版本清单
+│   │       └── natives/           # 原生库
+│   ├── libraries/                # 全局共享库文件
+│   └── assets/                   # 全局共享资源文件
+├── .smcl/
+│   └── instance_configs/         # 实例配置目录
+│       └── {version_id}.json    # 实例配置（Java、内存、窗口等）
+└── minecraft/                    # 旧版实例目录（兼容，仅读取）
+    └── default/
 ```
 
-**注意**: 实例目录从 `{base}/daemon/{instance_name}/.minecraft/` 改为 `{base}/minecraft/{instance_name}/versions/{version_name}/`，所有版本文件都放在 `versions/{version_name}/` 目录下。
+**注意**: 从 v0.2.0 开始采用新的目录结构：
+- `version_id` 作为实例唯一标识符
+- 库文件和资源全局共享，避免重复存储
+- 实例配置独立存储在 `.smcl/instance_configs/{version_id}.json`
 
 | Rust 命令               | 前端函数               | 参数                                                             | 返回值                    |
 | --------------------- | ------------------ | -------------------------------------------------------------- | ---------------------- |
@@ -871,8 +913,19 @@ s1yle-launcher/
 | `remove_known_path`   | `removeKnownPath`  | `id`                                                           | `void`                 |
 | `open_folder`         | `openFolder`       | `path`                                                         | `string`               |
 | `open_url`            | `openUrl`          | `url`                                                          | `string`               |
+| `migrate_directory_structure` | `migrateDirectoryStructure` | - | `MigrationResult`      |
 
 > **注意**: `remove_known_path` 不限制任何目录的删除（包括系统内置的 `default`、`official`、`home-mc`），前端通过 `SYSTEM_FOLDER_IDS` 过滤来控制是否显示删除按钮。
+
+**MigrationResult 类型**：
+```typescript
+interface MigrationResult {
+  migrated_versions: string[];
+  migrated_libraries: number;
+  migrated_assets: number;
+  errors: string[];
+}
+```
 
 ### 5.6 配置管理 (config/)
 
@@ -987,21 +1040,22 @@ interface LibraryInfo {
 interface GameInstance {
   id: string;
   name: string;
-  version: string;
+  version_id: string;           // 版本 ID（如 "1.20.1"、"1.19.2-forge-43.2.0"）
   loader_type: ModLoaderType;
   loader_version: string | null;
-  path: string;               // .minecraft/ 绝对路径
+  path: string;               // 版本目录绝对路径
   icon_path: string | null;
   last_played: number | null;
   created_at: number;
   enabled: boolean;
+  game_settings?: GameSettings;
 }
 
 interface KnownPath {
   id: string;
   name: string;               // 显示名称
   path: string;               // 绝对路径
-  is_default: boolean;        // 是否为 daemon 默认目录
+  is_default: boolean;        // 是否为默认目录
 }
 ```
 
@@ -1015,9 +1069,9 @@ interface KnownPath {
 
 | 概念 | 英文 | ID 字段 | 说明 | 示例 |
 |------|------|--------|------|------|
-| **游戏实例** | Game Instance | `instanceId` | 每个独立的游戏版本配置 | `id: "1b50c1a9-5fdc-41bb-b2fe-1af21450cb52"`<br>`name: "Minecraft 1.2.1"`<br>`version: "1.2.1"` |
+| **游戏实例** | Game Instance | `instanceId` / `version_id` | 每个独立的游戏版本配置 | `id: "1b50c1a9-5fdc-41bb-b2fe-1af21450cb52"`<br>`name: "Minecraft 1.2.1"`<br>`version_id: "1.20.1"` |
 | **游戏文件夹** | Game Folder / Known Folder | `folderId` | 实例所在的目录分组 | `id: "default"`<br>`name: "默认文件夹"`<br>`path: "C:/.../minecraft"` |
-| **实例路径** | Instance Path | - | 游戏实例在文件系统中的路径 | `path: "C:/.../minecraft/1.2.1"` |
+| **实例路径** | Instance Path | - | 游戏实例在文件系统中的路径 | `path: "C:/.../.minecraft/versions/1.20.1"` |
 
 ### 7.2 关键命名说明
 
@@ -1512,6 +1566,386 @@ pnpm tauri dev
 
 # Tauri 构建
 pnpm tauri build
+```
+
+***
+
+## 11.5 统一配置系统
+
+> **实现时间**: 2026-05-10  
+> **架构**: 三层存储 + 统一入口 + 类型安全
+
+### 11.5.1 配置分层架构
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ L1: localStorage (UI 配置 - 立即同步)                    │
+│ - 侧边栏宽度、折叠状态                                  │
+│ - 主题模式、强调色（通过 zustand persist）              │
+│ - 实例视图模式、下载面板状态                            │
+└─────────────────────────────────────────────────────────┘
+                        ↓
+┌─────────────────────────────────────────────────────────┐
+│ L2: 配置文件 (业务配置 - 防抖异步保存)                  │
+│ - 位置：{base_dir}/.smcl/app_config.json                │
+│ - 用户偏好：theme, language, enable_animation           │
+│ - 下载配置：download_path, concurrent_limit             │
+│ - 实例配置：instance_configs.<id>.*                     │
+│ - 窗口位置：window_position                             │
+└─────────────────────────────────────────────────────────┘
+                        ↓
+┌─────────────────────────────────────────────────────────┐
+│ L3: 加密存储 (敏感数据 - 立即异步保存)                  │
+│ - 账户 tokens（access_token, refresh_token）            │
+│ - 其他敏感凭证                                          │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 11.5.2 统一配置入口
+
+**核心文件**：
+- `src/config/index.ts` - 统一配置管理器（单例）
+- `src/config/types.ts` - 配置类型定义
+
+**初始化流程**：
+```typescript
+// src/main.tsx
+import { config } from './config';
+
+async function initApp() {
+  // 1. 账户系统初始化
+  await invokeAccInit();
+  
+  // 2. 统一配置系统初始化（核心）
+  await config.initialize();
+  
+  // 3. 等待配置就绪后，并行初始化其他 store
+  await Promise.all([
+    useThemeStore.getState().init(),
+    useInstanceStore.getState().init(),
+    useDownloadStore.getState().init(),
+  ]);
+}
+```
+
+### 11.5.3 配置访问方式
+
+#### **方式 1：使用 config 单例（推荐）**
+
+```typescript
+import { config } from '@/config';
+
+// 等待配置就绪
+await config.whenReady();
+
+// 获取配置值（类型安全）
+const theme = config.getConfigValue('preferences.theme');
+const downloadPath = config.getConfigValue('download.download_path');
+const maxMemory = config.getConfigValue('instance_configs.xxx.memory.max_memory');
+
+// 设置配置值
+await config.setConfigValue('preferences.theme', 'dark');
+await config.setConfigValue('download.concurrent_limit', 32);
+
+// 获取实例配置
+const instanceConfig = config.getInstanceConfig('instance-id');
+await config.updateInstanceConfig('instance-id', { java: { java_path: '...' } });
+
+// 订阅配置变更
+const unsubscribe = config.on('change', (key, value) => {
+  console.log(`配置变更：${key} = ${value}`);
+});
+
+// 取消订阅
+unsubscribe();
+```
+
+#### **方式 2：使用 Hooks（组件中推荐）**
+
+```typescript
+import { useConfig, usePreferences, useInstanceConfig } from '@/hooks/useConfig';
+
+function SettingsPage() {
+  const { config, loading } = useConfig();
+  const { preferences, setTheme } = usePreferences();
+  const { instanceConfig, updateJava } = useInstanceConfig(instanceId);
+  
+  return (
+    <div>
+      <select value={preferences?.theme} onChange={(e) => setTheme(e.target.value)}>
+        <option value="dark">暗夜</option>
+        <option value="light">晨曦</option>
+      </select>
+    </div>
+  );
+}
+```
+
+#### **方式 3：使用 Zustand Store（高级用法）**
+
+```typescript
+import { useConfigStore } from '@/stores/configStore';
+
+const config = useConfigStore((s) => s.config);
+const updateInstanceConfig = useConfigStore((s) => s.updateInstanceConfig);
+```
+
+### 11.5.4 配置类型定义
+
+**配置键类型**：
+```typescript
+type ConfigKey = 
+  | 'preferences.theme'
+  | 'preferences.accent_color'
+  | 'preferences.language'
+  | 'preferences.enable_animation'
+  | 'download.download_path'
+  | 'download.concurrent_limit'
+  | 'download.auto_verify'
+  | 'window_position.x'
+  | 'window_position.y'
+  | 'window_position.width'
+  | 'window_position.height'
+  | 'window_position.maximized'
+  | 'instance_configs'
+  | 'known_folders';
+```
+
+**配置值类型**：
+```typescript
+type ThemeMode = 'dark' | 'light' | 'system';
+type AccentColor = 'indigo' | 'blue' | 'green' | 'purple' | 'red' | 'orange' | 'pink';
+type Language = 'zh-CN' | 'en-US';
+
+type ConfigValue<T extends ConfigKey> = 
+  T extends 'preferences.theme' ? ThemeMode :
+  T extends 'preferences.accent_color' ? AccentColor :
+  T extends 'preferences.language' ? Language :
+  T extends 'preferences.enable_animation' ? boolean :
+  T extends 'download.download_path' ? string :
+  T extends 'download.concurrent_limit' ? number :
+  ...;
+```
+
+### 11.5.5 配置事件
+
+**事件类型**：
+```typescript
+interface ConfigEvents {
+  ready: () => void;
+  change: (key: string, value: any) => void;
+  error: (error: Error) => void;
+}
+```
+
+**订阅示例**：
+```typescript
+// 订阅配置就绪
+config.on('ready', () => {
+  console.log('配置已就绪，可以访问');
+});
+
+// 订阅特定配置变更
+config.on('change', (key, value) => {
+  if (key === 'preferences.theme') {
+    console.log('主题变更为:', value);
+  }
+});
+
+// 订阅错误
+config.on('error', (error) => {
+  console.error('配置系统错误:', error);
+});
+```
+
+### 11.5.6 配置 API 概览
+
+| 方法 | 说明 | 参数 | 返回值 |
+|------|------|------|--------|
+| `initialize()` | 初始化配置系统 | - | `Promise<void>` |
+| `whenReady()` | 等待配置就绪 | - | `Promise<void>` |
+| `isReady()` | 检查是否就绪 | - | `boolean` |
+| `getConfig()` | 获取完整配置 | - | `AppConfig \| null` |
+| `getConfigValue<T>(key)` | 获取配置值（类型安全） | `key: ConfigKey` | `T \| undefined` |
+| `setConfigValue<T>(key, value)` | 设置配置值 | `key: ConfigKey, value: T` | `Promise<void>` |
+| `getInstanceConfig(id)` | 获取实例配置 | `instanceId: string` | `InstanceConfig \| null` |
+| `updateInstanceConfig(id, config)` | 更新实例配置 | `instanceId, config` | `Promise<void>` |
+| `removeInstanceConfig(id)` | 删除实例配置 | `instanceId` | `Promise<void>` |
+| `on(event, callback)` | 订阅事件 | `event, callback` | `() => void` (取消订阅) |
+| `off(event, callback)` | 取消订阅 | `event, callback` | `void` |
+
+### 11.5.7 最佳实践
+
+#### ✅ **推荐做法**
+
+1. **使用统一入口访问配置**
+```typescript
+// ✅ 推荐
+const theme = config.getConfigValue('preferences.theme');
+
+// ❌ 避免
+const config = useConfigStore.getState().config;
+const theme = config?.preferences.theme;
+```
+
+2. **等待配置就绪后再访问**
+```typescript
+// ✅ 推荐
+await config.whenReady();
+const value = config.getConfigValue('key');
+
+// ❌ 避免：配置未加载时访问
+const value = config.getConfigValue('key'); // 可能返回 undefined
+```
+
+3. **使用类型安全的配置键**
+```typescript
+// ✅ 推荐
+config.getConfigValue('preferences.theme');
+
+// ❌ 避免：字符串拼写错误
+config.getConfigValue('prefernces.them'); // 编译时无法发现错误
+```
+
+4. **订阅配置变更时清理**
+```typescript
+// ✅ 推荐
+useEffect(() => {
+  const unsubscribe = config.on('change', handleConfigChange);
+  return unsubscribe;
+}, []);
+
+// ❌ 避免：未清理导致内存泄漏
+config.on('change', handleConfigChange);
+```
+
+#### ❌ **禁止做法**
+
+1. **禁止直接修改配置文件**
+```typescript
+// ❌ 禁止：绕过配置系统
+fs.writeFileSync(configPath, JSON.stringify(config));
+
+// ✅ 推荐：使用配置 API
+await config.setConfigValue('key', value);
+```
+
+2. **禁止在配置未就绪时访问**
+```typescript
+// ❌ 禁止
+const theme = config.getConfigValue('preferences.theme');
+if (theme === 'dark') { ... } // 可能为 undefined
+
+// ✅ 推荐
+await config.whenReady();
+const theme = config.getConfigValue('preferences.theme') || 'dark';
+```
+
+3. **禁止混用多种配置访问方式**
+```typescript
+// ❌ 禁止：同一配置通过不同方式访问
+const theme1 = config.getConfigValue('preferences.theme');
+const theme2 = localStorage.getItem('preferences.theme');
+
+// ✅ 推荐：统一使用 config API
+const theme = config.getConfigValue('preferences.theme');
+```
+
+### 11.5.8 配置文件结构
+
+**配置文件位置**：
+```
+{base_dir}/.smcl/app_config.json
+```
+
+**配置文件示例**：
+```json
+{
+  "version": 1,
+  "base_path": "C:/Users/User/AppData/Local/s1yle/mc_launcher",
+  "window_position": {
+    "x": 100,
+    "y": 100,
+    "width": 1024,
+    "height": 680,
+    "maximized": false
+  },
+  "preferences": {
+    "theme": "dark",
+    "accent_color": "indigo",
+    "language": "zh-CN",
+    "enable_animation": true
+  },
+  "download": {
+    "download_path": "C:/Users/User/AppData/Local/s1yle/mc_launcher/download",
+    "concurrent_limit": 16,
+    "auto_verify": true
+  },
+  "instance_configs": {
+    "uuid-1": {
+      "id": "uuid-1",
+      "name": "生存服务器",
+      "version": "1.20.4",
+      "loader_type": "Fabric",
+      "loader_version": "0.15.7",
+      "java": {
+        "java_path": "C:/Program Files/Java/jdk-17/bin/java.exe",
+        "java_args": ["-XX:+UseG1GC"],
+        "use_bundled": false
+      },
+      "memory": {
+        "min_memory": 1024,
+        "max_memory": 4096
+      },
+      "graphics": {
+        "width": 1920,
+        "height": 1080,
+        "fullscreen": false
+      },
+      "custom_args": [],
+      "icon_path": null,
+      "last_played": 1714377600,
+      "created_at": 1714291200,
+      "enabled": true
+    }
+  }
+}
+```
+
+### 11.5.9 配置系统事件流
+
+```
+应用启动
+  ↓
+config.initialize()
+  ↓
+加载配置文件 (app_config.json)
+  ↓
+更新 Zustand Store
+  ↓
+触发 'ready' 事件
+  ↓
+其他 store 初始化
+  ↓
+等待 config.whenReady()
+  ↓
+访问配置数据
+
+---
+
+用户修改配置
+  ↓
+config.setConfigValue(key, value)
+  ↓
+调用 Rust API (set_config_value)
+  ↓
+写入配置文件 (防抖 500ms)
+  ↓
+刷新 Zustand Store
+  ↓
+触发 'change' 事件
+  ↓
+订阅者收到通知
 ```
 
 ***
@@ -3694,6 +4128,37 @@ configManager.setPreference:
 
 **详细文档**：
 - 完整方案见 `docs/分层配置存储系统方案规划书.md`
+
+### 12.2 目录结构重构 (v0.2.0)
+
+> **实现时间**: 2026-05-10
+
+**重构目标**：
+1. 采用版本化目录结构，全局共享库文件和资源
+2. 实例配置独立存储，支持持久化游戏设置
+3. 移除旧版 daemon 目录依赖
+
+**主要变更**：
+
+| 变更项 | 旧版 | 新版 |
+|--------|------|------|
+| Minecraft 根目录 | `{base}/minecraft/` | `{base}/.minecraft/` |
+| 版本目录 | `{instance}/versions/{name}/` | `.minecraft/versions/{version_id}/` |
+| 库文件路径 | 每个实例独立存储 | `.minecraft/libraries/`（全局共享） |
+| 资源文件路径 | 每个实例独立存储 | `.minecraft/assets/`（全局共享） |
+| 实例配置 | 无（元数据文件） | `.smcl/instance_configs/{version_id}.json` |
+| 版本标识字段 | `version` | `version_id` |
+
+**新增 API**：
+
+| 命令 | 说明 |
+|------|------|
+| `deploy_version_global` | 全局资源部署模式 |
+| `migrate_directory_structure` | 旧版目录迁移工具 |
+
+**修复问题**：
+- 游戏设置页面进入后自动恢复默认值的问题
+- 扫描实例时自动保存默认配置覆盖用户设置的问题
 
 ***
 

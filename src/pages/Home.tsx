@@ -21,7 +21,7 @@ const Home = () => {
                 当前选择: <span className="text-primary font-semibold">{selectedInstance.name}</span>
               </p>
               <p className="text-sm text-text-tertiary">
-                {selectedInstance.version} · {selectedInstance.loader_type}
+                {selectedInstance.version_id} · {selectedInstance.loader_type}
                 {selectedInstance.loader_version && ` ${selectedInstance.loader_version}`}
               </p>
             </div>

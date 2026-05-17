@@ -283,7 +283,7 @@ export const useDownloadStore = create<DownloadState>((set, get) => ({
             selectedInstance = {
               id: 'default',
               name: defaultInstanceName,
-              version: versionId,
+              version_id: versionId,
               loader_type: ModLoaderType.Vanilla,
               loader_version: null,
               path: defaultInstancePath,

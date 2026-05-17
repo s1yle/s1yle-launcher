@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -33,6 +33,9 @@ const InstanceGameSettings: React.FC = () => {
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [javaPaths, setJavaPaths] = useState<Array<{ version: string; path: string }>>([]);
   const [javaExpanded, setJavaExpanded] = useState(false);
+  
+  const isInitialLoad = useRef(true);
+  const lastSavedSettings = useRef<string>('');
 
   const instance = instanceId ? getInstance(instanceId) : null;
 
@@ -57,6 +60,8 @@ const InstanceGameSettings: React.FC = () => {
         const loadedSettings = await getInstanceSettings(instance.id);
         console.log('[GameSettings] Loaded settings:', loadedSettings);
         setSettings(loadedSettings);
+        lastSavedSettings.current = JSON.stringify(loadedSettings);
+        isInitialLoad.current = true;
         
         // 扫描常见的 Java 安装路径
         const commonJavaPaths = await scanCommonJavaPaths();
@@ -72,14 +77,23 @@ const InstanceGameSettings: React.FC = () => {
     loadSettings();
   }, [instance?.id]);
 
-  // 保存设置（防抖）
+  // 保存设置（防抖）- 仅在用户修改后保存
   useEffect(() => {
-    if (!instance || settingsLoading) return;
+    if (!instance || settingsLoading || isInitialLoad.current) {
+      isInitialLoad.current = false;
+      return;
+    }
+
+    const currentSettingsStr = JSON.stringify(settings);
+    if (currentSettingsStr === lastSavedSettings.current) {
+      return;
+    }
 
     const timer = setTimeout(async () => {
       try {
         console.log('[GameSettings] Saving settings:', settings);
         await updateInstanceSettings(instance.id, settings);
+        lastSavedSettings.current = currentSettingsStr;
         success(t('settings.saved', '设置已保存'));
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);

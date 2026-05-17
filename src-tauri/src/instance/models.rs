@@ -6,7 +6,11 @@ use uuid::Uuid;
 pub struct InstanceMeta {
     pub id: String,
     pub name: String,
-    pub version: String,
+    
+    /// 版本 ID（如 "1.20.1"、"1.19.2-forge-43.2.0"）
+    #[serde(alias = "version")]
+    pub version_id: String,
+    
     pub loader_type: ModLoaderType,
     pub loader_version: Option<String>,
     pub icon_path: Option<String>,
@@ -21,7 +25,7 @@ impl Default for InstanceMeta {
         Self {
             id: Uuid::new_v4().to_string(),
             name: String::new(),
-            version: String::new(),
+            version_id: String::new(),
             loader_type: ModLoaderType::Vanilla,
             loader_version: None,
             icon_path: None,
@@ -97,7 +101,11 @@ impl Default for GameSettings {
 pub struct GameInstance {
     pub id: String,
     pub name: String,
-    pub version: String,
+    
+    /// 版本 ID
+    #[serde(alias = "version")]
+    pub version_id: String,
+    
     pub loader_type: ModLoaderType,
     pub loader_version: Option<String>,
     pub path: String,

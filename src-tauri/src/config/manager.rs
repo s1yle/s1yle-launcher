@@ -131,6 +131,82 @@ impl ConfigManager {
         Ok(config.instance_configs.clone())
     }
 
+    // ==================== 实例配置管理 ====================
+
+    /// # 保存实例配置到独立文件
+    pub fn save_instance_config_to_file(
+        &self,
+        instance_id: &str,
+        config: &InstanceConfig,
+    ) -> Result<(), String> {
+        use crate::config::INSTANCE_CONFIGS_DIR;
+        
+        let config_dir = &*INSTANCE_CONFIGS_DIR;
+        fs::create_dir_all(config_dir)
+            .map_err(|e| format!("创建实例配置目录失败：{}", e))?;
+        
+        let config_path = config_dir.join(format!("{}.json", instance_id));
+        let json = serde_json::to_string_pretty(config)
+            .map_err(|e| format!("序列化实例配置失败：{}", e))?;
+        
+        fs::write(&config_path, json)
+            .map_err(|e| format!("写入实例配置文件失败：{}", e))?;
+        
+        log_info!("实例配置已保存到：{}", config_path.to_string_lossy());
+        Ok(())
+    }
+
+    /// # 从独立文件加载实例配置
+    pub fn load_instance_config_from_file(
+        &self,
+        instance_id: &str,
+    ) -> Result<Option<InstanceConfig>, String> {
+        use crate::config::INSTANCE_CONFIGS_DIR;
+        
+        let config_path = INSTANCE_CONFIGS_DIR.join(format!("{}.json", instance_id));
+        
+        if !config_path.exists() {
+            return Ok(None);
+        }
+        
+        let content = fs::read_to_string(&config_path)
+            .map_err(|e| format!("读取实例配置文件失败：{}", e))?;
+        
+        let config: InstanceConfig = serde_json::from_str(&content)
+            .map_err(|e| format!("解析实例配置文件失败：{}", e))?;
+        
+        Ok(Some(config))
+    }
+
+    /// # 删除实例配置文件
+    pub fn delete_instance_config_file(&self, instance_id: &str) -> Result<(), String> {
+        use crate::config::INSTANCE_CONFIGS_DIR;
+        
+        let config_path = INSTANCE_CONFIGS_DIR.join(format!("{}.json", instance_id));
+        
+        if config_path.exists() {
+            fs::remove_file(&config_path)
+                .map_err(|e| format!("删除实例配置文件失败：{}", e))?;
+        }
+        
+        Ok(())
+    }
+
+    /// # 同步实例配置（全局配置 + 独立文件）
+    pub fn sync_instance_config(
+        &self,
+        instance_id: &str,
+        config: &InstanceConfig,
+    ) -> Result<(), String> {
+        // 更新全局配置
+        self.update_instance_config(instance_id, config.clone())?;
+        
+        // 保存到独立文件
+        self.save_instance_config_to_file(instance_id, config)?;
+        
+        Ok(())
+    }
+
     /// # 重置配置到默认值
     pub fn reset_config(&self) -> Result<(), String> {
         let default = AppConfig::default();

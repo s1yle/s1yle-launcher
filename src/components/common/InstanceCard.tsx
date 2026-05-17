@@ -174,7 +174,7 @@ const InstanceCard: React.FC<InstanceCardProps> = ({
         </div>
 
         <div className="flex items-center gap-4 mx-4">
-          <span className="text-text-secondary text-sm">{instance.version}</span>
+          <span className="text-text-secondary text-sm">{instance.version_id}</span>
           <span className={`px-2 py-0.5 text-xs rounded border ${getLoaderColor(instance.loader_type)}`}>
             {getLoaderLabel(instance.loader_type)}
             {instance.loader_version && ` ${instance.loader_version}`}
@@ -250,7 +250,7 @@ const InstanceCard: React.FC<InstanceCardProps> = ({
           </div>
 
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-text-secondary">{instance.version}</span>
+            <span className="text-text-secondary">{instance.version_id}</span>
             <span className={`px-2 py-0.5 text-xs rounded border ${getLoaderColor(instance.loader_type)}`}>
               {getLoaderLabel(instance.loader_type)}
               {instance.loader_version && ` ${instance.loader_version}`}

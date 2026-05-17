@@ -376,7 +376,7 @@ export const useInstanceStore = create<InstanceState>((set, get) => ({
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(
-        (i) => i.name.toLowerCase().includes(q) || i.version.toLowerCase().includes(q),
+        (i) => i.name.toLowerCase().includes(q) || i.version_id.toLowerCase().includes(q),
       );
       console.log('[getFilteredInstances] 搜索过滤后:', filtered.length);
     }

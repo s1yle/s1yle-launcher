@@ -15,20 +15,37 @@ pub static BASE_PATH: Lazy<PathBuf> =
             .unwrap_or_else(|| PathBuf::from(""))
     });
 
-/// # minecraft 根目录
+/// # minecraft 根目录（旧版，保持兼容）
 pub static DEAMON_BASE_PATH: Lazy<PathBuf> = Lazy::new(|| BASE_PATH.join("minecraft"));
 
-/// # 默认的 实例名称
+/// # 默认的 实例名称（旧版，保持兼容）
 pub static DEFAULT_DEAMON_PATH: Lazy<PathBuf> =
     Lazy::new(|| BASE_PATH.join("minecraft").join("default"));
 
-/// # 下载路径（/.smcl/download/）
-pub static DOWNLOAD_BASE_PATH: Lazy<PathBuf> = Lazy::new(|| CONFIG_APPLICATION.join("download"));
+/// # Minecraft 根目录
+pub static MINECRAFT_DIR: Lazy<PathBuf> = Lazy::new(|| BASE_PATH.join(".minecraft"));
 
-/// # 实例元数据文件名
+/// # 版本库目录
+pub static VERSIONS_DIR: Lazy<PathBuf> = Lazy::new(|| MINECRAFT_DIR.join("versions"));
+
+/// # 共享库目录
+pub static LIBRARIES_DIR: Lazy<PathBuf> = Lazy::new(|| MINECRAFT_DIR.join("libraries"));
+
+/// # 资源目录
+pub static ASSETS_DIR: Lazy<PathBuf> = Lazy::new(|| MINECRAFT_DIR.join("assets"));
+
+/// # 实例配置目录
+pub static INSTANCE_CONFIGS_DIR: Lazy<PathBuf> = 
+    Lazy::new(|| CONFIG_APPLICATION.join("instance_configs"));
+
+/// # 下载路径（ /.smcl/download/versions/）
+pub static DOWNLOAD_BASE_PATH: Lazy<PathBuf> = 
+    Lazy::new(|| CONFIG_APPLICATION.join("download").join("versions"));
+
+/// # 实例元数据文件名（旧版，保持兼容）
 pub static INSTANCE_META_FILE_NAME: &str = "instance_meta.json";
 
-/// # InstanceMeta 路径（位于 minecraft 根目录）
+/// # InstanceMeta 路径（旧版，保持兼容）
 pub static INSTANCE_META_PATH: Lazy<PathBuf> =
     Lazy::new(|| DEAMON_BASE_PATH.join(INSTANCE_META_FILE_NAME));
 
@@ -135,29 +152,51 @@ impl PathConfig {
         self.daemon_base_path.join(INSTANCE_META_FILE_NAME)
     }
     
-    /// 获取指定实例的目录路径
+    /// 获取指定实例的目录路径（旧版，保持兼容）
     pub fn get_instance_dir(&self, instance_name: &str) -> PathBuf {
         self.daemon_base_path.join(instance_name)
     }
     
-    /// 获取指定实例的 versions 目录
+    /// 获取指定实例的 versions 目录（旧版，保持兼容）
     pub fn get_versions_dir(&self, instance_name: &str) -> PathBuf {
         self.get_instance_dir(instance_name).join("versions")
     }
     
-    /// 获取指定实例的 libraries 目录
+    /// 获取指定实例的 libraries 目录（旧版，保持兼容）
     pub fn get_libraries_dir(&self, instance_name: &str) -> PathBuf {
         self.get_instance_dir(instance_name).join("libraries")
     }
     
-    /// 获取指定实例的 assets 目录
+    /// 获取指定实例的 assets 目录（旧版，保持兼容）
     pub fn get_assets_dir(&self, instance_name: &str) -> PathBuf {
         self.get_instance_dir(instance_name).join("assets")
     }
     
-    /// 获取指定实例的 natives 目录
+    /// 获取指定实例的 natives 目录（旧版，保持兼容）
     pub fn get_natives_dir(&self, instance_name: &str) -> PathBuf {
         self.get_instance_dir(instance_name).join("natives")
+    }
+    
+    // ==================== 版本目录路径方法 ====================
+    
+    /// 获取版本目录
+    pub fn get_version_dir(&self, version_id: &str) -> PathBuf {
+        (*VERSIONS_DIR).join(version_id)
+    }
+    
+    /// 获取全局库目录
+    pub fn get_global_libraries_dir(&self) -> PathBuf {
+        (*LIBRARIES_DIR).clone()
+    }
+    
+    /// 获取全局资源目录
+    pub fn get_global_assets_dir(&self) -> PathBuf {
+        (*ASSETS_DIR).clone()
+    }
+    
+    /// 获取实例配置文件路径
+    pub fn get_instance_config_path(&self, instance_id: &str) -> PathBuf {
+        (*INSTANCE_CONFIGS_DIR).join(format!("{}.json", instance_id))
     }
 }
 

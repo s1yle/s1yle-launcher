@@ -1,7 +1,7 @@
 use tauri::State;
 use std::path::PathBuf;
 
-use super::manager::InstanceManager;
+use super::manager::{InstanceManager, MigrationResult};
 use super::models::{GameInstance, KnownPath};
 use super::validator::{FolderValidator, FolderValidationResult};
 use crate::log_info;
@@ -155,4 +155,12 @@ pub async fn add_validated_folder(
     
     log_info!("<add_validated_folder> path={}, name={}", path, display_name);
     instance_manager.add_known_path_with_name(&path, &display_name).await
+}
+
+#[tauri::command]
+pub fn migrate_directory_structure(
+    instance_manager: State<'_, InstanceManager>,
+) -> Result<MigrationResult, String> {
+    log_info!("开始迁移目录结构");
+    instance_manager.migrate_directory_structure()
 }

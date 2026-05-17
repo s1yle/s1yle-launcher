@@ -28,28 +28,51 @@ pub fn update_instance_settings(
         .get_instance(&instance_id)
         .ok_or_else(|| format!("实例不存在：{}", instance_id))?;
     
-    // 加载或创建 InstanceMeta
-    let mut meta = if let Some(existing_meta) = instance_manager.load_meta(&instance.name) {
-        existing_meta
-    } else {
-        // 如果元数据不存在，创建一个新的
-        InstanceMeta {
-            id: instance.id.clone(),
-            name: instance.name.clone(),
-            version: instance.version.clone(),
-            loader_type: instance.loader_type,
-            loader_version: instance.loader_version.clone(),
-            icon_path: instance.icon_path.clone(),
-            created_at: instance.created_at,
-            last_played: instance.last_played,
-            game_settings: None,
-        }
+    // 加载或创建 InstanceConfig
+    let mut config = instance_manager.load_instance_config(&instance.version_id)
+        .unwrap_or_else(|| {
+            // 如果配置不存在，创建一个新的
+            crate::config::InstanceConfig {
+                id: instance.id.clone(),
+                name: instance.name.clone(),
+                version: instance.version_id.clone(),
+                loader_type: instance.loader_type,
+                loader_version: instance.loader_version.clone(),
+                java: crate::config::JavaConfig::default(),
+                memory: crate::config::MemoryConfig::default(),
+                graphics: crate::config::GraphicsConfig::default(),
+                custom_args: Vec::new(),
+                icon_path: instance.icon_path.clone(),
+                last_played: instance.last_played,
+                created_at: instance.created_at,
+                enabled: instance.enabled,
+            }
+        });
+    
+    // 更新配置中的设置
+    config.java.java_path = settings.java_path.clone();
+    config.memory.min_memory = settings.min_memory.unwrap_or(1024) as u32;
+    config.memory.max_memory = settings.max_memory.unwrap_or(2048) as u32;
+    config.java.java_args = settings.jvm_args.clone().unwrap_or_default();
+    config.graphics.width = settings.width.unwrap_or(854);
+    config.graphics.height = settings.height.unwrap_or(480);
+    config.graphics.fullscreen = settings.fullscreen.unwrap_or(false);
+    
+    // 保存到实例配置文件
+    instance_manager.save_instance_config(&config)?;
+    
+    // 同时保存到旧式元数据（兼容）
+    let meta = InstanceMeta {
+        id: instance.id.clone(),
+        name: instance.name.clone(),
+        version_id: instance.version_id.clone(),
+        loader_type: instance.loader_type,
+        loader_version: instance.loader_version.clone(),
+        icon_path: instance.icon_path.clone(),
+        created_at: instance.created_at,
+        last_played: instance.last_played,
+        game_settings: Some(settings),
     };
-    
-    // 更新配置
-    meta.game_settings = Some(settings);
-    
-    // 保存到磁盘
     instance_manager.save_meta(&instance.name, &meta)?;
     
     // 重新获取实例（包含更新后的配置）

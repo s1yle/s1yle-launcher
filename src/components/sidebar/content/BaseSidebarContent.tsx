@@ -88,8 +88,8 @@ const BaseSidebarContent = ({
   const handleItemClick = (item: SidebarMenuItem) => {
     if (item.type === 'route' && item.path) {
       if (onMenuClick) {
-        // 不要提前替换 :instanceId，让 React Router 自己处理
-        onMenuClick(item.path);
+        // 传递完整的 item 对象，而不是 item.path
+        onMenuClick(item);
       }
     } else if (item.type === 'action' && item.action) {
       if (item.id === 'refresh-instances') {

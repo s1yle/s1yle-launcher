@@ -61,7 +61,7 @@ const ActionButton = ({ onClick }: ActionButtonProps) => {
       const result = await launchInstance({
         java_path: 'java',
         memory_mb: 2048,
-        version: selectedInstance.version,
+        version: selectedInstance.version_id,
         game_dir: selectedInstance.path,
         assets_dir: `${selectedInstance.path}/assets`,
         username,
@@ -104,7 +104,7 @@ const ActionButton = ({ onClick }: ActionButtonProps) => {
 
   const getButtonInfo = () => {
     const instanceName = selectedInstance?.name || '未选择实例';
-    const instanceVersion = selectedInstance?.version || '';
+    const instanceVersion = selectedInstance?.version_id || '';
     
     switch (status) {
       case LaunchStatus.Idle:

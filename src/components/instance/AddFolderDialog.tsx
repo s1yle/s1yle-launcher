@@ -156,7 +156,7 @@ const AddFolderDialog: React.FC<AddFolderDialogProps> = ({ isOpen, onClose }) =>
                     <div className="mt-2 space-y-1">
                       {validationResult.instances.map((inst: any, idx: number) => (
                         <div key={idx} className="text-xs text-text-secondary font-mono bg-surface px-2 py-1 rounded">
-                          📦 {inst.name} ({inst.version})
+                          📦 {inst.name} ({inst.version_id})
                         </div>
                       ))}
                     </div>
