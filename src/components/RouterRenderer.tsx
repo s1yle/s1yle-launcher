@@ -21,8 +21,9 @@ import {
     InstanceGameSettings
 } from '../pages';
 import { AdminServers, AdminAnalytics, AdminUpload } from '../pages/admin';
+import { useUIModeStore, type PageAnimationDirection } from "../stores/uiModeStore";
 
-const PAGE_TRANSITION_DURATION = 0.15;
+const PAGE_TRANSITION_DURATION = 0.25;
 
 const componentMap: Record<string, React.FC> = {
     Home,
@@ -84,9 +85,29 @@ export const useRouteParams = (): Record<string, string> => {
     return contextParams || reactRouterParams || {};
 };
 
+const getAnimationValues = (direction: PageAnimationDirection, enabled: boolean) => {
+    if (!enabled) {
+        return {
+            initial: { opacity: 0 },
+            animate: { opacity: 1 },
+            exit: { opacity: 0 },
+        };
+    }
+
+    const yEnter = direction === 'slide-up' ? 30 : -30;
+    const yExit = direction === 'slide-down' ? -30 : 30;
+
+    return {
+        initial: { opacity: 0, y: yEnter },
+        animate: { opacity: 1, y: 0 },
+        exit: { opacity: 0, y: yExit },
+    };
+};
+
 const RouterRenderer = () => {
     const location = useLocation();
     const currentPathname = location.pathname;
+    const { animation } = useUIModeStore();
 
     const route = findRouteByPath(currentPathname, routes);
     if (!route) return null;
@@ -94,8 +115,8 @@ const RouterRenderer = () => {
     const Component = componentMap[route.componentName];
     if (!Component) return null;
 
-    // 解析路由参数
     const params = parseRouteParams(route.path, currentPathname);
+    const animationValues = getAnimationValues(animation.direction, animation.enabled);
 
     return (
         <div className="h-full pl-3 pr-3 relative">
@@ -103,9 +124,9 @@ const RouterRenderer = () => {
                 <motion.div
                     key={currentPathname}
                     className="absolute inset-0"
-                    initial={{ opacity: 0, x: 30 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -30 }}
+                    initial={animationValues.initial}
+                    animate={animationValues.animate}
+                    exit={animationValues.exit}
                     transition={{
                         duration: PAGE_TRANSITION_DURATION,
                         ease: [0.25, 0.1, 0.25, 1],

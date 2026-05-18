@@ -69,6 +69,7 @@ export interface RouteConfig {
   sidebarGroup?: SidebarGroup;
   parentPath?: string;
   autoNavigateToFirstChild?: boolean;
+  needsScrollbar?: boolean;
 }
 
 export const routes: RouteConfig[] = [
@@ -76,7 +77,8 @@ export const routes: RouteConfig[] = [
     path: '/',
     componentName: 'Home',
     header: { type: SidebarType.MAIN, title: 's1yle Minecraft! Launcher', titleI18nKey: 'header.title' },
-    sidebarGroup: SidebarGroup.NONE
+    sidebarGroup: SidebarGroup.NONE,
+    needsScrollbar: false
   },
   {
     path: '/account',

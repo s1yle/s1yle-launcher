@@ -57,17 +57,16 @@ const MainLayout = () => {
 
   const isFullscreen = currentRoute.layoutMode === LayoutMode.FULLSCREEN;
 
-  // 检测当前页面是否有独立侧边栏
   const pagesWithOwnSidebar = ['/account', '/download', '/game-settings', '/instance-list'];
   const isInstanceManagePage = location.pathname.startsWith('/instance-manage/');
   const hasOwnSidebar = uiMode === 'island' && (
-    pagesWithOwnSidebar.some(path => location.pathname.startsWith(path)) || 
+    pagesWithOwnSidebar.some(path => location.pathname.startsWith(path)) ||
     isInstanceManagePage
   );
 
   const handleMenuClick = (targetPath: string) => {
     if (animLockRef.current || targetPath === location.pathname) return;
-    
+
     let finalPath = targetPath;
     if (finalPath.includes(':instanceId')) {
       const instance = useInstanceStore.getState().getSelectedInstance();
@@ -78,7 +77,7 @@ const MainLayout = () => {
         return;
       }
     }
-    
+
     animLockRef.current = true;
     setNavigating(true);
     setCurrentPath(finalPath);
@@ -178,20 +177,16 @@ const MainLayout = () => {
           {/* 灵动岛模式 */}
           <FloatingControls />
           <DynamicIsland onMenuClick={handleMenuClick} />
-          
+
           {/* 顶部拖曳区域 - 覆盖灵动岛两侧的空间 */}
-          <div 
+          <div
             className="fixed top-0 left-0 right-0 h-20 z-40"
             data-tauri-drag-region="true"
-            style={{ 
-              // 排除灵动岛和控制按钮区域
-              pointerEvents: 'none',
-            }}
           >
-            <div className="absolute inset-0" data-tauri-drag-region="true" />
+            <div className="absolute inset-0" data-tauri-drag-region />
           </div>
-          
-          {hasOwnSidebar ? (
+
+          {hasOwnSidebar && !isSidebarCollapsed ? (
             // 有独立侧边栏的页面：显示侧边栏 + 内容
             <div className="flex flex-1 overflow-hidden">
               <motion.div
@@ -201,7 +196,7 @@ const MainLayout = () => {
                 animate={{ width: sidebarWidth, opacity: 1 }}
                 transition={{
                   duration: SIDEBAR_TRANSITION_DURATION,
-                  ease: [0.25, 0.1, 0.25, 1],
+                  ease: 'circInOut',
                 }}
               >
                 <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} footer={sidebarFooter} />
@@ -210,10 +205,10 @@ const MainLayout = () => {
                   onMouseDown={handleMouseDown}
                 />
               </motion.div>
-              
+
               <main
-                className="flex-1 overflow-y-auto overflow-x-hidden relative noise-bg gradient-bg scrollbar-custom pt-20"
-                style={{ background: 'var(--color-bg-primary)' }}
+                className="flex-1 overflow-y-auto overflow-x-hidden relative noise-bg gradient-bg scrollbar-custom"
+                style={{ background: 'var(--color-bg-primary)', padding: '40px 0 0' }}
               >
                 <RouterRenderer />
               </main>
@@ -221,18 +216,19 @@ const MainLayout = () => {
           ) : (
             // 普通页面：只显示内容区
             <main
-              className="flex-1 overflow-y-auto overflow-x-hidden relative noise-bg gradient-bg scrollbar-custom pt-20"
-              style={{ background: 'var(--color-bg-primary)' }}
+              className="flex-1 overflow-y-auto overflow-x-hidden relative noise-bg gradient-bg scrollbar-custom pt-30"
+              style={{ background: 'var(--color-bg-primary)', padding: '30px 0 0' }}
             >
               <RouterRenderer />
             </main>
           )}
+          {collapsedToggleButton}
         </>
       ) : (
         <>
           {/* 经典模式 */}
           <Header type={currentRoute.header.type === 'main' ? 'main' : 'sub'} title={currentRoute.header.title} />
-          
+
           <div className="flex flex-1 overflow-hidden ">
             <AnimatePresence>
               {shouldShowSidebar && (
@@ -245,10 +241,11 @@ const MainLayout = () => {
                   exit={{ width: 0, opacity: 0 }}
                   transition={{
                     duration: SIDEBAR_TRANSITION_DURATION,
-                    ease: [0.25, 0.1, 0.25, 1],
+                    // ease: [0.25, 0.1, 0.25, 1],
+                    ease: 'anticipate'
                   }}
                 >
-                  <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} footer={sidebarFooter} />
+                  <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} />
                   <div
                     className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-[var(--color-primary)] hover:opacity-50 transition-opacity z-10"
                     onMouseDown={handleMouseDown}

@@ -19,9 +19,10 @@ interface SmartSidebarProps {
   onMenuClick?: (path: string) => void;
   showAllGroups?: boolean;
   footer?: React.ReactNode;
+  header?: React.ReactNode;
 }
 
-const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer }: SmartSidebarProps) => {
+const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: SmartSidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -216,7 +217,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer }: SmartSideb
 
     return (
       
-      <BaseSidebarLayout footer={footer}>
+      <BaseSidebarLayout footer={footer} header={header}>
         <AnimatePresence mode="wait">
           <motion.div
             key={`sidebar-instance-${selectedFolderId || 'default'}`}
@@ -272,7 +273,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer }: SmartSideb
   }
 
   return (
-    <BaseSidebarLayout footer={footer}>
+    <BaseSidebarLayout footer={footer} header={header}>
       <AnimatePresence mode="wait">
         {currentGroup === 'all' && (
           <motion.div

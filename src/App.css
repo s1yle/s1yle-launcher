@@ -76,13 +76,14 @@ select {
 }
 
 .scrollbar-custom {
-  scrollbar-width: auto;
+  scrollbar-width: thin;
   scrollbar-color: rgba(99, 102, 241, 0.4) transparent;
   padding: 10px;
 }
 
 .scrollbar-custom::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 
 .scrollbar-custom::-webkit-scrollbar-track {
@@ -102,6 +103,10 @@ select {
 
 .scrollbar-custom::-webkit-scrollbar-corner {
   background: transparent;
+}
+
+.scrollbar-custom * {
+  scrollbar-gutter: auto;
 }
 
 .scrollbar-hide {
