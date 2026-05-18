@@ -154,4 +154,4 @@ typeof icon === 'function'      React.isValidElement(icon)
 ---
 
 **最后更新**: 2026-05-07  
-**维护者**: S1yle Launcher Team
+**维护者**: WeCraft! Launcher Team

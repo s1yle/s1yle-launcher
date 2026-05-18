@@ -361,6 +361,6 @@ prettier --write AGENTS.md docs/
 
 **文档维护规范已正式实施！**
 
-**维护者**: S1yle Launcher 开发团队  
+**维护者**: WeCraft! Launcher 开发团队  
 **审查周期**: 每季度一次  
 **下次审查日期**: 2026-08-18

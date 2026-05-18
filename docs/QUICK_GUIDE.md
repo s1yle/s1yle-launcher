@@ -16,7 +16,7 @@
 
 **询问 AI 示例**:
 ```
-"我想了解 S1yle Launcher 的状态管理架构，特别是用户角色切换时
+"我想了解 WeCraft! Launcher 的状态管理架构，特别是用户角色切换时
 如何通知其他组件？已查阅 docs/architecture.md §4，请结合代码说明。"
 ```
 
@@ -333,5 +333,5 @@
 - 完整使用指南：[`docs/GUIDE.md`](docs/GUIDE.md)
 - 文档维护规范：[`docs/MAINTENANCE.md`](docs/MAINTENANCE.md)
 
-**维护者**: S1yle Launcher 开发团队  
+**维护者**: WeCraft! Launcher 开发团队  
 **最后更新**: 2026-05-18

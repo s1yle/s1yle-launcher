@@ -35,7 +35,7 @@
     "no": "No"
   },
   "header": {
-    "title": "S1yle Launcher",
+    "title": "WeCraft! Launcher",
     "backToHome": "Back to Home",
     "backToParent": "Back to Parent"
   },
@@ -64,7 +64,7 @@
     "discord": "Discord"
   },
   "home": {
-    "title": "S1yle Launcher",
+    "title": "WeCraft! Launcher",
     "subtitle": "Minecraft Launcher",
     "launch": "Launch Game",
     "stop": "Stop Game",

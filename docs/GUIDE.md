@@ -1,4 +1,4 @@
-# S1yle Launcher - 文档使用指南
+# WeCraft! Launcher - 文档使用指南
 
 > **版本**: 1.0  
 > **最后更新**: 2026-05-18
@@ -232,7 +232,7 @@
 
 **场景 4.1: 了解架构**
 ```
-"我想了解 S1yle Launcher 的状态管理架构，特别是用户角色切换
+"我想了解 WeCraft! Launcher 的状态管理架构，特别是用户角色切换
 时如何通知其他组件？请结合 docs/architecture.md §4 说明。"
 
 "能解释一下灵动岛导航系统的实现原理吗？参考 
@@ -298,7 +298,7 @@ ConfigManager.update_value() 增量更新。
 
 **示例**:
 ```markdown
-**背景**: 我是新开发者，想了解 S1yle Launcher 的配置系统
+**背景**: 我是新开发者，想了解 WeCraft! Launcher 的配置系统
 
 **已查阅文档**: 
 - AGENTS.md §6
@@ -599,5 +599,5 @@ docs/MAINTENANCE.md
 
 **记住**: 文档是你的朋友，越用越熟悉！
 
-**维护者**: S1yle Launcher 开发团队  
+**维护者**: WeCraft! Launcher 开发团队  
 **最后更新**: 2026-05-18

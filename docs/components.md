@@ -1,4 +1,4 @@
-# S1yle Launcher - 组件文档
+# WeCraft! Launcher - 组件文档
 
 > **版本**: 0.2.0  
 > **最后更新**: 2026-05-18

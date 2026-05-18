@@ -1,4 +1,4 @@
-# S1yle Launcher - 文档维护规范
+# WeCraft! Launcher - 文档维护规范
 
 > **版本**: 1.0  
 > **生效日期**: 2026-05-18  
@@ -592,6 +592,6 @@ const theme = await config.get('theme.mode');
 
 **本规范自发布之日起生效，所有项目文档维护工作应遵循此规范。**
 
-**维护者**: S1yle Launcher 开发团队  
+**维护者**: WeCraft! Launcher 开发团队  
 **审查周期**: 每季度审查一次  
 **下次审查日期**: 2026-08-18

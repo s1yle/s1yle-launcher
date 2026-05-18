@@ -35,7 +35,7 @@
     "no": "否"
   },
   "header": {
-    "title": "S1yle Launcher",
+    "title": "WeCraft! Launcher",
     "backToHome": "返回主页",
     "backToParent": "返回上级"
   },
@@ -64,7 +64,7 @@
     "discord": "Discord"
   },
   "home": {
-    "title": "S1yle Launcher",
+    "title": "WeCraft! Launcher",
     "subtitle": "Minecraft 启动器",
     "launch": "启动游戏",
     "stop": "停止游戏",

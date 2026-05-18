@@ -1,4 +1,4 @@
-# S1yle Launcher - 快速参考指南
+# WeCraft! Launcher - 快速参考指南
 
 > **最后更新**: 2026-05-18  
 > **项目版本**: 0.2.0  
@@ -20,7 +20,7 @@
 
 ## 1. 项目概述
 
-S1yle Launcher 是一个现代化的 Minecraft 启动器，采用 Tauri 2 + React 19 技术栈构建。
+WeCraft! Launcher 是一个现代化的 Minecraft 启动器，采用 Tauri 2 + React 19 技术栈构建。
 
 **核心特性**:
 - Minecraft 版本管理（下载、安装、启动）

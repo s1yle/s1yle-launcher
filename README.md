@@ -1,4 +1,4 @@
-# S1yle Launcher 🎮
+# WeCraft! Launcher 🎮
 
 [![Version](https://img.shields.io/badge/version-0.1.3-blue.svg)](https://github.com/s1yle/s1yle-launcher/releases)
 [![License](https://img.shields.io/badge/license-GPL3.0-green.svg)](LICENSE)
@@ -7,7 +7,7 @@
 
 一个现代化的 Minecraft 启动器，使用 Tauri、React 和 Rust 构建。提供流畅的用户体验和强大的功能。
 
-![S1yle Launcher Screenshot](image.png)
+![WeCraft! Launcher Screenshot](image.png)
 
 ## ✨ 特性
 

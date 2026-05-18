@@ -261,7 +261,7 @@ const items: ContextMenuItemData[] = [
 ---
 
 **修复完成时间**: 2026-05-07  
-**修复者**: S1yle Launcher Team  
+**修复者**: WeCraft! Launcher Team  
 **相关文档**: 
 - `docs/Lucide 图标使用最佳实践.md`
 - `AGENTS.md` 第 3.6 节
