@@ -469,7 +469,55 @@ await invoke('update_config', {
 
 ---
 
+## 11. 相关方案文档
+
+### 11.1 配置系统
+
+**活跃方案**:
+- [`plans/configuration/unified-config-implementation.md`](plans/configuration/unified-config-implementation.md) - 统一配置系统实现总结
+- [`plans/configuration/unified-config-usage-guide.md`](plans/configuration/unified-config-usage-guide.md) - 统一配置系统使用指南
+- [`plans/configuration/config-system-examples.md`](plans/configuration/config-system-examples.md) - 配置系统使用示例
+
+**历史方案**:
+- [`archives/configuration/config-migration-plan.md`](archives/configuration/config-migration-plan.md) - 配置系统迁移方案（已完成）
+- [`archives/configuration/config-api-removal.md`](archives/configuration/config-api-removal.md) - configApi.ts 删除总结（已完成）
+
+### 11.2 实例管理
+
+**活跃方案**:
+- [`plans/instance-management/instance-config-system-design.md`](plans/instance-management/instance-config-system-design.md) - 实例配置系统设计
+- [`plans/instance-management/instance-config-implementation.md`](plans/instance-management/instance-config-implementation.md) - 实例配置系统实现
+- [`plans/instance-management/path-config-integration.md`](plans/instance-management/path-config-integration.md) - 路径配置集成
+
+**历史方案**:
+- [`archives/instance-management/instance-dir-refactor.md`](archives/instance-management/instance-dir-refactor.md) - 实例目录重构（部分过时）
+- [`archives/instance-management/path-config-fix-plan.md`](archives/instance-management/path-config-fix-plan.md) - 路径配置修复方案（已完成）
+
+### 11.3 UI/交互
+
+**活跃方案**:
+- [`plans/ui-interaction/popup-component-guide.md`](plans/ui-interaction/popup-component-guide.md) - 弹窗组件使用指南
+- [`plans/ui-interaction/game-settings-page-implementation.md`](plans/ui-interaction/game-settings-page-implementation.md) - 游戏设置页面实现
+
+**待审查**:
+- [`plans/ui-interaction/home-game-button-redesign.md`](plans/ui-interaction/home-game-button-redesign.md) - 主界面按钮改造（待审查）
+
+### 11.4 功能特性
+
+**活跃方案**:
+- [`plans/features/theme-color-system.md`](plans/features/theme-color-system.md) - 主题配色系统
+- [`plans/features/cross-platform-memory-detection.md`](plans/features/cross-platform-memory-detection.md) - 跨平台内存检测
+- [`plans/features/lucide-icon-best-practices.md`](plans/features/lucide-icon-best-practices.md) - Lucide 图标最佳实践
+
+**历史方案**:
+- [`archives/features/dependency-removal-plan.md`](archives/features/dependency-removal-plan.md) - 依赖移除计划（待审查）
+- [`archives/features/delete-game-folder-feature.md`](archives/features/delete-game-folder-feature.md) - 删除游戏文件夹功能（未实施）
+
+---
+
 **详细文档**:
 - 更新日志：[`docs/changelog.md`](changelog.md)
-- API 文档：[`docs/api.md`](api.md) (待创建)
-- 组件文档：[`docs/components.md`](components.md) (待创建)
+- API 文档：[`docs/api.md`](api.md)
+- 组件文档：[`docs/components.md`](components.md)
+- **方案文档索引**: [`docs/plans/README.md`](plans/README.md) ⭐
+- **归档文档索引**: [`docs/archives/README.md`](archives/README.md) 📝
