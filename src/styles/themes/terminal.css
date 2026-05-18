@@ -1,0 +1,278 @@
+/* ===================================
+   现代极简终端风格主题系统
+   Modern Minimalist Terminal Themes
+   
+   设计理念：
+   - 干净的深色背景（非纯黑）
+   - 柔和高对比度文字（护眼）
+   - 微妙精致的边框和阴影
+   - 无CRT/扫描线/荧光等复古效果
+   - 参考：VS Code / Warp / Nord / One Dark
+   =================================== */
+
+/* 
+ * 主题1: GitHub Midnight (GitHub深夜风)
+ * 灵感来源：VS Code GitHub Dark Theme
+ * 特点：专业、干净、开发者最熟悉的配色
+ */
+.theme-github {
+  /* 背景色系 - 深邃但不压抑 */
+  --color-bg-primary: #0d1117;
+  --color-bg-secondary: #161b22;
+  --color-bg-tertiary: #0d1117;
+
+  /* 表面层 - 微妙的层次感 */
+  --color-surface: rgba(255, 255, 255, 0.03);
+  --color-surface-solid: #161b22;
+  --color-surface-hover: rgba(255, 255, 255, 0.06);
+  --color-surface-active: rgba(255, 255, 255, 0.09);
+
+  /* 边框 - 极其微弱的存在感 */
+  --color-border: rgba(240, 246, 252, 0.1);
+  --color-border-hover: rgba(240, 246, 252, 0.18);
+
+  /* 文字色 - 高对比度但柔和 */
+  --color-text-primary: #c9d1d9;
+  --color-text-secondary: #8b949e;
+  --color-text-tertiary: #6e7681;
+  --color-text-disabled: #484f58;
+
+  /* 主色 - GitHub蓝 */
+  --accent-github: #58a6ff;
+  --accent-github-hover: #79b8ff;
+  --accent-github-active: #1f6feb;
+  --accent-github-bg: rgba(88, 166, 255, 0.12);
+  --accent-github-5: rgba(88, 166, 255, 0.05);
+  --accent-github-10: rgba(88, 166, 255, 0.10);
+  --accent-github-15: rgba(88, 166, 255, 0.15);
+  --accent-github-20: rgba(88, 166, 255, 0.20);
+
+  /* 映射到主色变量 */
+  --color-primary: var(--accent-github);
+  --color-primary-hover: var(--accent-github-hover);
+  --color-primary-active: var(--accent-github-active);
+  --color-primary-bg: var(--accent-github-bg);
+  --color-primary-5: var(--accent-github-5);
+  --color-primary-10: var(--accent-github-10);
+  --color-primary-15: var(--accent-github-15);
+  --color-primary-20: var(--accent-github-20);
+
+  /* 语义色 - 柔和版 */
+  --color-success: #3fb950;
+  --color-success-bg: rgba(63, 185, 80, 0.12);
+  --color-success-5: rgba(63, 185, 80, 0.05);
+  --color-success-8: rgba(63, 185, 80, 0.08);
+  --color-success-10: rgba(63, 185, 80, 0.10);
+  --color-success-15: rgba(63, 185, 80, 0.15);
+  --color-warning: #d29922;
+  --color-warning-bg: rgba(210, 153, 34, 0.12);
+  --color-warning-5: rgba(210, 153, 34, 0.05);
+  --color-warning-10: rgba(210, 153, 34, 0.10);
+  --color-warning-15: rgba(210, 153, 34, 0.15);
+  --color-error: #f85149;
+  --color-error-bg: rgba(248, 81, 73, 0.12);
+  --color-error-5: rgba(248, 81, 73, 0.05);
+  --color-error-10: rgba(248, 81, 73, 0.10);
+  --color-error-15: rgba(248, 81, 73, 0.15);
+  --color-info: #58a6ff;
+  --color-info-bg: rgba(88, 166, 255, 0.12);
+  --color-info-5: rgba(88, 166, 255, 0.05);
+  --color-info-10: rgba(88, 166, 255, 0.10);
+  --color-info-15: rgba(88, 166, 255, 0.15);
+
+  /* 其他 */
+  --color-overlay: rgba(13, 17, 23, 0.85);
+  --color-backdrop-blur: 12px;
+  --color-context-bg: #1c2128;
+  --color-context-border: rgba(240, 246, 252, 0.1);
+  --color-context-hover: rgba(255, 255, 255, 0.06);
+  --color-progress-track: rgba(255, 255, 255, 0.08);
+  --color-toggle-track: rgba(255, 255, 255, 0.12);
+
+  /* 字体 - 现代等宽字体栈 */
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Consolas', monospace;
+}
+
+/* 
+ * 主题2: One Dark Pro (经典IDE风)
+ * 灵感来源：Atom One Dark Pro / VS Code
+ * 特点：温暖舒适，长时间编程不累眼
+ */
+.theme-onedark {
+  /* 背景色系 - 温暖深灰 */
+  --color-bg-primary: #282c34;
+  --color-bg-secondary: #21252b;
+  --color-bg-tertiary: #282c34;
+
+  /* 表面层 */
+  --color-surface: rgba(255, 255, 255, 0.04);
+  --color-surface-solid: #21252b;
+  --color-surface-hover: rgba(255, 255, 255, 0.07);
+  --color-surface-active: rgba(255, 255, 255, 0.10);
+
+  /* 边框 */
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-hover: rgba(255, 255, 255, 0.15);
+
+  /* 文字色 - 暖灰色系 */
+  --color-text-primary: #abb2bf;
+  --color-text-secondary: #7f848e;
+  --color-text-tertiary: #5c6370;
+  --color-text-disabled: #4b5263;
+
+  /* 主色 - 天空蓝 */
+  --accent-onedark: #61afef;
+  --accent-onedark-hover: #82aaff;
+  --accent-onedark-active: #528bff;
+  --accent-onedark-bg: rgba(97, 175, 239, 0.12);
+  --accent-onedark-5: rgba(97, 175, 239, 0.05);
+  --accent-onedark-10: rgba(97, 175, 239, 0.10);
+  --accent-onedark-15: rgba(97, 175, 239, 0.15);
+  --accent-onedark-20: rgba(97, 175, 239, 0.20);
+
+  /* 映射到主色变量 */
+  --color-primary: var(--accent-onedark);
+  --color-primary-hover: var(--accent-onedark-hover);
+  --color-primary-active: var(--accent-onedark-active);
+  --color-primary-bg: var(--accent-onedark-bg);
+  --color-primary-5: var(--accent-onedark-5);
+  --color-primary-10: var(--accent-onedark-10);
+  --color-primary-15: var(--accent-onedark-15);
+  --color-primary-20: var(--accent-onedark-20);
+
+  /* 语义色 */
+  --color-success: #98c379;
+  --color-success-bg: rgba(152, 195, 121, 0.12);
+  --color-success-5: rgba(152, 195, 121, 0.05);
+  --color-success-8: rgba(152, 195, 121, 0.08);
+  --color-success-10: rgba(152, 195, 121, 0.10);
+  --color-success-15: rgba(152, 195, 121, 0.15);
+  --color-warning: #e5c07b;
+  --color-warning-bg: rgba(229, 192, 123, 0.12);
+  --color-warning-5: rgba(229, 192, 123, 0.05);
+  --color-warning-10: rgba(229, 192, 123, 0.10);
+  --color-warning-15: rgba(229, 192, 123, 0.15);
+  --color-error: #e06c75;
+  --color-error-bg: rgba(224, 108, 117, 0.12);
+  --color-error-5: rgba(224, 108, 117, 0.05);
+  --color-error-10: rgba(224, 108, 117, 0.10);
+  --color-error-15: rgba(224, 108, 117, 0.15);
+  --color-info: #61afef;
+  --color-info-bg: rgba(97, 175, 239, 0.12);
+  --color-info-5: rgba(97, 175, 239, 0.05);
+  --color-info-10: rgba(97, 175, 239, 0.10);
+  --color-info-15: rgba(97, 175, 239, 0.15);
+
+  /* 其他 */
+  --color-overlay: rgba(40, 44, 52, 0.88);
+  --color-backdrop-blur: 12px;
+  --color-context-bg: #282c34;
+  --color-context-border: rgba(255, 255, 255, 0.08);
+  --color-context-hover: rgba(255, 255, 255, 0.06);
+  --color-progress-track: rgba(255, 255, 255, 0.08);
+  --color-toggle-track: rgba(255, 255, 255, 0.12);
+
+  /* 字体 */
+  --font-mono: 'Source Code Pro', 'JetBrains Mono', 'Consolas', monospace;
+}
+
+/* 
+ * 主题3: Nord Polar (北极光极简风)
+ * 灵感来源：Nord Theme / Arctic Fox
+ * 特点：冷色调、极简、高级感、适合专注工作
+ */
+.theme-nord {
+  /* 背景色系 - 北极夜空 */
+  --color-bg-primary: #2e3440;
+  --color-bg-secondary: #3b4252;
+  --color-bg-tertiary: #2e3440;
+
+  /* 表面层 - 冰雪质感 */
+  --color-surface: rgba(255, 255, 255, 0.03);
+  --color-surface-solid: #3b4252;
+  --color-surface-hover: rgba(255, 255, 255, 0.06);
+  --color-surface-active: rgba(255, 255, 255, 0.09);
+
+  /* 边框 - 极地薄雾 */
+  --color-border: rgba(216, 222, 233, 0.08);
+  --color-border-hover: rgba(216, 222, 233, 0.15);
+
+  /* 文字色 - 雪花白 */
+  --color-text-primary: #eceff4;
+  --color-text-secondary: #d8dee9;
+  --color-text-tertiary: #a3be8c;
+  --color-text-disabled: #4c566a;
+
+  /* 主色 - 北极蓝 */
+  --accent-nord: #88c0d0;
+  --accent-nord-hover: #8fbcbb;
+  --accent-nord-active: #81a1c1;
+  --accent-nord-bg: rgba(136, 192, 208, 0.12);
+  --accent-nord-5: rgba(136, 192, 208, 0.05);
+  --accent-nord-10: rgba(136, 192, 208, 0.10);
+  --accent-nord-15: rgba(136, 192, 208, 0.15);
+  --accent-nord-20: rgba(136, 192, 208, 0.20);
+
+  /* 映射到主色变量 */
+  --color-primary: var(--accent-nord);
+  --color-primary-hover: var(--accent-nord-hover);
+  --color-primary-active: var(--accent-nord-active);
+  --color-primary-bg: var(--accent-nord-bg);
+  --color-primary-5: var(--accent-nord-5);
+  --color-primary-10: var(--accent-nord-10);
+  --color-primary-15: var(--accent-nord-15);
+  --color-primary-20: var(--accent-nord-20);
+
+  /* 语义色 - 北欧自然色 */
+  --color-success: #a3be8c;
+  --color-success-bg: rgba(163, 190, 140, 0.12);
+  --color-success-5: rgba(163, 190, 140, 0.05);
+  --color-success-8: rgba(163, 190, 140, 0.08);
+  --color-success-10: rgba(163, 190, 140, 0.10);
+  --color-success-15: rgba(163, 190, 140, 0.15);
+  --color-warning: #ebcb8b;
+  --color-warning-bg: rgba(235, 203, 139, 0.12);
+  --color-warning-5: rgba(235, 203, 139, 0.05);
+  --color-warning-10: rgba(235, 203, 139, 0.10);
+  --color-warning-15: rgba(235, 203, 139, 0.15);
+  --color-error: #bf616a;
+  --color-error-bg: rgba(191, 97, 106, 0.12);
+  --color-error-5: rgba(191, 97, 106, 0.05);
+  --color-error-10: rgba(191, 97, 106, 0.10);
+  --color-error-15: rgba(191, 97, 106, 0.15);
+  --color-info: #88c0d0;
+  --color-info-bg: rgba(136, 192, 208, 0.12);
+  --color-info-5: rgba(136, 192, 208, 0.05);
+  --color-info-10: rgba(136, 192, 208, 0.10);
+  --color-info-15: rgba(136, 192, 208, 0.15);
+
+  /* 其他 */
+  --color-overlay: rgba(46, 52, 64, 0.90);
+  --color-backdrop-blur: 14px;
+  --color-context-bg: #3b4252;
+  --color-context-border: rgba(216, 222, 233, 0.08);
+  --color-context-hover: rgba(255, 255, 255, 0.05);
+  --color-progress-track: rgba(255, 255, 255, 0.08);
+  --color-toggle-track: rgba(255, 255, 255, 0.10);
+
+  /* 字体 - 清晰现代 */
+  --font-mono: 'Inter', 'SF Pro Display', -apple-system, sans-serif;
+}
+
+/* ===================================
+   终端交互特效（仅保留光标闪烁）
+   =================================== */
+
+/* 终端光标闪烁 - 简洁版 */
+@keyframes terminal-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.terminal-cursor::after {
+  content: '▋';
+  animation: terminal-blink 1s step-end infinite;
+  margin-left: 4px;
+  color: var(--color-primary);
+}
+

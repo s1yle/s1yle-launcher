@@ -20,6 +20,7 @@ import {
     VersionInstall,
     InstanceGameSettings
 } from '../pages';
+import { AdminServers, AdminAnalytics, AdminUpload } from '../pages/admin';
 
 const PAGE_TRANSITION_DURATION = 0.15;
 
@@ -39,7 +40,10 @@ const componentMap: Record<string, React.FC> = {
     Feedback,
     Hint,
     VersionInstall,
-    InstanceGameSettings
+    InstanceGameSettings,
+    AdminServers,
+    AdminAnalytics,
+    AdminUpload
 };
 
 const findComponentForPath = (pathname: string): React.FC | null => {

@@ -3,12 +3,15 @@ import { BrowserRouter as Router, useLocation, useNavigate } from 'react-router-
 import { AnimatePresence, motion } from 'framer-motion';
 import Header from './components/Header';
 import SmartSidebar from './components/sidebar/SmartSidebar';
+import DynamicIsland from './components/navigation/DynamicIsland';
+import FloatingControls from './components/header/FloatingControls';
 import { routes, findRouteByPath, LayoutMode } from './router/config';
 import { useNavStore } from './stores/navStore';
 import { useThemeStore } from './stores/themeStore';
 import { useAppStore } from './stores/appStore';
 import { useInstanceStore } from './stores/instanceStore';
 import { useDownloadStore } from './stores/downloadStore';
+import { useUIModeStore } from './stores/uiModeStore';
 import { logger } from './helper/logger';
 import RouterRenderer from './components/RouterRenderer';
 import { useWindowPosition } from './hooks/useWindowPosition';
@@ -28,6 +31,7 @@ const MainLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { setCurrentPath, setNavigating } = useNavStore();
+  const { mode: uiMode } = useUIModeStore();
   const animLockRef = useRef(false);
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     try {
@@ -52,6 +56,14 @@ const MainLayout = () => {
   const currentRoute = findRouteByPath(location.pathname, routes) || routes[0];
 
   const isFullscreen = currentRoute.layoutMode === LayoutMode.FULLSCREEN;
+
+  // 检测当前页面是否有独立侧边栏
+  const pagesWithOwnSidebar = ['/account', '/download', '/game-settings', '/instance-list'];
+  const isInstanceManagePage = location.pathname.startsWith('/instance-manage/');
+  const hasOwnSidebar = uiMode === 'island' && (
+    pagesWithOwnSidebar.some(path => location.pathname.startsWith(path)) || 
+    isInstanceManagePage
+  );
 
   const handleMenuClick = (targetPath: string) => {
     if (animLockRef.current || targetPath === location.pathname) return;
@@ -161,38 +173,99 @@ const MainLayout = () => {
 
   return (
     <div className="h-screen flex flex-col " onContextMenu={handleContextMenu}>
-      <Header type={currentRoute.header.type === 'main' ? 'main' : 'sub'} title={currentRoute.header.title} />
-      <div className="flex flex-1 overflow-hidden ">
-        <AnimatePresence>
-          {shouldShowSidebar && (
-            <motion.div
-              key="sidebar"
-              className="flex-shrink-0 relative"
-              style={{ width: sidebarWidth }}
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: sidebarWidth, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{
-                duration: SIDEBAR_TRANSITION_DURATION,
-                ease: [0.25, 0.1, 0.25, 1],
-              }}
+      {uiMode === 'island' ? (
+        <>
+          {/* 灵动岛模式 */}
+          <FloatingControls />
+          <DynamicIsland onMenuClick={handleMenuClick} />
+          
+          {/* 顶部拖曳区域 - 覆盖灵动岛两侧的空间 */}
+          <div 
+            className="fixed top-0 left-0 right-0 h-20 z-40"
+            data-tauri-drag-region="true"
+            style={{ 
+              // 排除灵动岛和控制按钮区域
+              pointerEvents: 'none',
+            }}
+          >
+            <div className="absolute inset-0" data-tauri-drag-region="true" />
+          </div>
+          
+          {hasOwnSidebar ? (
+            // 有独立侧边栏的页面：显示侧边栏 + 内容
+            <div className="flex flex-1 overflow-hidden">
+              <motion.div
+                className="flex-shrink-0 relative"
+                style={{ width: sidebarWidth }}
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: sidebarWidth, opacity: 1 }}
+                transition={{
+                  duration: SIDEBAR_TRANSITION_DURATION,
+                  ease: [0.25, 0.1, 0.25, 1],
+                }}
+              >
+                <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} footer={sidebarFooter} />
+                <div
+                  className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-[var(--color-primary)] hover:opacity-50 transition-opacity z-10"
+                  onMouseDown={handleMouseDown}
+                />
+              </motion.div>
+              
+              <main
+                className="flex-1 overflow-y-auto overflow-x-hidden relative noise-bg gradient-bg scrollbar-custom pt-20"
+                style={{ background: 'var(--color-bg-primary)' }}
+              >
+                <RouterRenderer />
+              </main>
+            </div>
+          ) : (
+            // 普通页面：只显示内容区
+            <main
+              className="flex-1 overflow-y-auto overflow-x-hidden relative noise-bg gradient-bg scrollbar-custom pt-20"
+              style={{ background: 'var(--color-bg-primary)' }}
             >
-              <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} footer={sidebarFooter} />
-              <div
-                className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-[var(--color-primary)] hover:opacity-50 transition-opacity z-10"
-                onMouseDown={handleMouseDown}
-              />
-            </motion.div>
+              <RouterRenderer />
+            </main>
           )}
-        </AnimatePresence>
-        {collapsedToggleButton}
-        <main
-          className="flex-1 overflow-y-auto overflow-x-hidden relative noise-bg gradient-bg scrollbar-custom"
-          style={{ background: 'var(--color-bg-primary)' }}
-        >
-          <RouterRenderer />
-        </main>
-      </div>
+        </>
+      ) : (
+        <>
+          {/* 经典模式 */}
+          <Header type={currentRoute.header.type === 'main' ? 'main' : 'sub'} title={currentRoute.header.title} />
+          
+          <div className="flex flex-1 overflow-hidden ">
+            <AnimatePresence>
+              {shouldShowSidebar && (
+                <motion.div
+                  key="sidebar"
+                  className="flex-shrink-0 relative"
+                  style={{ width: sidebarWidth }}
+                  initial={{ width: 0, opacity: 0 }}
+                  animate={{ width: sidebarWidth, opacity: 1 }}
+                  exit={{ width: 0, opacity: 0 }}
+                  transition={{
+                    duration: SIDEBAR_TRANSITION_DURATION,
+                    ease: [0.25, 0.1, 0.25, 1],
+                  }}
+                >
+                  <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} footer={sidebarFooter} />
+                  <div
+                    className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-[var(--color-primary)] hover:opacity-50 transition-opacity z-10"
+                    onMouseDown={handleMouseDown}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+            {collapsedToggleButton}
+            <main
+              className="flex-1 overflow-y-auto overflow-x-hidden relative noise-bg gradient-bg scrollbar-custom"
+              style={{ background: 'var(--color-bg-primary)' }}
+            >
+              <RouterRenderer />
+            </main>
+          </div>
+        </>
+      )}
     </div>
   );
 };
@@ -215,6 +288,19 @@ function App() {
     const cleanup = setupDownloadListeners();
     return cleanup;
   }, [setupDownloadListeners]);
+
+  // 监听角色切换事件（目前主要用于日志记录）
+  useEffect(() => {
+    const handleRoleSwitch = (event: CustomEvent) => {
+      // 导航已在 DynamicIsland 组件中通过 useNavigate 处理
+      // 这里只需要记录日志即可
+    };
+
+    window.addEventListener('role-switch', handleRoleSwitch as EventListener);
+    return () => {
+      window.removeEventListener('role-switch', handleRoleSwitch as EventListener);
+    };
+  }, []);
 
   return (
     <Router>

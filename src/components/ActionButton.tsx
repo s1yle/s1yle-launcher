@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Loader2, Gamepad2 } from 'lucide-react';
 import { launchInstance, stopInstance, getLaunchStatus, LaunchStatus, getCurrentAccount } from '../helper/rustInvoke';
 import { useInstanceStore } from '../stores/instanceStore';
@@ -162,43 +163,62 @@ const ActionButton = ({ onClick }: ActionButtonProps) => {
   const isDisabled = isLoading || status === LaunchStatus.Launching;
 
   return (
-    <div className="fixed bottom-6 right-6 flex flex-col items-end space-y-2">
+    <div className="fixed bottom-8 right-8 flex flex-col items-end space-y-3">
       {message && (
-        <div className="bg-context-bg text-text-primary px-4 py-2 rounded-lg shadow-lg max-w-xs text-sm">
-          {message}
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="bg-[var(--color-context-bg)] text-[var(--color-text-primary)] px-5 py-3 rounded-xl shadow-xl max-w-sm text-sm border border-[var(--color-context-border)] backdrop-blur-xl"
+        >
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${
+              status === LaunchStatus.Running ? 'bg-[var(--color-success)] animate-pulse' :
+              status === LaunchStatus.Launching ? 'bg-[var(--color-warning)]' :
+              status === LaunchStatus.Crashed ? 'bg-[var(--color-error)]' :
+              'bg-[var(--color-text-secondary)]'
+            }`} />
+            {message}
+          </div>
+        </motion.div>
       )}
       
-      <button
+      <motion.button
         onClick={buttonInfo.action}
         disabled={isDisabled}
-        className={`${buttonInfo.bgColor} text-text-primary px-8 py-4 rounded-xl shadow-lg transition-all hover:shadow-xl active:scale-95 flex flex-col items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed`}
+        whileHover={{ scale: 1.03, y: -2 }}
+        whileTap={{ scale: 0.97 }}
+        className={`
+          group relative overflow-hidden
+          ${buttonInfo.bgColor} text-white 
+          px-10 py-4 rounded-2xl shadow-2xl 
+          transition-all duration-300 ease-out
+          disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer
+          hover:shadow-3xl active:scale-95
+          flex flex-col items-center justify-center min-w-[200px]
+        `}
       >
+        {/* 背景光效 */}
+        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 
+          translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+        
         {buttonInfo.loading ? (
-          <div className="flex items-center space-x-2">
-            <Loader2 className="w-5 h-5 animate-spin" />
-            <span className="text-lg font-bold">{buttonInfo.text}</span>
+          <div className="flex items-center space-x-3">
+            <Loader2 className="w-6 h-6 animate-spin" />
+            <span className="text-lg font-bold tracking-wide">{buttonInfo.text}</span>
           </div>
         ) : (
           <>
-            <div className="flex items-center gap-2">
-              <Gamepad2 className="w-5 h-5" />
-              <span className="text-lg font-bold">{buttonInfo.text}</span>
+            <div className="flex items-center gap-2.5">
+              <Gamepad2 className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
+              <span className="text-lg font-bold tracking-wide">{buttonInfo.text}</span>
             </div>
-            <span className="text-xs opacity-90 mt-1">{buttonInfo.subtext}</span>
+            <span className="text-xs font-medium opacity-90 mt-1.5 tracking-wider uppercase">
+              {buttonInfo.subtext}
+            </span>
           </>
         )}
-      </button>
-      
-      <div className="flex items-center space-x-2 text-xs text-text-secondary">
-        <div className={`w-2 h-2 rounded-full ${
-          status === LaunchStatus.Running ? 'bg-success animate-pulse' :
-          status === LaunchStatus.Launching ? 'bg-warning' :
-          status === LaunchStatus.Crashed ? 'bg-error' :
-          'bg-surface'
-        }`}></div>
-        <span>状态: {status}</span>
-      </div>
+      </motion.button>
     </div>
   );
 };

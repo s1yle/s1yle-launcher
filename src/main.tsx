@@ -14,6 +14,7 @@ import './styles/themes/dark.css';
 import './styles/themes/accents.css';
 import './styles/themes/background.css';
 import './styles/themes/light.css';
+import './styles/themes/terminal.css'; // 极客终端风格主题
 
 async function initApp() {
   try {

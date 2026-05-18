@@ -4,6 +4,7 @@ import { config } from '@/config';
 
 export type ThemeMode = 'dark' | 'light' | 'system';
 export type AccentColor = 'indigo' | 'blue' | 'green' | 'purple' | 'red' | 'orange' | 'pink';
+export type TerminalTheme = 'github' | 'onedark' | 'nord';
 
 export interface ThemePreset {
   id: string;
@@ -13,6 +14,7 @@ export interface ThemePreset {
   descriptionI18nKey: string;
   mode: ThemeMode;
   accentColor: AccentColor;
+  terminalTheme?: TerminalTheme; // 新增：终端主题
   previewColors: { bg: string; surface: string; accent: string; text: string };
 }
 
@@ -36,6 +38,40 @@ export const themePresets: ThemePreset[] = [
     mode: 'light',
     accentColor: 'indigo',
     previewColors: { bg: '#f5f5f5', surface: 'rgba(0,0,0,0.03)', accent: '#6366f1', text: '#1a1a1a' },
+  },
+  // 新增3套现代极简终端主题
+  {
+    id: 'github',
+    name: 'GitHub Midnight',
+    nameI18nKey: 'theme.preset.github',
+    description: 'GitHub深夜风格，专业干净的开发者配色',
+    descriptionI18nKey: 'theme.preset.githubDesc',
+    mode: 'dark',
+    accentColor: 'indigo',
+    terminalTheme: 'github',
+    previewColors: { bg: '#0d1117', surface: '#161b22', accent: '#58a6ff', text: '#c9d1d9' },
+  },
+  {
+    id: 'onedark',
+    name: 'One Dark Pro',
+    nameI18nKey: 'theme.preset.onedark',
+    description: '经典IDE风格，温暖舒适的编程配色',
+    descriptionI18nKey: 'theme.preset.onedarkDesc',
+    mode: 'dark',
+    accentColor: 'indigo',
+    terminalTheme: 'onedark',
+    previewColors: { bg: '#282c34', surface: '#21252b', accent: '#61afef', text: '#abb2bf' },
+  },
+  {
+    id: 'nord',
+    name: 'Nord Polar',
+    nameI18nKey: 'theme.preset.nord',
+    description: '北极光极简风，冷色调高级感配色',
+    descriptionI18nKey: 'theme.preset.nordDesc',
+    mode: 'dark',
+    accentColor: 'indigo',
+    terminalTheme: 'nord',
+    previewColors: { bg: '#2e3440', surface: '#3b4252', accent: '#88c0d0', text: '#eceff4' },
   },
 ];
 
@@ -135,12 +171,14 @@ interface ThemeConfig {
   mode: ThemeMode;
   accentColor: AccentColor;
   activeTheme: 'dark' | 'light';
+  terminalTheme?: TerminalTheme; // 新增：当前激活的终端主题
 }
 
 interface ThemeState extends ThemeConfig {
   setMode: (mode: ThemeMode) => void;
   setAccentColor: (color: AccentColor) => void;
   applyPreset: (preset: ThemePreset) => void;
+  setTerminalTheme: (theme: TerminalTheme | undefined) => void; // 新增：设置终端主题
   init: () => void;
 }
 
@@ -150,24 +188,26 @@ export const useThemeStore = create<ThemeState>()(
       mode: 'dark',
       accentColor: 'indigo',
       activeTheme: 'dark',
+      terminalTheme: undefined, // 新增
 
       setMode: async (mode: ThemeMode) => {
         const actualTheme = mode === 'system'
           ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
           : mode;
         set({ mode, activeTheme: actualTheme });
-        applyToDom(actualTheme, get().accentColor);
-        
-        // 保存到统一配置
+        applyToDom(actualTheme, get().accentColor, get().terminalTheme);
+
         await config.setConfigValue('preferences.theme', mode);
         await config.setConfigValue('preferences.accent_color', get().accentColor);
+        if (get().terminalTheme) {
+          await config.setConfigValue('preferences.terminal_theme', get().terminalTheme);
+        }
       },
 
       setAccentColor: async (accentColor: AccentColor) => {
         set({ accentColor });
-        applyToDom(get().activeTheme, accentColor);
-        
-        // 保存到统一配置
+        applyToDom(get().activeTheme, accentColor, get().terminalTheme);
+
         await config.setConfigValue('preferences.accent_color', accentColor);
       },
 
@@ -179,66 +219,104 @@ export const useThemeStore = create<ThemeState>()(
           mode: preset.mode,
           accentColor: preset.accentColor,
           activeTheme: actualTheme,
+          terminalTheme: preset.terminalTheme,
         };
         set(configState);
-        applyToDom(actualTheme, preset.accentColor);
-        
-        // 保存到统一配置
+        applyToDom(actualTheme, preset.accentColor, preset.terminalTheme);
+
         await config.setConfigValue('preferences.theme', preset.mode);
         await config.setConfigValue('preferences.accent_color', preset.accentColor);
+        if (preset.terminalTheme) {
+          await config.setConfigValue('preferences.terminal_theme', preset.terminalTheme);
+        }
+      },
+
+      // 新增：设置终端主题
+      setTerminalTheme: async (terminalTheme: TerminalTheme | undefined) => {
+        set({ terminalTheme });
+        applyToDom(get().activeTheme, get().accentColor, terminalTheme);
+
+        if (terminalTheme) {
+          await config.setConfigValue('preferences.terminal_theme', terminalTheme);
+        } else {
+          await config.setConfigValue('preferences.terminal_theme', null);
+        }
       },
 
       init: async () => {
-        // L1: localStorage 已自动加载（通过 persist 中间件）
-        const { activeTheme, accentColor } = get();
-        applyToDom(activeTheme, accentColor);
-        
-        // 从统一配置同步
+        const { activeTheme, accentColor, terminalTheme } = get();
+        applyToDom(activeTheme, accentColor, terminalTheme);
+
         await config.whenReady();
         const configTheme = config.getConfigValue('preferences.theme');
         const configAccent = config.getConfigValue('preferences.accent_color');
-        
+        const configTerminal = config.getConfigValue('preferences.terminal_theme') as TerminalTheme | undefined;
+
         if (configTheme && configAccent) {
           const actualTheme = configTheme === 'system'
             ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
             : configTheme;
-          set({ mode: configTheme, accentColor: configAccent, activeTheme: actualTheme });
+          set({ mode: configTheme, accentColor: configAccent, activeTheme: actualTheme, terminalTheme: configTerminal });
+          applyToDom(actualTheme, configAccent, configTerminal);
         }
 
-        // 监听系统主题变化
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
           const { mode } = get();
           if (mode === 'system') {
             const theme = e.matches ? 'dark' : 'light';
             set({ activeTheme: theme });
-            applyToDom(theme, get().accentColor);
+            applyToDom(theme, get().accentColor, get().terminalTheme);
           }
         });
       },
     }),
     {
       name: 'theme-storage',
-      partialize: (state) => ({ 
-        mode: state.mode, 
+      partialize: (state) => ({
+        mode: state.mode,
         accentColor: state.accentColor,
-        activeTheme: state.activeTheme
+        activeTheme: state.activeTheme,
+        terminalTheme: state.terminalTheme, // 新增持久化
       }),
     }
   )
 );
 
-function applyToDom(theme: 'dark' | 'light', accentColor: AccentColor) {
+function applyToDom(theme: 'dark' | 'light', accentColor: AccentColor, terminalTheme?: TerminalTheme) {
   const root = document.documentElement;
-  root.classList.toggle('theme-dark', theme === 'dark');
-  root.classList.toggle('theme-light', theme === 'light');
 
-  const colors = accentMap[accentColor];
-  root.style.setProperty('--color-primary', colors.primary);
-  root.style.setProperty('--color-primary-hover', colors.hover);
-  root.style.setProperty('--color-primary-active', colors.active);
-  root.style.setProperty('--color-primary-bg', colors.bg);
-  root.style.setProperty('--color-primary-5', colors['5']);
-  root.style.setProperty('--color-primary-10', colors['10']);
-  root.style.setProperty('--color-primary-15', colors['15']);
-  root.style.setProperty('--color-primary-20', colors['20']);
+  // 移除所有主题类
+  root.classList.remove('theme-dark', 'theme-light', 'theme-github', 'theme-onedark', 'theme-nord');
+
+  // 应用基础主题
+  root.classList.add(`theme-${theme}`);
+
+  // 如果有终端主题，应用（现代极简风格，无CRT/扫描线/噪点）
+  if (terminalTheme) {
+    root.classList.add(`theme-${terminalTheme}`);
+  }
+
+  // 如果不是终端主题，应用标准强调色
+  if (!terminalTheme) {
+    const colors = accentMap[accentColor];
+    root.style.setProperty('--color-primary', colors.primary);
+    root.style.setProperty('--color-primary-hover', colors.hover);
+    root.style.setProperty('--color-primary-active', colors.active);
+    root.style.setProperty('--color-primary-bg', colors.bg);
+    root.style.setProperty('--color-primary-5', colors['5']);
+    root.style.setProperty('--color-primary-10', colors['10']);
+    root.style.setProperty('--color-primary-15', colors['15']);
+    root.style.setProperty('--color-primary-20', colors['20']);
+  } else {
+    // 终端主题的primary颜色由CSS文件中的变量定义，不需要额外设置
+    // 但需要清除可能存在的内联样式
+    root.style.removeProperty('--color-primary');
+    root.style.removeProperty('--color-primary-hover');
+    root.style.removeProperty('--color-primary-active');
+    root.style.removeProperty('--color-primary-bg');
+    root.style.removeProperty('--color-primary-5');
+    root.style.removeProperty('--color-primary-10');
+    root.style.removeProperty('--color-primary-15');
+    root.style.removeProperty('--color-primary-20');
+  }
 }

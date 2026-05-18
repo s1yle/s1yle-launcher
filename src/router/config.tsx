@@ -201,6 +201,28 @@ export const routes: RouteConfig[] = [
     sidebarGroup: SidebarGroup.COMMON,
     parentPath: '/'
   },
+  // 服主管理页面
+  {
+    path: '/admin/servers',
+    componentName: 'AdminServers',
+    header: { type: SidebarType.SUB, title: '服务器管理', titleI18nKey: 'admin.servers' },
+    sidebarGroup: SidebarGroup.COMMON,
+    parentPath: '/'
+  },
+  {
+    path: '/admin/analytics',
+    componentName: 'AdminAnalytics',
+    header: { type: SidebarType.SUB, title: '数据看板', titleI18nKey: 'admin.analytics' },
+    sidebarGroup: SidebarGroup.COMMON,
+    parentPath: '/'
+  },
+  {
+    path: '/admin/upload',
+    componentName: 'AdminUpload',
+    header: { type: SidebarType.SUB, title: '配置上传', titleI18nKey: 'admin.upload' },
+    sidebarGroup: SidebarGroup.COMMON,
+    parentPath: '/'
+  },
   {
     path: '/download/game/:versionId',
     componentName: 'VersionDetailWithInstall',
