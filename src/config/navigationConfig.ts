@@ -6,7 +6,8 @@ import {
   BarChart3,
   Upload,
   Crown,
-  type LucideIcon
+  type LucideIcon,
+  Home
 } from 'lucide-react';
 import { useUserRoleStore } from '@/stores/userRoleStore';
 
@@ -15,7 +16,7 @@ export interface NavItem {
   label: string;
   labelI18nKey?: string;
   icon: LucideIcon;
-  path?: string;
+  path: string;
   action?: () => void;
   roles: ('player' | 'admin' | 'creator')[];
   badge?: number;
@@ -23,6 +24,14 @@ export interface NavItem {
 }
 
 export const playerNavItems: NavItem[] = [
+  {
+    id: 'main',
+    label: '主页',
+    labelI18nKey: 'nav.main',
+    icon: Home,
+    path: '/',
+    roles: ['player', 'admin'],
+  },
   {
     id: 'account',
     label: '账户',
@@ -50,6 +59,14 @@ export const playerNavItems: NavItem[] = [
 ];
 
 export const adminNavItems: NavItem[] = [
+  {
+    id: 'main',
+    label: '主页',
+    labelI18nKey: 'nav.main',
+    icon: Home,
+    path: '/',
+    roles: ['player', 'admin'],
+  },
   {
     id: 'server-manage',
     label: '服务器管理',

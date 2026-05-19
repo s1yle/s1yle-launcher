@@ -19,8 +19,8 @@ import FloatingDownloadButton from './components/FloatingDownloadButton';
 import { PanelLeftClose, PanelLeftOpen } from './icons';
 import './helper/i18n';
 
-const PAGE_TRANSITION_DURATION = 0.25;
-const SIDEBAR_TRANSITION_DURATION = 0.3;
+const PAGE_TRANSITION_DURATION = 0.10;
+const SIDEBAR_TRANSITION_DURATION = 0.2;
 const SIDEBAR_MIN_WIDTH = 180;
 const SIDEBAR_MAX_WIDTH = 400;
 const SIDEBAR_DEFAULT_WIDTH = 220;
@@ -200,12 +200,8 @@ const MainLayout = () => {
           {/* //外层动画容器 */}
           <AnimatePresence mode='wait'>
             <motion.div
-              style={{ width: 'auto', height: '100%' }}
-              exit={{ x: -sidebarWidth, opacity: 0 }}
-              transition={{
-                duration: SIDEBAR_TRANSITION_DURATION,
-                type: "spring",
-              }}
+              className='bg-[var(--color-bg-secondary)]'
+              style={{ width: 'auto', height: '100%', marginTop: '90px' }}
             >
               {hasOwnSidebar && !isSidebarCollapsed ? (
                 // 有独立侧边栏的页面：显示侧边栏 + 内容
@@ -216,7 +212,7 @@ const MainLayout = () => {
 
                   {/* 侧边栏容器 */}
                   <AnimatePresence mode='popLayout'>
-                    {!isNavigating && !isSidebarCollapsed ? (
+                    {!isNavigating && !isSidebarCollapsed && (
                       <motion.div
                         className="flex-shrink-0 fixed left-0 top-0 bottom-0 z-30"
                         style={{ width: sidebarWidth }}
@@ -228,8 +224,6 @@ const MainLayout = () => {
                         }}
                         transition={{
                           duration: SIDEBAR_TRANSITION_DURATION,
-                          ease: 'circInOut',
-                          type: 'tween'
                         }}
                       >
                         <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} footer={sidebarFooter} />
@@ -238,12 +232,12 @@ const MainLayout = () => {
                           onMouseDown={handleMouseDown}
                         />
                       </motion.div>
-                    ) : null}
+                    )}
                   </AnimatePresence>
 
                   <main
-                    className="flex-1 overflow-y-auto overflow-x-hidden relative noise-bg gradient-bg scrollbar-custom"
-                    style={{ background: 'var(--color-bg-primary)', padding: `40px 0 0 0`, paddingLeft: sidebarWidth }}
+                    className="flex-1 overflow-y-auto overflow-x-hidden relative scrollbar-custom"
+                    style={{ background: 'var(--bg-primary)', padding: `40px 0 0 0`, paddingLeft: sidebarWidth }}
                   >
                     <RouterRenderer />
                   </main>
@@ -252,8 +246,8 @@ const MainLayout = () => {
               ) : (
                 // 普通页面：只显示内容区
                 < main
-                  className="flex-1 overflow-y-auto overflow-x-hidden relative noise-bg gradient-bg scrollbar-custom pt-30"
-                  style={{ background: 'var(--color-bg-primary)', paddingTop: '30px', height: '100%' }}
+                  className="flex-1 overflow-y-auto overflow-x-hidden relative scrollbar-custom pt-30"
+                  style={{ background: 'var(--bg-primary)', height: '100%' }}
                 >
                   <RouterRenderer />
                 </main>
@@ -284,8 +278,7 @@ const MainLayout = () => {
                   }}
                   transition={{
                     duration: SIDEBAR_TRANSITION_DURATION,
-                    // ease: [0.25, 0.1, 0.25, 1],
-                    ease: 'anticipate'
+                    ease: 'easeInOut'
                   }}
                 >
                   <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} footer={sidebarFooter} />
@@ -297,8 +290,8 @@ const MainLayout = () => {
               )}
             </AnimatePresence>
             <main
-              className="flex-1 overflow-y-auto overflow-x-hidden relative noise-bg gradient-bg scrollbar-custom"
-              style={{ background: 'var(--color-bg-primary)' }}
+              className="flex-1 overflow-y-auto overflow-x-hidden relative scrollbar-custom"
+              style={{ background: 'var(--bg-primary)' }}
             >
               <RouterRenderer />
             </main>

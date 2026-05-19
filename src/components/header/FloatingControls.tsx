@@ -38,7 +38,7 @@ const FloatingControls = () => {
   return (
     <motion.div
       className="fixed top-5 right-5 z-[60] flex items-center gap-1"
-      initial={{ opacity: 0, x: 20 }}
+      initial={{ opacity: 0, x: 0}}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.4, delay: 0.1 }}
       data-tauri-drag-region="true"

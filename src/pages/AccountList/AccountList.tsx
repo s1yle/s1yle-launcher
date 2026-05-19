@@ -155,14 +155,9 @@ const AccountList = ({ onClickAddAccount }: AccountListProps) => {
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] p-4 md:p-8">
       <div className="max-w-6xl w-full space-y-8">
-        {/* 标题区域 */}
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-text-primary mb-2">账户管理</h1>
-          <p className="text-lg text-text-secondary">管理您的 Minecraft 账户</p>
-        </div>
 
         {/* 当前账户卡片 */}
-        <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm rounded-xl p-6 border border-border-hover">
+        <div className="from-blue-500/20 to-purple-500/20 rounded-xl p-6 border border-border-hover">
           <h2 className="text-2xl font-bold text-text-primary mb-4">当前账户</h2>
           {currentAccount ? (
             <div className="bg-surface rounded-lg p-4 border border-border-hover">
