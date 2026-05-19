@@ -30,6 +30,7 @@ export const useUIModeStore = create<UIModeState>()(
         set({ mode });
       },
 
+      // 灵动岛 / 经典模式切换
       toggleMode: () => {
         const { mode } = get();
         set({ mode: mode === 'island' ? 'classic' : 'island' });

@@ -85,7 +85,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: Sm
 
   // 带独立侧边栏的渲染逻辑
   const pagesWithOwnSidebar = ['/account', '/download', '/game-settings', '/instance-list'];
-  
+
   // 判断当前是否在 instance-manage 页面（支持动态参数）
   const isInstanceManagePage = location.pathname.startsWith('/instance-manage/');
 
@@ -133,7 +133,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: Sm
     }
 
     // 生成动态文件夹菜单项
-    let folderItems: SidebarMenuItem[] = location.pathname.startsWith('/instance-list') ? 
+    let folderItems: SidebarMenuItem[] = location.pathname.startsWith('/instance-list') ?
       knownFolders.map(f => ({
         id: `folder-${f.id}`,
         type: 'action' as const,
@@ -143,7 +143,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: Sm
         action: () => useInstanceStore.getState().setSelectedFolder(f.id),
         group: 'game' as SidebarGroup,
       })) : [];
-    
+
 
     // 合并动态 + 静态
     const allChildrenItems = [
@@ -216,7 +216,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: Sm
     };
 
     return (
-      
+
       <BaseSidebarLayout footer={footer} header={header}>
         <AnimatePresence mode="wait">
           <motion.div
@@ -227,20 +227,20 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: Sm
             exit={{ opacity: 0, x: 10 }}
             transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
           >
-                <BaseChildrenContent
-                  items={allChildrenItems}
-                  onMenuClick={handleItemClick}
-                  isActive={isActive}
-                  isItemActive={(id) => id === `folder-${selectedFolderId}` }
-                  isParentActive={isParentOfActive}
-                  hasChildrenItems={hasChildrenItems}
-                  groupTitle={currentMenuItem?.title || parentMenuItem?.title || ''}
-                  groupTitleI18nKey={currentMenuItem?.titleI18nKey || parentMenuItem?.titleI18nKey}
-                  onItemDelete={handleDeleteFolder}
-                  onItemOpenFolder={handleOpenFolder}
-                  deletableItemIds={deletableIds}
-                  onContextMenuAction={handleContextMenuAction}
-                />
+            <BaseChildrenContent
+              items={allChildrenItems}
+              onMenuClick={handleItemClick}
+              isActive={isActive}
+              isItemActive={(id) => id === `folder-${selectedFolderId}`}
+              isParentActive={isParentOfActive}
+              hasChildrenItems={hasChildrenItems}
+              groupTitle={currentMenuItem?.title || parentMenuItem?.title || ''}
+              groupTitleI18nKey={currentMenuItem?.titleI18nKey || parentMenuItem?.titleI18nKey}
+              onItemDelete={handleDeleteFolder}
+              onItemOpenFolder={handleOpenFolder}
+              deletableItemIds={deletableIds}
+              onContextMenuAction={handleContextMenuAction}
+            />
           </motion.div>
         </AnimatePresence>
 

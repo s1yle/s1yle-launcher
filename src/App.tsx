@@ -19,8 +19,8 @@ import FloatingDownloadButton from './components/FloatingDownloadButton';
 import { PanelLeftClose, PanelLeftOpen } from './icons';
 import './helper/i18n';
 
-const PAGE_TRANSITION_DURATION = 0.15;
-const SIDEBAR_TRANSITION_DURATION = 0.25;
+const PAGE_TRANSITION_DURATION = 0.25;
+const SIDEBAR_TRANSITION_DURATION = 0.3;
 const SIDEBAR_MIN_WIDTH = 180;
 const SIDEBAR_MAX_WIDTH = 400;
 const SIDEBAR_DEFAULT_WIDTH = 220;
@@ -30,9 +30,15 @@ const SIDEBAR_COLLAPSED_STORAGE_KEY = 'sidebar-collapsed';
 const MainLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Nav Store 模式
   const { setCurrentPath, setNavigating } = useNavStore();
+  const isNavigating = useNavStore().isNavigating;
+
   const { mode: uiMode } = useUIModeStore();
   const animLockRef = useRef(false);
+
+  // 获取 sidebar 的宽度
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     try {
       const saved = localStorage.getItem(SIDEBAR_WIDTH_STORAGE_KEY);
@@ -42,6 +48,8 @@ const MainLayout = () => {
       return SIDEBAR_DEFAULT_WIDTH;
     }
   });
+
+  // 获取sidebar 的收起/展开 状态
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     try {
       return localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY) === 'true';
@@ -66,6 +74,8 @@ const MainLayout = () => {
 
   const handleMenuClick = (targetPath: string) => {
     if (animLockRef.current || targetPath === location.pathname) return;
+
+    // 通知侧边栏容器,切换页面时侧边栏收起,切换后再弹出
 
     let finalPath = targetPath;
     if (finalPath.includes(':instanceId')) {
@@ -186,43 +196,73 @@ const MainLayout = () => {
             <div className="absolute inset-0" data-tauri-drag-region />
           </div>
 
-          {hasOwnSidebar && !isSidebarCollapsed ? (
-            // 有独立侧边栏的页面：显示侧边栏 + 内容
-            <div className="flex flex-1 overflow-hidden">
-              <motion.div
-                className="flex-shrink-0 relative"
-                style={{ width: sidebarWidth }}
-                initial={{ width: 0, opacity: 0 }}
-                animate={{ width: sidebarWidth, opacity: 1 }}
-                transition={{
-                  duration: SIDEBAR_TRANSITION_DURATION,
-                  ease: 'circInOut',
-                }}
-              >
-                <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} footer={sidebarFooter} />
-                <div
-                  className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-[var(--color-primary)] hover:opacity-50 transition-opacity z-10"
-                  onMouseDown={handleMouseDown}
-                />
-              </motion.div>
 
-              <main
-                className="flex-1 overflow-y-auto overflow-x-hidden relative noise-bg gradient-bg scrollbar-custom"
-                style={{ background: 'var(--color-bg-primary)', padding: '40px 0 0' }}
-              >
-                <RouterRenderer />
-              </main>
-            </div>
-          ) : (
-            // 普通页面：只显示内容区
-            <main
-              className="flex-1 overflow-y-auto overflow-x-hidden relative noise-bg gradient-bg scrollbar-custom pt-30"
-              style={{ background: 'var(--color-bg-primary)', padding: '30px 0 0' }}
+          {/* //外层动画容器 */}
+          <AnimatePresence mode='wait'>
+            <motion.div
+              style={{ width: 'auto', height: '100%' }}
+              exit={{ x: -sidebarWidth, opacity: 0 }}
+              transition={{
+                duration: SIDEBAR_TRANSITION_DURATION,
+                type: "spring",
+              }}
             >
-              <RouterRenderer />
-            </main>
-          )}
+              {hasOwnSidebar && !isSidebarCollapsed ? (
+                // 有独立侧边栏的页面：显示侧边栏 + 内容
+                <div
+                  className="flex flex-1 overflow-hidden"
+                  style={{ height: '100%', }}
+                >
+
+                  {/* 侧边栏容器 */}
+                  <AnimatePresence mode='popLayout'>
+                    {!isNavigating && !isSidebarCollapsed ? (
+                      <motion.div
+                        className="flex-shrink-0 fixed left-0 top-0 bottom-0 z-30"
+                        style={{ width: sidebarWidth }}
+                        initial={{ x: -sidebarWidth, opacity: 0 }}
+                        exit={{ x: -sidebarWidth, opacity: 0 }}
+                        animate={{
+                          x: 0,
+                          opacity: 1,
+                        }}
+                        transition={{
+                          duration: SIDEBAR_TRANSITION_DURATION,
+                          ease: 'circInOut',
+                          type: 'tween'
+                        }}
+                      >
+                        <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} footer={sidebarFooter} />
+                        <div
+                          className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-[var(--color-primary)] hover:opacity-50 transition-opacity z-10"
+                          onMouseDown={handleMouseDown}
+                        />
+                      </motion.div>
+                    ) : null}
+                  </AnimatePresence>
+
+                  <main
+                    className="flex-1 overflow-y-auto overflow-x-hidden relative noise-bg gradient-bg scrollbar-custom"
+                    style={{ background: 'var(--color-bg-primary)', padding: `40px 0 0 0`, paddingLeft: sidebarWidth }}
+                  >
+                    <RouterRenderer />
+                  </main>
+
+                </div>
+              ) : (
+                // 普通页面：只显示内容区
+                < main
+                  className="flex-1 overflow-y-auto overflow-x-hidden relative noise-bg gradient-bg scrollbar-custom pt-30"
+                  style={{ background: 'var(--color-bg-primary)', paddingTop: '30px', height: '100%' }}
+                >
+                  <RouterRenderer />
+                </main>
+              )}
+            </motion.div>
+          </AnimatePresence>
+          {/* 侧边栏折叠按钮 */}
           {collapsedToggleButton}
+
         </>
       ) : (
         <>
@@ -236,16 +276,19 @@ const MainLayout = () => {
                   key="sidebar"
                   className="flex-shrink-0 relative"
                   style={{ width: sidebarWidth }}
-                  initial={{ width: 0, opacity: 0 }}
-                  animate={{ width: sidebarWidth, opacity: 1 }}
-                  exit={{ width: 0, opacity: 0 }}
+                  initial={{ x: -sidebarWidth, opacity: 0 }}
+                  exit={{ x: -sidebarWidth, opacity: 0 }}
+                  animate={{
+                    x: 0,
+                    opacity: 1,
+                  }}
                   transition={{
                     duration: SIDEBAR_TRANSITION_DURATION,
                     // ease: [0.25, 0.1, 0.25, 1],
                     ease: 'anticipate'
                   }}
                 >
-                  <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} />
+                  <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} footer={sidebarFooter} />
                   <div
                     className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-[var(--color-primary)] hover:opacity-50 transition-opacity z-10"
                     onMouseDown={handleMouseDown}
@@ -253,7 +296,6 @@ const MainLayout = () => {
                 </motion.div>
               )}
             </AnimatePresence>
-            {collapsedToggleButton}
             <main
               className="flex-1 overflow-y-auto overflow-x-hidden relative noise-bg gradient-bg scrollbar-custom"
               style={{ background: 'var(--color-bg-primary)' }}
@@ -261,9 +303,11 @@ const MainLayout = () => {
               <RouterRenderer />
             </main>
           </div>
+          {collapsedToggleButton}
         </>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 };
 
