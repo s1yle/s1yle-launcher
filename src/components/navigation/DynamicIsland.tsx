@@ -10,7 +10,7 @@ interface DynamicIslandProps {
 }
 
 const AVAILABLE_ROLES: UserRole[] = ['player', 'admin'];
-const TIMEOUT_IDLE = 15000;
+const TIMEOUT_IDLE = 30000;
 
 const ROLE_CONFIG: Record<UserRole, { icon: typeof User; label: string; color: string }> = {
   player: {

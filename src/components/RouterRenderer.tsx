@@ -119,7 +119,7 @@ const RouterRenderer = () => {
   const animationValues = getAnimationValues(animation.direction, animation.enabled);
 
   return (
-    <div className="h-full pl-3 pr-3 relative">
+    <div className="h-full relative">
       <AnimatePresence mode="wait">
         <motion.div
           key={currentPathname}

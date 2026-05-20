@@ -201,7 +201,11 @@ const MainLayout = () => {
           <AnimatePresence mode='wait'>
             <motion.div
               className='bg-[var(--color-bg-secondary)]'
-              style={{ width: 'auto', height: '100%', marginTop: '90px' }}
+              style={{ width: 'auto', height: '100%', marginTop: '80px' }}
+              exit={{ x: -sidebarWidth, opacity: 0 }}
+              transition={{
+                duration: SIDEBAR_TRANSITION_DURATION,
+              }}
             >
               {hasOwnSidebar && !isSidebarCollapsed ? (
                 // 有独立侧边栏的页面：显示侧边栏 + 内容
@@ -212,10 +216,17 @@ const MainLayout = () => {
 
                   {/* 侧边栏容器 */}
                   <AnimatePresence mode='popLayout'>
-                    {!isNavigating && !isSidebarCollapsed && (
+                    {!isNavigating && !isSidebarCollapsed ? (
                       <motion.div
-                        className="flex-shrink-0 fixed left-0 top-0 bottom-0 z-30"
-                        style={{ width: sidebarWidth }}
+                        className="flex-shrink-0 fixed left-0 top-0 bottom-0 z-30 
+                        border-[var(--color-border)] 
+                        shadow-[var(--shadow-lg)] 
+                        overflow-hidden"
+                        style={{ 
+                          width: sidebarWidth, top: '80px', 
+                          borderTopRightRadius: 'var(--radius-2xl)',
+                          borderBottomRightRadius: 'var(--radius-2xl)'
+                        }}
                         initial={{ x: -sidebarWidth, opacity: 0 }}
                         exit={{ x: -sidebarWidth, opacity: 0 }}
                         animate={{
@@ -232,7 +243,7 @@ const MainLayout = () => {
                           onMouseDown={handleMouseDown}
                         />
                       </motion.div>
-                    )}
+                    ) : null}
                   </AnimatePresence>
 
                   <main

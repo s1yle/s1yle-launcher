@@ -10,7 +10,10 @@ interface BaseSidebarLayoutProps {
 
 const BaseSidebarLayout = ({ children, title = "SMCL", subtitle = "使用 Rust 重写的 MC 启动器", footer, header }: BaseSidebarLayoutProps) => {
   return (
-    <aside className="w-full h-full flex flex-col bg-[var(--color-bg-secondary)] border-r border-[var(--color-border)] pt-5">
+    <aside
+      className="w-full h-full flex flex-col 
+      bg-[var(--color-bg-tertiary)] "
+    >
 
       {header && (
         <div className="border-b border-[var(--color-border)] p-3">
@@ -18,12 +21,12 @@ const BaseSidebarLayout = ({ children, title = "SMCL", subtitle = "使用 Rust �
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto scrollbar-custom">
+      <div className="flex-1 overflow-y-auto scrollbar-custom scrollbar-hide">
         {children}
       </div>
 
       {footer && (
-        <div className="border-t border-[var(--color-border)] p-3">
+        <div className="border-t border-[var(--color-border)] p-2">
           {footer}
         </div>
       )}

@@ -48,7 +48,7 @@ const Home = () => {
   }, [init]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-120px)] p-6">
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-120px)] p-0">
       <div className="max-w-4xl w-full space-y-8">
         {/* 玩家个人资料卡片 - MC 方块人头像 */}
         <PlayerProfile
