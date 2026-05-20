@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Crown, User, Home, ChevronDown, HomeIcon, FileQuestionMark } from 'lucide-react';
 import { useUserRoleStore, type UserRole } from '@/stores/userRoleStore';
 import { getNavItemsByRole, type NavItem } from '@/config/navigationConfig';
+import { autoJumpToFirstChild, findRouteByPath, routes } from '@/router/config';
 
 interface DynamicIslandProps {
   onMenuClick?: (path: string) => void;
@@ -91,6 +92,13 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
     }
 
     if (item.path && item.path !== location.pathname) {
+      
+      const route = findRouteByPath(item.path, routes);
+      if (route?.autoNavigateToFirstChild && route.children && route.children.length > 0 && onMenuClick) {
+        autoJumpToFirstChild(route,onMenuClick);
+        return;
+      }
+
       if (onMenuClick) {
         onMenuClick(item.path);
       } else {

@@ -9,9 +9,10 @@ import { useUIModeStore } from '../stores/uiModeStore';
 import { useLocation } from 'react-router-dom';
 import { getCurrentAccount, type AccountInfo } from '../helper/rustInvoke';
 import { useState } from 'react';
+import { pagesWithOwnSidebar } from '@/router/config';
 
 const Home = () => {
-  const init = useInstanceStore(s => s.init);
+  const instance_init = useInstanceStore(s => s.init);
   const { currentRole } = useUserRoleStore();
   const { mode: uiMode } = useUIModeStore();
   const location = useLocation();
@@ -20,15 +21,13 @@ const Home = () => {
   const [isLoadingAccount, setIsLoadingAccount] = useState(true);
 
   // 检测当前页面是否有独立侧边栏
-  const pagesWithOwnSidebar = ['/account', '/download', '/game-settings', '/instance-list'];
   const isInstanceManagePage = location.pathname.startsWith('/instance-manage/');
   const hasOwnSidebar = uiMode === 'island' && (
-    pagesWithOwnSidebar.some(path => location.pathname.startsWith(path)) ||
-    isInstanceManagePage
+    pagesWithOwnSidebar.some(path => location.pathname.startsWith(path)) || isInstanceManagePage
   );
 
   useEffect(() => {
-    init();
+    instance_init();
 
     // 加载当前账户信息
     const loadAccountName = async () => {
@@ -45,7 +44,7 @@ const Home = () => {
     };
 
     loadAccountName();
-  }, [init]);
+  }, [instance_init]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-120px)] p-0">

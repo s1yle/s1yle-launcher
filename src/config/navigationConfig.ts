@@ -10,6 +10,8 @@ import {
   Home
 } from 'lucide-react';
 import { useUserRoleStore } from '@/stores/userRoleStore';
+import { getSidebarGroups, SidebarMenuItem } from '@/router/config';
+import { logger } from '@/helper/logger';
 
 export interface NavItem {
   id: string;
@@ -23,23 +25,17 @@ export interface NavItem {
   isVisible?: boolean;
 }
 
+export const mainMenuNavItem: NavItem = {
+  id: 'main',
+  label: '主页',
+  labelI18nKey: 'nav.main',
+  icon: Home,
+  path: '/',
+  roles: ['player', 'admin'],
+}
+
 export const playerNavItems: NavItem[] = [
-  {
-    id: 'main',
-    label: '主页',
-    labelI18nKey: 'nav.main',
-    icon: Home,
-    path: '/',
-    roles: ['player', 'admin'],
-  },
-  {
-    id: 'account',
-    label: '账户',
-    labelI18nKey: 'nav.account',
-    icon: User,
-    path: '/account',
-    roles: ['player', 'admin'],
-  },
+  mainMenuNavItem,
   {
     id: 'games',
     label: '游戏',
@@ -59,14 +55,7 @@ export const playerNavItems: NavItem[] = [
 ];
 
 export const adminNavItems: NavItem[] = [
-  {
-    id: 'main',
-    label: '主页',
-    labelI18nKey: 'nav.main',
-    icon: Home,
-    path: '/',
-    roles: ['player', 'admin'],
-  },
+  mainMenuNavItem,
   {
     id: 'server-manage',
     label: '服务器管理',
@@ -94,8 +83,70 @@ export const adminNavItems: NavItem[] = [
   },
 ];
 
+// 通过组别获取 NavItems
+function getNavItemsByGroup(group: SidebarMenuItem[]): NavItem[] {
+  let navItems: NavItem[] = [];
+
+  group.forEach((item) => {
+    let nItems = item.navItem;
+    logger.info("该 account item：", item);
+    if (nItems) {
+      nItems.forEach((ni) => {
+        navItems.push(ni);
+      });
+    }
+  });
+
+  return navItems;
+}
+
+// 获取所有已知组别的 NavItems
+function getAllGroupsOfNavItems(): NavItem[] {
+  const groups = getSidebarGroups();
+
+  let navItems: NavItem[] = [];
+  // 获取主页
+  navItems.push(mainMenuNavItem)
+
+  let ni = getNavItemsByGroup(groups.account);
+  ni.forEach((i) => {
+    if (i.roles.includes("player")) {
+      navItems.push(i);
+    }
+  })
+
+  ni = getNavItemsByGroup(groups.game);
+  ni.forEach((i) => {
+    if (i.roles.includes("player")) {
+      navItems.push(i);
+    }
+  })
+
+  ni = getNavItemsByGroup(groups.common);
+  ni.forEach((i) => {
+    if (i.roles.includes("player")) {
+      navItems.push(i);
+    }
+  })
+  return navItems;
+}
+
+function getPlayerNavItems(): NavItem[] {
+  let navItems = getAllGroupsOfNavItems();
+
+  if (navItems.length<=0 || !navItems) return playerNavItems;
+  return navItems;
+}
+
+function getAdminNavItems(): NavItem[] {
+  let navItems = getAllGroupsOfNavItems();
+
+  if (navItems.length<=0 || !navItems) return playerNavItems;
+  return navItems;
+}
+
 export function getNavItemsByRole(role: 'player' | 'admin'): NavItem[] {
-  return role === 'player' ? playerNavItems : adminNavItems;
+  return role === 'player' ? getPlayerNavItems() : getAdminNavItems();
 }
 
 export function getCurrentNavItems(): NavItem[] {

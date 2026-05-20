@@ -1,16 +1,17 @@
 // 基础类型
 export type {
-  HeaderConfig, 
-  SidebarItemType, 
-  ContextMenuChildItem, 
-  RouteConfig 
+  HeaderConfig,
+  SidebarItemType,
+  ContextMenuChildItem,
+  RouteConfig,
+  SidebarMenuItem,
 } from './models'
 
-export { 
-  SidebarGroup, 
-  RoutePosition, 
-  LayoutMode, 
-  SidebarType 
+export {
+  SidebarGroup,
+  RoutePosition,
+  LayoutMode,
+  SidebarType
 } from './models'
 
 // routes
@@ -25,11 +26,20 @@ import { sidebarMenuItems } from './sidebarMenus';
 import type { RouteConfig, SidebarMenuItem } from './models';
 import { SidebarGroup } from './models';
 
+export const pagesWithOwnSidebar = [
+  '/account',
+  '/download',
+  '/game-settings',
+  '/instance-list',
+  '/settings'
+];
+
 export const getParentPath = (path: string): string => {
   const route = findRouteByPath(path, routes);
   return route?.parentPath || '/';
 };
 
+// 获取到所有的 SidebarMenuItems
 export const getSidebarGroups = (): Record<SidebarGroup, SidebarMenuItem[]> => {
   const groups: Record<string, SidebarMenuItem[]> = {
     [SidebarGroup.ACCOUNT]: [],
@@ -72,3 +82,13 @@ export const matchRoutePath = (routePath: string, actualPath: string): boolean =
 
   return true;
 };
+
+
+export const autoJumpToFirstChild = (route: RouteConfig, onMenuClick: (path:string) => any ) => {
+  if (route.children) {
+    const firstChildPath = route.children[0].path;
+    if (firstChildPath !== location.pathname) {
+      if (onMenuClick) onMenuClick(firstChildPath);
+    }
+  }
+}

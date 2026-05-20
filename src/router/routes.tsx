@@ -134,10 +134,20 @@ export const routes: RouteConfig[] = [
   },
   {
     path: '/settings',
-    componentName: 'Settings',
+    componentName: '',
     header: { type: SidebarType.SUB, title: '设置', titleI18nKey: 'sidebar.settings' },
     sidebarGroup: SidebarGroup.COMMON,
-    parentPath: '/'
+    parentPath: '/',
+    autoNavigateToFirstChild: true,
+    children: [
+      {
+        path: '/settings/appearance',
+        componentName: 'Settings',
+        header: { type: SidebarType.SUB, title: '外观', titleI18nKey: 'sidebar.appearanceSettings' },
+        sidebarGroup: SidebarGroup.COMMON,
+        parentPath: '/',
+      }
+    ]
   },
   // 服主管理页面
   {

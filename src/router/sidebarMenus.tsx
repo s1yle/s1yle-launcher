@@ -35,6 +35,16 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
     title: 'Account',
     titleI18nKey: 'sidebar.group.account',
     group: SidebarGroup.ACCOUNT,
+    navItem: [
+      {
+        id: 'account',
+        label: '账户',
+        labelI18nKey: 'nav.account',
+        icon: User,
+        path: '/account',
+        roles: ['player', 'admin'],
+      }
+    ],
     children: [
       {
         id: 'account-list',
@@ -82,6 +92,16 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
     title: 'Game',
     titleI18nKey: 'sidebar.group.game',
     group: SidebarGroup.GAME,
+    navItem: [
+      {
+        id: 'games',
+        label: '游戏',
+        labelI18nKey: 'nav.games',
+        icon: Gamepad2,
+        path: '/instance-list',
+        roles: ['player', 'admin'],
+      }
+    ],
     children: [
       {
         id: 'instance-manage',
@@ -268,7 +288,37 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
     title: 'Common',
     titleI18nKey: 'sidebar.group.common',
     group: SidebarGroup.COMMON,
+    navItem: [
+      {
+        id: 'settings',
+        label: '设置',
+        labelI18nKey: 'nav.settings',
+        icon: Settings,
+        path: '/settings',
+        roles: ['player', 'admin'],
+      },
+    ],
     children: [
+      {
+        id: 'settings',
+        type: 'route',
+        title: '设置',
+        titleI18nKey: 'sidebar.settings',
+        icon: <Settings className="w-4 h-4" />,
+        path: '/settings',
+        group: SidebarGroup.COMMON,
+        children: [
+          {
+            id: 'settings-appearance',
+            type: 'route',
+            title: '外观',
+            titleI18nKey: 'sidebar.appearanceSettings',
+            icon: <UserPlus className="w-4 h-4" />,
+            path: '/settings/appearance',
+            group: SidebarGroup.COMMON,
+          }
+        ]
+      },
       {
         id: 'hint',
         type: 'route',
@@ -278,15 +328,6 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
         path: '/hint',
         group: SidebarGroup.COMMON
       },
-      {
-        id: 'settings',
-        type: 'route',
-        title: '设置',
-        titleI18nKey: 'sidebar.settings',
-        icon: <Settings className="w-4 h-4" />,
-        path: '/settings',
-        group: SidebarGroup.COMMON
-      }
     ]
   },
 ];

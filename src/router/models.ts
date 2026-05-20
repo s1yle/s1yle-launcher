@@ -1,3 +1,4 @@
+import { NavItem } from "@/config/navigationConfig";
 import { ReactNode } from "react";
 
 export enum SidebarType {
@@ -44,6 +45,7 @@ export interface SidebarMenuItem {
   group: SidebarGroup;
   children?: SidebarMenuItem[];
   danger?: boolean;
+  navItem?: NavItem[];
   customRender?: React.ComponentType<{
     item: SidebarMenuItem;
     isActive: boolean;

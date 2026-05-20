@@ -2,7 +2,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getSidebarGroups, routes, sidebarMenuItems, type SidebarMenuItem, findRouteByPath, SidebarGroup } from '../../router/config';
+import { getSidebarGroups, routes, sidebarMenuItems, SidebarMenuItem, findRouteByPath, SidebarGroup, pagesWithOwnSidebar, RouteConfig, autoJumpToFirstChild } from '../../router/config';
 import BaseSidebarLayout from './layouts/BaseSidebarLayout';
 import AccountSidebarContent from './content/AccountSidebarContent';
 import GameSidebarContent from './content/GameSidebarContent';
@@ -49,11 +49,8 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: Sm
       if (item.path === location.pathname) return;
 
       const route = findRouteByPath(item.path, routes);
-      if (route?.autoNavigateToFirstChild && route.children && route.children.length > 0) {
-        const firstChildPath = route.children[0].path;
-        if (firstChildPath !== location.pathname) {
-          if (onMenuClick) onMenuClick(firstChildPath);
-        }
+      if (route?.autoNavigateToFirstChild && route.children && route.children.length > 0 && onMenuClick) {
+        autoJumpToFirstChild(route,onMenuClick);
         return;
       }
 
@@ -82,9 +79,6 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: Sm
   };
 
   const currentGroup = getCurrentSidebarGroup();
-
-  // 带独立侧边栏的渲染逻辑
-  const pagesWithOwnSidebar = ['/account', '/download', '/game-settings', '/instance-list'];
 
   // 判断当前是否在 instance-manage 页面（支持动态参数）
   const isInstanceManagePage = location.pathname.startsWith('/instance-manage/');
@@ -291,24 +285,20 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: Sm
               isParentActive={isParentOfActive}
               hasChildrenItems={hasChildrenItems}
             />
-            <div className="mt-8">
-              <GameSidebarContent
-                items={groups.game}
-                onMenuClick={handleItemClick}
-                isActive={isActive}
-                isParentActive={isParentOfActive}
-                hasChildrenItems={hasChildrenItems}
-              />
-            </div>
-            <div className="mt-8">
-              <CommonSidebarContent
-                items={groups.common}
-                onMenuClick={handleItemClick}
-                isActive={isActive}
-                isParentActive={isParentOfActive}
-                hasChildrenItems={hasChildrenItems}
-              />
-            </div>
+            <GameSidebarContent
+              items={groups.game}
+              onMenuClick={handleItemClick}
+              isActive={isActive}
+              isParentActive={isParentOfActive}
+              hasChildrenItems={hasChildrenItems}
+            />
+            <CommonSidebarContent
+              items={groups.common}
+              onMenuClick={handleItemClick}
+              isActive={isActive}
+              isParentActive={isParentOfActive}
+              hasChildrenItems={hasChildrenItems}
+            />
           </motion.div>
         )}
 

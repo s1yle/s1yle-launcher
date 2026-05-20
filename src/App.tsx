@@ -5,7 +5,7 @@ import Header from './components/Header';
 import SmartSidebar from './components/sidebar/SmartSidebar';
 import DynamicIsland from './components/navigation/DynamicIsland';
 import FloatingControls from './components/header/FloatingControls';
-import { routes, findRouteByPath, LayoutMode } from './router/config';
+import { routes, findRouteByPath, LayoutMode, pagesWithOwnSidebar } from './router/config';
 import { useNavStore } from './stores/navStore';
 import { useThemeStore } from './stores/themeStore';
 import { useAppStore } from './stores/appStore';
@@ -65,7 +65,6 @@ const MainLayout = () => {
 
   const isFullscreen = currentRoute.layoutMode === LayoutMode.FULLSCREEN;
 
-  const pagesWithOwnSidebar = ['/account', '/download', '/game-settings', '/instance-list'];
   const isInstanceManagePage = location.pathname.startsWith('/instance-manage/');
   const hasOwnSidebar = uiMode === 'island' && (
     pagesWithOwnSidebar.some(path => location.pathname.startsWith(path)) ||
@@ -75,9 +74,9 @@ const MainLayout = () => {
   const handleMenuClick = (targetPath: string) => {
     if (animLockRef.current || targetPath === location.pathname) return;
 
-    // 通知侧边栏容器,切换页面时侧边栏收起,切换后再弹出
-
     let finalPath = targetPath;
+
+    // 处理带有 instanceId 的 路径
     if (finalPath.includes(':instanceId')) {
       const instance = useInstanceStore.getState().getSelectedInstance();
       if (instance) {
@@ -190,7 +189,7 @@ const MainLayout = () => {
 
           {/* 顶部拖曳区域 - 覆盖灵动岛两侧的空间 */}
           <div
-            className="fixed top-0 left-0 right-0 h-20 z-40"
+            className="fixed top-0 left-0 right-0 h-20 z-40 shadow-[var(--shadow-md)]"
             data-tauri-drag-region="true"
           >
             <div className="absolute inset-0" data-tauri-drag-region />
@@ -224,8 +223,6 @@ const MainLayout = () => {
                         overflow-hidden"
                         style={{ 
                           width: sidebarWidth, top: '80px', 
-                          borderTopRightRadius: 'var(--radius-2xl)',
-                          borderBottomRightRadius: 'var(--radius-2xl)'
                         }}
                         initial={{ x: -sidebarWidth, opacity: 0 }}
                         exit={{ x: -sidebarWidth, opacity: 0 }}
