@@ -67,6 +67,3 @@ export type { ToggleProps } from './Toggle';
 
 export { default as TerminalThemePreview } from './TerminalThemePreview';
 export type { TerminalThemePreviewProps } from './TerminalThemePreview';
-
-export { default as ThemePreview } from './ThemePreview';
-export type { ThemePreviewProps } from './ThemePreview';

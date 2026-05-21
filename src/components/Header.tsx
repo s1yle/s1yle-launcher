@@ -42,7 +42,8 @@ const Header = ({ type, title }: HeaderProps) => {
   return (
     <header 
       id='title-bar' 
-      className="bg-primary text-text-primary h-16 flex items-center justify-between px-6"
+      className="bg-primary text-text-primary h-16 flex items-center justify-between px-6
+        shadow-[var(--shadow-md)] z-31"
       data-tauri-drag-region="true"
     >
       <div className="flex items-center gap-4" data-tauri-drag-region="true">

@@ -82,15 +82,6 @@ const TerminalThemePreview = ({ onSelect, compact = false }: TerminalThemePrevie
 
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-2 flex items-center gap-2">
-          <span className="text-xl">🎨</span>
-          {t('theme.terminal.title', '现代极简主题')}
-        </h3>
-        <p className="text-sm text-[var(--color-text-secondary)]">
-          {t('theme.terminal.description', '专业开发者配色，干净舒适，长时间使用不累眼')}
-        </p>
-      </div>
 
       <div className="grid grid-cols-1 gap-4">
         {terminalPresets.map((preset) => {

@@ -172,7 +172,13 @@ const MainLayout = () => {
   const collapsedToggleButton = !isFullscreen && isSidebarCollapsed && (
     <button
       onClick={toggleSidebar}
-      className="fixed left-3 top-1/2 -translate-y-1/2 z-20 p-2 rounded-md bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] transition-colors shadow-md"
+      className="fixed left-3 top-1/2 -translate-y-1/2 z-20 p-2 
+        rounded-md bg-[var(--color-surface)] 
+        border border-[var(--color-border)] 
+        text-[var(--color-text-secondary)] 
+        hover:text-[var(--color-text-primary)] 
+        hover:bg-[var(--color-surface-hover)] 
+        transition-colors shadow-md cursor-pointer"
       title="展开侧边栏"
     >
       <PanelLeftOpen className="w-4 h-4" />
@@ -221,8 +227,8 @@ const MainLayout = () => {
                         border-[var(--color-border)] 
                         shadow-[var(--shadow-lg)] 
                         overflow-hidden"
-                        style={{ 
-                          width: sidebarWidth, top: '80px', 
+                        style={{
+                          width: sidebarWidth, top: '80px',
                         }}
                         initial={{ x: -sidebarWidth, opacity: 0 }}
                         exit={{ x: -sidebarWidth, opacity: 0 }}
@@ -236,7 +242,9 @@ const MainLayout = () => {
                       >
                         <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} footer={sidebarFooter} />
                         <div
-                          className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-[var(--color-primary)] hover:opacity-50 transition-opacity z-10"
+                          className="absolute right-0 top-0 bottom-0 w-1 
+                            cursor-col-resize hover:bg-[var(--color-primary)] 
+                            hover:opacity-50 transition-opacity z-10"
                           onMouseDown={handleMouseDown}
                         />
                       </motion.div>
@@ -245,7 +253,7 @@ const MainLayout = () => {
 
                   <main
                     className="flex-1 overflow-y-auto overflow-x-hidden relative scrollbar-custom"
-                    style={{ background: 'var(--bg-primary)', padding: `40px 0 0 0`, paddingLeft: sidebarWidth }}
+                    style={{ background: 'var(--color-bg-secondary)', paddingLeft: sidebarWidth }}
                   >
                     <RouterRenderer />
                   </main>
@@ -253,9 +261,9 @@ const MainLayout = () => {
                 </div>
               ) : (
                 // 普通页面：只显示内容区
-                < main
+                <main
                   className="flex-1 overflow-y-auto overflow-x-hidden relative scrollbar-custom pt-30"
-                  style={{ background: 'var(--bg-primary)', height: '100%' }}
+                  style={{ background: 'var(--color-bg-secondary)', height: '100%' }}
                 >
                   <RouterRenderer />
                 </main>
@@ -272,11 +280,14 @@ const MainLayout = () => {
           <Header type={currentRoute.header.type === 'main' ? 'main' : 'sub'} title={currentRoute.header.title} />
 
           <div className="flex flex-1 overflow-hidden ">
+
+            {/* 侧边栏容器 */}
             <AnimatePresence>
               {shouldShowSidebar && (
                 <motion.div
                   key="sidebar"
-                  className="flex-shrink-0 relative"
+                  className="flex-shrink-0 relative fixed left-0 top-0 bottom-0 z-30 
+                    border-[var(--color-border)] shadow-[var(--shadow-lg)] "
                   style={{ width: sidebarWidth }}
                   initial={{ x: -sidebarWidth, opacity: 0 }}
                   exit={{ x: -sidebarWidth, opacity: 0 }}
@@ -297,9 +308,11 @@ const MainLayout = () => {
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {/* 页面内容 */}
             <main
               className="flex-1 overflow-y-auto overflow-x-hidden relative scrollbar-custom"
-              style={{ background: 'var(--bg-primary)' }}
+              style={{ background: 'var(--color-bg-secondary)' }}
             >
               <RouterRenderer />
             </main>
