@@ -25,7 +25,7 @@ import {
   UserPlus,
 } from 'lucide-react';
 import { type LayoutMode, type RouteConfig, SidebarGroup, type SidebarMenuItem, type SidebarType } from "./models";
-import InstanceManageButton from '@/components/sidebar/InstanceManageButton';
+import InstanceManageButton from '@/components/common/sidebar/renderer/InstanceManageButton';
 import { handleAddGameFolder, handleRefreshInstances } from './actionHandler';
 
 export const sidebarMenuItems: SidebarMenuItem[] = [

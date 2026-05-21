@@ -1,6 +1,6 @@
 import type { AppConfig, InstanceConfig, UserPreferences, DownloadConfig } from '@/helper/rustInvoke';
+import { ThemePreset } from '@/stores/themeStore';
 
-export type ThemeMode = 'dark' | 'light' | 'system';
 export type AccentColor = 'indigo' | 'blue' | 'green' | 'purple' | 'red' | 'orange' | 'pink';
 export type Language = 'zh-CN' | 'en-US';
 
@@ -14,7 +14,7 @@ export type ConfigEvent = keyof ConfigEvents;
 export type ConfigEventListener<T extends ConfigEvent> = ConfigEvents[T];
 
 export interface ConfigKeyMap {
-  'preferences.theme': ThemeMode;
+  'preferences.theme': ThemePreset;
   'preferences.accent_color': AccentColor;
   'preferences.language': Language;
   'preferences.enable_animation': boolean;

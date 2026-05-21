@@ -1,6 +1,6 @@
-import { ConfirmPopupProps } from '../components/popup/ConfirmPopup';
-import { AlertPopupProps } from '../components/popup/AlertPopup';
-import { LoadingPopupProps } from '../components/popup/LoadingPopup';
+import { ConfirmPopupProps } from '../components/common/popup/ConfirmPopup';
+import { AlertPopupProps } from '../components/common/popup/AlertPopup';
+import { LoadingPopupProps } from '../components/common/popup/LoadingPopup';
 
 // ======================== 弹窗配置类型 ========================
 

@@ -8,7 +8,7 @@ import { useInstanceStore } from '../../stores/instanceStore';
 import { openFolder } from '../../helper/rustInvoke';
 import { InstanceListItem, EmptyState, useNotification, IconButton } from '../../components/common';
 import Instance from './Instance';
-import BottomBar from '@/components/BottomBar/BottomBar';
+import BottomBar from '@/components/common/BottomBar/BottomBar';
 import { logger } from '@/helper/logger';
 import { staggerContainer, staggerItem } from '../../utils/animations';
 

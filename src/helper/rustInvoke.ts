@@ -639,6 +639,7 @@ export enum ModLoaderType {
   Fabric = "Fabric",
   Forge = "Forge",
   NeoForge = "NeoForge",
+  Quilt = "Quilt",
 }
 
 export interface LibraryInfo {
@@ -1196,7 +1197,7 @@ export const getConfig = async (
   options?: InvokeOptions
 ): Promise<AppConfig> => {
   logger.info('获取全局配置');
-  return await invokeRustFunction("config::get_config", {}, options);
+  return await invokeRustFunction("get_config", {}, options);
 };
 
 /**

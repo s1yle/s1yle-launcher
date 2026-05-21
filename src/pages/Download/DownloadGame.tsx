@@ -9,7 +9,7 @@ import { VersionListItem, VersionFilterDropdown, EmptyState, useNotification, Vi
 import { useNavStore } from '../../stores/navStore';
 import { getWikiUrl } from '../../utils/modloaderCompat';
 import { VersionCategory, filterVersionsByCategory, debugVersionTypes } from '../../utils/versionFilter';
-import BottomBar from '@/components/BottomBar/BottomBar';
+import BottomBar from '@/components/common/BottomBar/BottomBar';
 
 const ITEM_HEIGHT = 72;
 

@@ -9,7 +9,7 @@ export interface LoaderIconProps {
   className?: string;
 }
 
-const LoaderIcon: React.FC<LoaderIconProps> = ({ type, className }) => {
+const LoaderIcon = ({ type, className }: LoaderIconProps) => {
   switch (type) {
     case 'minecraft':
       return (

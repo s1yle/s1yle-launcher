@@ -17,6 +17,10 @@ export interface SpinnerOverlayProps {
   className?: string;
 }
 
+/**
+ * ## 转圈加载动画
+ * @param visible 是否可见 
+ */
 const SpinnerOverlay = ({
   visible,
   loading = true,

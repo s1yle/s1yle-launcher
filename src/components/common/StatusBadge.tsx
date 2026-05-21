@@ -9,13 +9,13 @@ export interface StatusBadgeProps {
   className?: string;
 }
 
-const StatusBadge: React.FC<StatusBadgeProps> = ({
+const StatusBadge = ({
   type,
   label,
   size = 'md',
   showDot = false,
   className = '',
-}) => {
+}: StatusBadgeProps) => {
   const sizeClasses = {
     sm: 'px-1.5 py-0.5 text-xs',
     md: 'px-2 py-0.5 text-xs',

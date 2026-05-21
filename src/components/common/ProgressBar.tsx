@@ -17,7 +17,7 @@ export interface ProgressBarProps {
   formatValue?: (value: number) => string;
 }
 
-const ProgressBar: React.FC<ProgressBarProps> = ({
+const ProgressBar = ({
   progress,
   label,
   sublabel,
@@ -29,7 +29,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   className = '',
   barClassName = '',
   formatValue,
-}) => {
+}: ProgressBarProps) => {
   const clampedProgress = Math.min(100, Math.max(0, progress));
 
   const statusVariant = useMemo(() => {

@@ -1,8 +1,6 @@
 import { useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import ActionButton from '../components/ActionButton';
-import PlayerProfile from '../components/home/PlayerProfile';
-import InstanceInfoHeader from '../components/sidebar/InstanceInfoHeader';
+import ActionButton from '../components/common/StartGameButton';
+import PlayerProfile from '../components/common/home/PlayerProfile';
 import { useInstanceStore } from '../stores/instanceStore';
 import { useUserRoleStore } from '../stores/userRoleStore';
 import { useUIModeStore } from '../stores/uiModeStore';

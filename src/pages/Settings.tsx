@@ -1,26 +1,16 @@
 import { useTranslation } from 'react-i18next';
 import { useThemeStore, themePresets } from '../stores/themeStore';
-import { UIMode, useUIModeStore } from '../stores/uiModeStore';
+import { useUIModeStore } from '../stores/uiModeStore';
 import TerminalThemePreview from '../components/common/TerminalThemePreview';
 import { Toggle } from '../components/common';
-import { AnimatePresence } from 'framer-motion';
-import { motion } from 'framer-motion';
-import { SettingsPanel } from '@/components/SettingsPanel/SettingPanel';
+import { SettingsPanel } from '@/components/common/SettingsPanel/SettingPanel';
 import { useState } from 'react';
 
 const Settings = () => {
   const { t } = useTranslation();
-  const {
-    mode,
-    accentColor,
-    setAccentColor,
-    applyPreset,
-  } = useThemeStore();
+  const { accentColor, setAccentColor, applyPreset, } = useThemeStore();
 
   const { mode: uiMode, setMode: setUIMode, animation, setAnimation } = useUIModeStore();
-
-  const normalPresets = themePresets.filter(p => !p.terminalTheme);
-  
   const [isCompat, setIsCompat] = useState(true)
 
   return (

@@ -17,6 +17,9 @@ interface UIModeState {
   setAnimation: (animation: AnimationConfig) => void;
 }
 
+/**
+ * ## 用于设置灵动岛、经典模式、动画状态(slide-up / slide-down)
+ */
 export const useUIModeStore = create<UIModeState>()(
   persist(
     (set, get) => ({

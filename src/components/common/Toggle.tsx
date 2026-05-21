@@ -2,7 +2,7 @@ import { useContext } from 'react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { AnimatePresence, motion } from 'framer-motion';
-import { SettingsPanelItemContext } from '../SettingsPanel/models';
+import { SettingsPanelItemContext } from './SettingsPanel/models';
 
 const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(inputs));
 

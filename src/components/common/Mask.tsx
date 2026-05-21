@@ -14,7 +14,7 @@ interface MaskProps {
   disabled?: boolean;
 }
 
-const Mask: React.FC<MaskProps> = ({
+const Mask = ({
   active,
   children,
   label,
@@ -24,7 +24,7 @@ const Mask: React.FC<MaskProps> = ({
   className = '',
   overlayClassName = '',
   disabled = false,
-}) => {
+}: MaskProps) => {
   const { t } = useTranslation();
 
   const displayLabel = labelI18nKey ? t(labelI18nKey, label || '') : label;

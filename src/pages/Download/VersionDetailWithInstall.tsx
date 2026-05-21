@@ -19,8 +19,8 @@ import { downloadAndDeploy, ModLoaderType } from '@/helper/rustInvoke';
 import { useNotification } from '@/components/common';
 import { listen } from '@tauri-apps/api/event';
 import { useDownloadStore } from '../../stores/downloadStore';
-import SettingsSection from '@/components/settings/SettingsSection';
-import SettingItem from '@/components/settings/SettingItem';
+import SettingsSection from '@/components/common/settings/SettingsSection';
+import SettingItem from '@/components/common/settings/SettingItem';
 import ListItem from '@/components/common/ListItem';
 import ProgressBar from '@/components/common/ProgressBar';
 

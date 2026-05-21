@@ -16,7 +16,7 @@ export interface DownloadItemProps {
   sublabel?: string;
 }
 
-const DownloadItem: React.FC<DownloadItemProps> = ({
+const DownloadItem = ({
   filename,
   downloaded,
   total,
@@ -26,7 +26,7 @@ const DownloadItem: React.FC<DownloadItemProps> = ({
   onCancel,
   onRetry,
   sublabel,
-}) => {
+}: DownloadItemProps) => {
   const progress = total > 0 ? (downloaded / total) * 100 : 0;
 
   const getStatus = (): 'idle' | 'active' | 'completed' | 'error' => {

@@ -60,7 +60,7 @@ const ListItem = ({
     <motion.div
       whileTap={onClick ? { scale: 0.98 } : undefined}
       className={cn(
-        'flex items-center rounded-lg cursor-pointer transition-all duration-200',
+        'flex items-center rounded-lg cursor-pointer transition-all',
         sizeClasses[size],
         disabled && 'opacity-50 cursor-not-allowed',
         selected

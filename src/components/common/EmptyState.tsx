@@ -1,4 +1,3 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 import { Inbox, Download, FolderOpen, Search, AlertTriangle, CheckCircle } from 'lucide-react';
 import { fadeInUp, transitions } from '../../utils/animations';
@@ -14,13 +13,13 @@ export interface EmptyStateProps {
   className?: string;
 }
 
-const EmptyState: React.FC<EmptyStateProps> = ({
+const EmptyState = ({
   icon = 'default',
   title,
   description,
   action,
   className = '',
-}) => {
+}: EmptyStateProps) => {
   const icons = {
     default: <Inbox className="w-16 h-16 text-text-tertiary" strokeWidth={1.5} />,
     download: <Download className="w-16 h-16 text-text-tertiary" strokeWidth={1.5} />,
@@ -31,7 +30,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
   };
 
   return (
-    <motion.div 
+    <motion.div
       className={`flex flex-col items-center justify-center py-12 px-4 text-center ${className}`}
       variants={fadeInUp}
       initial="initial"
@@ -39,13 +38,13 @@ const EmptyState: React.FC<EmptyStateProps> = ({
       exit="exit"
       transition={transitions.normal}
     >
-      <motion.div 
+      <motion.div
         className="mb-4 opacity-50"
-        animate={{ 
+        animate={{
           y: [0, -10, 0],
           opacity: [0.5, 0.7, 0.5]
         }}
-        transition={{ 
+        transition={{
           duration: 3,
           repeat: Infinity,
           ease: 'easeInOut'
@@ -53,7 +52,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
       >
         {icons[icon]}
       </motion.div>
-      <motion.h3 
+      <motion.h3
         className="text-lg font-medium text-text-secondary mb-2"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -62,7 +61,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
         {title}
       </motion.h3>
       {description && (
-        <motion.p 
+        <motion.p
           className="text-sm text-text-tertiary mb-4 max-w-sm"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}

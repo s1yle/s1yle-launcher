@@ -24,7 +24,7 @@ export interface PopupProps {
   ariaDescribedby?: string;
 }
 
-const Popup: React.FC<PopupProps> = ({
+const Popup =({
   isOpen,
   onClose,
   title,
@@ -44,7 +44,7 @@ const Popup: React.FC<PopupProps> = ({
   ariaLabel,
   ariaLabelledby,
   ariaDescribedby,
-}) => {
+}: PopupProps) => {
   const [shouldRender, setShouldRender] = useState(isOpen);
 
   useEffect(() => {

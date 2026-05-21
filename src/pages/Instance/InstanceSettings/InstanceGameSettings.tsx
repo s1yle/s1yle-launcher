@@ -11,15 +11,15 @@ import {
   Check,
   FolderOpen,
 } from 'lucide-react';
-import { useInstanceStore } from '../../../stores/instanceStore';
-import { getInstanceSettings, updateInstanceSettings, GameSettings, selectJavaPath } from '../../../helper/rustInvoke';
-import { Toggle, useNotification } from '../../../components/common';
-import { SettingsSection, SettingItem } from '../../../components/settings';
-import MemorySlider from '../../../components/settings/MemorySlider';
-import Mask from '../../../components/common/Mask';
-import { useRouteParams } from '../../../components/RouterRenderer';
+import { useInstanceStore } from '@/stores/instanceStore';
+import { getInstanceSettings, updateInstanceSettings, GameSettings, selectJavaPath } from '@/helper/rustInvoke';
+import { SettingsSection, Toggle, useNotification } from '@/components/common';
+import SettingItem from '@/components/common/settings/SettingItem'
+import MemorySlider from '@/components/common/settings/MemorySlider';
+import Mask from '@/components/common/Mask';
+import { useRouteParams } from '@/components/RouterRenderer';
 
-const InstanceGameSettings: React.FC = () => {
+const InstanceGameSettings = () => {
   const { t } = useTranslation();
   const { instanceId } = useRouteParams();
   const navigate = useNavigate();
@@ -193,6 +193,7 @@ const InstanceGameSettings: React.FC = () => {
           >
 
             <Toggle
+              label='启用实例特定游戏设置'
               checked={settings.use_instance_settings || false}
               onChange={(checked) => updateSetting('use_instance_settings', checked)}
               disabled={settingsLoading}
@@ -398,6 +399,7 @@ const InstanceGameSettings: React.FC = () => {
             description={t('settings.advanced.launcherVisibleDesc', '启动游戏后是否显示启动器窗口')}
           >
               <Toggle
+                label='启动器是否可见'
                 checked={settings.launcher_visible ?? true}
                 onChange={(checked) => updateSetting('launcher_visible', checked)}
                 disabled={settingsLoading}

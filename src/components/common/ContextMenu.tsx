@@ -23,14 +23,14 @@ export interface ContextMenuProps {
   className?: string;
 }
 
-const ContextMenu: React.FC<ContextMenuProps> = ({
+const ContextMenu = ({
   items,
   position,
   visible,
   onClose,
   onItemClick,
   className = '',
-}) => {
+}: ContextMenuProps) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [adjustedPosition, setAdjustedPosition] = useState(position);
 
