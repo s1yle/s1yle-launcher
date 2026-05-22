@@ -19,13 +19,13 @@ const Settings = () => {
       <SettingsPanel
         label={"布局"}
       >
-        {/* 条目 */}
-        <Toggle
-          checked={uiMode == 'classic'}
-          onChange={(enabled) => setUIMode(enabled ? 'classic' : 'island')}
-          label='经典模式(classic)'
-          disabled={false}
-        />
+          {/* 条目 */}
+          <Toggle
+            checked={uiMode == 'classic'}
+            onChange={(enabled) => setUIMode(enabled ? 'classic' : 'island')}
+            label='经典模式(classic)'
+            disabled={false}
+          />
       </SettingsPanel>
 
       {/* 主题设置 */}
@@ -34,21 +34,21 @@ const Settings = () => {
       >
         {/* 条目 */}
         {/* 终端主题 */}
-        <SettingsPanel.Item hoverable={false}>
+        <SettingsPanel.Item shouldLoad={true} >
           <SettingsPanel.Sub label='终端主题'>
             <SettingsPanel.Toggle
               checked={isCompat}
-              onChange={(enabled) => {setIsCompat(enabled)}}
+              onChange={(enabled) => { setIsCompat(enabled) }}
               label='简洁模式'
             />
-            <TerminalThemePreview compact={isCompat}/>
+            <TerminalThemePreview compact={isCompat} />
           </SettingsPanel.Sub>
         </SettingsPanel.Item>
-        
+
       </SettingsPanel>
 
 
-    </div>
+    </div >
   );
 };
 

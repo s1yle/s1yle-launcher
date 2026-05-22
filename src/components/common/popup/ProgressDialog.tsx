@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Popup from '../../Popup';
-import ProgressBar from '../ProgressBar';
+import ProgressBar from '../Loading/ProgressBar';
 import { Loader2, CheckCircle, CircleX } from 'lucide-react';
 
 export interface ProgressDialogProps {

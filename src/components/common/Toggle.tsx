@@ -16,7 +16,10 @@ export interface ToggleProps {
 }
 
 /**
- * Toggle Switch 开关组件
+ * # Toggle Switch 开关组件
+ * 
+ * ## 注意事项
+ * - 非必要不要把 toggle 放进 SettingsItem 中 (很丑)
  * 
  * @example
  * ```tsx
@@ -38,11 +41,12 @@ const Toggle= ({
 }: ToggleProps) => {
 
   // Settings Panel上下文
-  const { isInsideItem, hovered } = useContext(SettingsPanelItemContext)
+  const { isInsideItem } = useContext(SettingsPanelItemContext)
 
   return (
     <AnimatePresence>
       {/* 条目 */}
+      {/* isInsideItem 时，为了适配样式，将 border-radius 设置为 radius-full */}
       <motion.div
         className={cn(
           `${!isInsideItem && 'bg-(--color-surface) '}`,

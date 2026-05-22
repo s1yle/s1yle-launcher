@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { GameVersion } from '../../../helper/rustInvoke';
 import { formatDate } from '../../../utils/format';
-import StatusBadge from '../StatusBadge';
+import StatusBadge from '../Badge/VersionBadge';
 import { ExternalLink, Package, CheckCircle } from 'lucide-react';
 import { listItem, transitions } from '../../../utils/animations';
 import { clsx } from 'clsx';

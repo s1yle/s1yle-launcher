@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useThemeStore, themePresets, ThemePreset } from '@/stores/themeStore';
-import SpinnerOverlay from './SpinnerOverlay';
+import YesOrNoBadge from './Badge/YesOrNoBadge';
+import { ComponentStackLayer } from './ContextStack/ContextStack';
 
 interface TerminalThemePreviewProps {
   onSelect?: (theme: ThemePreset | undefined) => void;
@@ -28,50 +29,53 @@ const TerminalThemePreview = ({
 
   if (compact) {
     return (
-      <div className="grid grid-cols-5 gap-3">
-        <SpinnerOverlay
-          visible
-        ></SpinnerOverlay>
-        {theme_presets.map((preset) => {
-          return (
-            <motion.button
-              key={preset.id}
-              onClick={() => handleSelect(preset)}
-              className={`relative p-3 rounded-(--radius-sm) 
-                cursor-pointer hover:scale-1.2
-                hover:shadow-(--shadow-md)
-                `
-              }
-              style={{
-                background: preset.previewColors.bg,
-              }}
-              whileHover={{
-                zIndex: 30,
-                border: 'var(--color-border-hover)',
-                y: '-2px'
-              }}
-              transition={{
-                duration: 0.1,
-                type: 'spring'
-              }}
-            >
-              <div
-                className="w-full h-16 rounded mb-2 flex items-center justify-center text-xs font-mono"
-                style={{ background: preset.previewColors.surface, color: preset.previewColors.accent }}
+      <ComponentStackLayer type='TerminalThemePreview'>
+        <div className="grid grid-cols-5 gap-3">
+          {theme_presets.map((preset) => {
+            return (
+              <motion.button
+                key={preset.id}
+                onClick={() => handleSelect(preset)}
+                className={`relative p-3 rounded-(--radius-sm) 
+                  cursor-pointer hover:scale-1.2
+                  ${activeTheme.id == preset.id && '-translate-y-2'}
+                  hover:shadow-(--shadow-md)`
+                }
+                style={{
+                  background: preset.previewColors.bg,
+                }}
+                whileHover={{
+                  zIndex: 30,
+                  border: 'var(--color-border-hover)',
+                  y: activeTheme.id != preset.id ? -2 : 0
+                }}
+                transition={{
+                  duration: 0.1,
+                  type: 'spring'
+                }}
               >
-                {preset.name}
-              </div>
-              <div
-                className="text-center font-medium text-sm"
-                style={{ color: preset.previewColors.text }}
-              >
-                {preset.name}
-              </div>
-            </motion.button>
-          );
-        })}
 
-      </div>
+                {activeTheme.id === preset.id && (
+                  <YesOrNoBadge></YesOrNoBadge>
+                )}
+
+                <div
+                  className="w-full h-16 rounded mb-2 flex items-center justify-center text-xs font-mono"
+                  style={{ background: preset.previewColors.surface, color: preset.previewColors.accent }}
+                >
+                  {preset.name}
+                </div>
+                <div
+                  className="text-center font-medium text-sm"
+                  style={{ color: preset.previewColors.text }}
+                >
+                  {preset.name}
+                </div>
+              </motion.button>
+            );
+          })}
+        </div>
+      </ComponentStackLayer>
     );
   }
 

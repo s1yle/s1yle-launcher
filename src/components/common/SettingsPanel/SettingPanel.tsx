@@ -1,7 +1,9 @@
 import { AnimatePresence, motion, } from "framer-motion"
-import React from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import Toggle from "../Toggle";
 import { SettingsPanelItemContext, SettingsPanelItemProps, SettingsPanelProps, SubSettingsPanelItemProps } from "./models";
+import Spinner from "../Loading/Spinner";
+import Overlay from "../Loading/Overlay";
 
 
 
@@ -44,30 +46,58 @@ const SettingsPanelItem = ({
     children,
     className,
     noPadding = false,
-    hoverable = true,
+    hoverable = false,
+    shouldLoad = false,
 }: SettingsPanelItemProps) => {
     const [hovered, setHovered] = React.useState(false);
+    const [itemElement, setItemElement] = useState<HTMLDivElement | null>(null);
+
+    const itemRef = useCallback((node: HTMLDivElement | null) => {
+        setItemElement(node);
+    }, [])
 
     const contextValue = React.useMemo(
-        () => ({ isInsideItem: true, hovered }),
-        [hovered]
+        () => ({
+            isInsideItem: true,
+            itemElement,
+            hovered,
+        }),
+        [hovered, itemElement]
     );
 
+    // TODO: 适配实际的加载任务(如果有)
+    // 初始化 loading
+    const [isLoading, setIsLoading] = useState(shouldLoad);
+
+    useEffect(() => {
+        setTimeout(() => {
+            setIsLoading(false);
+        }, 300);
+    }, [])
+
     return (
-        <div
-            className={`
-        bg-(--color-surface)
-        ${hoverable && 'hover:bg-(--color-surface-hover)'}
-        ${noPadding ? "" : "px-5 py-1"}
-        ${className || ""}
-      `}
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
-        >
-            <SettingsPanelItemContext.Provider value={contextValue}>
-                {children}
-            </SettingsPanelItemContext.Provider>
-        </div>
+        <SettingsPanelItemContext.Provider value={contextValue}>
+            <div className="item-ref" ref={itemRef}>
+                <Overlay active={isLoading && shouldLoad}>
+
+                    <Spinner visible={isLoading && shouldLoad}>
+                        <div
+                            className={`gap
+                                bg-(--color-surface)
+                                ${hoverable && 'hover:bg-(--color-surface-hover)'}
+                                ${noPadding ? "" : "px-5 py-1"}
+                                ${className || ""}
+                            `}
+                            onMouseEnter={() => setHovered(true)}
+                            onMouseLeave={() => setHovered(false)}
+                        >
+                            {children}
+                        </div>
+                    </Spinner>
+
+                </Overlay>
+            </div>
+        </SettingsPanelItemContext.Provider>
     );
 };
 

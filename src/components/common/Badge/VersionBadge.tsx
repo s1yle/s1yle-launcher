@@ -1,7 +1,6 @@
-import React from 'react';
-import { getVersionTypeLabel, getVersionTypeColor, getVersionTypeBgColor } from '../../utils/format';
+import { getVersionTypeLabel, getVersionTypeColor, getVersionTypeBgColor } from '../../../utils/format';
 
-export interface StatusBadgeProps {
+export interface VersionBadgeProps {
   type: 'release' | 'snapshot' | 'old_beta' | 'old_alpha' | string;
   label?: string;
   size?: 'sm' | 'md' | 'lg';
@@ -9,13 +8,13 @@ export interface StatusBadgeProps {
   className?: string;
 }
 
-const StatusBadge = ({
+const VersionBadge = ({
   type,
   label,
   size = 'md',
   showDot = false,
   className = '',
-}: StatusBadgeProps) => {
+}: VersionBadgeProps) => {
   const sizeClasses = {
     sm: 'px-1.5 py-0.5 text-xs',
     md: 'px-2 py-0.5 text-xs',
@@ -44,4 +43,4 @@ const StatusBadge = ({
   );
 };
 
-export default StatusBadge;
+export default VersionBadge;

@@ -13,10 +13,9 @@ import {
 } from 'lucide-react';
 import { useInstanceStore } from '@/stores/instanceStore';
 import { getInstanceSettings, updateInstanceSettings, GameSettings, selectJavaPath } from '@/helper/rustInvoke';
-import { SettingsSection, Toggle, useNotification } from '@/components/common';
+import { Overlay, SettingsSection, Toggle, useNotification } from '@/components/common';
 import SettingItem from '@/components/common/settings/SettingItem'
 import MemorySlider from '@/components/common/settings/MemorySlider';
-import Mask from '@/components/common/Mask';
 import { useRouteParams } from '@/components/RouterRenderer';
 
 const InstanceGameSettings = () => {
@@ -204,10 +203,8 @@ const InstanceGameSettings = () => {
         
 
         {/* Java 配置 */}
-        <Mask
+        <Overlay
           active={!settings.use_instance_settings}
-          label={t('mask.globalSettings', '使用全局设置')}
-          description={t('mask.globalSettingsDesc', '当前实例使用全局游戏设置。启用"实例特定游戏设置"后可自定义')}
         >
           <SettingsSection
             title={t('settings.java.title', 'Java 配置')}
@@ -406,7 +403,7 @@ const InstanceGameSettings = () => {
               />
           </SettingItem>
           </SettingsSection>
-        </Mask>
+        </Overlay>
       </div>
     </div>
   );

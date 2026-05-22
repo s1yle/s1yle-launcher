@@ -1,11 +1,14 @@
-export { default as ProgressBar } from './ProgressBar';
-export type { ProgressBarProps, ProgressStatus } from './ProgressBar';
+export { default as ProgressBar } from './Loading/ProgressBar';
+export type { ProgressBarProps, ProgressStatus } from './Loading/ProgressBar';
 
 export { default as DownloadItem } from './DownloadItem';
 export type { DownloadItemProps } from './DownloadItem';
 
-export { default as StatusBadge } from './StatusBadge';
-export type { StatusBadgeProps } from './StatusBadge';
+export { default as VersionBadge } from './Badge/VersionBadge';
+export type { VersionBadgeProps } from './Badge/VersionBadge';
+
+export { default as YesOrNoBadge } from './Badge/YesOrNoBadge';
+export type { YesOrNoBadgeProps } from './Badge/YesOrNoBadge';
 
 export { default as VersionCard } from './Version/VersionCard';
 export type { VersionCardProps } from './Version/VersionCard';
@@ -18,8 +21,11 @@ export { default as InstanceListItem } from './Instance/InstanceListItem';
 export { default as EmptyState } from './EmptyState';
 export type { EmptyStateProps } from './EmptyState';
 
-export { default as SpinnerOverlay } from './SpinnerOverlay';
-export type { SpinnerOverlayProps } from './SpinnerOverlay';
+export { default as Spinner } from './Loading/Spinner';
+export type { SpinnerProps } from './Loading/Spinner';
+
+export { default as Overlay } from './Loading/Overlay';
+export type { OverlayProps } from './Loading/Overlay';
 
 export { default as ListItem } from './ListItem';
 export type { ListItemProps } from './ListItem';
@@ -44,8 +50,8 @@ export type { VersionListItemProps } from './Version/VersionListItem';
 export { default as InstallCard } from './Instance/InstallCard';
 export type { InstallCardProps, InstallCardStatus } from './Instance/InstallCard';
 
-export { default as LoaderIcon } from './LoaderIcon';
-export type { LoaderIconProps } from './LoaderIcon';
+export { default as LoaderIcon } from './Loading/LoaderIcon';
+export type { LoaderIconProps } from './Loading/LoaderIcon';
 
 export { default as VirtualList } from './VirtualList';
 export type { VirtualListProps } from './VirtualList';

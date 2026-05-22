@@ -15,11 +15,13 @@ export interface SettingsPanelProps {
 
 interface SettingsPanelItemContextValue {
     isInsideItem: boolean;
+    itemElement?: HTMLDivElement | null;
     hovered: boolean;
 }
 
 export const SettingsPanelItemContext = React.createContext<SettingsPanelItemContextValue>({
     isInsideItem: false,
+    itemElement: null,
     hovered: false,
 });
 
@@ -29,6 +31,7 @@ export interface SettingsPanelItemProps {
     className?: string;
     noPadding?: boolean;
     hoverable?: boolean;
+    shouldLoad?: boolean;
 }
 
 export interface SubSettingsPanelItemProps {

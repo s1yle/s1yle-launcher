@@ -22,7 +22,7 @@ import { useDownloadStore } from '../../stores/downloadStore';
 import SettingsSection from '@/components/common/settings/SettingsSection';
 import SettingItem from '@/components/common/settings/SettingItem';
 import ListItem from '@/components/common/ListItem';
-import ProgressBar from '@/components/common/ProgressBar';
+import ProgressBar from '@/components/common/Loading/ProgressBar';
 
 interface DeployPhase {
   key: string;

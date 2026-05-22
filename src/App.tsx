@@ -16,8 +16,8 @@ import { logger } from './helper/logger';
 import RouterRenderer from './components/RouterRenderer';
 import { useWindowPosition } from './hooks/useWindowPosition';
 import FloatingDownloadButton from './components/FloatingDownloadButton';
-import { PanelLeftClose, PanelLeftOpen } from './icons';
 import './helper/i18n';
+import { PanelLeft, PanelLeftOpen } from 'lucide-react';
 
 const PAGE_TRANSITION_DURATION = 0.10;
 const SIDEBAR_TRANSITION_DURATION = 0.2;
@@ -164,7 +164,7 @@ const MainLayout = () => {
       className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] transition-colors"
       title={isSidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}
     >
-      <PanelLeftClose className="w-4 h-4" />
+      <PanelLeft className="w-4 h-4" />
       <span>收起侧边栏</span>
     </button>
   );
@@ -220,36 +220,34 @@ const MainLayout = () => {
                 >
 
                   {/* 侧边栏容器 */}
-                  <AnimatePresence mode='popLayout'>
-                    {!isNavigating && !isSidebarCollapsed ? (
-                      <motion.div
-                        className="flex-shrink-0 fixed left-0 top-0 bottom-0 z-30 
+                  {!isNavigating && !isSidebarCollapsed ? (
+                    <motion.div
+                      className="flex-shrink-0 fixed left-0 top-0 bottom-0 z-30 
                         border-[var(--color-border)] 
                         shadow-[var(--shadow-lg)] 
                         overflow-hidden"
-                        style={{
-                          width: sidebarWidth, top: '80px',
-                        }}
-                        initial={{ x: -sidebarWidth, opacity: 0 }}
-                        exit={{ x: -sidebarWidth, opacity: 0 }}
-                        animate={{
-                          x: 0,
-                          opacity: 1,
-                        }}
-                        transition={{
-                          duration: SIDEBAR_TRANSITION_DURATION,
-                        }}
-                      >
-                        <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} footer={sidebarFooter} />
-                        <div
-                          className="absolute right-0 top-0 bottom-0 w-1 
+                      style={{
+                        width: sidebarWidth, top: '80px',
+                      }}
+                      initial={{ x: -sidebarWidth, opacity: 0 }}
+                      exit={{ x: -sidebarWidth, opacity: 0 }}
+                      animate={{
+                        x: 0,
+                        opacity: 1,
+                      }}
+                      transition={{
+                        duration: SIDEBAR_TRANSITION_DURATION,
+                      }}
+                    >
+                      <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} footer={sidebarFooter} />
+                      <div
+                        className="absolute right-0 top-0 bottom-0 w-1 
                             cursor-col-resize hover:bg-[var(--color-primary)] 
                             hover:opacity-50 transition-opacity z-10"
-                          onMouseDown={handleMouseDown}
-                        />
-                      </motion.div>
-                    ) : null}
-                  </AnimatePresence>
+                        onMouseDown={handleMouseDown}
+                      />
+                    </motion.div>
+                  ) : null}
 
                   <main
                     className="flex-1 overflow-y-auto overflow-x-hidden relative scrollbar-custom"
@@ -319,8 +317,7 @@ const MainLayout = () => {
           </div>
           {collapsedToggleButton}
         </>
-      )
-      }
+      )}
     </div >
   );
 };

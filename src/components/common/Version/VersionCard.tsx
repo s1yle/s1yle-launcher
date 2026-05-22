@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { GameVersion } from '../../../helper/rustInvoke';
-import ProgressBar from '../ProgressBar';
-import StatusBadge from '../StatusBadge';
+import ProgressBar from '../Loading/ProgressBar';
+import StatusBadge from '../Badge/VersionBadge';
 import { formatDate } from '../../../utils/format';
 import { Loader2, Package } from 'lucide-react';
 import { cardHover, transitions } from '../../../utils/animations';
