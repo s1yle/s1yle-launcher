@@ -11,7 +11,7 @@ import { useThemeStore } from './stores/themeStore';
 import { useAppStore } from './stores/appStore';
 import { useInstanceStore } from './stores/instanceStore';
 import { useDownloadStore } from './stores/downloadStore';
-import { useUIModeStore } from './stores/uiModeStore';
+import { UIMode, useUIModeStore } from './stores/uiModeStore';
 import { logger } from './helper/logger';
 import RouterRenderer from './components/RouterRenderer';
 import { useWindowPosition } from './hooks/useWindowPosition';
@@ -102,7 +102,7 @@ const MainLayout = () => {
     logger.info(`Navigated to ${location.pathname}`);
   }, [location.pathname, setCurrentPath]);
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+  const handleSidebarResizeMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     isResizingRef.current = true;
     startXRef.current = e.clientX;
@@ -185,139 +185,191 @@ const MainLayout = () => {
     </button>
   );
 
-  return (
-    <div className="h-screen flex flex-col " onContextMenu={handleContextMenu}>
-      {uiMode === 'island' ? (
-        <>
-          {/* 灵动岛模式 */}
-          <FloatingControls />
-          <DynamicIsland onMenuClick={handleMenuClick} />
+  function renderHead(mode: UIMode) {
+    return (
+      <>
+        {mode == "island" && (
+          <>
+            {/* 灵动岛模式 */}
+            <FloatingControls />
+            <DynamicIsland onMenuClick={handleMenuClick} />
 
-          {/* 顶部拖曳区域 - 覆盖灵动岛两侧的空间 */}
-          <div
-            className="fixed top-0 left-0 right-0 h-20 z-40 shadow-[var(--shadow-md)]"
-            data-tauri-drag-region="true"
-          >
-            <div className="absolute inset-0" data-tauri-drag-region />
-          </div>
-
-
-          {/* //外层动画容器 */}
-          <AnimatePresence mode='wait'>
-            <motion.div
-              className='bg-[var(--color-bg-secondary)]'
-              style={{ width: 'auto', height: '100%', marginTop: '80px' }}
-              exit={{ x: -sidebarWidth, opacity: 0 }}
-              transition={{
-                duration: SIDEBAR_TRANSITION_DURATION,
-              }}
+            {/* 顶部拖曳区域 - 覆盖灵动岛两侧的空间 */}
+            <div
+              className="fixed top-0 left-0 right-0 h-20 z-40 shadow-[var(--shadow-md)]"
+              data-tauri-drag-region="true"
             >
-              {hasOwnSidebar && !isSidebarCollapsed ? (
-                // 有独立侧边栏的页面：显示侧边栏 + 内容
+              <div className="absolute inset-0" data-tauri-drag-region />
+            </div>
+          </>
+        )}
+        {mode == "classic" && (
+          <Header type={currentRoute.header.type === 'main' ? 'main' : 'sub'} title={currentRoute.header.title} />
+        )}
+      </>
+    )
+  }
+
+  function renderMain() {
+    return (
+      <>
+        {/* 普通页面：只显示内容区 */}
+        <main
+          className="flex-1 overflow-y-auto overflow-x-hidden relative scrollbar-custom pt-30"
+          style={{
+            background: 'var(--color-bg-secondary)',
+            height: '100%',
+            paddingLeft: hasOwnSidebar && !isSidebarCollapsed ? sidebarWidth : 0
+          }}
+        >
+          <RouterRenderer />
+        </main>
+      </>
+    )
+
+  }
+
+  function renderSidebar(mode: UIMode) {
+    return (
+      <>
+        <motion.div
+          className={`${mode == 'classic' && 'relative'}
+                      ${mode == 'island' && 'fixed'}
+                      flex-shrink-0 left-0 top-0 bottom-0 z-30 
+                      border-[var(--color-border)] 
+                      shadow-[var(--shadow-lg)]
+                      overflow-hidden`
+          }
+          style={{
+            width: sidebarWidth, top: mode == "island" ? '80px' : '0',
+          }}
+          initial={{ x: -sidebarWidth, opacity: 0 }}
+          exit={{ x: -sidebarWidth, opacity: 0 }}
+          animate={{
+            x: 0,
+            opacity: 1,
+          }}
+          transition={{
+            duration: SIDEBAR_TRANSITION_DURATION,
+          }}
+        >
+          <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} footer={sidebarFooter} />
+          <div
+            className="absolute right-0 top-0 bottom-0 w-1 
+                              cursor-col-resize hover:bg-[var(--color-primary)] 
+                              hover:opacity-50 transition-opacity z-10"
+            onMouseDown={handleSidebarResizeMouseDown}
+          />
+        </motion.div>
+      </>
+    )
+  }
+
+
+  // TODO: 重构并且实现组件式多态, 例：
+  // const LayoutComponents = {
+  //   island: IslandLayout,
+  //   classic: ClassicLayout,
+  // };
+  // const CurrentLayout = LayoutComponents[mode];
+  // return <CurrentLayout {...commonProps} />;
+
+  /**
+   * ```
+   * renderPage()
+   * ├─ if (island)
+   * │  ├─ renderHead()
+   * │  └─ renderBody()
+   * │     ├─ renderSidebar()
+   * │     └─ renderMain()
+   * └─ else (classic)
+   *   ├─ renderHead()
+   *   └─ renderBody()
+   *       ├─ renderSidebar()
+   *       └─ renderMain()
+   * ```
+   */
+  function renderPage() {
+    return (
+      <>
+        {uiMode === 'island' ? (
+          <>
+            {renderHead(uiMode)}
+            {/* //外层动画容器 */}
+            <AnimatePresence mode='wait'>
+              <motion.div
+                className='bg-[var(--color-bg-secondary)]'
+                style={{ width: 'auto', height: '100%', marginTop: '80px' }}
+                exit={{ x: -sidebarWidth, opacity: 0 }}
+                transition={{
+                  duration: SIDEBAR_TRANSITION_DURATION,
+                }}
+              >
                 <div
                   className="flex flex-1 overflow-hidden"
                   style={{ height: '100%', }}
                 >
-
-                  {/* 侧边栏容器 */}
-                  {!isNavigating && !isSidebarCollapsed ? (
-                    <motion.div
-                      className="flex-shrink-0 fixed left-0 top-0 bottom-0 z-30 
-                        border-[var(--color-border)] 
-                        shadow-[var(--shadow-lg)] 
-                        overflow-hidden"
-                      style={{
-                        width: sidebarWidth, top: '80px',
-                      }}
-                      initial={{ x: -sidebarWidth, opacity: 0 }}
-                      exit={{ x: -sidebarWidth, opacity: 0 }}
-                      animate={{
-                        x: 0,
-                        opacity: 1,
-                      }}
-                      transition={{
-                        duration: SIDEBAR_TRANSITION_DURATION,
-                      }}
-                    >
-                      <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} footer={sidebarFooter} />
-                      <div
-                        className="absolute right-0 top-0 bottom-0 w-1 
-                            cursor-col-resize hover:bg-[var(--color-primary)] 
-                            hover:opacity-50 transition-opacity z-10"
-                        onMouseDown={handleMouseDown}
-                      />
-                    </motion.div>
-                  ) : null}
-
-                  <main
-                    className="flex-1 overflow-y-auto overflow-x-hidden relative scrollbar-custom"
-                    style={{ background: 'var(--color-bg-secondary)', paddingLeft: sidebarWidth }}
-                  >
-                    <RouterRenderer />
-                  </main>
-
+                  {hasOwnSidebar && !isSidebarCollapsed && (
+                    <>
+                      {/* 有独立侧边栏的页面：显示侧边栏 + 内容 */}
+                      {/* 侧边栏容器 */}
+                      <AnimatePresence>
+                        {!isNavigating && !isSidebarCollapsed && (
+                          renderSidebar(uiMode)
+                        )}
+                      </AnimatePresence>
+                    </>
+                  )}
+                  {renderMain()}
                 </div>
-              ) : (
-                // 普通页面：只显示内容区
-                <main
-                  className="flex-1 overflow-y-auto overflow-x-hidden relative scrollbar-custom pt-30"
-                  style={{ background: 'var(--color-bg-secondary)', height: '100%' }}
-                >
-                  <RouterRenderer />
-                </main>
-              )}
-            </motion.div>
-          </AnimatePresence>
-          {/* 侧边栏折叠按钮 */}
-          {collapsedToggleButton}
 
-        </>
-      ) : (
-        <>
-          {/* 经典模式 */}
-          <Header type={currentRoute.header.type === 'main' ? 'main' : 'sub'} title={currentRoute.header.title} />
-
-          <div className="flex flex-1 overflow-hidden ">
-
-            {/* 侧边栏容器 */}
-            <AnimatePresence>
-              {shouldShowSidebar && (
-                <motion.div
-                  key="sidebar"
-                  className="flex-shrink-0 relative fixed left-0 top-0 bottom-0 z-30 
-                    border-[var(--color-border)] shadow-[var(--shadow-lg)] "
-                  style={{ width: sidebarWidth }}
-                  initial={{ x: -sidebarWidth, opacity: 0 }}
-                  exit={{ x: -sidebarWidth, opacity: 0 }}
-                  animate={{
-                    x: 0,
-                    opacity: 1,
-                  }}
-                  transition={{
-                    duration: SIDEBAR_TRANSITION_DURATION,
-                    ease: 'easeInOut'
-                  }}
-                >
-                  <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} footer={sidebarFooter} />
-                  <div
-                    className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-[var(--color-primary)] hover:opacity-50 transition-opacity z-10"
-                    onMouseDown={handleMouseDown}
-                  />
-                </motion.div>
-              )}
+              </motion.div>
             </AnimatePresence>
+            {/* 侧边栏折叠按钮 */}
+            {collapsedToggleButton}
 
-            {/* 页面内容 */}
-            <main
-              className="flex-1 overflow-y-auto overflow-x-hidden relative scrollbar-custom"
-              style={{ background: 'var(--color-bg-secondary)' }}
-            >
-              <RouterRenderer />
-            </main>
-          </div>
-          {collapsedToggleButton}
-        </>
-      )}
+          </>
+        ) : (
+          <>
+            {/* classic */}
+            {renderHead(uiMode)}
+            {/* //外层动画容器 */}
+            <AnimatePresence mode='wait'>
+              <motion.div
+                className='bg-[var(--color-bg-secondary)]'
+                style={{ width: 'auto', height: '100%', }} //marginTop: '80px'
+                exit={{ x: -sidebarWidth, opacity: 0 }}
+                transition={{
+                  duration: SIDEBAR_TRANSITION_DURATION,
+                }}
+              >
+                <div
+                  className="flex flex-1 overflow-hidden"
+                  style={{ height: '100%' }}
+                >
+                  {/* 侧边栏容器 */}
+                  <AnimatePresence>
+                    {shouldShowSidebar && (
+                      renderSidebar(uiMode)
+                    )}
+                  </AnimatePresence>
+
+                  {/* 页面内容 */}
+                  {renderMain()}
+                </div>
+
+              </motion.div>
+            </AnimatePresence>
+            {collapsedToggleButton}
+          </>
+        )}
+      </>
+    )
+  }
+
+  return (
+    <div className="h-screen flex flex-col " onContextMenu={handleContextMenu}>
+      {renderPage()}
     </div >
   );
 };
