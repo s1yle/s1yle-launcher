@@ -20,7 +20,7 @@ import {
   type AppConfig,
   type InstanceConfig,
 } from '@/helper/rustInvoke';
-import { useConfigStore } from '@/stores/configStore';
+import { useConfigStore } from '@/stores/configStore'
 import { getNestedValue } from '@/utils/configUtils';
 import type {
   ConfigEvent,

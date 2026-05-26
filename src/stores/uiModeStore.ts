@@ -1,7 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type UIMode = 'island' | 'classic';
+export enum UIMode {
+  ISLAND,
+  CLASSIC
+}
 export type PageAnimationDirection = 'slide-up' | 'slide-down';
 
 export interface AnimationConfig {
@@ -23,7 +26,7 @@ interface UIModeState {
 export const useUIModeStore = create<UIModeState>()(
   persist(
     (set, get) => ({
-      mode: 'island',
+      mode: UIMode.ISLAND,
       animation: {
         enabled: true,
         direction: 'slide-up',
@@ -36,7 +39,7 @@ export const useUIModeStore = create<UIModeState>()(
       // 灵动岛 / 经典模式切换
       toggleMode: () => {
         const { mode } = get();
-        set({ mode: mode === 'island' ? 'classic' : 'island' });
+        set({ mode: mode === UIMode.ISLAND ? UIMode.CLASSIC : UIMode.ISLAND });
       },
 
       setAnimation: (animation) => {

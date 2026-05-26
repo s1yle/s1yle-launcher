@@ -103,7 +103,10 @@ const ConfirmPopup: React.FC<ConfirmPopupProps> = ({
             type="button"
             onClick={handleCancel}
             disabled={disableCancel}
-            className={`px-4 py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${cancelTypeClasses[cancelType]} ${cancelClassName}`}
+            className={`px-4 py-2 rounded-md transition-colors 
+              disabled:opacity-50 disabled:cursor-not-allowed 
+              cursor-pointer ${cancelTypeClasses[cancelType]} ${cancelClassName}`
+            }
             style={{ 
               backgroundColor: 'var(--color-surface-hover)',
               color: 'var(--color-text-secondary)',
@@ -123,7 +126,10 @@ const ConfirmPopup: React.FC<ConfirmPopupProps> = ({
             type="button"
             onClick={handleConfirm}
             disabled={disableConfirm || loading}
-            className={`px-4 py-2 rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer ${confirmTypeClasses[confirmType]} ${confirmClassName}`}
+            className={`px-4 py-2 rounded-md transition-all disabled:opacity-50 
+              disabled:cursor-not-allowed 
+              flex items-center gap-2 cursor-pointer 
+              ${confirmTypeClasses[confirmType]} ${confirmClassName}`}
             style={{ 
               backgroundColor: confirmBgClasses[confirmType],
             }}

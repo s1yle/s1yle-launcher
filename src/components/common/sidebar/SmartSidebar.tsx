@@ -24,23 +24,10 @@ export interface SmartSidebarProps {
 
 const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: SmartSidebarProps) => {
   const location = useLocation();
-  const navigate = useNavigate();
   const { t } = useTranslation();
   const groups = getSidebarGroups();
   const selectedFolderId = useInstanceStore(s => s.selectedFolderId);
 
-  const getCurrentSidebarGroup = (): 'account' | 'game' | 'common' | 'none' | 'all' => {
-    if (showAllGroups) return 'all';
-    const currentRoute = routes.find(route => route.path === location.pathname);
-    if (currentRoute && currentRoute.sidebarGroup) {
-      return currentRoute.sidebarGroup;
-    }
-    if (location.pathname.startsWith('/account')) return 'account';
-    if (location.pathname.startsWith('/download')) return 'game';
-    if (location.pathname.startsWith('/instance-list')) return 'game';
-    if (location.pathname.startsWith('/instance-manage')) return 'game';
-    return 'none';
-  };
 
   const handleItemClick = (item: SidebarMenuItem) => {
     logger.info(`菜单点击: type=${item.type} path=${item.path}`);
@@ -77,8 +64,6 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: Sm
   const hasChildrenItems = (item: SidebarMenuItem): boolean => {
     return !!(item.children && item.children.length > 0);
   };
-
-  const currentGroup = getCurrentSidebarGroup();
 
   // 判断当前是否在 instance-manage 页面（支持动态参数）
   const isInstanceManagePage = location.pathname.startsWith('/instance-manage/');
@@ -269,7 +254,6 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: Sm
   return (
     <BaseSidebarLayout footer={footer} header={header}>
       <AnimatePresence mode="wait">
-        {currentGroup === 'all' && (
           <motion.div
             key="sidebar-all"
             className="flex flex-col"
@@ -300,77 +284,6 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: Sm
               hasChildrenItems={hasChildrenItems}
             />
           </motion.div>
-        )}
-
-        {currentGroup === 'account' && (
-          <motion.div
-            key="sidebar-account"
-            className="flex flex-col"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 10 }}
-            transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-          >
-            <AccountSidebarContent
-              items={groups.account}
-              onMenuClick={handleItemClick}
-              isActive={isActive}
-              isParentActive={isParentOfActive}
-              hasChildrenItems={hasChildrenItems}
-            />
-          </motion.div>
-        )}
-
-        {currentGroup === 'game' && (
-          <motion.div
-            key="sidebar-game"
-            className="flex flex-col"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 10 }}
-            transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-          >
-            <GameSidebarContent
-              items={groups.game}
-              onMenuClick={handleItemClick}
-              isActive={isActive}
-              isParentActive={isParentOfActive}
-              hasChildrenItems={hasChildrenItems}
-            />
-          </motion.div>
-        )}
-
-        {currentGroup === 'common' && (
-          <motion.div
-            key="sidebar-common"
-            className="flex flex-col"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 10 }}
-            transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-          >
-            <CommonSidebarContent
-              items={groups.common}
-              onMenuClick={handleItemClick}
-              isActive={isActive}
-              isParentActive={isParentOfActive}
-              hasChildrenItems={hasChildrenItems}
-            />
-          </motion.div>
-        )}
-
-        {currentGroup === 'none' && (
-          <motion.div
-            key="sidebar-none"
-            className="text-center py-8"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 10 }}
-            transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-          >
-            <p className="text-text-tertiary text-sm">{t('sidebar.noSidebar', '当前页面无侧边栏')}</p>
-          </motion.div>
-        )}
       </AnimatePresence>
     </BaseSidebarLayout>
   );

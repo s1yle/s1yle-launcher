@@ -1,6 +1,7 @@
 import React, { useEffect, useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Overlay } from './common';
 
 export interface PopupProps {
   isOpen: boolean;
@@ -24,7 +25,7 @@ export interface PopupProps {
   ariaDescribedby?: string;
 }
 
-const Popup =({
+const Popup = ({
   isOpen,
   onClose,
   title,
@@ -39,7 +40,7 @@ const Popup =({
   className = '',
   overlayClassName = '',
   contentClassName = '',
-  animation = 'fade',
+  animation = 'slide',
   animationDuration = 200,
   ariaLabel,
   ariaLabelledby,
@@ -137,78 +138,72 @@ const Popup =({
     <AnimatePresence>
       {shouldRender && (
         <>
-          <motion.div
-            key="popup-backdrop"
-            className="fixed inset-0 bg-overlay backdrop-blur-sm z-49"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: durationSec * 0.8 }}
-            onClick={handleOverlayClick}
-          />
-
-          <div
-            className={`fixed inset-0 flex ${positionClasses[position]} z-50 pointer-events-none ${overlayClassName}`}
-            onClick={handleOverlayClick}
-            role="dialog"
-            aria-modal="true"
-            {...ariaProps}
-          >
-            <motion.div
-              key="popup-content"
-              className={`backdrop-blur-md w-full ${sizeClasses[size]} pointer-events-auto ${className}`}
-              style={{ 
-                backgroundColor: 'var(--color-surface-solid)',
-                border: '1px solid var(--color-border)',
-                borderRadius: '8px',
-                boxShadow: '0 12px 48px rgba(0, 0, 0, 0.25)',
-              }}
-              initial={variant.initial}
-              animate={variant.animate}
-              exit={variant.exit}
-              transition={{
-                duration: durationSec,
-                ease: [0.25, 0.1, 0.25, 1],
-              }}
-              onClick={(e) => e.stopPropagation()}
+          <Overlay active={true} zIndex={500} fixed>
+            <div
+              className={`fixed inset-0 z-51 flex ${positionClasses[position]} 
+                pointer-events-none ${overlayClassName}`
+              }
+              onClick={handleOverlayClick}
+              role="dialog"
+              aria-modal="true"
+              {...ariaProps}
             >
-              {(title || showCloseButton) && (
-                <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--color-border)' }}>
-                  {title && (
-                    <div className="text-lg font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-                      {typeof title === 'string' ? <h2>{title}</h2> : title}
-                    </div>
-                  )}
-                  {showCloseButton && (
-                    <button
-                      onClick={onClose}
-                      className="text-text-secondary hover:text-text-primary text-xl leading-none p-1.5 transition-colors rounded-md cursor-pointer"
-                      style={{ color: 'var(--color-text-secondary)' }}
-                      aria-label="关闭弹窗"
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = 'var(--color-primary-10)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }}
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
-              )}
+              <motion.div
+                key="popup-content"
+                className={`w-full ${sizeClasses[size]} pointer-events-auto ${className}`}
+                style={{
+                  backgroundColor: 'var(--color-surface-solid)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '8px',
+                }}
+                initial={variant.initial}
+                animate={variant.animate}
+                exit={variant.exit}
+                transition={{
+                  duration: durationSec,
+                  ease: [0.25, 0.1, 0.25, 1],
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {(title || showCloseButton) && (
+                  <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--color-border)' }}>
+                    {title && (
+                      <div className="text-lg font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                        {typeof title === 'string' ? <h2>{title}</h2> : title}
+                      </div>
+                    )}
+                    {showCloseButton && (
+                      <button
+                        onClick={onClose}
+                        className="text-text-secondary hover:text-text-primary text-xl leading-none p-1.5 transition-colors rounded-md cursor-pointer"
+                        style={{ color: 'var(--color-text-secondary)' }}
+                        aria-label="关闭弹窗"
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--color-primary-10)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                        }}
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                )}
 
-              <div className={`px-5 py-4 ${contentClassName}`}>
-                {children}
-              </div>
-
-              {footer && (
-                <div className="px-5 py-4 border-t" style={{ borderColor: 'var(--color-border)' }}>
-                  {footer}
+                <div className={`px-5 py-4 ${contentClassName}`}>
+                  {children}
                 </div>
-              )}
-            </motion.div>
-          </div>
+
+                {footer && (
+                  <div className="px-5 py-4" >
+                    {footer}
+                  </div>
+                )}
+              </motion.div>
+            </div>
+          </Overlay>
+
         </>
       )}
     </AnimatePresence>

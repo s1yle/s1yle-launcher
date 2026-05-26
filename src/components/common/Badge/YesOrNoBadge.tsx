@@ -32,7 +32,6 @@ const YesOrNoBadge = ({
 
     useDebugComponentStack("TEST");
     let parent = useGetParentComponentType();
-    console.warn("getParentComponentType: ", parent)
 
     const classes =
     `

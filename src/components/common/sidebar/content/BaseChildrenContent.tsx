@@ -160,7 +160,7 @@ const BaseChildrenContent = ({
         initial={{ opacity: 0, x: -8 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: index * 0.03, duration: 0.15 }}
-        className="group/item"
+        className="BaseChildrenContent group/item"
       >
         <motion.button
           onClick={(e) => {

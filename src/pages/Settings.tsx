@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useThemeStore, themePresets } from '../stores/themeStore';
-import { useUIModeStore } from '../stores/uiModeStore';
+import { UIMode, useUIModeStore } from '../stores/uiModeStore';
 import TerminalThemePreview from '../components/common/TerminalThemePreview';
 import { Toggle } from '../components/common';
 import { SettingsPanel } from '@/components/common/SettingsPanel/SettingPanel';
@@ -21,8 +21,8 @@ const Settings = () => {
       >
           {/* 条目 */}
           <Toggle
-            checked={uiMode == 'classic'}
-            onChange={(enabled) => setUIMode(enabled ? 'classic' : 'island')}
+            checked={uiMode == UIMode.CLASSIC}
+            onChange={(enabled) => setUIMode(enabled ? UIMode.CLASSIC : UIMode.ISLAND)}
             label='经典模式(classic)'
             disabled={false}
           />

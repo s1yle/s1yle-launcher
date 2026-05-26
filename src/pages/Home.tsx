@@ -3,7 +3,7 @@ import ActionButton from '../components/common/StartGameButton';
 import PlayerProfile from '../components/common/home/PlayerProfile';
 import { useInstanceStore } from '../stores/instanceStore';
 import { useUserRoleStore } from '../stores/userRoleStore';
-import { useUIModeStore } from '../stores/uiModeStore';
+import { UIMode, useUIModeStore } from '../stores/uiModeStore';
 import { useLocation } from 'react-router-dom';
 import { getCurrentAccount, type AccountInfo } from '../helper/rustInvoke';
 import { useState } from 'react';
@@ -20,7 +20,7 @@ const Home = () => {
 
   // 检测当前页面是否有独立侧边栏
   const isInstanceManagePage = location.pathname.startsWith('/instance-manage/');
-  const hasOwnSidebar = uiMode === 'island' && (
+  const hasOwnSidebar = uiMode === UIMode.ISLAND && (
     pagesWithOwnSidebar.some(path => location.pathname.startsWith(path)) || isInstanceManagePage
   );
 

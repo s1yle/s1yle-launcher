@@ -16,7 +16,7 @@ const BaseSidebarLayout = ({
 }: BaseSidebarLayoutProps) => {
   return (
     <aside
-      className="w-full h-full flex flex-col 
+      className="BaseSidebarLayout w-full h-full flex flex-col 
       bg-[var(--color-bg-tertiary)] "
     >
 
