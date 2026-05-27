@@ -1,7 +1,7 @@
 # WeCraft! Launcher - 文档使用指南
 
-> **版本**: 1.0  
-> **最后更新**: 2026-05-18
+> **版本**: 1.1  
+> **最后更新**: 2026-05-27
 
 ---
 
@@ -9,7 +9,7 @@
 
 ### 场景 1：我想了解项目架构
 
-**推荐文档**: [`docs/architecture.md`](docs/architecture.md)
+**推荐文档**: [`docs/architecture.md`](architecture.md)
 
 **阅读顺序**:
 1. §1 技术架构 - 了解整体技术栈

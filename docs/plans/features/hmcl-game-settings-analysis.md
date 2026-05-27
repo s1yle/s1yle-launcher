@@ -1,4 +1,8 @@
 # HMCL「实例管理-游戏设置」页面源码对应关系与分析
+
+> **状态**: 已实施 ✅  
+> **最后更新**: 2026-05-12
+
 结合 HMCL 官方仓库（[https://github.com/huanghongxun/HMCL](https://github.com/huanghongxun/HMCL)）的源码结构，以下精准定位该界面对应的代码模块，并从**UI布局、核心逻辑、配置存储**三层拆解实现原理。
 
 ## 一、界面整体归属（源码目录）

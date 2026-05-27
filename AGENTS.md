@@ -1,8 +1,8 @@
 # WeCraft! Launcher - 快速参考指南
 
-> **最后更新**: 2026-05-18  
-> **项目版本**: 0.2.0  
-> **最新更新**: UI 全面重构（灵动岛导航、双角色系统、服主后台）
+> **最后更新**: 2026-05-27  
+> **项目版本**: 0.1.0-alpha.1  
+> **最新更新**: 文档维护更新（路由、Store、组件、API 同步）
 
 ---
 
@@ -71,28 +71,53 @@ WeCraft! Launcher 是一个现代化的 Minecraft 启动器，采用 Tauri 2 + R
 src/
 ├── components/               # React 组件
 │   ├── common/              # 通用组件
+│   │   ├── Badge/           # 徽章组件
+│   │   ├── BottomBar/       # 底部栏
+│   │   ├── ContextStack/    # 上下文栈
+│   │   ├── Instance/        # 实例相关组件
+│   │   ├── Loading/         # 加载组件
+│   │   ├── SettingsPanel/   # 设置面板
+│   │   └── Version/         # 版本相关组件
 │   ├── navigation/          # 导航组件（灵动岛）
 │   ├── home/                # 主页组件
 │   ├── header/              # 头部组件
 │   ├── sidebar/             # 侧边栏组件
-│   └── popup/               # 弹窗组件
+│   ├── popup/               # 弹窗组件
+│   └── settings/            # 设置组件
 ├── pages/                    # 页面组件
 │   ├── Home.tsx
 │   ├── Settings.tsx
-│   └── admin/               # 服主后台
+│   ├── AccountList/          # 账户页面
+│   ├── Download/             # 下载页面
+│   ├── Instance/             # 实例页面
+│   │   └── InstanceSettings/ # 实例设置子页面
+│   ├── Feedback/             # 反馈页面
+│   └── admin/                # 服主后台
 ├── stores/                   # Zustand 状态管理
 │   ├── userRoleStore.ts     # 角色状态
 │   ├── uiModeStore.ts       # UI 模式
+│   ├── layoutStore.ts       # 布局状态
+│   ├── appStore.ts          # 应用全局状态
+│   ├── configStore.ts       # 配置状态
 │   └── ...
 ├── config/                   # 配置管理
 │   ├── index.ts             # 统一配置入口
+│   ├── types.ts             # 配置类型定义
 │   └── navigationConfig.ts  # 导航配置
 ├── router/                   # 路由系统
-│   └── config.tsx           # 路由配置
+│   ├── config.tsx           # 路由配置
+│   └── routes.tsx           # 路由定义
 ├── helper/                   # 辅助工具
 │   ├── rustInvoke.ts        # Rust API 调用
-│   └── logger.ts            # 日志工具
-└── main.tsx                  # 入口文件
+│   ├── logger.ts            # 日志工具
+│   └── i18n.ts              # 国际化
+├── hooks/                    # 自定义 Hooks
+├── utils/                    # 工具函数
+├── styles/                   # 样式文件
+│   └── themes/              # 主题 CSS
+├── types/                    # TypeScript 类型
+├── main.tsx                  # 入口文件
+└── App.tsx                   # 主应用组件
 ```
 
 **详细目录结构**: 见 [`docs/architecture.md`](docs/architecture.md) §2
@@ -103,14 +128,23 @@ src/
 
 ```
 /                              # 主页（玩家/服主个人中心）
-/account                       # 账户列表
+/account                       # 账户列表（含侧边栏）
 /account/microsoft             # 微软账号
 /account/offline               # 离线账号
-/instance-manage/:instanceId   # 实例管理（需要参数）
+/account/thirdparty            # 第三方账号
+/instance-manage/:instanceId   # 实例管理（自动跳转子路由）
+/instance-manage/:instanceId/game-settings    # 游戏设置
+/instance-manage/:instanceId/auto-install     # 自动安装
+/instance-manage/:instanceId/mods             # 模组管理
+/instance-manage/:instanceId/resource-packs   # 材质包
+/instance-manage/:instanceId/worlds           # 世界管理
 /instance-list                 # 游戏列表
-/download                      # 下载
+/download                      # 下载（自动跳转到 /download/game）
 /download/game                 # 游戏下载
-/settings                      # 设置
+/download/game/:versionId      # 版本安装（全屏模式）
+/download/modpack              # 整合包下载
+/settings                      # 设置（自动跳转子路由）
+/settings/appearance           # 外观设置
 /hint                          # 启动器说明
 /admin/servers                 # 服主后台 - 服务器管理
 /admin/analytics               # 服主后台 - 数据看板
@@ -118,7 +152,6 @@ src/
 ```
 
 **已移除的页面**:
-- ~~`/game-settings`~~ - 全局游戏设置
 - ~~`/multiplayer`~~ - 多人联机
 - ~~`/feedback`~~ - 反馈
 
@@ -132,12 +165,15 @@ src/
 
 | Store | 文件 | 用途 |
 |-------|------|------|
-| `userRoleStore` | `src/stores/userRoleStore.ts` | 用户角色（玩家/服主） |
-| `uiModeStore` | `src/stores/uiModeStore.ts` | UI 模式（灵动岛/经典） |
-| `themeStore` | `src/stores/themeStore.ts` | 主题管理 |
-| `navStore` | `src/stores/navStore.ts` | 导航状态 |
-| `instanceStore` | `src/stores/instanceStore.ts` | 实例管理 |
-| `downloadStore` | `src/stores/downloadStore.ts` | 下载管理 |
+| `userRoleStore` | `src/stores/userRoleStore.ts` | 用户角色（玩家/服主/创作者） |
+| `uiModeStore` | `src/stores/uiModeStore.ts` | UI 模式（灵动岛/经典）、页面动画 |
+| `layoutStore` | `src/stores/layoutStore.ts` | 布局状态（侧边栏宽度、折叠） |
+| `themeStore` | `src/stores/themeStore.ts` | 主题管理（预设、强调色） |
+| `navStore` | `src/stores/navStore.ts` | 导航状态（路径、历史） |
+| `appStore` | `src/stores/appStore.ts` | 应用全局状态（系统信息、初始化） |
+| `configStore` | `src/stores/configStore.ts` | 全局配置状态（AppConfig） |
+| `instanceStore` | `src/stores/instanceStore.ts` | 实例管理（列表、文件夹、CRUD） |
+| `downloadStore` | `src/stores/downloadStore.ts` | 下载管理（版本清单、任务、部署） |
 | `accountStore` | `src/stores/accountStore.ts` | 账户管理 |
 
 **使用示例**:
@@ -171,10 +207,10 @@ const { currentRole, switchRole } = useUserRoleStore();
 import { config } from '@/config';
 
 // 读取配置
-const theme = await config.get('theme.mode');
+const theme = await config.getConfig('theme.mode');
 
 // 更新配置
-await config.set('theme.accentColor', 'blue');
+await config.setConfigValue('theme.accentColor', 'blue');
 ```
 
 **详细配置系统**: 见 [`docs/architecture.md`](docs/architecture.md) §3
@@ -200,13 +236,46 @@ await updateConfig('theme.accentColor', 'blue');
 
 ### 7.2 主要 API 命令
 
-| 命令 | 说明 | TypeScript 封装 |
-|------|------|----------------|
-| `get_config` | 获取配置 | `getConfig(key)` |
-| `update_config` | 更新配置 | `updateConfig(key, value)` |
-| `get_instances` | 获取实例列表 | `getInstances()` |
-| `get_current_account` | 获取当前账户 | `getCurrentAccount()` |
-| `open_folder` | 打开文件夹 | `openFolder(path)` |
+| 分类 | 命令 | TypeScript 封装 | 说明 |
+|------|------|----------------|------|
+| **配置** | `get_config` | `getConfig(key)` | 获取配置 |
+| | `set_config_value` | `setConfigValue(path, value)` | 设置配置值 |
+| | `get_config_value` | `getConfigValue(path)` | 获取配置值 |
+| | `reset_config` | `resetConfig()` | 重置配置 |
+| | `export_config` / `import_config` | `exportConfig()` / `importConfig()` | 导入导出配置 |
+| **路径配置** | `get_path_config` | `getPathConfig()` | 获取路径配置 |
+| | `update_path_config` | `updatePathConfig(config)` | 更新路径配置 |
+| **实例** | `scan_instances` | `scanInstances()` | 扫描实例 |
+| | `create_instance` | `createInstance(config)` | 创建实例 |
+| | `delete_instance` | `deleteInstance(id)` | 删除实例 |
+| | `copy_instance` | `copyInstance(id)` | 复制实例 |
+| | `rename_instance` | `renameInstance(id, name)` | 重命名实例 |
+| | `update_instance` | `updateInstance(id, data)` | 更新实例 |
+| **实例设置** | `get_instance_settings` | `getInstanceSettings(id)` | 获取实例设置 |
+| | `update_instance_settings` | `updateInstanceSettings(id, s)` | 更新实例设置 |
+| | `get_system_memory` | `getSystemMemory()` | 获取系统内存 |
+| | `select_java_path` | `selectJavaPath()` | 选择 Java 路径 |
+| **下载** | `get_version_manifest` | `getVersionManifest()` | 获取版本清单 |
+| | `download_and_deploy` | `downloadAndDeploy(config)` | 下载并部署 |
+| | `cancel_download` | `cancelDownload(taskId)` | 取消下载 |
+| | `deploy_version_to_instance` | `deployVersionToInstance(opts)` | 部署到实例 |
+| | `is_version_deployed` | `isVersionDeployed(id)` | 检查版本是否已部署 |
+| **模组加载器** | `get_fabric_versions` | `getFabricVersions()` | 获取 Fabric 版本 |
+| | `get_forge_versions` | `getForgeVersions()` | 获取 Forge 版本 |
+| | `install_with_loaders` | `installWithLoaders(config)` | 安装含加载器 |
+| **账户** | `add_account` | `invokeAddAccount()` | 添加账户 |
+| | `get_account_list` | `getAccountList()` | 获取账户列表 |
+| | `get_current_account` | `getCurrentAccount()` | 获取当前账户 |
+| | `delete_account` | `deleteAccount(uuid)` | 删除账户 |
+| | `set_current_account` | `setCurrentAccount(uuid)` | 设置当前账户 |
+| **启动** | `tauri_launch_instance` | `launchInstance(config)` | 启动实例 |
+| | `tauri_stop_instance` | `stopInstance()` | 停止实例 |
+| | `tauri_get_launch_status` | `getLaunchStatus()` | 获取启动状态 |
+| **窗口** | `save_window_position` | `saveWindowPosition(pos)` | 保存窗口位置 |
+| | `load_window_position` | `loadWindowPosition()` | 加载窗口位置 |
+| **系统** | `open_folder` | `openFolder(path)` | 打开文件夹 |
+| | `open_url` | `openUrl(url)` | 打开外部链接 |
+| | `get_system_info` | — | 获取系统信息 |
 
 **详细 API 文档**: 见 [`docs/api.md`](docs/api.md)
 
@@ -221,11 +290,19 @@ await updateConfig('theme.accentColor', 'blue');
 - `StatusBadge` - 版本类型徽章
 - `Toggle` - 开关组件
 - `EmptyState` - 空状态组件
-- `SpinnerOverlay` - 加载覆盖层
+- `Spinner` - 加载覆盖层
 - `ListItem` - 列表项组件
 - `ContextMenu` - 上下文菜单
 - `ConfirmPopup` - 确认弹窗
 - `VirtualList` - 虚拟列表
+- `IconButton` - 图标按钮
+- `NotificationProvider` - 通知提供者
+- `StartGameButton` - 启动游戏按钮
+- `VersionCard` / `VersionFilterDropdown` - 版本相关组件
+- `InstanceCard` / `InstallCard` - 实例相关组件
+- `TerminalThemePreview` - 主题预览组件
+- `Overlay` - 遮罩组件
+- `LoaderIcon` - 加载图标
 
 **使用示例**:
 ```typescript
@@ -353,7 +430,8 @@ pnpm typecheck            # TypeScript 类型检查
 ## 12. 注意事项
 
 - 前端调用 Rust 使用 `@tauri-apps/api/core` 的 `invoke` 函数
-- Rust 后端的所有命令都通过 `lib.rs` 的 `generate_handler!` 宏注册
+- Rust 后端的所有命令通过 `lib.rs` 的 `generate_handler!` 宏注册（共 49 个命令）
+- 后端命令按模块组织：`config/`、`download/`、`instance/` + 顶层文件（`account.rs`、`launch.rs`、`window.rs`、`modloader.rs`）
 - 窗口使用无边框模式，自定义标题栏需要实现拖动区域
 - 文件下载使用 `async-fetcher`，SHA1 校验使用 `sha1` crate
 - i18n 初始化在 `src/helper/i18n.ts`，已在 `App.tsx` 中导入

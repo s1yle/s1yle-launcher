@@ -1,7 +1,7 @@
 # WeCraft! Launcher - 组件文档
 
-> **版本**: 0.2.0  
-> **最后更新**: 2026-05-18
+> **版本**: 0.1.0-alpha.1  
+> **最后更新**: 2026-05-27
 
 **相关文档**:
 - 文档维护规范：[`MAINTENANCE.md`](MAINTENANCE.md) - 文档编写与更新指南
@@ -243,6 +243,50 @@ interface MaskProps {
 }
 ```
 
+### 1.21 通知提供者 (NotificationProvider)
+
+```typescript
+interface NotificationProviderProps {
+  children: React.ReactNode;           // 子组件
+}
+```
+
+**使用示例**:
+```tsx
+const { success, error, warning, info } = useNotification();
+success('操作成功', '文件已保存');
+error('操作失败', '请重试');
+```
+
+### 1.22 启动游戏按钮 (StartGameButton)
+
+```typescript
+interface StartGameButtonProps {
+  // 启动游戏主按钮
+}
+```
+
+**特性**:
+- 渐变光效扫过动画
+- Hover 上浮效果
+- 点击反馈动画
+
+---
+
+### 1.23 通用组件子目录
+
+**位置**: `src/components/common/`
+
+| 子目录 | 组件 | 说明 |
+|--------|------|------|
+| `Badge/` | 徽章组件 | 状态标签、版本类型标识 |
+| `BottomBar/` | 底部栏 | 页面底部操作栏 |
+| `ContextStack/` | 上下文栈 | 上下文状态管理组件 |
+| `Instance/` | 实例相关组件 | InstanceCard、InstallCard 等 |
+| `Loading/` | 加载组件 | SpinnerOverlay、LoaderIcon 等 |
+| `SettingsPanel/` | 设置面板 | 通用设置面板布局 |
+| `Version/` | 版本相关组件 | VersionCard、VersionFilterDropdown 等 |
+
 ---
 
 ## 2. 导航组件
@@ -361,7 +405,28 @@ interface InstanceInfoHeaderProps {
 
 ---
 
-## 7. 服主后台组件
+## 7. 设置组件
+
+**位置**: `src/components/settings/`
+
+设置页面专用组件，配合 `/settings/appearance` 路由使用。
+
+---
+
+## 8. 根级组件
+
+**位置**: `src/components/`
+
+| 组件 | 文件 | 说明 |
+|------|------|------|
+| `FloatingDownloadButton` | `FloatingDownloadButton.tsx` | 悬浮下载按钮 |
+| `Header` | `Header.tsx` | 全局头部组件 |
+| `Popup` | `Popup.tsx` | 通用弹窗容器（使用 `isOpen` 属性） |
+| `RouterRenderer` | `RouterRenderer.tsx` | 路由渲染器 |
+
+---
+
+## 9. 服主后台组件
 
 **位置**: `src/pages/admin/`
 
@@ -395,7 +460,7 @@ interface InstanceInfoHeaderProps {
 
 ---
 
-## 8. 组件设计原则
+## 10. 组件设计原则
 
 ### 8.1 单一职责原则 (SRP)
 
@@ -415,7 +480,7 @@ interface InstanceInfoHeaderProps {
 
 ---
 
-## 9. 组件使用最佳实践
+## 11. 组件使用最佳实践
 
 ### 9.1 Props 命名
 

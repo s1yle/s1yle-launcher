@@ -1,6 +1,6 @@
 # WeCraft! Launcher - 更新日志
 
-> **项目版本**: 0.2.0  
+> **项目版本**: 0.1.0-alpha.1  
 > **更新日志**: 记录所有重大重构和功能更新
 
 **相关文档**:
@@ -8,6 +8,62 @@
 - 架构设计：[`architecture.md`](architecture.md) - 技术架构、目录结构
 - 组件文档：[`components.md`](components.md) - 所有组件的详细说明
 - API 文档：[`api.md`](api.md) - 后端 API 调用指南
+
+---
+
+## 2026-05-27 - 文档维护更新
+
+### 文档与代码同步
+
+**更新概述**:
+对项目文档进行全面审查和维护，修正文档与实际代码之间的差异，确保文档准确性。
+
+**核心变更**:
+
+1. **版本号修正**
+   - 所有文档版本号从 `0.2.0` 修正为 `0.1.0-alpha.1`（与 `package.json` 和 `tauri.conf.json` 一致）
+
+2. **路由表更新**（AGENTS.md §4 + architecture.md §5）
+   - 新增 `/account/thirdparty` 第三方账号路由
+   - 新增 6 个实例管理子路由（game-settings、auto-install、mods、resource-packs、worlds）
+   - 新增 `/download/game/:versionId` 版本安装路由
+   - 新增 `/download/modpack` 整合包下载路由
+   - 新增 `/settings/appearance` 外观设置路由
+   - 修正 `/game-settings` 为实例管理子路由（非已移除页面）
+
+3. **Store 表格补全**（AGENTS.md §5 + architecture.md §4）
+   - 新增 `layoutStore`（布局状态）
+   - 新增 `appStore`（应用全局状态）
+   - 新增 `configStore`（配置状态）
+   - 更新各 Store 用途描述
+
+4. **API 命令表扩充**（AGENTS.md §7 + api.md）
+   - 从 5 个命令扩充至 40+ 个命令（按分类组织）
+   - 新增分类：路径配置、实例设置、模组加载器、启动管理、窗口管理
+   - 修正配置 API 封装名称（`config.get()` → `config.getConfig()`）
+
+5. **组件列表补全**（AGENTS.md §8 + components.md）
+   - 新增 `NotificationProvider`、`StartGameButton` 等组件
+   - 新增通用组件子目录文档（Badge、BottomBar、ContextStack 等）
+   - 新增设置组件和根级组件文档
+
+6. **目录结构更新**（AGENTS.md §3 + architecture.md §2）
+   - 前端目录：新增 common 子目录、pages 子目录、hooks/utils/styles/types 目录
+   - 后端目录：修正 `commands/` 顶层目录为模块子目录组织方式
+   - 新增 `routes.tsx` 路由定义文件
+
+**影响文档**:
+- `AGENTS.md` - 更新 §1-§12 多个章节
+- `docs/architecture.md` - 更新 §2、§3、§4、§5、§7
+- `docs/components.md` - 更新 §1、新增 §7-§8
+- `docs/api.md` - 全面重写，从 5 类 API 扩充至 10 类
+- `docs/changelog.md` - 新增本次记录
+
+**变更类型**:
+- [x] 修正错误（版本号、API 名称、目录结构）
+- [x] 新增内容（路由、Store、组件、API）
+- [ ] 修改内容（无功能性修改）
+- [ ] 删除内容（无）
 
 ---
 
