@@ -1,5 +1,5 @@
 import { useLocation, useParams } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, scale } from "framer-motion";
 import React, { createContext, useContext } from "react";
 import { routes, findRouteByPath } from "../router/config";
 import {
@@ -21,9 +21,9 @@ import {
   InstanceGameSettings
 } from '../pages';
 import { AdminServers, AdminAnalytics, AdminUpload } from '../pages/admin';
-import { useUIModeStore, type PageAnimationDirection } from "../stores/uiModeStore";
+import { useUIModeStore } from "../stores/uiModeStore";
 
-const PAGE_TRANSITION_DURATION = 0.4;
+const PAGE_TRANSITION_DURATION = 0.25;
 
 const componentMap: Record<string, React.FC> = {
   Home,
@@ -45,12 +45,6 @@ const componentMap: Record<string, React.FC> = {
   AdminServers,
   AdminAnalytics,
   AdminUpload
-};
-
-const findComponentForPath = (pathname: string): React.FC | null => {
-  const route = findRouteByPath(pathname, routes);
-  if (!route) return null;
-  return componentMap[route.componentName] || null;
 };
 
 // 手动解析路由参数
@@ -82,25 +76,41 @@ export const useRouteParams = (): Record<string, string> => {
 
   // 优先使用 context 中的参数（手动解析的）
   // 如果没有，则使用 React Router 的参数
-  return contextParams || reactRouterParams || {};
+  const params = contextParams || reactRouterParams || {};
+  
+  // 过滤掉 undefined 值，确保返回类型符合 Record<string, string>
+  return Object.fromEntries(
+    Object.entries(params).filter(([_, value]) => value !== undefined)
+  ) as Record<string, string>;
 };
 
-const getAnimationValues = (direction: PageAnimationDirection, enabled: boolean) => {
+// TODO: 支持更多动画
+// TODO: 创建全局动画管理器
+const getAnimationValues = (enabled: boolean) => {
   if (!enabled) {
     return {
-      initial: { opacity: 0 },
-      animate: { opacity: 1 },
-      exit: { opacity: 0 },
+      initial: {},
+      animate: {},
+      exit: {},
     };
   }
 
-  const yEnter = direction === 'slide-up' ? 30 : -30;
-  const yExit = direction === 'slide-down' ? -30 : 30;
-
   return {
-    initial: { opacity: 0, y: yEnter },
-    animate: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: yExit },
+    initial: {
+      opacity: 0,
+      scale: 0.93,
+      // x: 100
+    },
+    animate: {
+      opacity: 1,
+      scale: 1,
+      // x: 0,
+    },
+    exit: {
+      opacity: 0,
+      // scale: 0.98,
+      // x: 100
+    },
   };
 };
 
@@ -116,7 +126,7 @@ const RouterRenderer = () => {
   if (!Component) return null;
 
   const params = parseRouteParams(route.path, currentPathname);
-  const animationValues = getAnimationValues(animation.direction, animation.enabled);
+  const animationValues = getAnimationValues(animation.enabled);
 
   return (
     <div className="h-full relative">

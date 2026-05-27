@@ -1,17 +1,19 @@
-import { useTranslation } from 'react-i18next';
-import { useThemeStore, themePresets } from '../stores/themeStore';
-import { UIMode, useUIModeStore } from '../stores/uiModeStore';
+import { useThemeStore } from '../stores/themeStore';
+import { AnimationConfig, UIMode, useUIModeStore } from '../stores/uiModeStore';
 import TerminalThemePreview from '../components/common/TerminalThemePreview';
-import { Toggle } from '../components/common';
+import { Toggle, VersionFilterDropdown } from '../components/common';
 import { SettingsPanel } from '@/components/common/SettingsPanel/SettingPanel';
 import { useState } from 'react';
 
 const Settings = () => {
-  const { t } = useTranslation();
   const { accentColor, setAccentColor, applyPreset, } = useThemeStore();
 
   const { mode: uiMode, setMode: setUIMode, animation, setAnimation } = useUIModeStore();
   const [isCompat, setIsCompat] = useState(true)
+
+  const handleAnimationSetting = () => {
+    setAnimation({enabled: !animation.enabled});
+  }
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
@@ -19,14 +21,23 @@ const Settings = () => {
       <SettingsPanel
         label={"布局"}
       >
-          {/* 条目 */}
-          <Toggle
-            checked={uiMode == UIMode.CLASSIC}
-            onChange={(enabled) => setUIMode(enabled ? UIMode.CLASSIC : UIMode.ISLAND)}
-            label='经典模式(classic)'
-            disabled={false}
-          />
+        {/* 条目 */}
+        <Toggle
+          checked={uiMode == UIMode.CLASSIC}
+          onChange={(enabled) => setUIMode(enabled ? UIMode.CLASSIC : UIMode.ISLAND)}
+          label='经典模式(classic)'
+          disabled={false}
+        />
+
+        <Toggle
+          checked={animation.enabled}
+          onChange={handleAnimationSetting}
+          label='开启页面动画'
+          disabled={false}
+        />
       </SettingsPanel>
+
+      {/* <VersionFilterDropdown className='pb-3' value='all' onChange={() => { }} versions={[{ id: '1', name: '1', type_: '1', release_time: '1', url: '1' }]}></VersionFilterDropdown> */}
 
       {/* 主题设置 */}
       <SettingsPanel

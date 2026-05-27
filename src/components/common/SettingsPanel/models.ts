@@ -1,5 +1,6 @@
 import { TargetAndTransition, VariantLabels } from "framer-motion"
 import React from "react";
+import { DropDownProps } from "../DropDown";
 
 export interface SettingsPanelProps {
     label: string;
@@ -11,6 +12,7 @@ export interface SettingsPanelProps {
     animate?: boolean | TargetAndTransition | VariantLabels;
     onClick?: React.MouseEventHandler<HTMLDivElement>;
     contentClassName?: string;
+    overflowHidden?: boolean;
 }
 
 interface SettingsPanelItemContextValue {
@@ -40,4 +42,8 @@ export interface SubSettingsPanelItemProps {
     className?: string;
     noPadding?: boolean;
     gap?: string;
+}
+
+export interface SettingsPanelDropDownProps extends DropDownProps {
+    label: string | '';
 }

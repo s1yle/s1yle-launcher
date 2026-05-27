@@ -38,7 +38,7 @@ const TerminalThemePreview = ({
                 onClick={() => handleSelect(preset)}
                 className={`relative p-3 rounded-(--radius-sm) 
                   cursor-pointer hover:scale-1.2
-                  ${activeTheme.id == preset.id && '-translate-y-2'}
+                  ${activeTheme.id == preset.id && '-translate-y-1'}
                   hover:shadow-(--shadow-md)`
                 }
                 style={{

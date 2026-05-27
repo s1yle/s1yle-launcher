@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { UIMode } from '../stores/uiModeStore'
 import { SmartSidebar } from '../components/common'
 import { useCallback, useEffect, useRef, useState } from 'react';
-import useLayoutStore from '@/stores/LayoutStore';
+import useLayoutStore from '@/stores/layoutStore';
 
 export interface AppSidebarProps {
     mode: UIMode;
@@ -13,7 +13,6 @@ export interface AppSidebarProps {
 
 const SIDEBAR_MIN_WIDTH = 180;
 const SIDEBAR_MAX_WIDTH = 400;
-const SIDEBAR_DEFAULT_WIDTH = 220;
 
 const AppSidebar = ({
     mode = UIMode.ISLAND,
@@ -23,7 +22,8 @@ const AppSidebar = ({
 }: AppSidebarProps) => {
 
     // 获取 sidebar 的宽度
-    const { sidebarWidth, setSidebarWidth } = useLayoutStore();
+    const sidebarWidth = useLayoutStore((s) => s.sidebarWidth);
+    const setSidebarWidth = useLayoutStore((s) => s.setSidebarWidth);
 
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
@@ -74,11 +74,19 @@ const AppSidebar = ({
                     shadow-[var(--shadow-lg)]
                     overflow-hidden`
                 }
+                // TODO: 加入 AnimationConfig 状态控制, enabled 时动画开启否则关闭
                 style={{
-                    width: sidebarWidth, top: mode == UIMode.ISLAND ? '80px' : '0',
+                    width: sidebarWidth,
+                    top: mode == UIMode.ISLAND ? '80px' : '0',
                 }}
-                initial={{ x: -sidebarWidth, opacity: 0 }}
-                exit={{ x: -sidebarWidth, opacity: 0 }}
+                initial={{
+                    x: -sidebarWidth,
+                    opacity: 0
+                }}
+                exit={{
+                    x: -sidebarWidth,
+                    opacity: 0
+                }}
                 animate={{
                     x: 0,
                     opacity: 1,

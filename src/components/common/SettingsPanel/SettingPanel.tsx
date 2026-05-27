@@ -1,30 +1,42 @@
 import { AnimatePresence, motion, } from "framer-motion"
 import React, { useCallback, useEffect, useState } from "react"
 import Toggle from "../Toggle";
-import { SettingsPanelItemContext, SettingsPanelItemProps, SettingsPanelProps, SubSettingsPanelItemProps } from "./models";
+import { SettingsPanelDropDownProps, SettingsPanelItemContext, SettingsPanelItemProps, SettingsPanelProps, SubSettingsPanelItemProps } from "./models";
 import Spinner from "../Loading/Spinner";
 import Overlay from "../Loading/Overlay";
+import DropDown from "../DropDown";
 
 
-
-// 根组件
+/**
+ * ## SettingsPanel 根组件
+ * 
+ * @param label 大标题
+ * @param className 最外层容器 - 自定义css样式
+ * @param gap children 容器的 gap 样式
+ * @param overflowHidden #### 控制最外层容器的溢出显示状态
+ * - true -> overflow-hidden + rounded-(--radius-sm)
+ * - false -> rounded-t-(--radius-sm)
+ */
 const SettingsPanelRoot = ({
     label,
     children,
     className,
     gap = 20,
+    overflowHidden = true,
     ...rest
 }: SettingsPanelProps) => {
     return (
         <AnimatePresence>
             <motion.div
-                className={`bg-(--color-surface) rounded-(--radius-sm) w-full overflow-hidden mb-10 ${className}`}
+                className={`bg-(--color-surface)  w-full mb-10 
+                    ${overflowHidden ? 'overflow-hidden rounded-(--radius-sm)' : 'rounded-t-(--radius-sm)'} 
+                    ${className}`}
                 {...rest}
             >
                 {/* title */}
                 <div
-                    className="px-4 py-2.5 border-b 
-                hover:border-(--color-border-hover) border-(--color-border)"
+                    className="px-4 py-2.5 border-b q
+                        hover:border-(--color-border-hover) border-(--color-border)"
                 >
                     <span className="text-(--color-text-primary) text-base font-medium">
                         {label}
@@ -41,7 +53,10 @@ const SettingsPanelRoot = ({
 };
 
 
-// 条目包装器(负责单个条目的内边距)
+/**
+ * ## 条目包装器(负责单个条目的内边距)
+ * 
+ */
 const SettingsPanelItem = ({
     children,
     className,
@@ -80,12 +95,12 @@ const SettingsPanelItem = ({
             <div className="item-ref" ref={itemRef}>
                 <Overlay active={isLoading && shouldLoad}>
 
-                    <Spinner visible={isLoading && shouldLoad}>
+                    <Spinner active={isLoading && shouldLoad}>
                         <div
                             className={`gap
                                 bg-(--color-surface)
                                 ${hoverable && 'hover:bg-(--color-surface-hover)'}
-                                ${noPadding ? "" : "px-5 py-1"}
+                                ${noPadding ? "" : "px-3 py-2"}
                                 ${className || ""}
                             `}
                             onMouseEnter={() => setHovered(true)}
@@ -103,7 +118,11 @@ const SettingsPanelItem = ({
 
 
 
-// 子组件
+/**
+ * ## 子组件(用于嵌套)
+ * - 推荐的做法：将其作为 SettingsPanelItem / SubSettingsPanelItemProps 的子集
+ * - 不推荐的做法：独立使用 SubSettingsPanelItemProps
+ */
 const SubSettingsPanelItem = ({
     children,
     label = "未知",
@@ -150,10 +169,51 @@ const SubSettingsPanelItem = ({
     );
 };
 
+/**
+ * ## 设置面板定制 Dropdown,  
+ * - 该接口继承自 DropDownProps
+ */
+const SettingsPanelDropDown = ({
+    options,
+    label = '未知',
+    onSelect,
+    borderRadius,
+    displayNumber,
+}: SettingsPanelDropDownProps) => {
+
+    return (
+        <AnimatePresence>
+            <motion.div
+                className={`
+                    flex justify-between items-center
+                `}
+            >
+                <motion.span
+                    className={`
+                        font-light text-(--color-text-secondary) text-sm
+                        block
+                    `}
+                >
+                    {label}
+                </motion.span>
+
+                <DropDown
+                    options={options}
+                    onSelect={onSelect}
+                    borderRadius={borderRadius}
+                    displayNumber={displayNumber}
+                    buttonWidth="w-xs"
+                />
+            </motion.div>
+        </AnimatePresence>
+    )
+}
+
 // TODO: 为后续可能需要用到的组件（如Toggle）实现条目包装器
 // 复合组件export
 export const SettingsPanel = Object.assign(SettingsPanelRoot, {
     Item: SettingsPanelItem,
     Sub: SubSettingsPanelItem,
     Toggle: Toggle,
+    DropDown: SettingsPanelDropDown,
 });

@@ -5,11 +5,10 @@ export enum UIMode {
   ISLAND,
   CLASSIC
 }
-export type PageAnimationDirection = 'slide-up' | 'slide-down';
 
+// TODO: 支持更细粒度的动画状态控制
 export interface AnimationConfig {
   enabled: boolean;
-  direction: PageAnimationDirection;
 }
 
 interface UIModeState {
@@ -21,7 +20,7 @@ interface UIModeState {
 }
 
 /**
- * ## 用于设置灵动岛、经典模式、动画状态(slide-up / slide-down)
+ * ## 用于设置灵动岛、经典模式、动画状态(enabled)
  */
 export const useUIModeStore = create<UIModeState>()(
   persist(
@@ -29,7 +28,6 @@ export const useUIModeStore = create<UIModeState>()(
       mode: UIMode.ISLAND,
       animation: {
         enabled: true,
-        direction: 'slide-up',
       },
 
       setMode: (mode) => {

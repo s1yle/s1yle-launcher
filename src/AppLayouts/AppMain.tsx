@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import RouterRenderer from "../components/RouterRenderer"
-import useLayoutStore, { PAGE_TRANSITION_DURATION } from "@/stores/LayoutStore";
+import useLayoutStore, { PAGE_TRANSITION_DURATION, SIDEBAR_TRANSITION_DURATION } from "@/stores/layoutStore";
+import { debounce } from "@/utils/configUtils";
 
 export interface AppMainProps {
     hasOwnSidebar: boolean;
@@ -13,18 +14,28 @@ const AppMain = ({
 }: AppMainProps) => {
 
     const width = useLayoutStore((s) => s.sidebarWidth)
-    let [appliedWidth, setAppliedWidth] = useState(width);
+    const appliedWidthRef = useRef(width);
+    const [appliedWidth, setAppliedWidth] = useState(width);
 
-    // TODO: 加入 isResizing 标志位优化 useEffect 性能:
-    // - 当isResizing === true（正在拖拽）：实时应用宽度
-    // - 当isResizing === false（普通状态）：延迟应用宽度
+    // 使用防抖函数优化侧边栏宽度变化时的响应
+    // 当宽度频繁变化时（如拖拽调整），避免频繁触发状态更新
+    const debouncedSetWidth = useCallback(
+        debounce((newWidth: number) => {
+            appliedWidthRef.current = newWidth;
+            setAppliedWidth(newWidth);
+        }, PAGE_TRANSITION_DURATION * 1000),
+        []
+    );
+
     useEffect(() => {
-        const timer = setTimeout(() => {
+        // 如果宽度发生变化，立即更新 ref 和 state
+        if (appliedWidthRef.current !== width) {
+            appliedWidthRef.current = width;
             setAppliedWidth(width);
-        }, PAGE_TRANSITION_DURATION * 10);
-
-        return () => clearTimeout(timer);
-    }, [width]);
+        }
+        // 同时启动防抖以处理连续变化
+        debouncedSetWidth(width);
+    }, [width, debouncedSetWidth]);
 
     const paddingLeft = hasOwnSidebar && !isSidebarCollapsed ? appliedWidth : 0;
 
@@ -36,6 +47,7 @@ const AppMain = ({
                     background: 'var(--color-bg-secondary)',
                     height: '100%',
                     paddingLeft,
+                    transition: `padding-left ${SIDEBAR_TRANSITION_DURATION}s ease-in-out`,
                 }}
             >
                 <RouterRenderer />

@@ -7,7 +7,7 @@ import { ComponentStackLayer, useIsInsideComponent } from '../ContextStack/Conte
 const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(inputs));
 
 export interface SpinnerProps {
-  visible: boolean;
+  active: boolean;
   loading?: boolean;
   children?: ReactNode;
   message?: string;
@@ -20,10 +20,10 @@ export interface SpinnerProps {
 
 /**
  * ## 转圈加载动画
- * @param visible 是否可见 
+ * @param active 是否可见 
  */
 const Spinner= ({
-  visible,
+  active,
   loading = true,
   children,
   message,
@@ -33,7 +33,7 @@ const Spinner= ({
   cancelText = '取消',
   className = ' ',
 }: SpinnerProps) => {
-  if (!visible) return <>{children}</>;
+  if (!active) return <>{children}</>;
   
   const isInsideSelf = useIsInsideComponent("SpinnerOverlay");
 

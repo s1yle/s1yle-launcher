@@ -95,12 +95,12 @@ const VersionFilterDropdownInner = ({
 
       {isOpen && (
         <div 
-          className="absolute top-full mt-1 left-0 z-[100] min-w-full border rounded-lg shadow-lg overflow-hidden"
+          className="absolute top-full mt-1 left-0 z-[100] 
+            min-w-full border rounded-lg
+            shadow-lg"
           style={{ 
             backgroundColor: 'var(--color-surface-solid)', 
             borderColor: 'var(--color-border)',
-            borderWidth: '1px',
-            borderStyle: 'solid'
           }}
         >
           {options.map(option => (
@@ -116,7 +116,9 @@ const VersionFilterDropdownInner = ({
               <span>{option.label}</span>
               <div className="flex items-center gap-2">
                 {option.count !== undefined && (
-                  <span style={{ color: 'var(--color-text-tertiary)' }} className="text-xs">{option.count}</span>
+                  <span style={{ color: 'var(--color-text-tertiary)' }} className="text-xs">
+                    {option.count}
+                  </span>
                 )}
                 {value === option.value && (
                   <Check className="w-4 h-4" style={{ color: 'var(--color-primary)' }} />
