@@ -23,7 +23,7 @@ import {
 import { AdminServers, AdminAnalytics, AdminUpload } from '../pages/admin';
 import { useUIModeStore } from "../stores/uiModeStore";
 
-const PAGE_TRANSITION_DURATION = 0.25;
+const PAGE_TRANSITION_DURATION = 0.35;
 
 const componentMap: Record<string, React.FC> = {
   Home,
@@ -97,17 +97,17 @@ const getAnimationValues = (enabled: boolean) => {
 
   return {
     initial: {
-      opacity: 0,
-      scale: 0.93,
+      // opacity: 0,
+      scale: 0.95,
       // x: 100
     },
     animate: {
-      opacity: 1,
+      // opacity: 1,
       scale: 1,
       // x: 0,
     },
     exit: {
-      opacity: 0,
+      // opacity: 0,
       // scale: 0.98,
       // x: 100
     },
@@ -139,7 +139,7 @@ const RouterRenderer = () => {
           exit={animationValues.exit}
           transition={{
             duration: PAGE_TRANSITION_DURATION,
-            ease: [0.25, 0.1, 0.25, 1],
+            type:'spring'
           }}
         >
           <RouteParamsContext.Provider value={params}>

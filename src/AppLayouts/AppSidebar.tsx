@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { UIMode } from '../stores/uiModeStore'
 import { SmartSidebar } from '../components/common'
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, } from 'react';
 import useLayoutStore from '@/stores/layoutStore';
 
 export interface AppSidebarProps {
@@ -65,7 +65,9 @@ const AppSidebar = ({
 
     return (
         <>
+            {/* TODO: 解决 transition 开始时，sidebar 内容已经变换的小动画 bug */}
             <motion.div
+                // TODO: header 以及该组件的边框阴影优化，仅右边框具备 box-shadow
                 className={`AppSidebar
                     ${mode == UIMode.CLASSIC && 'relative'}
                     ${mode == UIMode.ISLAND && 'fixed'}
@@ -75,6 +77,7 @@ const AppSidebar = ({
                     overflow-hidden`
                 }
                 // TODO: 加入 AnimationConfig 状态控制, enabled 时动画开启否则关闭
+                // TODO: 实现更多、更细粒度的动画
                 style={{
                     width: sidebarWidth,
                     top: mode == UIMode.ISLAND ? '80px' : '0',
@@ -84,7 +87,7 @@ const AppSidebar = ({
                     opacity: 0
                 }}
                 exit={{
-                    x: -sidebarWidth,
+                    x: sidebarWidth,
                     opacity: 0
                 }}
                 animate={{
@@ -93,6 +96,7 @@ const AppSidebar = ({
                 }}
                 transition={{
                     duration: transitionDuration,
+                    // duration: 1,
                 }}
             >
                 <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} footer={footer} />

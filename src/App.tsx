@@ -1,3 +1,4 @@
+// TODO: 检查并更新 package.json 中的旧包
 import { useEffect, useRef, useCallback } from 'react';
 import { BrowserRouter as Router, useLocation, useNavigate } from 'react-router-dom';
 import { routes, findRouteByPath, LayoutMode, pagesWithOwnSidebar } from './router/config';
@@ -17,7 +18,7 @@ import IslandLayout from './AppLayouts/IslandLayout';
 import AppHeader from './AppLayouts/AppHeader';
 import AppSidebar from './AppLayouts/AppSidebar';
 import AppMain from './AppLayouts/AppMain';
-import useLayoutStore, {PAGE_TRANSITION_DURATION, SIDEBAR_TRANSITION_DURATION} from './stores/LayoutStore';
+import useLayoutStore, {PAGE_TRANSITION_DURATION, SIDEBAR_TRANSITION_DURATION} from './stores/layoutStore';
 
 const LAYOUT_MODES = {
   [UIMode.CLASSIC]: ClassicLayout,
