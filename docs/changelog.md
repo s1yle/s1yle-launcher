@@ -23,7 +23,7 @@
 1. **版本号修正**
    - 所有文档版本号从 `0.2.0` 修正为 `0.1.0-alpha.1`（与 `package.json` 和 `tauri.conf.json` 一致）
 
-2. **路由表更新**（AGENTS.md §4 + architecture.md §5）
+2. **路由表更新**（AGENTS.md [核心路由](AGENTS.md#core-routes) + architecture.md [路由配置](architecture.md#routes)）
    - 新增 `/account/thirdparty` 第三方账号路由
    - 新增 6 个实例管理子路由（game-settings、auto-install、mods、resource-packs、worlds）
    - 新增 `/download/game/:versionId` 版本安装路由
@@ -31,31 +31,31 @@
    - 新增 `/settings/appearance` 外观设置路由
    - 修正 `/game-settings` 为实例管理子路由（非已移除页面）
 
-3. **Store 表格补全**（AGENTS.md §5 + architecture.md §4）
+3. **Store 表格补全**（AGENTS.md [状态管理](AGENTS.md#state-management) + architecture.md [状态管理](architecture.md#state-management)）
    - 新增 `layoutStore`（布局状态）
    - 新增 `appStore`（应用全局状态）
    - 新增 `configStore`（配置状态）
    - 更新各 Store 用途描述
 
-4. **API 命令表扩充**（AGENTS.md §7 + api.md）
+4. **API 命令表扩充**（AGENTS.md [后端 API](AGENTS.md#backend-api) + api.md）
    - 从 5 个命令扩充至 40+ 个命令（按分类组织）
    - 新增分类：路径配置、实例设置、模组加载器、启动管理、窗口管理
    - 修正配置 API 封装名称（`config.get()` → `config.getConfig()`）
 
-5. **组件列表补全**（AGENTS.md §8 + components.md）
+5. **组件列表补全**（AGENTS.md [通用组件](AGENTS.md#common-components) + components.md）
    - 新增 `NotificationProvider`、`StartGameButton` 等组件
    - 新增通用组件子目录文档（Badge、BottomBar、ContextStack 等）
    - 新增设置组件和根级组件文档
 
-6. **目录结构更新**（AGENTS.md §3 + architecture.md §2）
+6. **目录结构更新**（AGENTS.md [目录结构](AGENTS.md#directory-structure) + architecture.md [目录结构](architecture.md#directory-structure)）
    - 前端目录：新增 common 子目录、pages 子目录、hooks/utils/styles/types 目录
    - 后端目录：修正 `commands/` 顶层目录为模块子目录组织方式
    - 新增 `routes.tsx` 路由定义文件
 
 **影响文档**:
-- `AGENTS.md` - 更新 §1-§12 多个章节
-- `docs/architecture.md` - 更新 §2、§3、§4、§5、§7
-- `docs/components.md` - 更新 §1、新增 §7-§8
+- `AGENTS.md` - 更新多个章节
+- `docs/architecture.md` - 更新目录结构、状态管理、路由配置等章节
+- `docs/components.md` - 更新通用组件、新增设置组件和根级组件
 - `docs/api.md` - 全面重写，从 5 类 API 扩充至 10 类
 - `docs/changelog.md` - 新增本次记录
 
@@ -64,6 +64,133 @@
 - [x] 新增内容（路由、Store、组件、API）
 - [ ] 修改内容（无功能性修改）
 - [ ] 删除内容（无）
+
+---
+
+## 2026-05-27 - 组件文档全面更新
+
+### components 子目录结构更新
+
+**更新概述**:
+根据 `src/components` 目录结构的变更，全面更新组件文档，确保文档与实际代码结构一致。
+
+**核心变更**:
+
+1. **通用组件子目录扩充**（docs/components.md §1.23）
+   - 更新 `Badge/` 子目录：新增 `VersionBadge.tsx`、`YesOrNoBadge.tsx`、`models.ts`
+   - 更新 `Instance/` 子目录：新增 `InstanceListItem.tsx`
+   - 更新 `Loading/` 子目录：新增 `LoaderIcon.tsx`、`Overlay.tsx`、`ProgressBar.tsx`、`Spinner.tsx`
+   - 更新 `SettingsPanel/` 子目录：新增 `SettingPanel.tsx`、`models.ts`
+   - 更新 `Version/` 子目录：新增 `VersionListItem.tsx`
+   - 新增 `header/` 子目录：`FloatingControls.tsx`
+   - 新增 `home/` 子目录：`PlayerProfile.tsx`
+   - 新增 `navigation/` 子目录：`DynamicIsland.tsx`
+   - 新增 `popup/` 子目录：5 个弹窗组件
+   - 新增 `settings/` 子目录：3 个设置组件
+   - 新增 `sidebar/` 子目录：侧边栏系统组件
+
+2. **弹窗组件详细文档**（docs/components.md §6）
+   - 新增 `AlertPopup` 组件文档
+   - 新增 `InputDialog` 组件文档
+   - 新增 `LoadingPopup` 组件文档
+   - 新增 `ProgressDialog` 组件文档
+   - 补充各组件的 TypeScript 接口定义
+
+3. **设置组件详细文档**（docs/components.md §7）
+   - 新增 `MemorySlider` 组件文档
+   - 新增 `SettingItem` 组件文档
+   - 新增 `SettingsSection` 组件文档
+   - 补充各组件的 TypeScript 接口定义
+
+4. **侧边栏组件详细文档**（docs/components.md [侧边栏组件](docs/components.md#sidebar-components)）
+   - 新增 `SmartSidebar` 特性说明
+   - 新增 `InstanceManageButton` 位置和功能说明
+   - 新增侧边栏内容渲染器文档（3 个文件）
+   - 新增侧边栏分组内容文档（3 个文件）
+   - 新增侧边栏布局文档
+
+5. **根级组件说明**（docs/components.md [根级组件](docs/components.md#root-components)）
+   - 新增根级组件说明注释
+
+6. **章节编号修正**（docs/components.md）
+   - 修正组件设计原则章节编号（8.x → 10.x）
+   - 修正最佳实践章节编号（9.x → 11.x）
+
+7. **AGENTS.md 组件列表更新**（AGENTS.md [通用组件](AGENTS.md#common-components)）
+   - 扩充核心组件列表：从 19 个组件扩充至 30+ 个组件
+   - 新增组件子目录列表：13 个子目录
+   - 更新组件分类：徽章、弹窗、版本、实例、设置等
+
+**影响文档**:
+- `docs/components.md` - 全面更新通用组件、侧边栏组件、弹窗组件、设置组件、根级组件，修正组件设计原则和最佳实践编号
+- `AGENTS.md` - 更新通用组件列表
+
+**变更类型**:
+- [x] 新增内容（组件子目录、组件文档）
+- [x] 修正错误（章节编号）
+- [ ] 修改内容（无功能性修改）
+- [ ] 删除内容（无）
+
+---
+
+## 2026-05-27 - 加载组件重构
+
+### SpinnerOverlay 拆分为 Spinner 和 Overlay
+
+**更新概述**:
+将原来的 `SpinnerOverlay` 组件拆分为两个独立组件：`Spinner`（转圈加载动画）和 `Overlay`（覆盖层），同时移除 `Mask` 组件。
+
+**核心变更**:
+
+1. **组件拆分**（docs/components.md [覆盖层](docs/components.md#overlay)-[转圈加载动画](docs/components.md#spinner)）
+   - **原 `SpinnerOverlay`**：单一组件，同时负责加载动画和覆盖层
+   - **新 `Spinner`**：专注转圈加载动画，支持进度显示和取消按钮
+   - **新 `Overlay`**：专注覆盖层功能，支持激活状态、Z 轴层级、固定定位
+
+2. **`Spinner` 组件文档**（docs/components.md [转圈加载动画](docs/components.md#spinner)）
+   - 新增 `visible` 属性控制可见性
+   - 新增 `loading` 属性表示加载中状态
+   - 新增 `message` 属性显示加载提示
+   - 新增 `progress` 和 `showProgress` 显示进度
+   - 新增 `onCancel` 和 `cancelText` 支持取消操作
+   - 新增 `className` 自定义样式
+
+3. **`Overlay` 组件文档**（docs/components.md [覆盖层](docs/components.md#overlay)）
+   - 新增 `active` 属性控制激活状态
+   - 新增 `children` 子组件
+   - 新增 `className` 和 `overLayClassName` 自定义样式
+   - 新增 `disabled` 禁用状态
+   - 新增 `zIndex` Z 轴层级控制
+   - 新增 `fixed` 固定定位选项
+
+4. **`Mask` 组件移除**（docs/components.md）
+   - 移除 `Mask` 组件文档
+   - 功能由 `Overlay` 组件的覆盖层实现
+   - 更新后续组件编号
+
+5. **章节编号调整**（docs/components.md）
+   - `NotificationProvider`：§1.21 → §1.20
+   - `StartGameButton`：§1.22 → §1.21
+   - 通用组件子目录：§1.23 → §1.24
+
+6. **Loading 子目录更新**（docs/components.md [通用组件子目录](docs/components.md#common-components-subdirectories)）
+   - 更新文件列表：新增 `CircularProgress.tsx`
+   - 保持其他文件：`LoaderIcon.tsx`、`Overlay.tsx`、`ProgressBar.tsx`、`Spinner.tsx`
+
+7. **AGENTS.md 更新**（AGENTS.md [通用组件](AGENTS.md#common-components)）
+   - 更新 `CircularProgress` / `Spinner` 说明：圆形进度指示器/转圈加载动画
+   - 更新 `Overlay` 说明：遮罩组件 → 覆盖层组件
+   - 移除 `Mask` 组件引用
+
+**影响文档**:
+- `docs/components.md` - 更新覆盖层、转圈加载动画，移除 Mask 组件，调整后续组件编号
+- `AGENTS.md` - 更新通用组件列表
+
+**变更类型**:
+- [x] 新增内容（Spinner、Overlay 组件文档）
+- [x] 删除内容（Mask 组件、SpinnerOverlay 组件）
+- [x] 修正错误（章节编号）
+- [ ] 修改内容（无功能性修改）
 
 ---
 

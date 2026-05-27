@@ -285,24 +285,45 @@ await updateConfig('theme.accentColor', 'blue');
 
 **核心组件**:
 - `ProgressBar` - 线性进度条
-- `CircularProgress` - 圆形进度指示器
+- `CircularProgress` / `Spinner` - 圆形进度指示器/转圈加载动画
 - `DownloadItem` - 下载项组件
-- `StatusBadge` - 版本类型徽章
+- `StatusBadge` / `VersionBadge` / `YesOrNoBadge` - 版本类型徽章
 - `Toggle` - 开关组件
 - `EmptyState` - 空状态组件
-- `Spinner` - 加载覆盖层
 - `ListItem` - 列表项组件
 - `ContextMenu` - 上下文菜单
-- `ConfirmPopup` - 确认弹窗
+- `ConfirmPopup` / `AlertPopup` / `InputDialog` / `LoadingPopup` / `ProgressDialog` - 弹窗组件
 - `VirtualList` - 虚拟列表
 - `IconButton` - 图标按钮
 - `NotificationProvider` - 通知提供者
 - `StartGameButton` - 启动游戏按钮
-- `VersionCard` / `VersionFilterDropdown` - 版本相关组件
-- `InstanceCard` / `InstallCard` - 实例相关组件
+- `VersionCard` / `VersionFilterDropdown` / `VersionListItem` - 版本相关组件
+- `InstanceCard` / `InstallCard` / `InstanceListItem` - 实例相关组件
 - `TerminalThemePreview` - 主题预览组件
-- `Overlay` - 遮罩组件
+- `Overlay` - 覆盖层组件
 - `LoaderIcon` - 加载图标
+- `MemorySlider` - 内存滑块
+- `SettingItem` / `SettingsSection` / `SettingPanel` - 设置相关组件
+- `FloatingControls` - 窗口头部悬浮控件
+- `PlayerProfile` - 玩家资料组件
+- `DynamicIsland` - 灵动岛导航组件
+- `BottomBar` - 底部栏组件
+- `ContextStack` - 上下文栈组件
+
+**组件子目录**:
+- `src/components/common/Badge/` - 徽章组件
+- `src/components/common/BottomBar/` - 底部栏
+- `src/components/common/ContextStack/` - 上下文栈
+- `src/components/common/Instance/` - 实例相关组件
+- `src/components/common/Loading/` - 加载组件
+- `src/components/common/SettingsPanel/` - 设置面板
+- `src/components/common/Version/` - 版本相关组件
+- `src/components/common/header/` - 头部控件
+- `src/components/common/home/` - 主页组件
+- `src/components/common/navigation/` - 导航组件
+- `src/components/common/popup/` - 弹窗组件
+- `src/components/common/settings/` - 设置组件
+- `src/components/common/sidebar/` - 侧边栏组件
 
 **使用示例**:
 ```typescript
@@ -405,6 +426,38 @@ rustInvoke.ts
 // 常量：UPPER_SNAKE_CASE
 const MAX_RETRY_COUNT = 3;
 ```
+
+### 10.5 文档编号规范
+
+**核心原则**：使用自动编号 + 锚点引用，禁止手动编号
+
+```markdown
+✅ 正确：
+## 通用组件 {#common-components}
+### 进度条 {#progress-bar}
+### 圆形进度指示器 {#circular-progress}
+
+引用：[进度条](components.md#progress-bar)
+
+❌ 错误：
+## 1.1 进度条
+## 1.2 圆形进度指示器
+
+引用：components.md §1.1
+```
+
+**锚点命名规则**：
+- 使用小写英文字母
+- 单词间用连字符分隔：`common-components`
+- 保持语义清晰：使用组件英文名
+- 中文标题使用英文翻译
+
+**引用规范**：
+- 使用 Markdown 链接：`[文本](文件路径#锚点)`
+- 禁止使用 § 符号：`§数字`
+- 优先使用相对路径
+
+**详细规范**：[`docs/MAINTENANCE.md`](docs/MAINTENANCE.md) - 文档维护规范
 
 ---
 

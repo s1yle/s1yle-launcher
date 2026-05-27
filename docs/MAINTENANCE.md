@@ -52,35 +52,35 @@ Level 3: 代码注释 (JSDoc/Rust doc)
 1. **新增/删除路由**
    ```markdown
    触发条件：router/config.tsx 变更
-   更新文件：AGENTS.md §4 + docs/architecture.md §5
+   更新文件：AGENTS.md [核心路由](AGENTS.md#core-routes) + docs/architecture.md [路由配置](docs/architecture.md#routes)
    更新内容：路由表、已移除页面列表
    ```
 
 2. **新增/删除 Zustand Store**
    ```markdown
    触发条件：src/stores/ 目录变更
-   更新文件：AGENTS.md §5 + docs/architecture.md §4
+   更新文件：AGENTS.md [状态管理](AGENTS.md#state-management) + docs/architecture.md [状态管理](docs/architecture.md#state-management)
    更新内容：Store 表格、使用示例
    ```
 
 3. **配置系统变更**
    ```markdown
    触发条件：config/index.ts 或 config/types.ts 变更
-   更新文件：AGENTS.md §6 + docs/architecture.md §3
+   更新文件：AGENTS.md [配置系统](AGENTS.md#config-system) + docs/architecture.md [配置系统](docs/architecture.md#config-system)
    更新内容：配置项列表、使用示例
    ```
 
 4. **新增通用组件**
    ```markdown
    触发条件：src/components/common/ 新增组件
-   更新文件：AGENTS.md §8 + docs/components.md
+   更新文件：AGENTS.md [通用组件](AGENTS.md#common-components) + docs/components.md
    更新内容：组件列表、Props 接口、使用示例
    ```
 
 5. **后端 API 变更**
    ```markdown
    触发条件：src-tauri/src/commands/ 或 src/helper/rustInvoke.ts 变更
-   更新文件：AGENTS.md §7 + docs/api.md
+   更新文件：AGENTS.md [后端 API](AGENTS.md#backend-api) + docs/api.md
    更新内容：API 命令表、调用示例
    ```
 
@@ -89,21 +89,21 @@ Level 3: 代码注释 (JSDoc/Rust doc)
 1. **UI 架构重大调整**
    ```markdown
    触发条件：布局组件重构（如灵动岛系统）
-   更新文件：AGENTS.md §9 + docs/architecture.md §6
+   更新文件：AGENTS.md [UI 架构](AGENTS.md#ui-architecture) + docs/architecture.md [UI 架构](docs/architecture.md#ui-architecture)
    更新内容：布局结构图、切换逻辑
    ```
 
 2. **编码规范更新**
    ```markdown
    触发条件：代码审查中发现的共性问题
-   更新文件：AGENTS.md §10
+   更新文件：AGENTS.md [编码规范](AGENTS.md#coding-standards)
    更新内容：命名规范、最佳实践
    ```
 
 3. **注意事项新增**
    ```markdown
    触发条件：遇到难以排查的 Bug 或踩坑
-   更新文件：AGENTS.md §12
+   更新文件：AGENTS.md [注意事项](AGENTS.md#notes)
    更新内容：避坑指南、解决方案
    ```
 
@@ -112,14 +112,14 @@ Level 3: 代码注释 (JSDoc/Rust doc)
 1. **技术栈版本升级**
    ```markdown
    触发条件：package.json 或 Cargo.toml 重大版本更新
-   更新文件：AGENTS.md §2
+   更新文件：AGENTS.md [技术栈](AGENTS.md#tech-stack)
    更新内容：技术栈列表
    ```
 
 2. **目录结构调整**
    ```markdown
    触发条件：src/ 或 src-tauri/src/ 目录重构
-   更新文件：AGENTS.md §3 + docs/architecture.md §2
+   更新文件：AGENTS.md [目录结构](AGENTS.md#directory-structure) + docs/architecture.md [目录结构](docs/architecture.md#directory-structure)
    更新内容：目录树
    ```
 
@@ -162,11 +162,11 @@ AI 实现玩家管理页面后，输出：
 📋 文档更新建议
 
 高优先级（必须更新）：
-1. AGENTS.md §4 核心路由
+1. AGENTS.md [核心路由](AGENTS.md#core-routes)
    - 添加：/admin/players
-2. AGENTS.md §5 状态管理
+2. AGENTS.md [状态管理](AGENTS.md#state-management)
    - 添加：playerStore 到表格
-3. docs/architecture.md §2 目录结构
+3. docs/architecture.md [目录结构](docs/architecture.md#directory-structure)
    - 新增：src/pages/admin/Players.tsx
 
 中优先级（建议更新）：

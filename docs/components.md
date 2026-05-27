@@ -10,11 +10,11 @@
 
 ---
 
-## 1. 通用组件
+## 1. 通用组件 {#common-components}
 
 **位置**: `src/components/common/`
 
-### 1.1 进度条 (ProgressBar)
+### 进度条 {#progress-bar}
 
 ```typescript
 interface ProgressBarProps {
@@ -34,7 +34,7 @@ interface ProgressBarProps {
 <ProgressBar progress={75} status="active" showPercentage size="md" />
 ```
 
-### 1.2 圆形进度指示器 (CircularProgress)
+### 圆形进度指示器 {#circular-progress}
 
 ```typescript
 interface CircularProgressProps {
@@ -46,7 +46,7 @@ interface CircularProgressProps {
 }
 ```
 
-### 1.3 下载项 (DownloadItem)
+### 下载项 {#download-item}
 
 ```typescript
 interface DownloadItemProps {
@@ -59,7 +59,7 @@ interface DownloadItemProps {
 }
 ```
 
-### 1.4 状态徽章 (StatusBadge)
+### 状态徽章 {#status-badge}
 
 ```typescript
 interface StatusBadgeProps {
@@ -70,7 +70,7 @@ interface StatusBadgeProps {
 }
 ```
 
-### 1.5 开关 (Toggle)
+### 开关 {#toggle}
 
 ```typescript
 interface ToggleProps {
@@ -80,7 +80,7 @@ interface ToggleProps {
 }
 ```
 
-### 1.6 空状态 (EmptyState)
+### 空状态 {#empty-state}
 
 ```typescript
 interface EmptyStateProps {
@@ -91,19 +91,54 @@ interface EmptyStateProps {
 }
 ```
 
-### 1.7 加载覆盖层 (SpinnerOverlay)
+### 覆盖层 {#overlay}
 
 ```typescript
-interface SpinnerOverlayProps {
-  visible: boolean;                    // 是否显示
+interface OverlayProps {
+  active: boolean;                     // 是否激活
+  children: React.ReactNode;           // 子组件
+  className?: string;                  // 自定义类名
+  overLayClassName?: string;           // 覆盖层类名
+  disabled?: boolean;                  // 禁用状态
+  zIndex?: number;                     // Z 轴层级
+  fixed?: boolean;                     // 固定定位
+}
+```
+
+**使用示例**:
+```tsx
+<Overlay active={true} zIndex={50}>
+  <div>内容区域</div>
+</Overlay>
+```
+
+### 转圈加载动画 {#spinner}
+
+```typescript
+interface SpinnerProps {
+  visible: boolean;                    // 是否可见
+  loading?: boolean;                   // 加载中状态
+  children?: ReactNode;                // 子组件
   message?: string;                    // 加载提示
   progress?: number;                   // 进度值
   showProgress?: boolean;              // 显示进度条
   onCancel?: () => void;               // 取消回调
+  cancelText?: string;                 // 取消按钮文字
+  className?: string;                  // 自定义类名
 }
 ```
 
-### 1.8 列表项 (ListItem)
+**使用示例**:
+```tsx
+<Spinner 
+  visible={isLoading} 
+  message="加载中..."
+  showProgress 
+  progress={75}
+/>
+```
+
+### 列表项 {#list-item}
 
 ```typescript
 interface ListItemProps {
@@ -115,7 +150,7 @@ interface ListItemProps {
 }
 ```
 
-### 1.9 版本卡片 (VersionCard)
+### 版本卡片 {#version-card}
 
 ```typescript
 interface VersionCardProps {
@@ -126,7 +161,7 @@ interface VersionCardProps {
 }
 ```
 
-### 1.10 实例卡片 (InstanceCard)
+### 实例卡片 {#instance-card}
 
 ```typescript
 interface InstanceCardProps {
@@ -136,7 +171,7 @@ interface InstanceCardProps {
 }
 ```
 
-### 1.11 安装卡片 (InstallCard)
+### 安装卡片 {#install-card}
 
 ```typescript
 interface InstallCardProps {
@@ -148,7 +183,7 @@ interface InstallCardProps {
 }
 ```
 
-### 1.12 上下文菜单 (ContextMenu)
+### 上下文菜单 {#context-menu}
 
 ```typescript
 interface ContextMenuProps {
@@ -158,7 +193,7 @@ interface ContextMenuProps {
 }
 ```
 
-### 1.13 确认弹窗 (ConfirmPopup)
+### 确认弹窗 {#confirm-popup}
 
 ```typescript
 interface ConfirmPopupProps {
@@ -172,7 +207,7 @@ interface ConfirmPopupProps {
 }
 ```
 
-### 1.14 虚拟列表 (VirtualList)
+### 虚拟列表 {#virtual-list}
 
 ```typescript
 interface VirtualListProps<T> {
@@ -183,7 +218,7 @@ interface VirtualListProps<T> {
 }
 ```
 
-### 1.15 图标按钮 (IconButton)
+### 图标按钮 {#icon-button}
 
 ```typescript
 interface IconButtonProps {
@@ -195,16 +230,26 @@ interface IconButtonProps {
 }
 ```
 
-### 1.16 版本筛选下拉框 (VersionFilterDropdown)
+### 版本筛选下拉框 {#version-filter-dropdown}
 
 ```typescript
-interface VersionFilterDropdownProps {
-  onFilterChange: (category: VersionCategory) => void;
-  selectedCategory?: VersionCategory;
+export interface VersionFilterOption {
+  value: VersionCategory;
+  label: string;
+  count?: number;
 }
 ```
 
-### 1.17 加载图标 (LoaderIcon)
+```typescript
+interface VersionFilterDropdownProps {
+  value: VersionCategory;
+  onChange: (value: VersionCategory) => void;
+  versions: GameVersion[];
+  className?: string;
+}
+```
+
+### 加载图标 {#loader-icon}
 
 ```typescript
 interface LoaderIconProps {
@@ -213,7 +258,7 @@ interface LoaderIconProps {
 }
 ```
 
-### 1.18 主题预览 (ThemePreview)
+### 主题预览 {#theme-preview}
 
 ```typescript
 interface ThemePreviewProps {
@@ -223,7 +268,7 @@ interface ThemePreviewProps {
 }
 ```
 
-### 1.19 终端主题预览 (TerminalThemePreview)
+### 终端主题预览 {#terminal-theme-preview}
 
 ```typescript
 interface TerminalThemePreviewProps {
@@ -233,17 +278,7 @@ interface TerminalThemePreviewProps {
 }
 ```
 
-### 1.20 遮罩 (Mask)
-
-```typescript
-interface MaskProps {
-  visible: boolean;                    // 是否显示
-  onClick?: () => void;                // 点击回调
-  blur?: boolean;                      // 模糊效果
-}
-```
-
-### 1.21 通知提供者 (NotificationProvider)
+### 通知提供者 {#notification-provider}
 
 ```typescript
 interface NotificationProviderProps {
@@ -258,7 +293,7 @@ success('操作成功', '文件已保存');
 error('操作失败', '请重试');
 ```
 
-### 1.22 启动游戏按钮 (StartGameButton)
+### 启动游戏按钮 {#start-game-button}
 
 ```typescript
 interface StartGameButtonProps {
@@ -271,29 +306,33 @@ interface StartGameButtonProps {
 - Hover 上浮效果
 - 点击反馈动画
 
----
-
-### 1.23 通用组件子目录
+### 通用组件子目录 {#common-components-subdirectories}
 
 **位置**: `src/components/common/`
 
 | 子目录 | 组件 | 说明 |
 |--------|------|------|
-| `Badge/` | 徽章组件 | 状态标签、版本类型标识 |
-| `BottomBar/` | 底部栏 | 页面底部操作栏 |
-| `ContextStack/` | 上下文栈 | 上下文状态管理组件 |
-| `Instance/` | 实例相关组件 | InstanceCard、InstallCard 等 |
-| `Loading/` | 加载组件 | SpinnerOverlay、LoaderIcon 等 |
-| `SettingsPanel/` | 设置面板 | 通用设置面板布局 |
-| `Version/` | 版本相关组件 | VersionCard、VersionFilterDropdown 等 |
+| `Badge/` | `VersionBadge.tsx`, `YesOrNoBadge.tsx`, `models.ts` | 状态标签、版本类型标识 |
+| `BottomBar/` | `BottomBar.tsx` | 页面底部操作栏 |
+| `ContextStack/` | `ContextStack.tsx` | 上下文状态管理组件 |
+| `Instance/` | `InstallCard.tsx`, `InstanceCard.tsx`, `InstanceListItem.tsx` | 实例相关组件 |
+| `Loading/` | `CircularProgress.tsx`, `LoaderIcon.tsx`, `Overlay.tsx`, `ProgressBar.tsx`, `Spinner.tsx` | 加载组件 |
+| `SettingsPanel/` | `SettingPanel.tsx`, `models.ts` | 通用设置面板布局 |
+| `Version/` | `VersionCard.tsx`, `VersionFilterDropdown.tsx`, `VersionListItem.tsx` | 版本相关组件 |
+| `header/` | `FloatingControls.tsx` | 窗口头部悬浮控件 |
+| `home/` | `PlayerProfile.tsx` | 主页玩家资料组件 |
+| `navigation/` | `DynamicIsland.tsx` | 灵动岛导航组件 |
+| `popup/` | `AlertPopup.tsx`, `ConfirmPopup.tsx`, `InputDialog.tsx`, `LoadingPopup.tsx`, `ProgressDialog.tsx` | 弹窗组件 |
+| `settings/` | `MemorySlider.tsx`, `SettingItem.tsx`, `SettingsSection.tsx` | 设置页面组件 |
+| `sidebar/` | 侧边栏相关组件 | 智能侧边栏系统（详见第 5 节） |
 
 ---
 
-## 2. 导航组件
+## 2. 导航组件 {#navigation-components}
 
 **位置**: `src/components/navigation/`
 
-### 2.1 灵动岛 (DynamicIsland)
+### 灵动岛 {#dynamic-island}
 
 ```typescript
 interface DynamicIslandProps {
@@ -315,11 +354,11 @@ interface DynamicIslandProps {
 
 ---
 
-## 3. 主页组件
+## 3. 主页组件 {#home-components}
 
 **位置**: `src/components/home/`
 
-### 3.1 玩家资料 (PlayerProfile)
+### 玩家资料 {#player-profile}
 
 ```typescript
 interface PlayerProfileProps {
@@ -344,11 +383,11 @@ interface PlayerProfileProps {
 
 ---
 
-## 4. 头部组件
+## 4. 头部组件 {#header-components}
 
 **位置**: `src/components/header/`
 
-### 4.1 悬浮控件 (FloatingControls)
+### 悬浮控件 {#floating-controls}
 
 ```typescript
 interface FloatingControlsProps {
@@ -363,11 +402,11 @@ interface FloatingControlsProps {
 
 ---
 
-## 5. 侧边栏组件
+## 5. 侧边栏组件 {#sidebar-components}
 
 **位置**: `src/components/sidebar/`
 
-### 5.1 智能侧边栏 (SmartSidebar)
+### 智能侧边栏 {#smart-sidebar}
 
 ```typescript
 interface SmartSidebarProps {
@@ -377,7 +416,14 @@ interface SmartSidebarProps {
 }
 ```
 
-### 5.2 实例管理按钮 (InstanceManageButton)
+**特性**:
+- 支持多角色侧边栏分组
+- 智能渲染侧边栏内容
+- 支持自定义底部内容
+
+### 实例管理按钮 {#instance-manage-button}
+
+**位置**: `src/components/sidebar/renderer/InstanceManageButton.tsx`
 
 ```typescript
 interface InstanceManageButtonProps {
@@ -385,35 +431,144 @@ interface InstanceManageButtonProps {
 }
 ```
 
-### 5.3 实例信息头部 (InstanceInfoHeader)
+**功能**: 在侧边栏中显示实例管理快捷按钮
+
+### 侧边栏内容渲染器 {#sidebar-content-renderers}
+
+**位置**: `src/components/sidebar/content/`
+
+| 文件 | 说明 |
+|------|------|
+| `BaseChildrenContent.tsx` | 基础子内容渲染器 |
+| `BaseSidebarContent.tsx` | 基础侧边栏内容 |
+| `SidebarItemRenderer.tsx` | 侧边栏项渲染器 |
+
+### 侧边栏分组内容 {#sidebar-group-contents}
+
+**位置**: `src/components/sidebar/content/group/`
+
+| 文件 | 说明 |
+|------|------|
+| `AccountSidebarContent.tsx` | 账户侧边栏内容 |
+| `CommonSidebarContent.tsx` | 通用侧边栏内容 |
+| `GameSidebarContent.tsx` | 游戏侧边栏内容 |
+
+### 侧边栏布局 {#sidebar-layouts}
+
+**位置**: `src/components/sidebar/layouts/`
+
+| 文件 | 说明 |
+|------|------|
+| `BaseSidebarLayout.tsx` | 基础侧边栏布局 |
+
+---
+
+## 6. 弹窗组件 {#popup-components}
+
+**位置**: `src/components/popup/`
+
+### 确认弹窗 {#confirm-popup-2}
+
+已在通用组件中说明。
+
+### 警告弹窗 {#alert-popup}
 
 ```typescript
-interface InstanceInfoHeaderProps {
-  // 无 props
+interface AlertPopupProps {
+  isOpen: boolean;                     // 是否打开
+  title: string;                       // 标题
+  message: string;                     // 消息
+  iconType?: 'info' | 'warning' | 'error' | 'success';
+  onConfirm: () => void;               // 确认回调
+  onClose: () => void;                 // 关闭回调
+}
+```
+
+### 输入对话框 {#input-dialog}
+
+```typescript
+interface InputDialogProps {
+  isOpen: boolean;                     // 是否打开
+  title: string;                       // 标题
+  value: string;                       // 输入值
+  onChange: (value: string) => void;   // 输入变化回调
+  onConfirm: () => void;               // 确认回调
+  onCancel: () => void;                // 取消回调
+  placeholder?: string;                // 占位符
+}
+```
+
+### 加载弹窗 {#loading-popup}
+
+```typescript
+interface LoadingPopupProps {
+  isOpen: boolean;                     // 是否打开
+  message?: string;                    // 加载提示
+  progress?: number;                   // 进度值
+  showProgress?: boolean;              // 显示进度条
+  onCancel?: () => void;               // 取消回调
+}
+```
+
+### 进度对话框 {#progress-dialog}
+
+```typescript
+interface ProgressDialogProps {
+  isOpen: boolean;                     // 是否打开
+  title: string;                       // 标题
+  message: string;                     // 消息
+  progress: number;                    // 进度值 (0-100)
+  canCancel?: boolean;                 // 是否可取消
+  onCancel?: () => void;               // 取消回调
 }
 ```
 
 ---
 
-## 6. 弹窗组件
-
-**位置**: `src/components/popup/`
-
-### 6.1 确认弹窗 (ConfirmPopup)
-
-已在通用组件中说明。
-
----
-
-## 7. 设置组件
+## 7. 设置组件 {#settings-components}
 
 **位置**: `src/components/settings/`
 
 设置页面专用组件，配合 `/settings/appearance` 路由使用。
 
+### 内存滑块 {#memory-slider}
+
+```typescript
+interface MemorySliderProps {
+  value: number;                       // 内存值 (MB)
+  onChange: (value: number) => void;   // 变化回调
+  min?: number;                        // 最小值
+  max?: number;                        // 最大值
+  step?: number;                       // 步长
+  disabled?: boolean;                  // 禁用状态
+}
+```
+
+### 设置项 {#setting-item}
+
+```typescript
+interface SettingItemProps {
+  title: string;                       // 设置项标题
+  description?: string;                // 设置项描述
+  icon?: React.ReactNode;              // 图标
+  children?: React.ReactNode;          // 子组件（如 Toggle、Select 等）
+  onClick?: () => void;                // 点击回调
+}
+```
+
+### 设置区域 {#settings-section}
+
+```typescript
+interface SettingsSectionProps {
+  title: string;                       // 区域标题
+  children: React.ReactNode;           // 子组件
+  className?: string;                  // 自定义类名
+}
+```
+
 ---
 
-## 8. 根级组件
+## 8. 根级组件 {#root-components}
 
 **位置**: `src/components/`
 
@@ -424,13 +579,15 @@ interface InstanceInfoHeaderProps {
 | `Popup` | `Popup.tsx` | 通用弹窗容器（使用 `isOpen` 属性） |
 | `RouterRenderer` | `RouterRenderer.tsx` | 路由渲染器 |
 
+**注意**: 根级组件是直接位于 `src/components/` 目录下的组件，其他组件按功能组织在子目录中。
+
 ---
 
-## 9. 服主后台组件
+## 9. 服主后台组件 {#admin-components}
 
 **位置**: `src/pages/admin/`
 
-### 7.1 服务器管理 (AdminServers)
+### 服务器管理 {#admin-servers}
 
 **路由**: `/admin/servers`
 
@@ -440,7 +597,7 @@ interface InstanceInfoHeaderProps {
 - 玩家数量进度条
 - 快速操作按钮
 
-### 7.2 数据看板 (AdminAnalytics)
+### 数据看板 {#admin-analytics}
 
 **路由**: `/admin/analytics`
 
@@ -449,7 +606,7 @@ interface InstanceInfoHeaderProps {
 - SVG 折线图
 - 服务器资源监控
 
-### 7.3 配置上传 (AdminUpload)
+### 配置上传 {#admin-upload}
 
 **路由**: `/admin/upload`
 
@@ -460,29 +617,29 @@ interface InstanceInfoHeaderProps {
 
 ---
 
-## 10. 组件设计原则
+## 10. 组件设计原则 {#component-design-principles}
 
-### 8.1 单一职责原则 (SRP)
+### 单一职责原则 {#single-responsibility-principle}
 
 每个组件只负责一个功能，组件名应清晰表达其职责。
 
-### 8.2 开闭原则 (OCP)
+### 开闭原则 {#open-closed-principle}
 
 对扩展开放，对修改关闭。使用 props 扩展功能，避免修改组件内部。
 
-### 8.3 依赖倒置原则 (DIP)
+### 依赖倒置原则 {#dependency-inversion-principle}
 
 依赖抽象，不依赖具体实现。使用 TypeScript interface 定义契约。
 
-### 8.4 组合优于继承
+### 组合优于继承 {#composition-over-inheritance}
 
 使用组合模式构建复杂 UI，提取可复用的子组件。
 
 ---
 
-## 11. 组件使用最佳实践
+## 11. 组件使用最佳实践 {#component-best-practices}
 
-### 9.1 Props 命名
+### Props 命名 {#props-naming}
 
 ```typescript
 // ✅ 推荐：清晰的命名
@@ -500,7 +657,7 @@ interface ButtonProps {
 }
 ```
 
-### 9.2 默认值
+### 默认值 {#default-values}
 
 ```typescript
 // ✅ 推荐：在 interface 中提供默认值
@@ -515,7 +672,7 @@ const Component = ({ size = 'md', disabled = false }: Props) => {
 };
 ```
 
-### 9.3 事件处理
+### 事件处理 {#event-handling}
 
 ```typescript
 // ✅ 推荐：提供完整的事件处理

@@ -12,12 +12,12 @@
 **推荐文档**: [`docs/architecture.md`](architecture.md)
 
 **阅读顺序**:
-1. §1 技术架构 - 了解整体技术栈
-2. §2 目录结构 - 理解文件组织
-3. §3 配置系统 - 理解配置管理
-4. §4 状态管理 - 理解数据流
-5. §5 路由系统 - 理解页面导航
-6. §6 UI 架构 - 理解界面设计
+1. [技术架构](architecture.md#tech-architecture) - 了解整体技术栈
+2. [目录结构](architecture.md#directory-structure) - 理解文件组织
+3. [配置系统](architecture.md#config-system) - 理解配置管理
+4. [状态管理](architecture.md#state-management) - 理解数据流
+5. [路由系统](architecture.md#routes) - 理解页面导航
+6. [UI 架构](architecture.md#ui-architecture) - 理解界面设计
 
 **预计时间**: 1-2 小时
 
@@ -30,9 +30,9 @@
 #### 步骤 1: 查看现有架构
 ```
 阅读：docs/architecture.md
-  - §4 状态管理 → 是否需要新增 Store?
-  - §5 路由系统 → 是否需要新增路由？
-  - §7 后端 API → 是否需要新增 API?
+  - [状态管理](architecture.md#state-management) → 是否需要新增 Store?
+  - [路由系统](architecture.md#routes) → 是否需要新增路由？
+  - [后端 API](architecture.md#backend-api) → 是否需要新增 API?
 ```
 
 #### 步骤 2: 查看组件库
@@ -48,12 +48,11 @@
 阅读：docs/api.md
   - 了解后端 API 调用方式
   - 查看错误处理示例
-  - 参考最佳实践
 ```
 
 #### 步骤 4: 遵循编码规范
 ```
-查阅：AGENTS.md §10
+查阅：AGENTS.md [编码规范](AGENTS.md#coding-standards)
   - TypeScript 规范
   - React 规范
   - 样式规范
@@ -62,7 +61,7 @@
 
 #### 步骤 5: 更新文档
 ```
-遵循：docs/MAINTENANCE.md §二
+遵循：docs/MAINTENANCE.md [何时更新](docs/MAINTENANCE.md#when-to-update)
   - 判断是否触发文档更新
   - 按照流程更新相关文档
 ```
@@ -75,30 +74,30 @@
 
 #### 问题：路由不工作
 ```
-1. 查阅 AGENTS.md §4 - 确认路由是否存在
-2. 查阅 docs/architecture.md §5 - 了解路由配置
+1. 查阅 AGENTS.md [核心路由](AGENTS.md#core-routes) - 确认路由是否存在
+2. 查阅 docs/architecture.md [路由配置](docs/architecture.md#routes) - 了解路由配置
 3. 查阅 src/router/config.tsx - 查看实际配置
 ```
 
 #### 问题：状态不更新
 ```
-1. 查阅 AGENTS.md §5 - 确认 Store 是否正确
-2. 查阅 docs/architecture.md §4 - 了解状态流转
+1. 查阅 AGENTS.md [状态管理](AGENTS.md#state-management) - 确认 Store 是否正确
+2. 查阅 docs/architecture.md [状态管理](docs/architecture.md#state-management) - 了解状态流转
 3. 查阅对应 Store 文件 - 查看实现
 ```
 
 #### 问题：配置不生效
 ```
-1. 查阅 AGENTS.md §6 - 了解配置分层
-2. 查阅 docs/architecture.md §3 - 了解配置系统
-3. 查阅 docs/MAINTENANCE.md §12 - 查看配置管理注意事项
+1. 查阅 AGENTS.md [配置系统](AGENTS.md#config-system) - 了解配置分层
+2. 查阅 docs/architecture.md [配置系统](docs/architecture.md#config-system) - 了解配置系统
+3. 查阅 docs/MAINTENANCE.md [配置管理](docs/MAINTENANCE.md#config-management) - 查看配置管理注意事项
 ```
 
 #### 问题：组件不渲染
 ```
 1. 查阅 docs/components.md - 确认 Props 是否正确
 2. 查阅组件源码 - 查看实现细节
-3. 查阅 AGENTS.md §12 - 查看注意事项
+3. 查阅 AGENTS.md [注意事项](AGENTS.md#notes) - 查看注意事项
 ```
 
 ---
@@ -162,13 +161,13 @@
 - [x] 文档更新
 
 **参考文档**:
-- docs/architecture.md §2 - 目录结构
-- docs/architecture.md §5 - 路由配置
-- docs/components.md - ListItem, ConfirmPopup 组件
+- docs/architecture.md [目录结构](docs/architecture.md#directory-structure) - 目录结构
+- docs/architecture.md [路由配置](docs/architecture.md#routes) - 路由配置
+- docs/components.md - [列表项](docs/components.md#list-item), [确认弹窗](docs/components.md#confirm-popup) 组件
 - docs/api.md - 后端 API 调用方式
 
 **期望输出**:
-1. 完整的代码实现（遵循 AGENTS.md §10 编码规范）
+1. 完整的代码实现（遵循 AGENTS.md [编码规范](AGENTS.md#coding-standards)）
 2. 需要修改/新增的文件列表
 3. 文档更新建议（需要更新哪些文档）
 ```
@@ -233,16 +232,16 @@
 **场景 4.1: 了解架构**
 ```
 "我想了解 WeCraft! Launcher 的状态管理架构，特别是用户角色切换
-时如何通知其他组件？请结合 docs/architecture.md §4 说明。"
+时如何通知其他组件？请结合 [状态管理](docs/architecture.md#state-management) 说明。"
 
 "能解释一下灵动岛导航系统的实现原理吗？参考 
-docs/architecture.md §6 和 src/components/navigation/DynamicIsland.tsx"
+[UI 架构](docs/architecture.md#ui-architecture) 和 src/components/navigation/DynamicIsland.tsx"
 ```
 
 **场景 4.2: 开发新功能**
 ```
 "我要添加一个新的服主功能：玩家管理页面。
-1. 需要在路由中配置什么？(参考 docs/architecture.md §5)
+1. 需要在路由中配置什么？(参考 [路由配置](docs/architecture.md#routes))
 2. 需要新增哪些组件？(参考 docs/components.md)
 3. 需要调用哪些后端 API？(参考 docs/api.md)
 请给出完整的实现方案。"
@@ -258,17 +257,17 @@ docs/architecture.md §6 和 src/components/navigation/DynamicIsland.tsx"
 2. 添加了 console.log 确认方法被调用
 3. 但 UI 没有更新
 
-请帮我分析可能的原因，参考 docs/architecture.md §4 状态管理部分。"
+请帮我分析可能的原因，参考 [状态管理](docs/architecture.md#state-management) 部分。"
 
 "配置更新后没有持久化，我使用了 config.set() 方法。
-查阅 docs/architecture.md §3 配置系统后，发现应该使用
+查阅 [配置系统](docs/architecture.md#config-system) 后，发现应该使用
 ConfigManager.update_value() 增量更新。
 请解释这两种方式的区别。"
 ```
 
 **场景 4.4: 代码审查**
 ```
-"我写了以下代码，请根据 AGENTS.md §10 编码规范进行审查：
+"我写了以下代码，请根据 AGENTS.md [编码规范](AGENTS.md#coding-standards) 进行审查：
 [粘贴代码]
 
 需要检查：
@@ -301,8 +300,8 @@ ConfigManager.update_value() 增量更新。
 **背景**: 我是新开发者，想了解 WeCraft! Launcher 的配置系统
 
 **已查阅文档**: 
-- AGENTS.md §6
-- docs/architecture.md §3
+- AGENTS.md [配置系统](AGENTS.md#config-system)
+- docs/architecture.md [配置系统](docs/architecture.md#config-system)
 
 **具体问题**: 
 1. L1/L2/L3 三层配置有什么区别？
@@ -322,9 +321,9 @@ ConfigManager.update_value() 增量更新。
 - 配置需要：[新增配置项]
 
 **已查阅文档**:
-- docs/architecture.md §[章节]
-- docs/components.md §[章节]
-- docs/api.md §[章节]
+- docs/architecture.md [章节](docs/architecture.md#章节锚点)
+- docs/components.md [章节](docs/components.md#章节锚点)
+- docs/api.md [章节](docs/api.md#章节锚点)
 
 **具体问题**:
 1. 这个功能应该放在哪个目录？
@@ -365,7 +364,7 @@ ConfigManager.update_value() 增量更新。
 - src/yyy.ts
 
 **已遵循的规范**:
-- AGENTS.md §10 编码规范 ✓
+- AGENTS.md [编码规范](AGENTS.md#coding-standards) ✓
 - docs/components.md 组件 Props 规范 ✓
 - docs/MAINTENANCE.md 文档更新流程 ✓
 
@@ -388,17 +387,17 @@ ConfigManager.update_value() 增量更新。
 
 | 我想知道... | 查阅文档 | 章节 |
 |------------|---------|------|
-| 项目用什么技术？ | AGENTS.md | §2 技术栈 |
-| 文件放在哪里？ | AGENTS.md | §3 目录结构 |
-| 有哪些路由？ | AGENTS.md | §4 核心路由 |
-| 怎么管理状态？ | AGENTS.md | §5 状态管理 |
-| 怎么配置系统？ | AGENTS.md | §6 配置系统 |
-| 怎么调用后端？ | AGENTS.md | §7 后端 API |
-| 有哪些组件？ | AGENTS.md | §8 通用组件 |
-| UI 怎么设计的？ | AGENTS.md | §9 UI 架构 |
-| 代码规范？ | AGENTS.md | §10 编码规范 |
-| 常用命令？ | AGENTS.md | §11 常用命令 |
-| 注意事项？ | AGENTS.md | §12 注意事项 |
+| 项目用什么技术？ | AGENTS.md | [技术栈](AGENTS.md#tech-stack) |
+| 文件放在哪里？ | AGENTS.md | [目录结构](AGENTS.md#directory-structure) |
+| 有哪些路由？ | AGENTS.md | [核心路由](AGENTS.md#core-routes) |
+| 怎么管理状态？ | AGENTS.md | [状态管理](AGENTS.md#state-management) |
+| 怎么配置系统？ | AGENTS.md | [配置系统](AGENTS.md#config-system) |
+| 怎么调用后端？ | AGENTS.md | [后端 API](AGENTS.md#backend-api) |
+| 有哪些组件？ | AGENTS.md | [通用组件](AGENTS.md#common-components) |
+| UI 怎么设计的？ | AGENTS.md | [UI 架构](AGENTS.md#ui-architecture) |
+| 代码规范？ | AGENTS.md | [编码规范](AGENTS.md#coding-standards) |
+| 常用命令？ | AGENTS.md | [常用命令](AGENTS.md#commands) |
+| 注意事项？ | AGENTS.md | [注意事项](AGENTS.md#notes) |
 | 架构详解？ | docs/architecture.md | 全部章节 |
 | 组件 API? | docs/components.md | 按组件名查找 |
 | 后端 API 详解？ | docs/api.md | 按命令名查找 |
@@ -463,7 +462,7 @@ docs/MAINTENANCE.md
 
 1. **先查阅文档，再提问**
    ```
-   遇到问题 → 查阅 AGENTS.md §12 注意事项
+   遇到问题 → 查阅 AGENTS.md [注意事项](AGENTS.md#notes)
           → 查阅 docs/architecture.md
           → 仍然不懂 → 询问 AI
    ```
@@ -471,7 +470,7 @@ docs/MAINTENANCE.md
 2. **提问时提供上下文**
    ```
    ✅ "我在实现玩家管理页面时，路由配置不生效，
-       已查阅 docs/architecture.md §5，
+       已查阅 [路由配置](docs/architecture.md#routes)，
        这是我的配置：[代码]"
    
    ❌ "路由怎么配置？"
@@ -492,7 +491,7 @@ docs/MAINTENANCE.md
 1. **不查阅文档直接提问**
    ```
    ❌ "这个项目有哪些路由？"
-   ✅ "我查阅了 AGENTS.md §4，想确认 /admin/* 
+   ✅ "我查阅了 AGENTS.md [核心路由](AGENTS.md#core-routes)，想确认 /admin/* 
        路由是否都需要权限守卫？"
    ```
 
@@ -500,7 +499,7 @@ docs/MAINTENANCE.md
    ```
    ❌ "怎么开发新功能？"
    ✅ "我要添加玩家管理页面，需要新增哪些文件？
-       参考 docs/architecture.md §2 目录结构"
+       参考 [目录结构](docs/architecture.md#directory-structure)"
    ```
 
 3. **不提供错误信息**
