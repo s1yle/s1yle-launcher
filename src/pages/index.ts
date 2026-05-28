@@ -1,7 +1,6 @@
 // 统一导出所有页面组件
 export { default as Home } from './Home';
 export { default as AccountList } from './AccountList/AccountList';
-export { default as AccountListWithSidebar } from './AccountList/AccountListWithSidebar';
 export { default as InstanceManage } from './Instance/InstanceManage';
 export { default as InstanceList } from './Instance/InstanceList';
 export { default as DownloadGame } from './Download/DownloadGame';

@@ -29,6 +29,7 @@
 // 支持系统JAVA环境识别, java设置中提供java选项, 解析java版本
 // 重构项目的日志模块, 移除现有的cargo 日志库，改为自行实现
 // 支持识别系统字体，并且可以选择系统字体 作为app的默认字体
+// 实现mc账户头像渲染(使用rust 自行实现)
 
 import { useEffect, useRef, useCallback } from 'react';
 import { BrowserRouter as Router, useLocation, useNavigate } from 'react-router-dom';

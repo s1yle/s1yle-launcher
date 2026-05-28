@@ -5,7 +5,6 @@ import { routes, findRouteByPath } from "../router/config";
 import {
   Home,
   AccountList,
-  AccountListWithSidebar,
   InstanceManage,
   InstanceList,
   DownloadGame,
@@ -28,7 +27,6 @@ const PAGE_TRANSITION_DURATION = 0.35;
 const componentMap: Record<string, React.FC> = {
   Home,
   AccountList,
-  AccountListWithSidebar,
   InstanceManage,
   InstanceList,
   DownloadGame,
@@ -77,7 +75,7 @@ export const useRouteParams = (): Record<string, string> => {
   // 优先使用 context 中的参数（手动解析的）
   // 如果没有，则使用 React Router 的参数
   const params = contextParams || reactRouterParams || {};
-  
+
   // 过滤掉 undefined 值，确保返回类型符合 Record<string, string>
   return Object.fromEntries(
     Object.entries(params).filter(([_, value]) => value !== undefined)
@@ -139,7 +137,7 @@ const RouterRenderer = () => {
           exit={animationValues.exit}
           transition={{
             duration: PAGE_TRANSITION_DURATION,
-            type:'spring'
+            type: 'spring'
           }}
         >
           <RouteParamsContext.Provider value={params}>
