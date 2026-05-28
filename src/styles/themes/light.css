@@ -1,5 +1,5 @@
 /* 静海 青灰 */
-.theme-light {
+.theme-light-grey {
   /* 背景系统 - 提高饱和度，保留原明度，更鲜活不发灰 */
   --color-bg-primary: #aebfd1;    /* 主背景：饱和度+18%，蓝色更明显 */
   --color-bg-secondary: #98adc5;  /* 卡片背景：饱和度+15%，层次感不变 */

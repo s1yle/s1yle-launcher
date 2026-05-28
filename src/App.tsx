@@ -1,4 +1,35 @@
-// TODO: 检查并更新 package.json 中的旧包
+// TODO: 特殊人群适配
+// - 光敏用户保护
+// - 禁用自动播放闪烁动画（频率≥3Hz 且持续≥5 秒）
+// - 提供 “光敏模式”：纯黑背景 + 无动画 + 高对比度文本
+// - 禁止深色模式 + 反转组合：会导致亮度激增，引发头痛 / 癫痫
+// - 低视力用户适配
+// - 支持文本缩放（最大至 200%）
+// - 提供高对比度模式（独立于系统反转）
+// - 避免使用细线条（<1px）和低对比度图标
+// - 系统级辅助功能适配
+// - 支持inverted-colors媒体查询，检测系统反转时禁用应用深色模式
+// - 支持prefers-contrast: more，提供额外高对比度样式
+// - 支持forced-colors，适配 Windows 高对比度模式
+// - 支持读屏模式
+//
+// TODO: 杂项
+// 在现有架构基础实现主题选择模式，支持跟随系统 + 浅色 + 深色模式
+// 系统主题感知：自动适配浅色 / 深色模式，支持prefers-color-scheme
+// 实现《用户协议》
+//
+// TODO: The Next Phase
+// 实现账户界面初步 ui 设计
+// 美化侧边栏样式
+// 在灵动岛中添加游戏下载入口
+// 支持自定义背景加载
+// 制定app字体大小标准
+// 支持设置字体大小
+// 页面切换及侧边栏动画重构,支持更一致、实用的动画. 将动画重构为通用基层api.
+// 支持系统JAVA环境识别, java设置中提供java选项, 解析java版本
+// 重构项目的日志模块, 移除现有的cargo 日志库，改为自行实现
+// 支持识别系统字体，并且可以选择系统字体 作为app的默认字体
+
 import { useEffect, useRef, useCallback } from 'react';
 import { BrowserRouter as Router, useLocation, useNavigate } from 'react-router-dom';
 import { routes, findRouteByPath, LayoutMode, pagesWithOwnSidebar } from './router/config';
@@ -18,7 +49,7 @@ import IslandLayout from './AppLayouts/IslandLayout';
 import AppHeader from './AppLayouts/AppHeader';
 import AppSidebar from './AppLayouts/AppSidebar';
 import AppMain from './AppLayouts/AppMain';
-import useLayoutStore, {PAGE_TRANSITION_DURATION, SIDEBAR_TRANSITION_DURATION} from './stores/layoutStore';
+import useLayoutStore, { PAGE_TRANSITION_DURATION, SIDEBAR_TRANSITION_DURATION } from './stores/layoutStore';
 
 const LAYOUT_MODES = {
   [UIMode.CLASSIC]: ClassicLayout,

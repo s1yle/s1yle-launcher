@@ -1,6 +1,6 @@
 /* 深海 */
 :root,
-.theme-dark {
+.theme-dark-blue {
   /* 背景系统 - 同色系渐变，统一和谐不割裂 */
   --color-bg-primary: #2c577e;    /* 主背景：深海蓝青（你选的主色） */
   --color-bg-secondary: #244869;  /* 卡片背景：比主色深15%，同色系 */

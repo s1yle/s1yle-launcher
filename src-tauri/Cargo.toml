@@ -1,3 +1,11 @@
+# TODO: 如果条件允许，移除以下库，改为自己实现:
+# - chrono（日期)
+# - tracing 全家桶（日志）
+# - dirs-next（路径）
+# - uuid（ID）
+# - hex（十六进制)
+# - md5/sha1（哈希）
+
 [package]
 name = "s1yle-launcher"
 version = "0.1.0"
@@ -8,53 +16,51 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
+crate-type = ["cdylib", "rlib", "staticlib"]
 # The `_lib` suffix may seem redundant but it is necessary
 # to make the lib name unique and wouldn't conflict with the bin name.
 # This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
 name = "s1yle_launcher_lib"
-crate-type = ["staticlib", "cdylib", "rlib"]
-
-[build-dependencies]
-tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
-tauri-plugin-opener = "2"
+chrono = "0.4.44"
+dirs-next = "2.0"
+once_cell = "1.21.3"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-once_cell = "1.21.3"
-chrono = "0.4.44"
-tracing = "0.1.44"
-tracing-subscriber = { version="0.3.22", features = ["env-filter", "time"] }
-tracing-appender = "0.2.4"
-dirs-next = "2.0"
+tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+tracing = "0.1.44"
+tracing-appender = "0.2.4"
+tracing-subscriber = { version = "0.3.22", features = ["env-filter", "time"] }
 
-[dependencies.uuid]
-version = "1.21.0"
-features = ["v8", "v4", "v3"]
+[dependencies.hex]
+version = "0.4"
+
+[dependencies.md5]
+version = "0.7"
 
 [dependencies.reqwest]
 version = "0.12"
 features = ["json", "stream"]
 
+[dependencies.sha1]
+version = "0.10"
+
 [dependencies.tokio]
 version = "1"
 features = ["full"]
 
-[dependencies.md5]
-version = "0.7"
-
-[dependencies.sha1]
-version = "0.10"
-
-
-
-[dependencies.hex]
-version = "0.4"
+[dependencies.uuid]
+version = "1.21.0"
+features = ["v3", "v4", "v8"]
 
 [dependencies.zip]
 version = "2"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.58", features = ["Win32_Storage_FileSystem"] }

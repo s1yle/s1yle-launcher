@@ -1,4 +1,4 @@
-import { useThemeStore } from '../stores/themeStore';
+import { ThemePreset, useThemeStore } from '../stores/themeStore';
 import { AnimationConfig, UIMode, useUIModeStore } from '../stores/uiModeStore';
 import TerminalThemePreview from '../components/common/TerminalThemePreview';
 import { Toggle, VersionFilterDropdown } from '../components/common';
@@ -6,13 +6,19 @@ import { SettingsPanel } from '@/components/common/SettingsPanel/SettingPanel';
 import { useState } from 'react';
 
 const Settings = () => {
-  const { accentColor, setAccentColor, applyPreset, } = useThemeStore();
+  const setAccentColor = useThemeStore((s) => s.setAccentColor);
 
   const { mode: uiMode, setMode: setUIMode, animation, setAnimation } = useUIModeStore();
   const [isCompat, setIsCompat] = useState(true)
 
   const handleAnimationSetting = () => {
-    setAnimation({enabled: !animation.enabled});
+    setAnimation({ enabled: !animation.enabled });
+  }
+
+  const handleThemeSelect = (preset: ThemePreset | undefined): void => {
+    if (!preset) return;
+    console.warn("切换相应主题色！", preset);
+    // setAccentColor(preset.accentColor);
   }
 
   return (
@@ -36,8 +42,6 @@ const Settings = () => {
           disabled={false}
         />
       </SettingsPanel>
-
-      {/* <VersionFilterDropdown className='pb-3' value='all' onChange={() => { }} versions={[{ id: '1', name: '1', type_: '1', release_time: '1', url: '1' }]}></VersionFilterDropdown> */}
 
       {/* 主题设置 */}
       <SettingsPanel
