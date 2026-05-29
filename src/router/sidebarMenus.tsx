@@ -21,10 +21,12 @@ import {
   Copy,
   Trash2,
   FileDown,
-  type LucideIcon,
   UserPlus,
+  Upload,
+  BarChart3,
+  Server,
 } from 'lucide-react';
-import { type LayoutMode, type RouteConfig, SidebarGroup, type SidebarMenuItem, type SidebarType } from "./models";
+import { SidebarGroup, type SidebarMenuItem, } from "./models";
 import InstanceManageButton from '@/components/common/sidebar/renderer/InstanceManageButton';
 import { handleAddGameFolder, handleRefreshInstances } from './actionHandler';
 
@@ -42,7 +44,7 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
         labelI18nKey: 'nav.account',
         icon: User,
         path: '/account',
-        roles: ['player', 'admin'],
+        roles: ['player'],
       }
     ],
     children: [
@@ -99,7 +101,29 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
         labelI18nKey: 'nav.games',
         icon: Gamepad2,
         path: '/instance-list',
-        roles: ['player', 'admin'],
+        roles: ['player'],
+      },
+      {
+        id: 'servers',
+        label: '服务器管理',
+        labelI18nKey: 'nav.servers',
+        icon: Server,
+        path: '/admin/servers',
+        roles: ['admin'],
+      },      {
+        id: 'analytics',
+        label: '数据分析',
+        labelI18nKey: 'nav.analytics',
+        icon: BarChart3,
+        path: '/admin/analytics',
+        roles: ['admin'],
+      },      {
+        id: 'upload-config',
+        label: '配置上传',
+        labelI18nKey: 'nav.uploadConfig',
+        icon: Upload,
+        path: '/admin/upload',
+        roles: ['admin'],
       }
     ],
     children: [

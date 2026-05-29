@@ -1,11 +1,9 @@
 import {
-  User,
   Gamepad2,
   Settings,
   Server,
   BarChart3,
   Upload,
-  Crown,
   type LucideIcon,
   Home
 } from 'lucide-react';
@@ -89,7 +87,6 @@ function getNavItemsByGroup(group: SidebarMenuItem[]): NavItem[] {
 
   group.forEach((item) => {
     let nItems = item.navItem;
-    logger.info("该 account item：", item);
     if (nItems) {
       nItems.forEach((ni) => {
         navItems.push(ni);
@@ -101,7 +98,7 @@ function getNavItemsByGroup(group: SidebarMenuItem[]): NavItem[] {
 }
 
 // 获取所有已知组别的 NavItems
-function getAllGroupsOfNavItems(): NavItem[] {
+function getAllGroupsOfNavItems(role: ('player' | 'admin' | 'creator')): NavItem[] {
   const groups = getSidebarGroups();
 
   let navItems: NavItem[] = [];
@@ -110,21 +107,21 @@ function getAllGroupsOfNavItems(): NavItem[] {
 
   let ni = getNavItemsByGroup(groups.account);
   ni.forEach((i) => {
-    if (i.roles.includes("player")) {
+    if (i.roles.includes(role)) {
       navItems.push(i);
     }
   })
 
   ni = getNavItemsByGroup(groups.game);
   ni.forEach((i) => {
-    if (i.roles.includes("player")) {
+    if (i.roles.includes(role)) {
       navItems.push(i);
     }
   })
 
   ni = getNavItemsByGroup(groups.common);
   ni.forEach((i) => {
-    if (i.roles.includes("player")) {
+    if (i.roles.includes(role)) {
       navItems.push(i);
     }
   })
@@ -132,16 +129,16 @@ function getAllGroupsOfNavItems(): NavItem[] {
 }
 
 function getPlayerNavItems(): NavItem[] {
-  let navItems = getAllGroupsOfNavItems();
+  let navItems = getAllGroupsOfNavItems('player');
 
   if (navItems.length<=0 || !navItems) return playerNavItems;
   return navItems;
 }
 
 function getAdminNavItems(): NavItem[] {
-  let navItems = getAllGroupsOfNavItems();
+  let navItems = getAllGroupsOfNavItems('admin');
 
-  if (navItems.length<=0 || !navItems) return playerNavItems;
+  if (navItems.length<=0 || !navItems) return adminNavItems;
   return navItems;
 }
 

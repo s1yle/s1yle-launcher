@@ -17,7 +17,7 @@ import {
   Feedback,
   Hint,
   VersionInstall,
-  InstanceGameSettings
+  InstanceGameSettings,
 } from '../pages';
 import { AdminServers, AdminAnalytics, AdminUpload } from '../pages/admin';
 import { useUIModeStore } from "../stores/uiModeStore";
