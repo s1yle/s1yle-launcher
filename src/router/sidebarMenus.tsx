@@ -110,14 +110,14 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
         icon: Server,
         path: '/admin/servers',
         roles: ['admin'],
-      },      {
+      }, {
         id: 'analytics',
         label: '数据分析',
         labelI18nKey: 'nav.analytics',
         icon: BarChart3,
         path: '/admin/analytics',
         roles: ['admin'],
-      },      {
+      }, {
         id: 'upload-config',
         label: '配置上传',
         labelI18nKey: 'nav.uploadConfig',
@@ -229,6 +229,21 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
         group: SidebarGroup.GAME,
         children: [
           {
+            // TODO:// 在静态配置中标记为"可替换"
+            // {
+            //   id: 'game-folders',
+            //   type: 'placeholder',  // 明确标记为占位符
+            //   replaceWith: 'folderItems',  // 指定替换内容
+            //   // ...
+            // }
+            //
+            // // 在合并时自动处理
+            // const allSidebarItems = sidebarItems.flatMap(item => {
+            //   if (item.type === 'placeholder' && item.replaceWith === 'folderItems') {
+            //     return folderItems;  // 直接替换
+            //   }
+            //   return item;
+            // });
             id: 'game-folders',
             type: 'route',
             title: '游戏目录',

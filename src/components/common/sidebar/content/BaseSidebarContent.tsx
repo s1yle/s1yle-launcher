@@ -3,9 +3,11 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronDown, RefreshCw } from 'lucide-react';
+import { ChevronRight, ChevronDown, RefreshCw, Trash2, FolderOpen } from 'lucide-react';
 import { type SidebarMenuItem } from '../../../../router/config';
 import { useInstanceStore } from '../../../../stores/instanceStore';
+import ContextMenu, { ContextMenuItemData, useContextMenu } from '../../ContextMenu';
+import clsx from 'clsx';
 
 export interface BaseSidebarContentProps {
   items: SidebarMenuItem[];
@@ -13,6 +15,15 @@ export interface BaseSidebarContentProps {
   isActive?: (path: string) => boolean;
   isParentActive?: (path: string) => boolean;
   hasChildrenItems?: (item: SidebarMenuItem) => boolean;
+
+  isItemActive?: (id: string) => boolean;
+  groupTitle?: string;
+  groupTitleI18nKey?: string;
+  onItemDelete?: (id: string) => void;
+  onItemOpenFolder?: (id: string) => void;
+  deletableItemIds?: Set<string>;
+  onContextMenuAction?: (parentId: string, actionId: string) => void;
+  enableClickToExpand?: boolean;
 }
 
 const BaseSidebarContent = ({
@@ -21,16 +32,24 @@ const BaseSidebarContent = ({
   isActive,
   isParentActive,
   hasChildrenItems,
+  isItemActive,
+  groupTitle = "未知",
+  groupTitleI18nKey,
+  onItemDelete,
+  onItemOpenFolder,
+  deletableItemIds,
+  onContextMenuAction,
+  enableClickToExpand = false,
 }: BaseSidebarContentProps) => {
   const { t } = useTranslation();
   const location = useLocation();
   const instance = useInstanceStore(s => s.getSelectedInstance());
-  
+
   // 初始化展开状态
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => {
     const expanded = new Set<string>();
     let hasMatchedPath = false;
-    
+
     items.forEach(item => {
       if (item.children?.length) {
         if (item.path && location.pathname.startsWith(item.path + '/')) {
@@ -39,7 +58,7 @@ const BaseSidebarContent = ({
         }
       }
     });
-    
+
     // 如果没有匹配的路径（如在主页），展开所有顶级菜单项
     if (!hasMatchedPath) {
       items.forEach(item => {
@@ -48,7 +67,7 @@ const BaseSidebarContent = ({
         }
       });
     }
-    
+
     return expanded;
   });
   const [spinningItems, setSpinningItems] = useState<Set<string>>(new Set());
@@ -76,6 +95,76 @@ const BaseSidebarContent = ({
   const parentActiveCheck = isParentActive || defaultIsParentActive;
   const childrenCheck = hasChildrenItems || defaultHasChildrenItems;
 
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [contextMenuTarget, setContextMenuTarget] = useState<string | null>(null);
+  const { contextMenuState, showContextMenu, hideContextMenu } = useContextMenu();
+
+  const toggleExpand = (id: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleActionWithContext = (e: React.MouseEvent, item: SidebarMenuItem) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (item.type === 'action' && item.children && item.children.length > 0) {
+      setContextMenuTarget(item.id);
+      showContextMenu(e);
+    } else {
+      handleItemClick(item);
+    }
+  };
+
+  const handleContextMenu = (e: React.MouseEvent, itemId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedItemId(itemId);
+    showContextMenu(e);
+  };
+
+  const handleContextMenuAction = (id: string) => {
+    if (contextMenuTarget && onContextMenuAction) {
+      onContextMenuAction(contextMenuTarget, id);
+      hideContextMenu();
+      setContextMenuTarget(null);
+      return;
+    }
+
+    if (!selectedItemId) return;
+
+    switch (id) {
+      case 'delete':
+        onItemDelete?.(selectedItemId);
+        break;
+      case 'openFolder':
+        onItemOpenFolder?.(selectedItemId);
+        break;
+    }
+  };
+
+  const getContextMenuItems = (): ContextMenuItemData[] => {
+    if (contextMenuTarget) {
+      const parentItem = items.find(i => i.id === contextMenuTarget);
+      if (parentItem?.children) {
+        return parentItem.children.map((child: SidebarMenuItem) => ({
+          id: child.id,
+          label: t(child.titleI18nKey, child.title) as string,
+          icon: child.icon,
+          danger: child.danger,
+        }));
+      }
+    }
+    return [
+      { id: 'delete', label: t('contextMenu.deleteFolder', '删除游戏文件夹') as string, icon: Trash2, danger: true },
+      { id: 'divider1', label: '', divider: true },
+      { id: 'openFolder', label: t('contextMenu.openFolder', '打开所在文件夹') as string, icon: FolderOpen },
+    ];
+  };
+
   const toggleGroup = (id: string) => {
     setExpandedGroups(prev => {
       const next = new Set(prev);
@@ -102,13 +191,26 @@ const BaseSidebarContent = ({
           });
         }, 1000);
       }
-      item.action();
+      if (item.action) item.action();
     } else if (item.type === 'external' && item.url) {
       openUrl(item.url);
     }
   };
 
+  const isDeletable = (itemId: string) => deletableItemIds?.has(itemId) ?? false;
+
   const renderItem = (item: SidebarMenuItem, level: number = 0, index: number = 0) => {
+
+    const isActionWithContext = item.type === 'action' && item.children && item.children.length > 0;
+    const canDelete = isDeletable(item.id);
+
+    const hasChildren = childrenCheck(item);
+    const isExpanded = expandedGroups.has(item.id);
+    const active = item.type === 'route' && item.path ? activeCheck(item.path) : false;
+    const itemActive = isItemActive ? isItemActive(item.id) : false;
+    const parentActive = !active && item.type === 'route' && item.path ? parentActiveCheck(item.path) : false;
+
+    // 渲染分隔符
     if (item.type === 'divider') {
       return (
         <div key={item.id} className="my-2 border-t border-[var(--color-border)]" />
@@ -117,16 +219,24 @@ const BaseSidebarContent = ({
 
     if (item.type === 'header') {
       const isExpanded = expandedGroups.has(item.id);
+
       return (
         <motion.div
+          className='----------------------headeraksdjadjklasdjlkajdlakdjlaskjdlajdladlajldadla------'
           key={item.id}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: index * 0.03, duration: 0.15 }}
         >
+
+          {/* ↓ 箭头 */}
           <button
             onClick={() => item.children?.length && toggleGroup(item.id)}
-            className="w-full flex items-center justify-between py-2 px-4 mb-1 text-sm font-semibold text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors"
+            className="w-full flex items-center 
+              justify-between py-2 px-4 mb-1 
+              text-sm text-[var(--color-text-tertiary)] 
+              hover:text-[var(--color-text-secondary)] 
+              transition-colors"
           >
             <span>{t(item.titleI18nKey, item.title)}</span>
             {item.children?.length && (
@@ -154,11 +264,6 @@ const BaseSidebarContent = ({
       );
     }
 
-    const hasChildren = childrenCheck(item);
-    const isExpanded = expandedGroups.has(item.id);
-    const active = item.type === 'route' && item.path ? activeCheck(item.path) : false;
-    const parentActive = !active && item.type === 'route' && item.path ? parentActiveCheck(item.path) : false;
-
     // 如果有 customRender，使用自定义渲染
     if (item.customRender) {
       const CustomComponent = item.customRender;
@@ -169,7 +274,7 @@ const BaseSidebarContent = ({
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: index * 0.03, duration: 0.15 }}
           style={{
-             padding: level > 0 ? `${level * 0.75}rem` : `0.75rem`,
+            padding: level > 0 ? `${level * 0.75}rem` : `0.75rem`,
           }}
         >
           <CustomComponent
@@ -213,26 +318,36 @@ const BaseSidebarContent = ({
         initial={{ opacity: 0, x: -8 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: index * 0.03, duration: 0.15 }}
+        className='BaseSidebarContent'
       >
         <motion.button
-          onClick={() => handleItemClick(item)}
-          className={`
-            w-full flex items-center gap-3 py-2.5 rounded-lg cursor-pointer
-            border-l-[3px] transition-colors duration-200
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--color-bg-secondary)]
-            ${active
-              ? 'bg-[var(--color-surface-active)] text-[var(--color-text-primary)] font-semibold border-l-[var(--color-primary)]'
-              : parentActive
-                ? 'bg-[var(--color-surface)] text-[var(--color-text-primary)] border-l-[var(--color-primary)] border-l-opacity-50'
-                : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] border-l-transparent'
+          onClick={(e) => {
+            if (isActionWithContext) {
+              handleActionWithContext(e, item);
+            } else {
+              if (enableClickToExpand && hasChildren) toggleExpand(item.id);
+              handleItemClick(item);
             }
-          `}
-          whileTap={{ scale: 0.97 }}
+          }}
+          onContextMenu={canDelete ? (e) => handleContextMenu(e, item.id) : undefined}
+          className={clsx(
+            'w-full flex items-center gap-3 py-2.5 cursor-pointer',
+            'border-l-[3px] transition-colors duration-200',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--color-bg-secondary)]',
+            {
+              'text-[var(--color-error)] hover:bg-[var(--color-error-10)] border-l-transparent': item.danger && !active && !itemActive,
+              'bg-[var(--color-surface-active)] text-[var(--color-text-primary)] font-semibold border-l-[var(--color-primary)]': active || itemActive,
+              'bg-[var(--color-surface)] text-[var(--color-text-primary)] border-l-[var(--color-primary)] border-l-opacity-50': !active && !itemActive && parentActive,
+              'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] border-l-transparent': !active && !itemActive && !parentActive && !item.danger,
+            }
+          )}          // whileTap={{ scale: 0.97 }}
           transition={{ duration: 0.1 }}
         >
+
+          {/* 按钮图标 */}
           {item.icon && (
             <motion.span
-              className="w-5 h-5 flex-shrink-0 flex items-center justify-center"
+              className="w-5 h-5 flex-shrink-0 flex items-center justify-center pl-2 "
               whileHover={{ scale: 1.15 }}
               transition={{ type: 'spring', stiffness: 400, damping: 15 }}
             >
@@ -241,17 +356,31 @@ const BaseSidebarContent = ({
                   animate={{ rotate: 360 }}
                   transition={{ duration: 1, ease: 'linear', repeat: Infinity }}
                 >
-                  {item.icon}
+                  {renderIcon(item.icon, '', 'lg')}
                 </motion.span>
               ) : (
                 item.icon
               )}
             </motion.span>
           )}
+
+          {/* 显示该按钮的title, 比如 /settings 就显示为其 title "设置" */}
           <span className="text-sm text-left flex-1 truncate">
             {t(item.titleI18nKey, item.title)}
           </span>
-          {hasChildren && (
+
+          {hasChildren && !isActionWithContext && (
+            <motion.div
+              animate={{ rotate: isExpanded ? 90 : 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex-shrink-0"
+            >
+              {/* TODO: 样式美化一下再启用该箭头 */}
+              {/* <ChevronRight className="w-3.5 h-3.5 text-[var(--color-text-tertiary)]" /> */}
+            </motion.div>
+          )}
+
+          {isActionWithContext && (
             <motion.div
               animate={{ rotate: isExpanded ? 90 : 0 }}
               transition={{ duration: 0.2 }}
@@ -260,10 +389,22 @@ const BaseSidebarContent = ({
               <ChevronRight className="w-3.5 h-3.5 text-[var(--color-text-tertiary)]" />
             </motion.div>
           )}
+
+          {canDelete && (
+            <motion.div
+              onClick={(e) => { e.stopPropagation(); onItemDelete?.(item.id); }}
+              className="opacity-0 group-hover/item:opacity-100 p-1 text-[var(--color-text-tertiary)] hover:text-error rounded transition-all duration-150 flex-shrink-0 cursor-pointer"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              title={t('instances.removeGameFolder', '删除游戏目录')}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </motion.div>
+          )}
         </motion.button>
 
         <AnimatePresence>
-          {hasChildren && isExpanded && item.children && (
+          {hasChildren && !isActionWithContext && isExpanded && item.children && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
@@ -282,8 +423,30 @@ const BaseSidebarContent = ({
   };
 
   return (
-    <div className="space-y-0.5">
-      {items.map((item, index) => renderItem(item, 0, index))}
+    <div>
+      {groupTitle && (
+        <div className="text-sm text-[var(--color-text-tertiary)] 
+            mb-3 px-4 pb-2 border-b 
+            border-[var(--color-border)]"
+        >
+          {groupTitleI18nKey ? t(groupTitleI18nKey, groupTitle) : groupTitle}
+        </div>
+      )}
+
+      <div className="space-y-0.5">
+        {items.map((item, index) => renderItem(item, 0, index))}
+      </div>
+
+      <ContextMenu
+        items={getContextMenuItems()}
+        position={contextMenuState.position}
+        visible={contextMenuState.visible}
+        onClose={() => {
+          hideContextMenu();
+          setContextMenuTarget(null);
+        }}
+        onItemClick={handleContextMenuAction}
+      />
     </div>
   );
 };

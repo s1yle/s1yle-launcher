@@ -40,17 +40,16 @@ const Header = ({ type, title }: HeaderProps) => {
   };
 
   return (
-    <header 
-      id='title-bar' 
-      className="bg-primary text-text-primary h-16 flex items-center justify-between px-6
-        shadow-[var(--shadow-md)] z-31"
+    <header
+      id='title-bar'
+      className="bg-primary text-text-primary h-16 flex items-center justify-between px-6 z-31"
       data-tauri-drag-region="true"
     >
       <div className="flex items-center gap-4" data-tauri-drag-region="true">
         {type === 'main' ? (
           <>
-            <motion.div 
-              className="w-10 h-10 bg-warning rounded-lg flex items-center justify-center shadow-lg"
+            <motion.div
+              className="w-10 h-10 bg-warning rounded-lg flex items-center justify-center"
               whileHover={{ scale: 1.05, rotate: -2 }}
               whileTap={{ scale: 0.95 }}
               transition={{ type: "spring", stiffness: 400, damping: 15 }}

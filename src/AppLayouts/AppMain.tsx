@@ -4,56 +4,56 @@ import useLayoutStore, { PAGE_TRANSITION_DURATION, SIDEBAR_TRANSITION_DURATION }
 import { debounce } from "@/utils/configUtils";
 
 export interface AppMainProps {
-    hasOwnSidebar: boolean;
-    isSidebarCollapsed: boolean;
+  hasOwnSidebar: boolean;
+  isSidebarCollapsed: boolean;
 }
 
 const AppMain = ({
-    hasOwnSidebar = false,
-    isSidebarCollapsed = false,
+  hasOwnSidebar = false,
+  isSidebarCollapsed = false,
 }: AppMainProps) => {
 
-    const width = useLayoutStore((s) => s.sidebarWidth)
-    const appliedWidthRef = useRef(width);
-    const [appliedWidth, setAppliedWidth] = useState(width);
+  const width = useLayoutStore((s) => s.sidebarWidth)
+  const appliedWidthRef = useRef(width);
+  const [appliedWidth, setAppliedWidth] = useState(width);
 
-    // 使用防抖函数优化侧边栏宽度变化时的响应
-    // 当宽度频繁变化时（如拖拽调整），避免频繁触发状态更新
-    const debouncedSetWidth = useCallback(
-        debounce((newWidth: number) => {
-            appliedWidthRef.current = newWidth;
-            setAppliedWidth(newWidth);
-        }, PAGE_TRANSITION_DURATION * 1000),
-        []
-    );
+  // 使用防抖函数优化侧边栏宽度变化时的响应
+  // 当宽度频繁变化时（如拖拽调整），避免频繁触发状态更新
+  const debouncedSetWidth = useCallback(
+    debounce((newWidth: number) => {
+      appliedWidthRef.current = newWidth;
+      setAppliedWidth(newWidth);
+    }, PAGE_TRANSITION_DURATION * 1000),
+    []
+  );
 
-    useEffect(() => {
-        // 如果宽度发生变化，立即更新 ref 和 state
-        if (appliedWidthRef.current !== width) {
-            appliedWidthRef.current = width;
-            setAppliedWidth(width);
-        }
-        // 同时启动防抖以处理连续变化
-        debouncedSetWidth(width);
-    }, [width, debouncedSetWidth]);
+  useEffect(() => {
+    // 如果宽度发生变化，立即更新 ref 和 state
+    if (appliedWidthRef.current !== width) {
+      appliedWidthRef.current = width;
+      setAppliedWidth(width);
+    }
+    // 同时启动防抖以处理连续变化
+    debouncedSetWidth(width);
+  }, [width, debouncedSetWidth]);
 
-    const paddingLeft = hasOwnSidebar && !isSidebarCollapsed ? appliedWidth : 0;
+  const paddingLeft = hasOwnSidebar && !isSidebarCollapsed ? appliedWidth : 0;
 
-    return (
-        <>
-            <main
-                className="flex-1 overflow-y-auto overflow-x-hidden relative scrollbar-custom pt-30"
-                style={{
-                    background: 'var(--color-bg-secondary)',
-                    height: '100%',
-                    paddingLeft,
-                    transition: `padding-left ${SIDEBAR_TRANSITION_DURATION}s ease-in-out`,
-                }}
-            >
-                <RouterRenderer />
-            </main>
-        </>
-    )
+  return (
+    <>
+      <main
+        className="flex-1 overflow-y-auto overflow-x-hidden relative scrollbar-custom"
+        style={{
+          background: 'var(--color-bg-secondary)',
+          height: '100%',
+          paddingLeft,
+          transition: `padding-left ${SIDEBAR_TRANSITION_DURATION}s ease-in-out`,
+        }}
+      >
+        <RouterRenderer />
+      </main>
+    </>
+  )
 }
 
 export default AppMain;

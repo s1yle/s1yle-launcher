@@ -1,12 +1,19 @@
 import { NavItem } from "@/config/navigationConfig";
 import { ReactNode } from "react";
 
+
+/**
+ * ## 侧边栏级别(主、次、从)
+ */
 export enum SidebarType {
   MAIN = 'main',
   SUB = 'sub',
   SECONDARY = 'secondary'
 }
 
+/**
+ * ## RouteConfig 类型使用的
+ */
 export interface HeaderConfig {
   type: SidebarType;
   title: string;
@@ -31,6 +38,9 @@ export enum SidebarGroup {
   NONE = 'none'
 }
 
+/**
+ * ## 该type 不同于HeaderConfig 类型中的 type
+ */
 export type SidebarItemType = 'route' | 'action' | 'external' | 'divider' | 'header';
 
 export interface SidebarMenuItem {

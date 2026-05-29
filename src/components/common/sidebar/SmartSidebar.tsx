@@ -12,7 +12,7 @@ import { logger } from '../../../helper/logger';
 import { openUrl, openFolder } from '../../../helper/rustInvoke';
 import { useInstanceStore } from '@/stores/instanceStore';
 import { Folder } from 'lucide-react';
-import { ConfirmPopup, useNotification } from '@/components/common';
+import { BaseSidebarContent, ConfirmPopup, useNotification } from '@/components/common';
 import { useContextMenuAction } from '../../../router/contextMenuConfigs';
 
 export interface SmartSidebarProps {
@@ -29,6 +29,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: Sm
   const selectedFolderId = useInstanceStore(s => s.selectedFolderId);
 
 
+  // 侧边栏按钮点击辅助函数
   const handleItemClick = (item: SidebarMenuItem) => {
     logger.info(`菜单点击: type=${item.type} path=${item.path}`);
 
@@ -37,7 +38,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: Sm
 
       const route = findRouteByPath(item.path, routes);
       if (route?.autoNavigateToFirstChild && route.children && route.children.length > 0 && onMenuClick) {
-        autoJumpToFirstChild(route,onMenuClick);
+        autoJumpToFirstChild(route, onMenuClick);
         return;
       }
 
@@ -76,216 +77,216 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: Sm
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deletingName, setDeletingName] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [currentMenuItem_, setCurrentMenuItem] = useState();
 
   // 渲染子侧边栏
-  if (pagesWithOwnSidebar.some(path => location.pathname.startsWith(path)) || isInstanceManagePage) {
-    const findMenuItemsByPath = (path: string): { current: SidebarMenuItem | undefined, parent: SidebarMenuItem | undefined } => {
-      let foundParent: SidebarMenuItem | undefined = undefined;
-      const findInItems = (items: SidebarMenuItem[], parent?: SidebarMenuItem): SidebarMenuItem | undefined => {
-        for (const item of items) {
-          // 支持动态参数匹配（如 /instance-manage/:instanceId/game-settings）
-          const normalizedItemPath = item.path?.replace(/:instanceId/g, '[^/]+');
-          const pathRegex = new RegExp(`^${normalizedItemPath}$`);
-          if ((item.path === path || pathRegex.test(path))) {
-            foundParent = parent;
-            return item;
-          }
-          if (item.children) {
-            const found = findInItems(item.children, item);
-            if (found) return found;
-          }
+  // if (pagesWithOwnSidebar.some(path => location.pathname.startsWith(path)) || isInstanceManagePage) {
+
+  // 获取到 current 及 parent 的SidebarMenuItem
+  const findMenuItemsByPath = (path: string): { current: SidebarMenuItem | undefined, parent: SidebarMenuItem | undefined } => {
+    let foundParent: SidebarMenuItem | undefined = undefined;
+    const findInItems = (items: SidebarMenuItem[], parent?: SidebarMenuItem): SidebarMenuItem | undefined => {
+      for (const item of items) {
+        // 支持动态参数匹配（如 /instance-manage/:instanceId/game-settings）
+        const normalizedItemPath = item.path?.replace(/:instanceId/g, '[^/]+');
+        const pathRegex = new RegExp(`^${normalizedItemPath}$`);
+        if ((item.path === path || pathRegex.test(path))) {
+          foundParent = parent;
+          return item;
         }
-        return undefined;
-      };
-      const current = findInItems(sidebarMenuItems);
-      return { current, parent: foundParent };
-    };
-
-    const { current: currentMenuItem, parent: parentMenuItem } = findMenuItemsByPath(location.pathname);
-
-    // 渲染子侧边栏
-    let childrenItems: SidebarMenuItem[] = [];
-    if (currentMenuItem?.children && currentMenuItem.children.length > 0) {
-      childrenItems = currentMenuItem.children;
-    } else if (parentMenuItem?.children && parentMenuItem.children.length > 0) {
-      childrenItems = parentMenuItem.children;
-    }
-
-    // 生成动态文件夹菜单项
-    let folderItems: SidebarMenuItem[] = location.pathname.startsWith('/instance-list') ?
-      knownFolders.map(f => ({
-        id: `folder-${f.id}`,
-        type: 'action' as const,
-        title: f.name,
-        titleI18nKey: '',
-        icon: <Folder className="w-4 h-4" />,
-        action: () => useInstanceStore.getState().setSelectedFolder(f.id),
-        group: 'game' as SidebarGroup,
-      })) : [];
-
-
-    // 合并动态 + 静态
-    const allChildrenItems = [
-      ...folderItems,
-      ...childrenItems.filter(item => item.id !== 'game-folders'),
-    ];
-
-    const SYSTEM_FOLDER_IDS = new Set(['default', 'official', 'home-mc']);
-
-    const deletableIds = new Set(
-      folderItems.filter(f => !SYSTEM_FOLDER_IDS.has(f.id.replace('folder-', ''))).map(f => f.id)
-    );
-
-    const handleDeleteFolder = (itemId: string) => {
-      const folderId = itemId.replace('folder-', '');
-      const folder = knownFolders.find(f => f.id === folderId);
-      setDeletingId(itemId);
-      setDeletingName(folder?.name || folderId);
-      setShowDeleteConfirm(true);
-    };
-
-    const handleOpenFolder = async (itemId: string) => {
-      const folderId = itemId.replace('folder-', '');
-      const folder = knownFolders.find(f => f.id === folderId);
-      if (folder?.path) {
-        try {
-          await openFolder(folder.path);
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : t('notification.error');
-          notifyError(t('instances.openFolderFailed', '打开文件夹失败'), msg);
+        if (item.children) {
+          const found = findInItems(item.children, item);
+          if (found) return found;
         }
       }
+      return undefined;
     };
+    const current = findInItems(sidebarMenuItems);
+    return { current, parent: foundParent };
+  };
 
-    const handleConfirmDelete = async () => {
-      if (!deletingId) return;
-      setIsDeleting(true);
+  const { current: currentMenuItem, parent: parentMenuItem } = findMenuItemsByPath(location.pathname);
+
+  // 渲染侧边栏
+  let sidebarItems: SidebarMenuItem[] = [];
+
+  // 1. 先判断是否有独立侧边栏
+  const hasOwnSidebar = pagesWithOwnSidebar.some(path => location.pathname.startsWith(path)) || isInstanceManagePage;
+
+  // 2. 根据是否有独立侧边栏来决定显示什么
+  if (hasOwnSidebar) {
+    // 有独立侧边栏的页面：显示子菜单
+    if (currentMenuItem?.children && currentMenuItem.children.length > 0) {
+      sidebarItems = currentMenuItem.children;
+    } else if (parentMenuItem?.children && parentMenuItem.children.length > 0) {
+      sidebarItems = parentMenuItem.children;
+    }
+  } else {
+    // 普通页面：显示所有顶级菜单
+    sidebarItems = Object.values(groups).flat();
+  }
+
+  // 生成动态文件夹菜单项
+  let folderItems: SidebarMenuItem[] = location.pathname.startsWith('/instance-list') ?
+    knownFolders.map(f => ({
+      id: `folder-${f.id}`,
+      type: 'action' as const,
+      title: f.name,
+      titleI18nKey: '',
+      icon: <Folder className="w-4 h-4" />,
+      action: () => useInstanceStore.getState().setSelectedFolder(f.id),
+      group: 'game' as SidebarGroup,
+    })) : [];
+
+
+  // 合并动态 + 静态
+  const allSidebarItems = [
+    ...folderItems,
+    // 暂时这样写，用于过滤该占位符(详情见 sidebarMenu.tsx)
+    ...sidebarItems.filter(item => item.id !== 'game-folders'),
+  ];
+
+  // ------------------------- 辅助函数部分 -------------------------
+
+  const SYSTEM_FOLDER_IDS = new Set(['default', 'official', 'home-mc']);
+
+  // 获取可删除的游戏文件夹
+  const deletableIds = new Set(
+    folderItems.filter(f => !SYSTEM_FOLDER_IDS.has(f.id.replace('folder-', ''))).map(f => f.id)
+  );
+
+  // 删除游戏文件夹辅助函数
+  const handleDeleteFolder = (itemId: string) => {
+    const folderId = itemId.replace('folder-', '');
+    const folder = knownFolders.find(f => f.id === folderId);
+    setDeletingId(itemId);
+    setDeletingName(folder?.name || folderId);
+    setShowDeleteConfirm(true);
+  };
+
+  // 打开游戏文件夹辅助函数
+  const handleOpenFolder = async (itemId: string) => {
+    const folderId = itemId.replace('folder-', '');
+    const folder = knownFolders.find(f => f.id === folderId);
+    if (folder?.path) {
       try {
-        const folderId = deletingId.replace('folder-', '');
-        await removeKnownFolder(folderId);
-        success(
-          t('instances.folderRemoved', '目录已移除'),
-          t('instances.folderRemovedMsg', '"{{name}}" 已从列表中移除', { name: deletingName })
-        );
-        setShowDeleteConfirm(false);
-        setDeletingId(null);
-        setDeletingName('');
+        await openFolder(folder.path);
       } catch (e) {
         const msg = e instanceof Error ? e.message : t('notification.error');
-        notifyError(t('instances.removeFolderFailed', '删除失败'), msg);
-      } finally {
-        setIsDeleting(false);
+        notifyError(t('instances.openFolderFailed', '打开文件夹失败'), msg);
       }
-    };
+    }
+  };
 
-    const handleContextMenuAction = (parentId: string, actionId: string) => {
-      logger.info(`Context menu action: parent=${parentId}, action=${actionId}`);
-      useContextMenuAction(parentId, actionId, t, {
-        success,
-        error: notifyError,
-        warning: (title: string, message?: string) => {
-          // TODO: implement warning
-          return '';
-        },
-        info: (title: string, message?: string) => {
-          // TODO: implement info
-          return '';
-        },
-      });
-    };
+  // 确认删除辅助函数
+  const handleConfirmDelete = async () => {
+    if (!deletingId) return;
+    setIsDeleting(true);
+    try {
+      const folderId = deletingId.replace('folder-', '');
+      await removeKnownFolder(folderId);
+      success(
+        t('instances.folderRemoved', '目录已移除'),
+        t('instances.folderRemovedMsg', '"{{name}}" 已从列表中移除', { name: deletingName })
+      );
+      setShowDeleteConfirm(false);
+      setDeletingId(null);
+      setDeletingName('');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : t('notification.error');
+      notifyError(t('instances.removeFolderFailed', '删除失败'), msg);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
+  // 右键菜单辅助函数
+  const handleContextMenuAction = (parentId: string, actionId: string) => {
+    logger.info(`Context menu action: parent=${parentId}, action=${actionId}`);
+    useContextMenuAction(parentId, actionId, t, {
+      success,
+      error: notifyError,
+      warning: (title: string, message?: string) => {
+        // TODO: implement warning
+        return '';
+      },
+      info: (title: string, message?: string) => {
+        // TODO: implement info
+        return '';
+      },
+    });
+    // };
+  }
+
+  const renderSidebar = (items: SidebarMenuItem[]) => {
     return (
+      <>
+        <BaseSidebarLayout footer={footer} header={header}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`sidebar-all
+                sidebar-instance-${selectedFolderId || 'default'}  
+              `}
+              // 这个key也是没有的
+              className="flex flex-col" // py-2 不一样
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+            >
+              <BaseSidebarContent
+                // 这个items需要根据情况调整
+                items={items}
+                onMenuClick={handleItemClick}
+                isActive={isActive}
+                isParentActive={isParentOfActive}
+                hasChildrenItems={hasChildrenItems}
 
-      <BaseSidebarLayout footer={footer} header={header}>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`sidebar-instance-${selectedFolderId || 'default'}`}
-            className="py-2"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 10 }}
-            transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-          >
-            <BaseChildrenContent
-              items={allChildrenItems}
-              onMenuClick={handleItemClick}
-              isActive={isActive}
-              isItemActive={(id) => id === `folder-${selectedFolderId}`}
-              isParentActive={isParentOfActive}
-              hasChildrenItems={hasChildrenItems}
-              groupTitle={currentMenuItem?.title || parentMenuItem?.title || ''}
-              groupTitleI18nKey={currentMenuItem?.titleI18nKey || parentMenuItem?.titleI18nKey}
-              onItemDelete={handleDeleteFolder}
-              onItemOpenFolder={handleOpenFolder}
-              deletableItemIds={deletableIds}
-              onContextMenuAction={handleContextMenuAction}
-            />
-          </motion.div>
-        </AnimatePresence>
+                // 不一样的点
+                isItemActive={(id) => id === `folder-${selectedFolderId}`}
+                groupTitle={currentMenuItem?.title || parentMenuItem?.title || ''}
+                groupTitleI18nKey={currentMenuItem?.titleI18nKey || parentMenuItem?.titleI18nKey}
+                onItemDelete={handleDeleteFolder}
+                onItemOpenFolder={handleOpenFolder}
+                deletableItemIds={deletableIds}
+                onContextMenuAction={handleContextMenuAction}
+              >
+              </BaseSidebarContent>
 
-        {showDeleteConfirm && (
-          <ConfirmPopup
-            isOpen={showDeleteConfirm}
-            title={t('instances.confirmRemoveFolder', '删除游戏目录')}
-            message={t('instances.confirmRemoveFolderDesc', '确定要删除目录 "{{name}}" 吗？此操作仅从列表中移除记录，不会删除实际文件。', { name: deletingName })}
-            confirmText={t('common.delete', '删除')}
-            cancelText={t('common.cancel', '取消')}
-            confirmType="danger"
-            showIcon
-            iconType="warning"
-            loading={isDeleting}
-            onConfirm={handleConfirmDelete}
-            onCancel={() => {
-              setShowDeleteConfirm(false);
-              setDeletingId(null);
-              setDeletingName('');
-            }}
-            onClose={() => {
-              setShowDeleteConfirm(false);
-              setDeletingId(null);
-              setDeletingName('');
-            }}
-          />
-        )}
-      </BaseSidebarLayout>
-    );
+              {/* 弹框确认是否删除 */}
+              {showDeleteConfirm && (
+                <ConfirmPopup
+                  isOpen={showDeleteConfirm}
+                  title={t('instances.confirmRemoveFolder', '删除游戏目录')}
+                  message={t('instances.confirmRemoveFolderDesc', '确定要删除目录 "{{name}}" 吗？此操作仅从列表中移除记录，不会删除实际文件。', { name: deletingName })}
+                  confirmText={t('common.delete', '删除')}
+                  cancelText={t('common.cancel', '取消')}
+                  confirmType="danger"
+                  showIcon
+                  iconType="warning"
+                  loading={isDeleting}
+                  onConfirm={handleConfirmDelete}
+                  onCancel={() => {
+                    setShowDeleteConfirm(false);
+                    setDeletingId(null);
+                    setDeletingName('');
+                  }}
+                  onClose={() => {
+                    setShowDeleteConfirm(false);
+                    setDeletingId(null);
+                    setDeletingName('');
+                  }}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </BaseSidebarLayout>
+      </>
+    )
   }
 
   return (
-    <BaseSidebarLayout footer={footer} header={header}>
-      <AnimatePresence mode="wait">
-          <motion.div
-            key="sidebar-all"
-            className="flex flex-col"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 10 }}
-            transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-          >
-            <AccountSidebarContent
-              items={groups.account}
-              onMenuClick={handleItemClick}
-              isActive={isActive}
-              isParentActive={isParentOfActive}
-              hasChildrenItems={hasChildrenItems}
-            />
-            <GameSidebarContent
-              items={groups.game}
-              onMenuClick={handleItemClick}
-              isActive={isActive}
-              isParentActive={isParentOfActive}
-              hasChildrenItems={hasChildrenItems}
-            />
-            <CommonSidebarContent
-              items={groups.common}
-              onMenuClick={handleItemClick}
-              isActive={isActive}
-              isParentActive={isParentOfActive}
-              hasChildrenItems={hasChildrenItems}
-            />
-          </motion.div>
-      </AnimatePresence>
-    </BaseSidebarLayout>
+    renderSidebar(sidebarItems)
   );
 };
 

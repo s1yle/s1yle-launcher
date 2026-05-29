@@ -7,12 +7,15 @@ import ContextMenu, { useContextMenu, type ContextMenuItemData } from '../../Con
 import { renderIcon } from '../../../../utils/iconRenderer';
 
 export interface BaseChildrenContentProps {
+  // 与 BaseSidebarContent 共有部分
   items: SidebarMenuItem[];
   onMenuClick?: (item: SidebarMenuItem) => void;
   isActive?: (path: string) => boolean;
   isParentActive?: (path: string) => boolean;
-  isItemActive?: (id: string) => boolean;
   hasChildrenItems?: (item: SidebarMenuItem) => boolean;
+
+  // children 特有部分
+  isItemActive?: (id: string) => boolean;
   groupTitle?: string;
   groupTitleI18nKey?: string;
   onItemDelete?: (id: string) => void;
@@ -26,8 +29,8 @@ const BaseChildrenContent = ({
   onMenuClick,
   isActive,
   isParentActive,
-  isItemActive,
   hasChildrenItems,
+  isItemActive,
   groupTitle,
   groupTitleI18nKey,
   onItemDelete,
@@ -175,7 +178,11 @@ const BaseChildrenContent = ({
           className={`
             w-full flex items-center gap-3 py-2.5 rounded-lg cursor-pointer
             border-l-[3px] transition-colors duration-200
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--color-bg-secondary)]
+            focus-visible:outline-none 
+            focus-visible:ring-2 
+            focus-visible:ring-[var(--color-primary)] 
+            focus-visible:ring-offset-1 
+            focus-visible:ring-offset-[var(--color-bg-secondary)]
             ${item.danger && !active && !itemActive
               ? 'text-[var(--color-error)] hover:bg-[var(--color-error-10)] border-l-transparent'
               : active || itemActive

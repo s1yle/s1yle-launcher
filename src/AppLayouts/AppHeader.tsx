@@ -4,43 +4,43 @@ import { RouteConfig } from "../router/models"
 import { UIMode } from "../stores/uiModeStore"
 
 export interface AppHeaderProps {
-    mode: UIMode,
-    currentRoute: RouteConfig | undefined
-    handleMenuClick: (targetPath: string) => void
+  mode: UIMode,
+  currentRoute: RouteConfig | undefined
+  handleMenuClick: (targetPath: string) => void
 }
 
 const AppHeader = ({
-    mode = UIMode.ISLAND,
-    currentRoute,
-    handleMenuClick,
+  mode = UIMode.ISLAND,
+  currentRoute,
+  handleMenuClick,
 }: AppHeaderProps) => {
 
-    if (mode == UIMode.ISLAND) {
-        return (
-            <>
-                {/* 灵动岛模式 */}
-                <FloatingControls />
-                <DynamicIsland onMenuClick={handleMenuClick} />
-
-                {/* 顶部拖曳区域 - 覆盖灵动岛两侧的空间 */}
-                <div
-                    className="fixed top-0 left-0 right-0 h-20 z-40 shadow-[var(--shadow-md)]"
-                    data-tauri-drag-region="true"
-                >
-                    <div className="absolute inset-0" data-tauri-drag-region />
-                </div>
-            </>
-        )
-    }
-
-
+  if (mode == UIMode.ISLAND) {
     return (
-        <>
-            {mode == UIMode.CLASSIC && (
-                <Header type={currentRoute?.header.type === 'main' ? 'main' : 'sub'} title={currentRoute?.header.title || "未知"} />
-            )}
-        </>
+      <>
+        {/* 灵动岛模式 */}
+        <FloatingControls />
+        <DynamicIsland onMenuClick={handleMenuClick} />
+
+        {/* 顶部拖曳区域 - 覆盖灵动岛两侧的空间 */}
+        <div
+          className="fixed top-0 left-0 right-0 h-20 z-40"
+          data-tauri-drag-region="true"
+        >
+          <div className="absolute inset-0" data-tauri-drag-region />
+        </div>
+      </>
     )
+  }
+
+
+  return (
+    <>
+      {mode == UIMode.CLASSIC && (
+        <Header type={currentRoute?.header.type === 'main' ? 'main' : 'sub'} title={currentRoute?.header.title || "未知"} />
+      )}
+    </>
+  )
 }
 
 export default AppHeader;

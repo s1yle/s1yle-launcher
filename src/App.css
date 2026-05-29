@@ -78,7 +78,7 @@ select {
 .scrollbar-custom {
   scrollbar-width: thin;
   scrollbar-color: rgba(99, 102, 241, 0.4) transparent;
-  padding: 10px;
+  /* padding: 10px; */
 }
 
 .scrollbar-custom::-webkit-scrollbar {

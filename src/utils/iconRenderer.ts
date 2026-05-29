@@ -69,10 +69,10 @@ export function renderIcon(
  * React 组件版本的图标渲染器
  * 可以直接在 JSX 中使用
  */
-export const Icon: React.FC<IconRendererProps> = ({ 
-  icon, 
-  className = '', 
-  size = 'md' 
+export const Icon: React.FC<IconRendererProps> = ({
+  icon,
+  className = '',
+  size = 'md'
 }) => {
   return React.createElement(React.Fragment, null, renderIcon(icon, className, size));
 };
@@ -82,16 +82,16 @@ export const Icon: React.FC<IconRendererProps> = ({
  */
 export function isValidIcon(icon: unknown): icon is LucideIcon | React.ReactElement {
   if (!icon) return false;
-  
+
   // 检查是否是函数类型（Lucide 图标）
   if (typeof icon === 'function') {
     return true;
   }
-  
+
   // 检查是否是 React element
   if (React.isValidElement(icon)) {
     return true;
   }
-  
+
   return false;
 }
