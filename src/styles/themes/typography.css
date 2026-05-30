@@ -1,0 +1,129 @@
+/* ===================================
+   字体排印系统
+   Typography System
+   
+   设计理念:
+   - 使用 CSS 变量实现动态字体大小
+   - 支持用户自定义缩放 (无障碍访问)
+   - 与现有设计系统保持一致
+   - 支持运行时动态调整
+   =================================== */
+
+:root {
+  /* 字体大小基准 - 基于 16px 根字体 */
+  --font-size-xs: 0.75rem;      /* 12px - 辅助说明、标签、时间戳 */
+  --font-size-sm: 0.875rem;     /* 14px - 正文、按钮文字、描述 */
+  --font-size-base: 1rem;       /* 16px - 默认文本、输入框 */
+  --font-size-lg: 1.125rem;     /* 18px - 副标题、卡片标题 */
+  --font-size-xl: 1.25rem;      /* 20px - 页面标题 */
+  --font-size-2xl: 1.5rem;      /* 24px - 重要标题 */
+  --font-size-3xl: 1.875rem;    /* 30px - 主标题 */
+  --font-size-4xl: 2.25rem;     /* 36px - 特殊大标题 */
+  --font-size-5xl: 3rem;        /* 48px - 展示标题 */
+  
+  /* 字体大小缩放系数 - 支持用户自定义 (无障碍访问) */
+  --font-scale: 1;
+  
+  /* 字重系统 */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  /* 行高系统 */
+  --line-height-none: 1;
+  --line-height-tight: 1.25;
+  --line-height-snug: 1.375;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+  --line-height-loose: 2;
+  
+  /* 字体家族系统 */
+  --font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  --font-family-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Consolas', monospace;
+}
+
+/* 用户自定义字体大小 - 通过 data 属性控制 */
+html[data-font-scale="0.875"] {
+  --font-scale: 0.875;
+}
+
+html[data-font-scale="1"] {
+  --font-scale: 1;
+}
+
+html[data-font-scale="1.125"] {
+  --font-scale: 1.125;
+}
+
+html[data-font-scale="1.25"] {
+  --font-scale: 1.25;
+}
+
+html[data-font-scale="1.5"] {
+  --font-scale: 1.5;
+}
+
+/* 应用缩放系数到所有字体大小变量 */
+:root {
+  --text-xs: calc(var(--font-size-xs) * var(--font-scale));
+  --text-sm: calc(var(--font-size-sm) * var(--font-scale));
+  --text-base: calc(var(--font-size-base) * var(--font-scale));
+  --text-lg: calc(var(--font-size-lg) * var(--font-scale));
+  --text-xl: calc(var(--font-size-xl) * var(--font-scale));
+  --text-2xl: calc(var(--font-size-2xl) * var(--font-scale));
+  --text-3xl: calc(var(--font-size-3xl) * var(--font-scale));
+  --text-4xl: calc(var(--font-size-4xl) * var(--font-scale));
+  --text-5xl: calc(var(--font-size-5xl) * var(--font-scale));
+}
+
+/* 字重辅助类 */
+.font-normal {
+  font-weight: var(--font-weight-normal);
+}
+
+.font-medium {
+  font-weight: var(--font-weight-medium);
+}
+
+.font-semibold {
+  font-weight: var(--font-weight-semibold);
+}
+
+.font-bold {
+  font-weight: var(--font-weight-bold);
+}
+
+/* 行高辅助类 */
+.leading-none {
+  line-height: var(--line-height-none);
+}
+
+.leading-tight {
+  line-height: var(--line-height-tight);
+}
+
+.leading-snug {
+  line-height: var(--line-height-snug);
+}
+
+.leading-normal {
+  line-height: var(--line-height-normal);
+}
+
+.leading-relaxed {
+  line-height: var(--line-height-relaxed);
+}
+
+.leading-loose {
+  line-height: var(--line-height-loose);
+}
+
+/* 字体家族辅助类 */
+.font-sans {
+  font-family: var(--font-family-sans);
+}
+
+.font-mono {
+  font-family: var(--font-family-mono);
+}
