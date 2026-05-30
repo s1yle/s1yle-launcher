@@ -11,6 +11,8 @@ import { useUserRoleStore } from '@/stores/userRoleStore';
 import { getSidebarGroups, SidebarMenuItem } from '@/router/config';
 import { logger } from '@/helper/logger';
 
+import { UserRole } from '@/stores/userRoleStore';
+
 export interface NavItem {
   id: string;
   label: string;
@@ -18,7 +20,7 @@ export interface NavItem {
   icon: LucideIcon;
   path: string;
   action?: () => void;
-  roles: ('player' | 'admin' | 'creator')[];
+  roles: UserRole[];
   badge?: number;
   isVisible?: boolean;
 }
@@ -29,10 +31,11 @@ export const mainMenuNavItem: NavItem = {
   labelI18nKey: 'nav.main',
   icon: Home,
   path: '/',
-  roles: ['player', 'admin'],
+  roles: [UserRole.PLAYER, UserRole.ADMIN],
 }
 
-export const playerNavItems: NavItem[] = [
+// 备用 player / admin NavItems
+export const defaultPlayerNavItems: NavItem[] = [
   mainMenuNavItem,
   {
     id: 'games',
@@ -40,7 +43,7 @@ export const playerNavItems: NavItem[] = [
     labelI18nKey: 'nav.games',
     icon: Gamepad2,
     path: '/instance-list',
-    roles: ['player', 'admin'],
+    roles: [UserRole.PLAYER, UserRole.ADMIN],
   },
   {
     id: 'settings',
@@ -48,11 +51,11 @@ export const playerNavItems: NavItem[] = [
     labelI18nKey: 'nav.settings',
     icon: Settings,
     path: '/settings',
-    roles: ['player', 'admin'],
+    roles: [UserRole.PLAYER, UserRole.ADMIN],
   },
 ];
 
-export const adminNavItems: NavItem[] = [
+export const defaultAdminNavItems: NavItem[] = [
   mainMenuNavItem,
   {
     id: 'server-manage',
@@ -60,7 +63,7 @@ export const adminNavItems: NavItem[] = [
     labelI18nKey: 'nav.serverManage',
     icon: Server,
     path: '/admin/servers',
-    roles: ['admin'],
+    roles: [UserRole.ADMIN],
   },
   {
     id: 'analytics',
@@ -68,7 +71,7 @@ export const adminNavItems: NavItem[] = [
     labelI18nKey: 'nav.analytics',
     icon: BarChart3,
     path: '/admin/analytics',
-    roles: ['admin'],
+    roles: [UserRole.ADMIN],
     badge: 0,
   },
   {
@@ -77,7 +80,7 @@ export const adminNavItems: NavItem[] = [
     labelI18nKey: 'nav.uploadConfig',
     icon: Upload,
     path: '/admin/upload',
-    roles: ['admin'],
+    roles: [UserRole.ADMIN],
   },
 ];
 
@@ -98,7 +101,7 @@ function getNavItemsByGroup(group: SidebarMenuItem[]): NavItem[] {
 }
 
 // 获取所有已知组别的 NavItems
-function getAllGroupsOfNavItems(role: ('player' | 'admin' | 'creator')): NavItem[] {
+function getAllGroupsOfNavItems(role: UserRole): NavItem[] {
   const groups = getSidebarGroups();
 
   let navItems: NavItem[] = [];
@@ -129,24 +132,24 @@ function getAllGroupsOfNavItems(role: ('player' | 'admin' | 'creator')): NavItem
 }
 
 function getPlayerNavItems(): NavItem[] {
-  let navItems = getAllGroupsOfNavItems('player');
+  let navItems = getAllGroupsOfNavItems(UserRole.PLAYER);
 
-  if (navItems.length<=0 || !navItems) return playerNavItems;
+  if (navItems.length<=0 || !navItems) return defaultPlayerNavItems;
   return navItems;
 }
 
 function getAdminNavItems(): NavItem[] {
-  let navItems = getAllGroupsOfNavItems('admin');
+  let navItems = getAllGroupsOfNavItems(UserRole.ADMIN);
 
-  if (navItems.length<=0 || !navItems) return adminNavItems;
+  if (navItems.length<=0 || !navItems) return defaultAdminNavItems;
   return navItems;
 }
 
-export function getNavItemsByRole(role: 'player' | 'admin'): NavItem[] {
-  return role === 'player' ? getPlayerNavItems() : getAdminNavItems();
+export function getNavItemsByRole(role: UserRole): NavItem[] {
+  return role === UserRole.PLAYER ? getPlayerNavItems() : getAdminNavItems();
 }
 
 export function getCurrentNavItems(): NavItem[] {
   const role = useUserRoleStore.getState().currentRole;
-  return getNavItemsByRole(role as 'player' | 'admin');
+  return getNavItemsByRole(role);
 }

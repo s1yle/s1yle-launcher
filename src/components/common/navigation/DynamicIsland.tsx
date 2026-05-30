@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Crown, User, Home, ChevronDown, HomeIcon, FileQuestionMark } from 'lucide-react';
-import { useUserRoleStore, type UserRole } from '@/stores/userRoleStore';
+import { useUserRoleStore, UserRole } from '@/stores/userRoleStore';
 import { getNavItemsByRole, type NavItem } from '@/config/navigationConfig';
 import { autoJumpToFirstChild, findRouteByPath, routes } from '@/router/config';
 
@@ -10,27 +10,28 @@ export interface DynamicIslandProps {
   onMenuClick?: (path: string) => void;
 }
 
-const AVAILABLE_ROLES: UserRole[] = ['player', 'admin'];
+const AVAILABLE_ROLES: UserRole[] = [UserRole.PLAYER, UserRole.ADMIN];
 const TIMEOUT_IDLE = 30000;
 
 const ROLE_CONFIG: Record<UserRole, { icon: typeof User; label: string; color: string }> = {
-  player: {
+  [UserRole.PLAYER]: {
     icon: User,
     label: '玩家',
     color: 'text-blue-400'
   },
-  admin: {
+  [UserRole.ADMIN]: {
     icon: Crown,
     label: '服主',
     color: 'text-purple-400'
   },
-  creator: {
+  [UserRole.CREATOR]: {
     icon: User,
     label: '创建者',
     color: 'text-green-400'
-  },
+  }
 };
 
+// TODO: 添加更有趣的显示
 // 可配置的底部随机文本
 const BOTTOM_TEXTS = [
   '探索无限可能',
@@ -52,8 +53,9 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
   const idleTimerRef = useRef<number | null>(null);
   const islandRef = useRef<HTMLDivElement>(null);
 
-  const navItems = useMemo(() => getNavItemsByRole(currentRole as 'player' | 'admin'), [currentRole]);
-  
+  const navItems = useMemo(() => getNavItemsByRole(currentRole), [currentRole]);
+
+  // available role >= 3 个时, 改为下拉框选择而非按钮toggle
   const hasMultipleRoles = AVAILABLE_ROLES.length > 2;
   const currentRoleConfig = ROLE_CONFIG[currentRole];
 
@@ -92,10 +94,10 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
     }
 
     if (item.path && item.path !== location.pathname) {
-      
+
       const route = findRouteByPath(item.path, routes);
       if (route?.autoNavigateToFirstChild && route.children && route.children.length > 0 && onMenuClick) {
-        autoJumpToFirstChild(route,onMenuClick);
+        autoJumpToFirstChild(route, onMenuClick);
         return;
       }
 
@@ -111,7 +113,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
     if (hasMultipleRoles) {
       setShowRoleMenu(!showRoleMenu);
     } else {
-      handleRoleSwitch(currentRole === 'player' ? 'admin' : 'player');
+      handleRoleSwitch(currentRole === UserRole.PLAYER ? UserRole.ADMIN : UserRole.PLAYER);
     }
   };
 
@@ -142,7 +144,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
     label: '主页',
     icon: Home,
     path: '/',
-    roles: ['player', 'admin'],
+    roles: [UserRole.PLAYER, UserRole.ADMIN],
   };
 
   const handleDragStart = (e: React.MouseEvent) => {
@@ -299,11 +301,11 @@ let def_item: NavItem = {
   label: '未知',
   icon: FileQuestionMark,
   path: '未知',
-  roles: ['player']
+  roles: [UserRole.PLAYER]
 }
 
 export const DynamicItem = ({ isMainMenu, handleItemClick, homeItem, isActive, isExpanded, isTransitioning, item }: DynamicItemProps) => {
-  
+
   if (!item) {
     console.warn("Navtem 传入失败, 转而使用默认 NavItem !");
     item = def_item;

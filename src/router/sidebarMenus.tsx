@@ -21,11 +21,13 @@ import {
   Copy,
   Trash2,
   FileDown,
+  Server,
   UserPlus,
   Upload,
   BarChart3,
-  Server,
+  type LucideIcon
 } from 'lucide-react';
+import { UserRole } from '@/stores/userRoleStore';
 import { SidebarGroup, type SidebarMenuItem, } from "./models";
 import InstanceManageButton from '@/components/common/sidebar/renderer/InstanceManageButton';
 import { handleAddGameFolder, handleRefreshInstances } from './actionHandler';
@@ -44,7 +46,7 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
         labelI18nKey: 'nav.account',
         icon: User,
         path: '/account',
-        roles: ['player'],
+        roles: [UserRole.PLAYER],
       }
     ],
     children: [
@@ -101,7 +103,7 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
         labelI18nKey: 'nav.games',
         icon: Gamepad2,
         path: '/instance-list',
-        roles: ['player'],
+        roles: [UserRole.PLAYER],
       },
       {
         id: 'servers',
@@ -109,22 +111,30 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
         labelI18nKey: 'nav.servers',
         icon: Server,
         path: '/admin/servers',
-        roles: ['admin'],
+        roles: [UserRole.ADMIN],
       }, {
         id: 'analytics',
         label: '数据分析',
         labelI18nKey: 'nav.analytics',
         icon: BarChart3,
         path: '/admin/analytics',
-        roles: ['admin'],
+        roles: [UserRole.ADMIN],
       }, {
         id: 'upload-config',
         label: '配置上传',
         labelI18nKey: 'nav.uploadConfig',
         icon: Upload,
         path: '/admin/upload',
-        roles: ['admin'],
-      }
+        roles: [UserRole.ADMIN],
+      },
+      {
+        id: 'download',
+        label: '下载',
+        labelI18nKey: 'nav.download',
+        icon: Download,
+        path: '/download',
+        roles: [UserRole.PLAYER],
+      },
     ],
     children: [
       {
@@ -334,7 +344,7 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
         labelI18nKey: 'nav.settings',
         icon: Settings,
         path: '/settings',
-        roles: ['player', 'admin'],
+        roles: [UserRole.PLAYER, UserRole.ADMIN],
       },
     ],
     children: [

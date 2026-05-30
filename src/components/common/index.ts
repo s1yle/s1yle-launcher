@@ -114,9 +114,6 @@ export type {
 export { default as SmartSidebar } from '@/components/common/sidebar/SmartSidebar'
 export type { SmartSidebarProps } from '@/components/common/sidebar/SmartSidebar';
 
-export { default as BaseChildrenContent } from '@/components/common/sidebar/content/BaseChildrenContent'
-export type { BaseChildrenContentProps } from '@/components/common/sidebar/content/BaseChildrenContent';
-
 export { default as BaseSidebarContent } from '@/components/common/sidebar/content/BaseSidebarContent'
 export type { BaseSidebarContentProps } from '@/components/common/sidebar/content/BaseSidebarContent';
 

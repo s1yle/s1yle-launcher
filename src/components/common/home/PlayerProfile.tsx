@@ -1,5 +1,5 @@
 import { Crown, User } from 'lucide-react';
-import { type UserRole } from '@/stores/userRoleStore';
+import { UserRole } from '@/stores/userRoleStore';
 
 // MC 方块人头像组件 (Steve/Alex 风格)
 const MCAvatar = ({ name = 'Steve' }: { name?: string }) => {
@@ -70,7 +70,7 @@ interface PlayerProfileProps {
 
 const PlayerProfile = ({
   name,
-  role = 'player'
+  role = UserRole.PLAYER
 }: PlayerProfileProps) => {
   return (
     <div className="flex flex-col items-center gap-3">
@@ -78,7 +78,7 @@ const PlayerProfile = ({
       <div className="relative">
         <div className={`
           w-20 h-20 rounded-md overflow-hidden
-          border-2 ${role === 'admin' ? 'border-purple-500/30' : 'border-blue-500/30'}
+          border-2 ${role === UserRole.ADMIN ? 'border-purple-500/30' : 'border-blue-500/30'}
           bg-bg-tertiary
         `}>
           <MCAvatar name={name} />
@@ -88,9 +88,9 @@ const PlayerProfile = ({
         <div className={`
           absolute -top-1 -right-1 w-5 h-5 rounded-full
           flex items-center justify-center
-          ${role === 'admin' ? 'bg-yellow-500' : 'bg-blue-500'}
+          ${role === UserRole.ADMIN ? 'bg-yellow-500' : 'bg-blue-500'}
         `}>
-          {role === 'admin' ? (
+          {role === UserRole.ADMIN ? (
             <Crown className="w-2.5 h-2.5 text-white" />
           ) : (
             <User className="w-2.5 h-2.5 text-white" />

@@ -1,7 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type UserRole = 'player' | 'admin' | 'creator';
+export enum UserRole {
+  PLAYER = 'player',
+  ADMIN = 'admin',
+  CREATOR = 'creator'
+}
 
 interface UserRoleState {
   currentRole: UserRole;
@@ -15,15 +19,15 @@ interface UserRoleState {
 
 // 角色专属页面路径前缀
 const ROLE_SPECIFIC_PATHS: Record<UserRole, string[]> = {
-  player: [],
-  admin: ['/admin'],
-  creator: []
+  [UserRole.PLAYER]: [],
+  [UserRole.ADMIN]: ['/admin'],
+  [UserRole.CREATOR]: []
 };
 
 export const useUserRoleStore = create<UserRoleState>()(
   persist(
     (set, get) => ({
-      currentRole: 'player',
+      currentRole: UserRole.PLAYER,
       previousRole: null,
       isTransitioning: false,
 
@@ -44,8 +48,8 @@ export const useUserRoleStore = create<UserRoleState>()(
 
           // 切换角色（导航在组件中处理）
           setTimeout(() => {
-            set({ 
-              currentRole: role, 
+            set({
+              currentRole: role,
               isTransitioning: false,
               previousRole: null
             });
@@ -65,7 +69,7 @@ export const useUserRoleStore = create<UserRoleState>()(
 
       toggleRole: () => {
         const { currentRole } = get();
-        const newRole = currentRole === 'player' ? 'admin' : 'player';
+        const newRole = currentRole === UserRole.PLAYER ? UserRole.ADMIN : UserRole.PLAYER;
         get().switchRole(newRole);
       },
 
