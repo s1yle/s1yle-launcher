@@ -126,3 +126,5 @@ export { default as GameSidebarContent } from '@/components/common/sidebar/conte
 
 export { default as StartGameButton } from '@/components/common/StartGameButton'
 export type { StartGameButtonProps } from '@/components/common/StartGameButton';
+
+export { Portal } from './Portal';

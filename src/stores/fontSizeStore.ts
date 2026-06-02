@@ -1,33 +1,40 @@
+import { createOptions, OptionValueType } from '@/utils/createOptions';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+
+
+export const fontScaleConfig = createOptions(
+  [
+    { value: 0.875, label: '较小 (87.5%)' },
+    { value: 1, label: '标准 (100%)' },
+    { value: 1.125, label: '稍大 (112.5%)' },
+    { value: 1.25, label: '大 (125%)' },
+    { value: 1.5, label: '超大 (150%)' },
+  ] as const,
+  1 // 默认值
+);
 
 /**
  * 字体大小缩放级别
  * 用于支持无障碍访问，允许用户自定义字体大小
  */
-export type FontScale = 
-  | 0.875  // 较小 (87.5%)
-  | 1      // 标准 (100%)
-  | 1.125  // 稍大 (112.5%)
-  | 1.25   // 大 (125%)
-  | 1.5;   // 超大 (150%)
-
+export type FontScale = OptionValueType<typeof fontScaleConfig>;
 export interface FontSizeState {
   /** 当前字体缩放比例 */
   fontScale: FontScale;
-  
+
   /** 设置字体缩放比例 */
   setFontScale: (scale: FontScale) => void;
-  
+
   /** 重置为默认字体大小 */
   resetFontScale: () => void;
-  
+
   /** 增加字体大小 */
   increaseFontSize: () => void;
-  
+
   /** 减小字体大小 */
   decreaseFontSize: () => void;
-  
+
   /** 获取当前缩放比例的百分比表示 */
   getScalePercentage: () => number;
 }
@@ -54,7 +61,7 @@ export const useFontSizeStore = create<FontSizeState>()(
   persist(
     (set, get) => ({
       fontScale: DEFAULT_FONT_SCALE,
-      
+
       setFontScale: (scale: FontScale) => {
         set({ fontScale: scale });
         // 更新 HTML 的 data 属性，触发 CSS 变量更新
@@ -62,11 +69,11 @@ export const useFontSizeStore = create<FontSizeState>()(
           document.documentElement.setAttribute('data-font-scale', scale.toString());
         }
       },
-      
+
       resetFontScale: () => {
         get().setFontScale(DEFAULT_FONT_SCALE);
       },
-      
+
       increaseFontSize: () => {
         const { fontScale } = get();
         const currentIndex = FONT_SCALES.indexOf(fontScale);
@@ -74,7 +81,7 @@ export const useFontSizeStore = create<FontSizeState>()(
           get().setFontScale(FONT_SCALES[currentIndex + 1]);
         }
       },
-      
+
       decreaseFontSize: () => {
         const { fontScale } = get();
         const currentIndex = FONT_SCALES.indexOf(fontScale);
@@ -82,7 +89,7 @@ export const useFontSizeStore = create<FontSizeState>()(
           get().setFontScale(FONT_SCALES[currentIndex - 1]);
         }
       },
-      
+
       getScalePercentage: () => {
         return get().fontScale * 100;
       },

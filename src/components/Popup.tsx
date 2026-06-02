@@ -1,7 +1,8 @@
 import React, { useEffect, useCallback, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Overlay } from './common';
+import { Portal } from './common/Portal';
+import { Z_INDEX } from '../utils/zIndex';
 
 export interface PopupProps {
   isOpen: boolean;
@@ -134,15 +135,13 @@ const Popup = ({
   if (ariaLabelledby) ariaProps['aria-labelledby'] = ariaLabelledby;
   if (ariaDescribedby) ariaProps['aria-describedby'] = ariaDescribedby;
 
-  const popupContent = (
-    <AnimatePresence>
-      {shouldRender && (
-        <>
-          <Overlay active={true} zIndex={500} fixed>
+  return (
+    <Portal preset={position} zIndex={Z_INDEX.POPUP}>
+      <AnimatePresence>
+        {shouldRender && (
+          <Overlay active={true} zIndex={Z_INDEX.POPUP} fixed>
             <div
-              className={`fixed inset-0 z-51 flex ${positionClasses[position]} 
-                pointer-events-none ${overlayClassName}`
-              }
+              className={`w-full h-full pointer-events-auto flex ${positionClasses[position]} ${overlayClassName}`}
               onClick={handleOverlayClick}
               role="dialog"
               aria-modal="true"
@@ -203,13 +202,10 @@ const Popup = ({
               </motion.div>
             </div>
           </Overlay>
-
-        </>
-      )}
-    </AnimatePresence>
+        )}
+      </AnimatePresence>
+    </Portal>
   );
-
-  return createPortal(popupContent, document.body);
 };
 
 export default Popup;

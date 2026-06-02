@@ -1,7 +1,9 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useCallback, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LucideIcon } from 'lucide-react';
+import { Portal } from '@/components/common/Portal';
+import { useClickOutside } from '@/hooks/useClickOutside';
+import { Z_INDEX } from '@/utils/zIndex';
 import { dropdown, transitions } from '../../utils/animations';
 import { renderIcon } from '../../utils/iconRenderer';
 
@@ -32,53 +34,8 @@ const ContextMenu = ({
   className = '',
 }: ContextMenuProps) => {
   const menuRef = useRef<HTMLDivElement>(null);
-  const [adjustedPosition, setAdjustedPosition] = useState(position);
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    };
-
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    if (visible) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('keydown', handleEscape);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [visible, onClose]);
-
-  useEffect(() => {
-    if (visible && menuRef.current) {
-      const menu = menuRef.current;
-      const rect = menu.getBoundingClientRect();
-      const windowWidth = window.innerWidth;
-      const windowHeight = window.innerHeight;
-
-      let x = position.x;
-      let y = position.y;
-
-      if (x + rect.width > windowWidth) {
-        x = windowWidth - rect.width - 10;
-      }
-
-      if (y + rect.height > windowHeight) {
-        y = windowHeight - rect.height - 10;
-      }
-
-      setAdjustedPosition({ x, y });
-    }
-  }, [visible, position]);
+  useClickOutside(() => onClose(), visible, [menuRef]);
 
   const handleItemClick = useCallback((id: string, disabled?: boolean) => {
     if (disabled) return;
@@ -88,19 +45,23 @@ const ContextMenu = ({
 
   if (!visible) return null;
 
-  return createPortal(
-    <AnimatePresence>
-      {visible && (
+  return (
+    <Portal
+      originX={position.x}
+      originY={position.y}
+      collisionBoundary={{ bottom: 10, right: 10 }}
+      zIndex={Z_INDEX.DROPDOWN}
+    >
+      <AnimatePresence>
         <motion.div
           ref={menuRef}
+          key="context-menu"
           variants={dropdown}
           initial="initial"
           animate="animate"
           exit="exit"
-          className={`fixed z-[9999] backdrop-blur-md py-1 min-w-[140px] ${className}`}
-          style={{ 
-            left: adjustedPosition.x, 
-            top: adjustedPosition.y,
+          className={`py-1 min-w-[140px] ${className}`}
+          style={{
             backgroundColor: 'var(--color-surface-solid)',
             border: '1px solid var(--color-border)',
             borderRadius: '6px',
@@ -112,7 +73,7 @@ const ContextMenu = ({
             if (item.divider) {
               return <div key={`divider-${index}`} className="my-1 border-t" style={{ borderColor: 'var(--color-border)' }} />;
             }
-            
+
             return (
               <motion.button
                 key={item.id}
@@ -127,8 +88,8 @@ const ContextMenu = ({
                 whileHover={{ x: 2 }}
                 onMouseEnter={(e) => {
                   if (!item.disabled) {
-                    e.currentTarget.style.backgroundColor = item.danger 
-                      ? 'var(--color-error-10)' 
+                    e.currentTarget.style.backgroundColor = item.danger
+                      ? 'var(--color-error-10)'
                       : 'var(--color-primary-10)';
                   }
                 }}
@@ -143,9 +104,8 @@ const ContextMenu = ({
             );
           })}
         </motion.div>
-      )}
-    </AnimatePresence>,
-    document.body
+      </AnimatePresence>
+    </Portal>
   );
 };
 

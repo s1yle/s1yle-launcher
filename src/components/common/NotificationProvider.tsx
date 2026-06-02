@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Portal } from './Portal';
+import { Z_INDEX } from '../../utils/zIndex';
 import { Check, X, AlertTriangle, Info, Bug } from 'lucide-react';
 
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';
@@ -123,30 +124,31 @@ interface NotificationContainerProps {
 const NotificationContainer: React.FC<NotificationContainerProps> = ({ notifications, onRemove }) => {
   if (notifications.length === 0) return null;
 
-  return createPortal(
-    <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-none max-h-[calc(100vh-2rem)] overflow-hidden">
-      <AnimatePresence mode="popLayout">
-        {notifications.map((notification) => (
-          <motion.div
-            key={notification.id}
-            layout
-            initial={{ opacity: 0, x: 100, scale: 0.9 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: 100, scale: 0.9 }}
-            transition={{
-              type: 'spring',
-              stiffness: 500,
-              damping: 30,
-              mass: 0.8,
-            }}
-            className="pointer-events-auto"
-          >
-            <NotificationToast notification={notification} onRemove={onRemove} />
-          </motion.div>
-        ))}
-      </AnimatePresence>
-    </div>,
-    document.body
+  return (
+    <Portal preset="top-right" zIndex={Z_INDEX.TOAST}>
+      <div className="flex flex-col gap-3 pointer-events-none max-h-[calc(100vh-2rem)] overflow-hidden">
+        <AnimatePresence mode="popLayout">
+          {notifications.map((notification) => (
+            <motion.div
+              key={notification.id}
+              layout
+              initial={{ opacity: 0, x: 100, scale: 0.9 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 100, scale: 0.9 }}
+              transition={{
+                type: 'spring',
+                stiffness: 500,
+                damping: 30,
+                mass: 0.8,
+              }}
+              className="pointer-events-auto"
+            >
+              <NotificationToast notification={notification} onRemove={onRemove} />
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+    </Portal>
   );
 };
 

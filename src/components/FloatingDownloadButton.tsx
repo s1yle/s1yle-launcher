@@ -1,8 +1,9 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, ChevronUp, Check, GripVertical } from 'lucide-react';
 import { useDownloadStore } from '../stores/downloadStore';
+import { Portal } from './common/Portal';
+import { Z_INDEX } from '../utils/zIndex';
 
 const FLOATING_BUTTON_SIZE = 56;
 const DEFAULT_POSITION = { x: 0, y: 16 };
@@ -308,7 +309,7 @@ export const FloatingDownloadButton: React.FC<FloatingDownloadButtonProps> = ({
                 </span>
               </motion.div>
             )}
-            
+
             {hasActiveDownloads && (
               <motion.div
                 className="absolute inset-0 rounded-full border-2 border-indigo-300"
@@ -323,7 +324,11 @@ export const FloatingDownloadButton: React.FC<FloatingDownloadButtonProps> = ({
     </div>
   );
 
-  return createPortal(buttonContent, document.body);
+  return (
+    <Portal zIndex={Z_INDEX.POPUP}>
+      {buttonContent}
+    </Portal>
+  );
 };
 
 export default FloatingDownloadButton;

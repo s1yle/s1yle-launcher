@@ -1,10 +1,13 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Gamepad2, Hammer, Zap, Package, Image } from 'lucide-react';
 import { useInstanceStore } from '../../../../stores/instanceStore';
 import { ModLoaderType, type GameInstance } from '../../../../helper/rustInvoke';
 import { SidebarMenuItem } from '@/router/models';
+import { Portal } from '@/components/common/Portal';
+import { useClickOutside } from '@/hooks/useClickOutside';
+import { Z_INDEX } from '@/utils/zIndex';
 
 interface InstanceManageButtonProps {
   item: SidebarMenuItem;
@@ -34,8 +37,12 @@ const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
   const instances = useInstanceStore(s => s.instances);
   const setSelectedInstance = useInstanceStore(s => s.setSelectedInstance);
   const [showDropdown, setShowDropdown] = useState(false);
-  const buttonRef = useRef<HTMLDivElement>(null);
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useClickOutside<HTMLDivElement>(
+    () => setShowDropdown(false),
+    showDropdown,
+    [dropdownRef],
+  );
 
   const formatVersionInfo = (inst: GameInstance): string => {
     const parts: string[] = [inst.version_id];
@@ -75,41 +82,13 @@ const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
 
   const handleToggleExpand = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (showDropdown) {
-      setShowDropdown(false);
-    } else {
-      if (buttonRef.current) {
-        const rect = buttonRef.current.getBoundingClientRect();
-        setDropdownPosition({
-          top: rect.bottom + window.scrollY,
-          left: rect.left + window.scrollX,
-          width: rect.width
-        });
-      }
-      setShowDropdown(true);
-    }
+    setShowDropdown(!showDropdown);
   };
 
   const handleInstanceSelect = (instanceId: string) => {
     setSelectedInstance(instanceId);
     setShowDropdown(false);
   };
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (buttonRef.current && !buttonRef.current.contains(e.target as Node)) {
-        setShowDropdown(false);
-      }
-    };
-
-    if (showDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showDropdown]);
 
   // 无实例时的显示
   if (!instance) {
@@ -193,23 +172,19 @@ const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
         </motion.div>
       </motion.button>
 
-      {/* 下拉菜单 - 使用 fixed 定位 */}
-      <AnimatePresence>
-        {showDropdown && instances.length > 0 && (
-          <>
-            {/* 下拉菜单容器 - 使用 fixed 定位 */}
+      {/* 下拉菜单 */}
+      {showDropdown && instances.length > 0 && (
+        <Portal anchorTo={buttonRef} placement="bottom-start" zIndex={Z_INDEX.DROPDOWN}>
+          <AnimatePresence>
             <motion.div
+              ref={dropdownRef}
+              key="instance-dropdown"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.15 }}
-              className="fixed z-[9999] py-1 bg-[var(--color-surface-solid)] border border-[var(--color-border)] rounded-lg shadow-lg backdrop-blur-md max-h-64 overflow-y-auto"
-              style={{
-                top: dropdownPosition.top + 4,
-                left: dropdownPosition.left,
-                width: dropdownPosition.width,
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
-              }}
+              className="py-1 bg-[var(--color-surface-solid)] border border-[var(--color-border)] rounded-lg shadow-lg max-h-64 overflow-y-auto"
+              style={{ boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)' }}
             >
               {instances.map((inst) => (
                 <button
@@ -221,7 +196,6 @@ const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
                       : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]'
                   }`}
                 >
-                  {/* 实例图标 */}
                   <div className="w-6 h-6 rounded bg-[var(--color-primary-10)] flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {inst.icon_path ? (
                       <img
@@ -239,7 +213,6 @@ const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
                     )}
                   </div>
 
-                  {/* 实例信息 */}
                   <div className="flex-1 min-w-0">
                     <div className="text-sm truncate">{inst.name}</div>
                     <div className="text-xs text-[var(--color-text-tertiary)] truncate">
@@ -247,16 +220,15 @@ const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
                     </div>
                   </div>
 
-                  {/* 选中指示器 */}
                   {inst.id === instance.id && (
                     <div className="w-2 h-2 rounded-full bg-[var(--color-primary)] flex-shrink-0" />
                   )}
                 </button>
               ))}
             </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+          </AnimatePresence>
+        </Portal>
+      )}
     </div>
   );
 };

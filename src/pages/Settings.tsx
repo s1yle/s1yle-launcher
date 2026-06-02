@@ -1,24 +1,23 @@
-import { ThemePreset, useThemeStore } from '../stores/themeStore';
-import { AnimationConfig, UIMode, useUIModeStore } from '../stores/uiModeStore';
+import { UIMode, useUIModeStore } from '../stores/uiModeStore';
 import TerminalThemePreview from '../components/common/TerminalThemePreview';
-import { Toggle, VersionFilterDropdown } from '../components/common';
+import { Toggle } from '../components/common';
 import { SettingsPanel } from '@/components/common/SettingsPanel/SettingPanel';
 import { useState } from 'react';
+import DropDown from '@/components/common/DropDown';
+import { useFontSizeStore, fontScaleConfig } from '@/stores/fontSizeStore';
 
 const Settings = () => {
-  const setAccentColor = useThemeStore((s) => s.setAccentColor);
-
   const { mode: uiMode, setMode: setUIMode, animation, setAnimation } = useUIModeStore();
   const [isCompat, setIsCompat] = useState(true)
+  const setFontScale = useFontSizeStore((s) => s.setFontScale);
 
   const handleAnimationSetting = () => {
     setAnimation({ enabled: !animation.enabled });
   }
 
-  const handleThemeSelect = (preset: ThemePreset | undefined): void => {
-    if (!preset) return;
-    console.warn("切换相应主题色！", preset);
-    // setAccentColor(preset.accentColor);
+  const handleFontScaleSelect = (option: { id: string; label: string }) => {
+    const value = fontScaleConfig.fromId(option.id);
+    setFontScale(value);
   }
 
   return (
@@ -41,6 +40,14 @@ const Settings = () => {
           label='开启页面动画'
           disabled={false}
         />
+
+        <SettingsPanel.Sub label='字体大小'>
+          <DropDown
+            options={fontScaleConfig.options}
+            onSelect={handleFontScaleSelect}
+            buttonWidth='w-xs'
+          />
+        </SettingsPanel.Sub>
       </SettingsPanel>
 
       {/* 主题设置 */}
@@ -59,7 +66,6 @@ const Settings = () => {
             <TerminalThemePreview compact={isCompat} />
           </SettingsPanel.Sub>
         </SettingsPanel.Item>
-
       </SettingsPanel>
 
 
