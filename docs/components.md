@@ -1,7 +1,7 @@
 # WeCraft! Launcher - 组件文档
 
-> **版本**: 0.1.0-alpha.1  
-> **最后更新**: 2026-05-27
+> **版本**: 0.1.0-alpha.2  
+> **最后更新**: 2026-06-02
 
 **相关文档**:
 - 文档维护规范：[`MAINTENANCE.md`](MAINTENANCE.md) - 文档编写与更新指南
@@ -306,6 +306,94 @@ interface StartGameButtonProps {
 - Hover 上浮效果
 - 点击反馈动画
 
+### Portal {#portal}
+
+**位置**: `src/components/common/Portal.tsx`
+
+智能 Portal — DOM 传送 + 浮动定位统一入口。提供 5 种互斥渲染模式：
+
+| 模式 | 触发条件 | 典型场景 |
+|------|----------|----------|
+| **anchor** | 传入 `anchorTo` ref | 下拉菜单、工具提示 |
+| **origin** | 传入 `originX` + `originY` | 右键菜单 |
+| **preset** | 传入 `preset` 字符串 | 弹窗、模态框、Toast |
+| **draggable** | 传入 `draggable=true` | 可拖拽浮动按钮 |
+| **simple**（兜底） | 以上均不匹配 | 仅需 DOM 传送，自管理定位 |
+
+```typescript
+type PresetPosition =
+  | 'center'
+  | 'top' | 'bottom'
+  | 'top-left' | 'top-right'
+  | 'bottom-left' | 'bottom-right';
+
+interface PortalProps {
+  children: React.ReactNode;
+  container?: HTMLElement | null;
+  floatingRef?: React.RefObject<HTMLDivElement | null>;
+
+  // anchor 模式
+  anchorTo?: React.RefObject<HTMLElement | null>;
+  placement?: FloatingPlacement;           // 默认 'bottom-start'
+  offset?: number;                         // 默认 4
+
+  // origin 模式
+  originX?: number;
+  originY?: number;
+
+  // preset 模式
+  preset?: PresetPosition;
+
+  // draggable 模式
+  draggable?: boolean;
+  defaultPosition?: { x: number; y: number };
+  onPositionChange?: (pos: { x: number; y: number }) => void;
+
+  // 通用
+  zIndex?: number;
+  collisionBoundary?: CollisionBoundary;
+  avoidRefs?: (React.RefObject<HTMLElement | null> | string)[];
+}
+```
+
+**定位保障（anchor / origin 模式）**：
+- **L1**: 视口碰撞自调整（anchor 翻转 placement，origin 夹紧坐标）
+- **L2**: 元素避开，避免与 `avoidRefs` 重叠
+- **L3**: Framer Motion 弹簧动画平滑过渡
+
+**使用示例**:
+```tsx
+// anchor 模式 — 锚定触发元素
+<Portal anchorTo={buttonRef} placement="bottom-start" offset={4}>
+  <DropdownMenu />
+</Portal>
+
+// origin 模式 — 绝对坐标
+<Portal originX={mouseX} originY={mouseY} collisionBoundary={{bottom:10,right:10}}>
+  <ContextMenu />
+</Portal>
+
+// preset 模式 — 预设定位
+<Portal preset="center" zIndex={Z_INDEX.MODAL}>
+  <ModalContent />
+</Portal>
+
+// draggable 模式 — 可拖拽
+<Portal draggable defaultPosition={{x:100,y:16}} zIndex={Z_INDEX.POPUP}>
+  <FloatingButton />
+</Portal>
+
+// simple 模式 — 仅传送
+<Portal>
+  <CustomTooltip />
+</Portal>
+```
+
+**注意事项**:
+- `avoidRefs` 支持 `string` key，自动从 `refRegistryStore` 查找已注册元素
+- `draggable` 模式使用 Pointer Events + `setPointerCapture`，非 Framer Motion drag
+- `simple` 模式不上传 `zIndex` prop，需调用方自行通过 className 控制层级
+
 ### 通用组件子目录 {#common-components-subdirectories}
 
 **位置**: `src/components/common/`
@@ -325,6 +413,7 @@ interface StartGameButtonProps {
 | `popup/` | `AlertPopup.tsx`, `ConfirmPopup.tsx`, `InputDialog.tsx`, `LoadingPopup.tsx`, `ProgressDialog.tsx` | 弹窗组件 |
 | `settings/` | `MemorySlider.tsx`, `SettingItem.tsx`, `SettingsSection.tsx` | 设置页面组件 |
 | `sidebar/` | 侧边栏相关组件 | 智能侧边栏系统（详见第 5 节） |
+| `Portal.tsx` | `Portal.tsx` | 智能 Portal，5 种浮动定位模式（详见 §1 Portal） |
 
 ---
 
@@ -689,4 +778,105 @@ interface ButtonProps {
 
 ---
 
-**详细实现**: 见各组件源文件（`src/components/*/`）
+## 12. 核心 Hooks 与工具 {#core-hooks-and-utilities}
+
+### useFloating {#use-floating}
+
+**位置**: `src/hooks/useFloating.ts`
+
+浮动定位引擎 hook，支持 anchor（相对元素）和 origin（绝对坐标）两种模式。
+
+```typescript
+type FloatingPlacement =
+  | 'top' | 'top-start' | 'top-end'
+  | 'bottom' | 'bottom-start' | 'bottom-end'
+  | 'left' | 'left-start' | 'left-end'
+  | 'right' | 'right-start' | 'right-end';
+
+interface CollisionBoundary {
+  top?: number;
+  bottom?: number;
+  left?: number;
+  right?: number;
+}
+
+interface UseFloatingOptions {
+  floatingRef: React.RefObject<HTMLElement | null>;
+  anchorTo?: React.RefObject<HTMLElement | null>;
+  placement?: FloatingPlacement;            // 默认 'bottom-start'
+  offset?: number;                          // 默认 4
+  originX?: number;
+  originY?: number;
+  collisionBoundary?: CollisionBoundary;
+  avoidRefs?: React.RefObject<HTMLElement | null>[];
+  autoFlip?: boolean;                       // 默认 true
+  enabled?: boolean;                        // 默认 true
+}
+
+interface UseFloatingReturn {
+  x: number;
+  y: number;
+  placement: FloatingPlacement;
+  updatePosition: () => void;
+}
+```
+
+**定位保障（按优先级）**：
+1. **L1** 视口翻转（anchor 模式）：检测碰撞后自动翻转 placement
+2. **L2** 元素避开：与 `avoidRefs` 重叠时沿最短位移推开
+3. **L3** 弹簧动画：由调用方（Portal）驱动
+
+**使用示例**:
+```tsx
+const { x, y } = useFloating({
+  floatingRef,
+  anchorTo: buttonRef,
+  placement: 'bottom-start',
+  offset: 4,
+});
+```
+
+### refRegistryStore {#ref-registry-store}
+
+**位置**: `src/stores/refRegistryStore.ts`
+
+全局 DOM 元素注册表（Zustand），允许通过 string key 跨组件共享 DOM ref。
+
+```typescript
+// 注册元素
+const register = useRegisterRef('my-key');
+return <div ref={register} />;
+
+// 读取元素
+const element = useRegisteredRef('my-key');
+
+// Portal 的 avoidRefs 支持 string key 自动查找
+<Portal avoidRefs={['my-key']}>...<Portal>
+```
+
+| Hook | 用途 |
+|------|------|
+| `useRegisterRef(key)` | 返回 ref callback，挂载时注册、卸载时注销 |
+| `useRegisteredRef(key)` | 返回已注册的 HTMLElement 或 null |
+
+### zIndex 常量 {#z-index-constants}
+
+**位置**: `src/utils/zIndex.ts`
+
+统一的 z-index 层级常量表，所有浮层组件应通过此常量控制层级，禁止硬编码。
+
+```typescript
+export const Z_INDEX = {
+  DROPDOWN: 100,   // 下拉菜单、工具提示
+  STICKY: 200,     // 粘性定位元素
+  POPUP: 500,      // 弹出面板、按钮浮层
+  MODAL: 1000,     // 模态弹窗
+  TOAST: 9999,     // 全局通知
+} as const;
+
+export type ZIndexKey = keyof typeof Z_INDEX;
+```
+
+---
+
+**详细实现**: 见各组件源文件（`src/components/*/`）、Hooks（`src/hooks/*`）、工具（`src/utils/*`）

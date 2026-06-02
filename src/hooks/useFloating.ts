@@ -165,6 +165,9 @@ function detectViewportCollision(
  * 2. 仅当水平与垂直方向同时重叠才触发避开
  * 3. 选择位移量较小的方向移动
  * 4. 对每个 `avoidRef` 重复计算（但不做多轮收敛）
+ *
+ * TODO: iterate convergence until no further displacement or cap at N rounds
+ * TODO: respect collisionBoundary after displacement (L2 push may cause new viewport collision)
  */
 function resolveOverlap(
   x: number,
@@ -283,6 +286,8 @@ export function useFloating(options: UseFloatingOptions): UseFloatingReturn {
           const flipped = getFlippedPlacement(currentPlacement);
           pos = calculateAnchorPosition(triggerRect, floatingRect, flipped, offset);
           currentPlacement = flipped;
+          // TODO: re-run detectViewportCollision on the flipped position;
+          //       the flipped placement might also collide in edge cases
         }
       }
     } else if (isOrigin) {
@@ -308,6 +313,8 @@ export function useFloating(options: UseFloatingOptions): UseFloatingReturn {
     }
 
     if (avoidRefs.length > 0) {
+      // TODO: re-check collisionBoundary after L2 push — resolveOverlap may push
+      //       element back into viewport collision
       pos = resolveOverlap(pos.x, pos.y, floatingRect.width, floatingRect.height, avoidRefs);
     }
 

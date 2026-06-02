@@ -1,7 +1,7 @@
 # WeCraft! Launcher - 架构设计文档
 
-> **版本**: 0.1.0-alpha.1  
-> **最后更新**: 2026-05-27
+> **版本**: 0.1.0-alpha.2  
+> **最后更新**: 2026-06-02
 
 **相关文档**:
 - 文档维护规范：[`MAINTENANCE.md`](MAINTENANCE.md) - 文档编写与更新指南
@@ -119,6 +119,7 @@ src/
 │   ├── configStore.ts       # 配置状态
 │   ├── themeStore.ts        # 主题状态
 │   ├── navStore.ts          # 导航状态
+│   ├── refRegistryStore.ts  # 全局 DOM 元素注册表
 │   └── ...
 ├── config/                   # 配置管理
 │   ├── index.ts             # 统一配置入口
@@ -132,7 +133,10 @@ src/
 │   ├── logger.ts            # 日志工具
 │   └── i18n.ts              # 国际化
 ├── hooks/                    # 自定义 Hooks
+│   ├── useFloating.ts       # 浮动定位引擎（anchor/origin 双模式）
+│   └── useClickOutside.ts   # 点击外部检测
 ├── utils/                    # 工具函数
+│   └── zIndex.ts            # Z-index 层级常量表
 ├── styles/                   # 样式文件
 │   └── themes/              # 主题 CSS
 ├── types/                    # TypeScript 类型
@@ -252,6 +256,7 @@ config.on('theme.mode', (newValue) => {
 | `instanceStore` | `src/stores/instanceStore.ts` | 实例管理（列表、文件夹、CRUD） |
 | `downloadStore` | `src/stores/downloadStore.ts` | 下载管理（版本清单、任务、部署） |
 | `accountStore` | `src/stores/accountStore.ts` | 账户管理 |
+| `refRegistryStore` | `src/stores/refRegistryStore.ts` | 全局 DOM 元素注册表 |
 
 ### 4.2 状态流转
 

@@ -16,6 +16,10 @@ export interface DropDownOption {
 
 export interface DropDownProps {
   options: DropDownOption[];
+  /** 受控模式：当前选中项（传入时组件由父组件控制选中状态） */
+  value?: DropDownOption;
+  /** 非受控模式：初始选中项（仅在首次渲染时生效） */
+  defaultValue?: DropDownOption;
   onSelect?: (value: DropDownOption) => void;
   styleName?: MotionStyle | undefined;
   borderRadius?: string | number;
@@ -28,6 +32,8 @@ export interface DropDownProps {
 
 const DropDown = ({
   options,
+  value,
+  defaultValue,
   onSelect,
   styleName,
   borderRadius = '--radius-sm',
@@ -38,7 +44,12 @@ const DropDown = ({
   buttonHeight = 'h-auto',
 }: DropDownProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedOption, setSelectedOption] = useState(options[0]);
+  // 受控模式
+  const isControlled = value !== undefined;
+  const [internalSelected, setInternalSelected] = useState<DropDownOption>(
+    defaultValue ?? options[0],
+  );
+  const selectedOption = isControlled ? value : internalSelected;
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -52,11 +63,13 @@ const DropDown = ({
     setIsOpen(!isOpen);
   };
 
-  const handleOptionClick = useCallback((value: DropDownOption) => {
-    setSelectedOption(value);
+  const handleOptionClick = useCallback((option: DropDownOption) => {
+    if (!isControlled) {
+      setInternalSelected(option);
+    }
     setIsOpen(false);
-    onSelect?.(value);
-  }, [onSelect]);
+    onSelect?.(option);
+  }, [isControlled, onSelect]);
 
   return (
     <AnimatePresence>
@@ -135,11 +148,11 @@ const DropDown = ({
                     aria-selected={option.id === selectedOption?.id}
                     onClick={() => handleOptionClick(option)}
                     className="
-                                            w-full flex items-center justify-between 
-                                            px-3 py-1.5 text-sm transition-colors
-                                            hover:bg-(--color-surface-hover)
-                                            hover:cursor-pointer
-                                        "
+                        w-full flex items-center justify-between 
+                        px-3 py-1.5 text-sm transition-colors
+                        hover:bg-(--color-surface-hover)
+                        hover:cursor-pointer
+                    "
                     style={{
                       backgroundColor: selectedOption?.id === option.id ? 'var(--color-surface-active)' : ''
                     }}

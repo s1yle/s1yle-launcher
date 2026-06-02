@@ -1,6 +1,6 @@
 # WeCraft! Launcher - 更新日志
 
-> **项目版本**: 0.1.0-alpha.1  
+> **项目版本**: 0.1.0-alpha.2  
 > **更新日志**: 记录所有重大重构和功能更新
 
 **相关文档**:
@@ -8,6 +8,46 @@
 - 架构设计：[`architecture.md`](architecture.md) - 技术架构、目录结构
 - 组件文档：[`components.md`](components.md) - 所有组件的详细说明
 - API 文档：[`api.md`](api.md) - 后端 API 调用指南
+
+---
+
+## 2026-06-02 - Portal API 重构
+
+### 新增智能 Portal 系统
+
+**更新概述**:
+重构 Portal 组件为覆盖全部浮动定位场景的通用渲染原语。新增浮动定位引擎、全局 DOM 注册表和 z-index 常量系统，并对所有现有浮层组件进行迁移。
+
+**新增文件**:
+
+| 文件 | 说明 |
+|------|------|
+| `src/hooks/useFloating.ts` | 浮动定位引擎（anchor/origin 双模式，L1 视口翻转 + L2 元素避开） |
+| `src/stores/refRegistryStore.ts` | Zustand 全局 DOM 元素注册表 |
+| `src/utils/zIndex.ts` | z-index 层级常量表（DROPDOWN 100 / POPUP 500 / MODAL 1000 / TOAST 9999） |
+
+**新增组件**:
+
+| 组件 | 说明 |
+|------|------|
+| `Portal` | 智能 Portal，支持 5 种互斥模式（anchor / origin / preset / draggable / simple） |
+
+**迁移组件**（保持原行为不变，仅替换定位/DOM 传送方式）：
+
+| 组件 | 原方式 | 现方式 |
+|------|--------|--------|
+| `DropDown` | 手动 `getBoundingClientRect` + scroll 监听 | `<Portal anchorTo={buttonRef}>` |
+| `InstanceManageButton` | 手动 `buttonRect` + `contains()` 点击检测 | `<Portal anchorTo={buttonRef}>` + `useClickOutside` |
+| `ContextMenu` | 手动视口碰撞 + `contains()` + `adjustedPosition` | `<Portal originX/Y collisionBoundary>` |
+| `Popup` | `createPortal` + `fixed inset-0 flex` | `<Portal preset="center">` |
+| `NotificationProvider` | `createPortal` + `fixed top-4 right-4` | `<Portal preset="top-right">` |
+| `FloatingDownloadButton` | `createPortal` + 自定义 pointer event drag | `<Portal>` (simple) 保留原坐标系统和拖拽逻辑 |
+
+**影响文档**:
+- `AGENTS.md` - 更新目录结构、通用组件、状态管理、注意事项
+- `docs/architecture.md` - 更新目录结构、状态管理
+- `docs/components.md` - 新增 Portal API、useFloating、refRegistryStore、zIndex 文档
+- `docs/changelog.md` - 新增本次记录
 
 ---
 

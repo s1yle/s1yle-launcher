@@ -82,6 +82,7 @@ const springTransition = {
   stiffness: 500,
   damping: 40,
 };
+// TODO: expose `transition` prop so callers can override spring params per-mode
 
 const presetStyles: Record<PresetPosition, React.CSSProperties> = {
   center: {
@@ -249,6 +250,9 @@ function OriginContent({
  *
  * 使用预设的 CSS 定位方式（center / top / bottom / 四角）。
  * 不接入 `useFloating` hook，无碰撞检测或避开逻辑。
+ *
+ * TODO: add optional collisionBoundary/avoidRefs support for preset modes
+ *       (e.g. center → clamp within safe-area when viewport is small)
  */
 function PresetContent({
   children,
@@ -283,6 +287,10 @@ function PresetContent({
  * 使用 Pointer Events 实现拖拽，内部用 ref 维护实时位置（避免 re-render 抖动）。
  * 拖拽时 transition 设为 `{ duration: 0 }` 以消除弹簧动画拖尾感；
  * 非拖拽时恢复弹簧动画。
+ *
+ * TODO: add `dragBoundary` prop to clamp position within viewport
+ * TODO: add `onDragStart`/`onDragEnd` callbacks so consumers can track drag state
+ * TODO: add optional `storageKey` prop for auto-persisting position to localStorage
  */
 function DraggableContent({
   children,
@@ -296,6 +304,7 @@ function DraggableContent({
   defaultPosition?: { x: number; y: number };
   onPositionChange?: (pos: { x: number; y: number }) => void;
   zIndex?: number;
+  // TODO: add floatingRef prop so DraggableContent surfaces its container element
 }) {
   const [pos, setPos] = useState(defaultPosition ?? { x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -381,6 +390,9 @@ function DraggableContent({
  * - **L1** 视口碰撞自动调整（anchor 翻转，origin 夹紧）
  * - **L2** 元素避开，避免与 `avoidRefs` 重叠
  * - **L3** Framer Motion 弹簧动画提供平滑过渡
+ *
+ * TODO: consider adding `onClickOutside` prop for unified outside-click handling
+ *       (currently each consumer implements `useClickOutside` independently)
  *
  * **SSR 安全**：通过 `mounted` 状态守卫，在客户端渲染前返回 null。
  *
@@ -498,6 +510,7 @@ export function Portal({
   }
 
   if (draggable) {
+    // TODO: pass avoidRefs + collisionBoundary into DraggableContent
     return (
       <DraggableContent
         container={container}
@@ -510,5 +523,6 @@ export function Portal({
     );
   }
 
+  // TODO: when zIndex is passed in simple mode, wrap children in a `<div style{{zIndex}}>` container
   return createPortal(children, container || document.body);
 }

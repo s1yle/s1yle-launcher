@@ -1,8 +1,8 @@
 # WeCraft! Launcher - 快速参考指南
 
-> **最后更新**: 2026-05-27  
-> **项目版本**: 0.1.0-alpha.1  
-> **最新更新**: 文档维护更新（路由、Store、组件、API 同步）
+> **最后更新**: 2026-06-02  
+> **项目版本**: 0.1.0-alpha.2  
+> **最新更新**: Portal API 重构（新增智能 Portal、浮动定位引擎、DOM 注册表、z-index 常量）
 
 ---
 
@@ -77,7 +77,8 @@ src/
 │   │   ├── Instance/        # 实例相关组件
 │   │   ├── Loading/         # 加载组件
 │   │   ├── SettingsPanel/   # 设置面板
-│   │   └── Version/         # 版本相关组件
+│   │   ├── Version/         # 版本相关组件
+│   │   └── Portal.tsx       # 智能 Portal（5 种浮动定位模式）
 │   ├── navigation/          # 导航组件（灵动岛）
 │   ├── home/                # 主页组件
 │   ├── header/              # 头部组件
@@ -98,6 +99,7 @@ src/
 │   ├── uiModeStore.ts       # UI 模式
 │   ├── layoutStore.ts       # 布局状态
 │   ├── appStore.ts          # 应用全局状态
+│   ├── refRegistryStore.ts  # 全局 DOM 元素注册表
 │   ├── configStore.ts       # 配置状态
 │   └── ...
 ├── config/                   # 配置管理
@@ -112,7 +114,10 @@ src/
 │   ├── logger.ts            # 日志工具
 │   └── i18n.ts              # 国际化
 ├── hooks/                    # 自定义 Hooks
+│   ├── useFloating.ts       # 浮动定位引擎（anchor/origin 模式）
+│   └── useClickOutside.ts   # 点击外部检测
 ├── utils/                    # 工具函数
+│   └── zIndex.ts            # Z-index 层级常量表
 ├── styles/                   # 样式文件
 │   └── themes/              # 主题 CSS
 ├── types/                    # TypeScript 类型
@@ -175,6 +180,7 @@ src/
 | `instanceStore` | `src/stores/instanceStore.ts` | 实例管理（列表、文件夹、CRUD） |
 | `downloadStore` | `src/stores/downloadStore.ts` | 下载管理（版本清单、任务、部署） |
 | `accountStore` | `src/stores/accountStore.ts` | 账户管理 |
+| `refRegistryStore` | `src/stores/refRegistryStore.ts` | 全局 DOM 元素注册表 |
 
 **使用示例**:
 ```typescript
@@ -309,6 +315,7 @@ await updateConfig('theme.accentColor', 'blue');
 - `DynamicIsland` - 灵动岛导航组件
 - `BottomBar` - 底部栏组件
 - `ContextStack` - 上下文栈组件
+- `Portal` - 智能 Portal（5 种浮动定位模式）
 
 **组件子目录**:
 - `src/components/common/Badge/` - 徽章组件
@@ -324,10 +331,11 @@ await updateConfig('theme.accentColor', 'blue');
 - `src/components/common/popup/` - 弹窗组件
 - `src/components/common/settings/` - 设置组件
 - `src/components/common/sidebar/` - 侧边栏组件
+- `src/components/common/Portal.tsx` - 智能 Portal（5 种浮动定位模式）
 
 **使用示例**:
 ```typescript
-import { ProgressBar, useNotification } from '@/components/common';
+import { ProgressBar, useNotification, Portal } from '@/components/common';
 
 // 进度条
 <ProgressBar progress={75} status="active" showPercentage />
@@ -335,6 +343,16 @@ import { ProgressBar, useNotification } from '@/components/common';
 // 通知
 const { success } = useNotification();
 success('操作成功', '文件已保存');
+
+// Portal 锚定浮动层
+<Portal anchorTo={buttonRef} placement="bottom-start">
+  <DropdownMenu />
+</Portal>
+
+// Portal 可拖拽浮动按钮
+<Portal draggable defaultPosition={{x:100,y:16}}>
+  <FloatingWidget />
+</Portal>
 ```
 
 **详细组件文档**: 见 [`docs/components.md`](docs/components.md)
@@ -495,6 +513,9 @@ pnpm typecheck            # TypeScript 类型检查
 - **窗口位置保存**: 最小化时不保存位置，避免保存 -32000 坐标
 - **Webview 右键菜单**: 已禁用，在 `App.tsx` 中通过 `e.preventDefault()` 实现
 - **配置管理**: 更新配置时必须使用 `ConfigManager.update_value()` 增量更新，**禁止**使用 `update_config()` 完整覆盖
+- **Portal 锚定**: 使用 `useRegisterRef(key)` 注册 DOM 元素，Portal 的 `avoidRefs` 支持 string key 自动查找
+- **Portal 约束**: `draggable` 模式尚未集成 `avoidRefs`/`collisionBoundary`；`simple` 模式忽略 `zIndex` prop
+- **z-index 层级**: 使用 `Z_INDEX` 常量统一管理，见 [`src/utils/zIndex.ts`](src/utils/zIndex.ts)
 
 ---
 

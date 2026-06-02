@@ -4,11 +4,12 @@ import { Toggle } from '../components/common';
 import { SettingsPanel } from '@/components/common/SettingsPanel/SettingPanel';
 import { useState } from 'react';
 import DropDown from '@/components/common/DropDown';
-import { useFontSizeStore, fontScaleConfig } from '@/stores/fontSizeStore';
+import { useFontSizeStore, fontScaleConfig, type FontScale } from '@/stores/fontSizeStore';
 
 const Settings = () => {
   const { mode: uiMode, setMode: setUIMode, animation, setAnimation } = useUIModeStore();
   const [isCompat, setIsCompat] = useState(true)
+  const fontScale = useFontSizeStore((s) => s.fontScale);
   const setFontScale = useFontSizeStore((s) => s.setFontScale);
 
   const handleAnimationSetting = () => {
@@ -44,6 +45,9 @@ const Settings = () => {
         <SettingsPanel.Sub label='字体大小'>
           <DropDown
             options={fontScaleConfig.options}
+            value={fontScaleConfig.options.find(
+              o => o.id === fontScaleConfig.toId(fontScale)
+            )}
             onSelect={handleFontScaleSelect}
             buttonWidth='w-xs'
           />
