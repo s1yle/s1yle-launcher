@@ -25,9 +25,8 @@
 // 实现账户界面初步 ui 设计
 // 支持自定义背景加载
 //
-// 支持设置字体大小
-//
 // 页面切换及侧边栏动画重构,支持更一致、实用的动画. 将动画重构为通用基层api.
+//
 // 支持系统JAVA环境识别, java设置中提供java选项, 解析java版本
 // 重构项目的日志模块, 移除现有的cargo 日志库，改为自行实现
 // 支持识别系统字体，并且可以选择系统字体 作为app的默认字体
@@ -60,7 +59,8 @@ import IslandLayout from './AppLayouts/IslandLayout';
 import AppHeader from './AppLayouts/AppHeader';
 import AppSidebar from './AppLayouts/AppSidebar';
 import AppMain from './AppLayouts/AppMain';
-import useLayoutStore, { PAGE_TRANSITION_DURATION, SIDEBAR_TRANSITION_DURATION } from './stores/layoutStore';
+import useLayoutStore, { LAYOUT_DEBOUNCE_DURATION, SIDEBAR_TRANSITION_DURATION } from './stores/layoutStore';
+import { DURATION } from './utils/animations';
 
 const LAYOUT_MODES = {
   [UIMode.CLASSIC]: ClassicLayout,
@@ -74,8 +74,6 @@ const MainLayout = () => {
 
   // Nav Store 模式
   const setCurrentPath = useNavStore((s) => s.setCurrentPath);
-  const setNavigating = useNavStore((s) => s.setNavigating);
-  const isNavigating = useNavStore((s) => s.isNavigating);
 
   const { mode: uiMode } = useUIModeStore();
   const animLockRef = useRef(false);
@@ -113,13 +111,11 @@ const MainLayout = () => {
     }
 
     animLockRef.current = true;
-    setNavigating(true);
     setCurrentPath(finalPath);
     navigate(finalPath);
     setTimeout(() => {
       animLockRef.current = false;
-      setNavigating(false);
-    }, (Math.max(PAGE_TRANSITION_DURATION, SIDEBAR_TRANSITION_DURATION) * 1000) + 100);
+    }, 300);
   };
 
   useEffect(() => {
@@ -175,27 +171,19 @@ const MainLayout = () => {
   // console.warn('IslandLayout:', IslandLayout);
 
   const layoutProps = {
-    // 布局部分
     header: <AppHeader mode={uiMode} currentRoute={currentRoute} handleMenuClick={handleMenuClick} />,
-    sidebar: <AppSidebar mode={uiMode} transitionDuration={SIDEBAR_TRANSITION_DURATION} handleMenuClick={handleMenuClick} footer={sidebarFooter} />,
+    sidebar: <AppSidebar mode={uiMode} transitionDuration={DURATION.SIDEBAR_TRANSITION} handleMenuClick={handleMenuClick} footer={sidebarFooter} />,
     collapsedToggleButton: collapsedToggleButton,
-    // 参数
-    sidebar_transition_duration: SIDEBAR_TRANSITION_DURATION,
-    // 特殊部分
+    sidebarTransitionDuration: DURATION.SIDEBAR_TRANSITION,
     ...(uiMode === UIMode.CLASSIC
       ? {
-        // Classic
         shouldShowSidebar
       }
       : uiMode === UIMode.ISLAND ? {
-        // Island
         hasOwnSidebar,
         isSidebarCollapsed,
-        isNavigating,
       }
-        : {
-          // expecting for adding more layout...
-        }
+        : {}
     )
   }
 

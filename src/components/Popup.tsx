@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Overlay } from './common';
 import { Portal } from './common/Portal';
 import { Z_INDEX } from '../utils/zIndex';
+import { DURATION, EASING } from '@/utils/animations';
 
 export interface PopupProps {
   isOpen: boolean;
@@ -42,7 +43,7 @@ const Popup = ({
   overlayClassName = '',
   contentClassName = '',
   animation = 'slide',
-  animationDuration = 200,
+  animationDuration = DURATION.MEDIUM * 1000,
   ariaLabel,
   ariaLabelledby,
   ariaDescribedby,
@@ -160,7 +161,7 @@ const Popup = ({
                 exit={variant.exit}
                 transition={{
                   duration: durationSec,
-                  ease: [0.25, 0.1, 0.25, 1],
+                  ease: EASING.DEFAULT,
                 }}
                 onClick={(e) => e.stopPropagation()}
               >

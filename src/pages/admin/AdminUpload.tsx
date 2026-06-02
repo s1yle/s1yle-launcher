@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
+import { Animated } from '@/components/common';
 import { Upload, FileText, FolderOpen, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import { useState, useCallback } from 'react';
+import { DURATION, microInteractions, transitions } from '@/utils/animations';
 
 const AdminUpload = () => {
   const [isDragging, setIsDragging] = useState(false);
@@ -66,10 +68,10 @@ const AdminUpload = () => {
 
   return (
     <div className="min-h-screen p-8 pt-24">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
+      <Animated
+        fade
+        slide="up"
+        duration={DURATION.SLOW * 2}
         className="max-w-7xl mx-auto"
       >
         {/* 页面标题 */}
@@ -85,10 +87,11 @@ const AdminUpload = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 上传区域 */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
+          <Animated
+            fade
+            slide="left"
+            delay={DURATION.MEDIUM}
+            duration={DURATION.SLOW * 2}
             className="lg:col-span-2"
           >
             <div
@@ -109,13 +112,13 @@ const AdminUpload = () => {
             >
               {!isUploading && !uploadComplete && (
                 <>
-                  <motion.div
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
+                  <Animated
+                    fade
+                    scale={0.9}
                     className="mb-4"
                   >
                     <Upload className={`w-16 h-16 mx-auto ${isDragging ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-tertiary)'} transition-colors`} />
-                  </motion.div>
+                  </Animated>
 
                   <h3 className="text-xl font-semibold text-[var(--color-text-primary)] mb-2">
                     拖拽文件到此处
@@ -126,8 +129,8 @@ const AdminUpload = () => {
 
                   <div className="flex justify-center gap-3 mb-4">
                     <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
+                      whileHover={microInteractions.secondaryButtonHover}
+                      whileTap={microInteractions.secondaryButtonTap}
                       onClick={simulateUpload}
                       className="flex items-center gap-2 px-6 py-2.5 bg-[var(--color-primary)] text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
                     >
@@ -136,8 +139,8 @@ const AdminUpload = () => {
                     </motion.button>
 
                     <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
+                      whileHover={microInteractions.secondaryButtonHover}
+                      whileTap={microInteractions.secondaryButtonTap}
                       className="flex items-center gap-2 px-6 py-2.5 bg-[var(--color-surface)] text-[var(--color-text-primary)] rounded-xl font-medium border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] cursor-pointer"
                     >
                       <FolderOpen className="w-5 h-5" />
@@ -153,13 +156,13 @@ const AdminUpload = () => {
 
               {isUploading && (
                 <div className="space-y-6">
-                  <motion.div
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
+                  <Animated
+                    fade
+                    scale={0.8}
                     className="mb-4"
                   >
                     <Clock className="w-16 h-16 mx-auto text-blue-400" />
-                  </motion.div>
+                  </Animated>
 
                   <h3 className="text-xl font-semibold text-[var(--color-text-primary)]">
                     正在上传...
@@ -175,7 +178,7 @@ const AdminUpload = () => {
                       <motion.div
                         className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
                         style={{ width: `${Math.min(uploadProgress, 100)}%` }}
-                        transition={{ duration: 0.15 }}
+                        transition={transitions.normal}
                       />
                     </div>
 
@@ -187,9 +190,9 @@ const AdminUpload = () => {
               )}
 
               {uploadComplete && (
-                <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
+                <Animated
+                  fade
+                  scale={0.8}
                   className="space-y-4"
                 >
                   <CheckCircle className="w-20 h-20 mx-auto text-green-400" />
@@ -203,23 +206,24 @@ const AdminUpload = () => {
                   </p>
 
                   <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={microInteractions.secondaryButtonHover}
+                    whileTap={microInteractions.secondaryButtonTap}
                     onClick={() => setUploadComplete(false)}
                     className="mt-4 px-6 py-2.5 bg-green-500/15 text-green-400 rounded-xl font-medium hover:bg-green-500/25 transition-colors cursor-pointer"
                   >
                     继续上传
                   </motion.button>
-                </motion.div>
+                </Animated>
               )}
             </div>
-          </motion.div>
+          </Animated>
 
           {/* 最近上传记录 */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
+          <Animated
+            fade
+            slide="right"
+            delay={DURATION.SLOW + DURATION.FAST}
+            duration={DURATION.SLOW * 2}
             className="bg-[var(--color-surface)]/80 backdrop-blur-xl rounded-2xl border border-[var(--color-border)]/50 p-6 shadow-lg"
           >
             <h3 className="font-semibold text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
@@ -229,11 +233,12 @@ const AdminUpload = () => {
 
             <div className="space-y-3">
               {recentUploads.map((file, index) => (
-                <motion.div
+                <Animated
                   key={file.name}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5 + index * 0.1 }}
+                  fade
+                  slide="left"
+                  delay={DURATION.SLOW + DURATION.MEDIUM + index * DURATION.FAST}
+                  duration={DURATION.NORMAL}
                   className="group flex items-start gap-3 p-3 rounded-xl hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
                 >
                   <div className="p-2 rounded-lg bg-[var(--color-bg-secondary)] group-hover:bg-[var(--color-primary)]/10 transition-colors mt-0.5">
@@ -250,16 +255,16 @@ const AdminUpload = () => {
                   {file.status === 'success' && (
                     <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-1" />
                   )}
-                </motion.div>
+                </Animated>
               ))}
             </div>
 
             <button className="w-full mt-4 py-2.5 text-sm font-medium text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 rounded-xl transition-colors cursor-pointer">
               查看全部上传记录
             </button>
-          </motion.div>
+          </Animated>
         </div>
-      </motion.div>
+      </Animated>
     </div>
   );
 };

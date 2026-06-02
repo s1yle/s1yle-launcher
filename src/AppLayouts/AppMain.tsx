@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import RouterRenderer from "../components/RouterRenderer"
-import useLayoutStore, { PAGE_TRANSITION_DURATION, SIDEBAR_TRANSITION_DURATION } from "@/stores/layoutStore";
+import useLayoutStore, { LAYOUT_DEBOUNCE_DURATION, SIDEBAR_TRANSITION_DURATION } from "@/stores/layoutStore";
 import { debounce } from "@/utils/configUtils";
 
 export interface AppMainProps {
@@ -23,7 +23,7 @@ const AppMain = ({
     debounce((newWidth: number) => {
       appliedWidthRef.current = newWidth;
       setAppliedWidth(newWidth);
-    }, PAGE_TRANSITION_DURATION * 1000),
+    }, LAYOUT_DEBOUNCE_DURATION * 1000),
     []
   );
 

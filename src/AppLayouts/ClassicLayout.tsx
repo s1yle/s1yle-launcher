@@ -1,11 +1,12 @@
 import { AnimatePresence, motion } from "framer-motion"
+import { DURATION } from "../utils/animations";
 
 export interface ClassicLayoutProps {
     children: React.ReactNode,
     header: React.ReactNode,
     sidebar: React.ReactNode,
     sidebarWidth: number;
-    sidebar_transition_duration: number;
+    sidebarTransitionDuration: number;
     shouldShowSidebar: boolean;
     collapsedToggleButton: React.ReactNode;
 }
@@ -15,7 +16,7 @@ const ClassicLayout = ({
     header,
     sidebar,
     sidebarWidth = 15,
-    sidebar_transition_duration = 0.2,
+    sidebarTransitionDuration = DURATION.SIDEBAR_TRANSITION,
     shouldShowSidebar = false,
     collapsedToggleButton,
 }: ClassicLayoutProps) => {
@@ -29,7 +30,7 @@ const ClassicLayout = ({
                     style={{ width: 'auto', height: '100%' }}
                     exit={{ x: -sidebarWidth, opacity: 0 }}
                     transition={{
-                        duration: sidebar_transition_duration,
+                        duration: sidebarTransitionDuration,
                     }}
                 >
                     <div

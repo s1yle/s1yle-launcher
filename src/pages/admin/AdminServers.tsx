@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion';
+import { Animated } from '@/components/common';
 import { Server, Plus, MoreVertical, Settings, Users, Activity } from 'lucide-react';
+import { DURATION, microInteractions } from '@/utils/animations';
 
 const AdminServers = () => {
   const mockServers = [
@@ -10,10 +12,10 @@ const AdminServers = () => {
 
   return (
     <div className="min-h-screen p-8 pt-24">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
+      <Animated
+        fade
+        slide="up"
+        duration={DURATION.SLOW * 2}
         className="max-w-7xl mx-auto"
       >
         {/* 页面标题 */}
@@ -30,8 +32,8 @@ const AdminServers = () => {
         <div className="flex items-center justify-between mb-6">
           <div className="flex gap-3">
             <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={microInteractions.secondaryButtonHover}
+              whileTap={microInteractions.secondaryButtonTap}
               className="flex items-center gap-2 px-5 py-2.5 bg-[var(--color-primary)] text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
             >
               <Plus className="w-5 h-5" />
@@ -48,13 +50,13 @@ const AdminServers = () => {
         {/* 服务器列表 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {mockServers.map((server, index) => (
-            <motion.div
+            <Animated
               key={server.id}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1, duration: 0.5 }}
-              whileHover={{ y: -4, scale: 1.01 }}
-              className="group bg-[var(--color-surface)]/80 backdrop-blur-xl rounded-2xl border border-[var(--color-border)]/50 p-6 shadow-lg hover:shadow-2xl transition-all cursor-pointer"
+              fade
+              slide="up"
+              delay={index * DURATION.FAST}
+              duration={DURATION.SLOW + 0.2}
+              className="group bg-[var(--color-surface)]/80 backdrop-blur-xl rounded-2xl border border-[var(--color-border)]/50 p-6 shadow-lg hover:-translate-y-1 hover:scale-[1.01] hover:shadow-2xl transition-all cursor-pointer"
             >
               {/* 服务器头部 */}
               <div className="flex items-start justify-between mb-4">
@@ -115,7 +117,7 @@ const AdminServers = () => {
                       className="h-full bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-hover)]"
                       initial={{ width: 0 }}
                       animate={{ width: `${server.players * 100}%` }}
-                      transition={{ delay: 0.3 + index * 0.1, duration: 0.6 }}
+                      transition={{ delay: DURATION.SLOW + index * DURATION.FAST, duration: DURATION.SLOW * 2 }}
                     />
                   </div>
                 </div>
@@ -137,10 +139,10 @@ const AdminServers = () => {
                   设置
                 </button>
               </div>
-            </motion.div>
+            </Animated>
           ))}
         </div>
-      </motion.div>
+      </Animated>
     </div>
   );
 };

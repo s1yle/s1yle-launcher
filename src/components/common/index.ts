@@ -128,3 +128,5 @@ export { default as StartGameButton } from '@/components/common/StartGameButton'
 export type { StartGameButtonProps } from '@/components/common/StartGameButton';
 
 export { Portal } from './Portal';
+export { Animated } from './Animated';
+export type { AnimatedProps } from './Animated';

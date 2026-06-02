@@ -2,12 +2,15 @@ import { openUrl } from '../../../../helper/rustInvoke';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronDown, RefreshCw, Trash2, FolderOpen } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ChevronRight, ChevronDown, Trash2, FolderOpen } from 'lucide-react';
 import { type SidebarMenuItem } from '../../../../router/config';
 import { useInstanceStore } from '../../../../stores/instanceStore';
 import ContextMenu, { ContextMenuItemData, useContextMenu } from '../../ContextMenu';
 import clsx from 'clsx';
+import { DURATION, EASING, microInteractions, transitions } from '../../../../utils/animations';
+import { Animated } from '../../Animated';
+import { renderIcon } from '../../../../utils/iconRenderer';
 
 export interface BaseSidebarContentProps {
   items: SidebarMenuItem[];
@@ -221,15 +224,11 @@ const BaseSidebarContent = ({
       const isExpanded = expandedGroups.has(item.id);
 
       return (
-        <motion.div
-          className='----------------------headeraksdjadjklasdjlkajdlakdjlaskjdlajdladlajldadla------'
-          key={item.id}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: index * 0.03, duration: 0.15 }}
+        <Animated
+          fade
+          delay={index * 0.03}
+          duration={DURATION.SLOW}
         >
-
-          {/* ↓ 箭头 */}
           <button
             onClick={() => item.children?.length && toggleGroup(item.id)}
             className="w-full flex items-center 
@@ -240,27 +239,18 @@ const BaseSidebarContent = ({
           >
             <span>{t(item.titleI18nKey, item.title)}</span>
             {item.children?.length && (
-              <motion.div animate={{ rotate: isExpanded ? 0 : -90 }} transition={{ duration: 0.2 }}>
+              <motion.div
+                animate={{ rotate: isExpanded ? 0 : -90 }}
+                transition={{ duration: DURATION.MEDIUM }}
+              >
                 <ChevronDown className="w-3.5 h-3.5" />
               </motion.div>
             )}
           </button>
-          <AnimatePresence>
-            {isExpanded && item.children && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-                className="overflow-hidden"
-              >
-                <div className="space-y-0.5">
-                  {item.children.map((child, i) => renderItem(child, level + 1, index + i + 1))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
+          <Animated accordion={isExpanded && !!item.children} className="space-y-0.5">
+            {item.children?.map((child, i) => renderItem(child, level + 1, index + i + 1))}
+          </Animated>
+        </Animated>
       );
     }
 
@@ -268,11 +258,11 @@ const BaseSidebarContent = ({
     if (item.customRender) {
       const CustomComponent = item.customRender;
       return (
-        <motion.div
-          key={item.id}
-          initial={{ opacity: 0, x: -8 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: index * 0.03, duration: 0.15 }}
+        <Animated
+          fade
+          slide="left"
+          delay={index * 0.03}
+          duration={DURATION.NORMAL}
           style={{
             padding: level > 0 ? `${level * 0.75}rem` : `0.75rem`,
           }}
@@ -293,31 +283,19 @@ const BaseSidebarContent = ({
               }
             }}
           />
-          <AnimatePresence>
-            {hasChildren && isExpanded && item.children && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-                className="overflow-hidden"
-              >
-                <div className="space-y-0.5 mt-0.5">
-                  {item.children.map((child, i) => renderItem(child, level + 1, index + i + 1))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
+          <Animated accordion={hasChildren && isExpanded && !!item.children} className="space-y-0.5 mt-0.5">
+            {item.children?.map((child, i) => renderItem(child, level + 1, index + i + 1))}
+          </Animated>
+        </Animated>
       );
     }
 
     return (
-      <motion.div
-        key={item.id}
-        initial={{ opacity: 0, x: -8 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: index * 0.03, duration: 0.15 }}
+      <Animated
+        fade
+        slide="left"
+        delay={index * 0.03}
+        duration={DURATION.NORMAL}
         className='BaseSidebarContent'
       >
         <motion.button
@@ -340,16 +318,17 @@ const BaseSidebarContent = ({
               'bg-[var(--color-surface)] text-[var(--color-text-primary)] border-l-[var(--color-primary)] border-l-opacity-50': !active && !itemActive && parentActive,
               'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] border-l-transparent': !active && !itemActive && !parentActive && !item.danger,
             }
-          )}          // whileTap={{ scale: 0.97 }}
-          transition={{ duration: 0.1 }}
+          )}
+          whileTap={microInteractions.itemTap}
+          transition={transitions.slow}
         >
 
           {/* 按钮图标 */}
           {item.icon && (
             <motion.span
               className="w-5 h-5 flex-shrink-0 flex items-center justify-center pl-2 "
-              whileHover={{ scale: 1.15 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+              whileHover={microInteractions.iconHover}
+              transition={EASING.SPRING_STIFF}
             >
               {item.id === 'refresh-instances' && spinningItems.has(item.id) ? (
                 <motion.span
@@ -372,18 +351,16 @@ const BaseSidebarContent = ({
           {hasChildren && !isActionWithContext && (
             <motion.div
               animate={{ rotate: isExpanded ? 90 : 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: DURATION.MEDIUM }}
               className="flex-shrink-0"
             >
-              {/* TODO: 样式美化一下再启用该箭头 */}
-              {/* <ChevronRight className="w-3.5 h-3.5 text-[var(--color-text-tertiary)]" /> */}
             </motion.div>
           )}
 
           {isActionWithContext && (
             <motion.div
               animate={{ rotate: isExpanded ? 90 : 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: DURATION.MEDIUM }}
               className="flex-shrink-0"
             >
               <ChevronRight className="w-3.5 h-3.5 text-[var(--color-text-tertiary)]" />
@@ -394,8 +371,8 @@ const BaseSidebarContent = ({
             <motion.div
               onClick={(e) => { e.stopPropagation(); onItemDelete?.(item.id); }}
               className="opacity-0 group-hover/item:opacity-100 p-1 text-[var(--color-text-tertiary)] hover:text-error rounded transition-all duration-150 flex-shrink-0 cursor-pointer"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+              whileHover={microInteractions.deleteIconHover}
+              whileTap={microInteractions.deleteIconTap}
               title={t('instances.removeGameFolder', '删除游戏目录')}
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -403,22 +380,10 @@ const BaseSidebarContent = ({
           )}
         </motion.button>
 
-        <AnimatePresence>
-          {hasChildren && !isActionWithContext && isExpanded && item.children && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-              className="overflow-hidden"
-            >
-              <div className="space-y-0.5 mt-0.5">
-                {item.children.map((child, i) => renderItem(child, level + 1, index + i + 1))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
+        <Animated accordion={hasChildren && !isActionWithContext && isExpanded && !!item.children} className="space-y-0.5 mt-0.5">
+          {item.children?.map((child, i) => renderItem(child, level + 1, index + i + 1))}
+        </Animated>
+      </Animated>
     );
   };
 

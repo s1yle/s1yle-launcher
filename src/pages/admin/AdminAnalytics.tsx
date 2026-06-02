@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion';
+import { Animated } from '@/components/common';
 import { BarChart3, TrendingUp, Users, Clock, Server, Activity, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { DURATION } from '@/utils/animations';
 
 const AdminAnalytics = () => {
   const statsCards = [
@@ -46,10 +48,10 @@ const AdminAnalytics = () => {
 
   return (
     <div className="min-h-screen p-8 pt-24">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
+      <Animated
+        fade
+        slide="up"
+        duration={DURATION.SLOW * 2}
         className="max-w-7xl mx-auto"
       >
         {/* 页面标题 */}
@@ -70,13 +72,13 @@ const AdminAnalytics = () => {
             const IconComponent = stat.icon;
             
             return (
-              <motion.div
+              <Animated
                 key={stat.title}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1, duration: 0.5 }}
-                whileHover={{ y: -4, scale: 1.02 }}
-                className="group bg-[var(--color-surface)]/80 backdrop-blur-xl rounded-2xl border border-[var(--color-border)]/50 p-6 shadow-lg hover:shadow-2xl transition-all"
+                fade
+                slide="up"
+                delay={index * DURATION.FAST}
+                duration={DURATION.SLOW + 0.2}
+                className="group bg-[var(--color-surface)]/80 backdrop-blur-xl rounded-2xl border border-[var(--color-border)]/50 p-6 shadow-lg hover:-translate-y-1 hover:scale-[1.02] hover:shadow-2xl transition-all"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className={`p-3 rounded-xl ${colors.iconBg}`}>
@@ -101,7 +103,7 @@ const AdminAnalytics = () => {
                   <p className="text-sm text-[var(--color-text-secondary)] mb-1">{stat.title}</p>
                   <p className="text-3xl font-bold text-[var(--color-text-primary)]">{stat.value}</p>
                 </div>
-              </motion.div>
+              </Animated>
             );
           })}
         </div>
@@ -109,10 +111,11 @@ const AdminAnalytics = () => {
         {/* 图表区域 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* 玩家趋势图 */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
+          <Animated
+            fade
+            slide="left"
+            delay={DURATION.SLOW + DURATION.FAST}
+            duration={DURATION.SLOW * 2}
             className="bg-[var(--color-surface)]/80 backdrop-blur-xl rounded-2xl border border-[var(--color-border)]/50 p-6 shadow-lg"
           >
             <div className="flex items-center justify-between mb-6">
@@ -138,7 +141,7 @@ const AdminAnalytics = () => {
                   strokeWidth="2"
                   initial={{ pathLength: 0 }}
                   animate={{ pathLength: 1 }}
-                  transition={{ delay: 0.6, duration: 1.5 }}
+                  transition={{ delay: DURATION.SLOW * 2, duration: 1.5 }}
                 />
                 
                 <motion.path
@@ -146,7 +149,7 @@ const AdminAnalytics = () => {
                   fill="url(#chartGradient)"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.8, duration: 0.8 }}
+                  transition={{ delay: DURATION.SLOW * 2 + DURATION.MEDIUM, duration: 0.8 }}
                 />
               </svg>
 
@@ -161,13 +164,14 @@ const AdminAnalytics = () => {
                 <span>周日</span>
               </div>
             </div>
-          </motion.div>
+          </Animated>
 
           {/* 服务器状态 */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5, duration: 0.6 }}
+          <Animated
+            fade
+            slide="right"
+            delay={DURATION.SLOW + DURATION.MEDIUM}
+            duration={DURATION.SLOW * 2}
             className="bg-[var(--color-surface)]/80 backdrop-blur-xl rounded-2xl border border-[var(--color-border)]/50 p-6 shadow-lg"
           >
             <div className="flex items-center justify-between mb-6">
@@ -181,11 +185,12 @@ const AdminAnalytics = () => {
                 { name: '创造服务器', cpu: 28, memory: 41, status: 'healthy' },
                 { name: '小游戏服务器', cpu: 67, memory: 78, status: 'warning' },
               ].map((server, index) => (
-                <motion.div
+                <Animated
                   key={server.name}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6 + index * 0.1 }}
+                  fade
+                  slide="left"
+                  delay={DURATION.SLOW * 2 + index * DURATION.FAST}
+                  duration={DURATION.NORMAL}
                   className="p-4 rounded-xl bg-[var(--color-bg-secondary)]/50 hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
                 >
                   <div className="flex items-center justify-between mb-3">
@@ -207,7 +212,7 @@ const AdminAnalytics = () => {
                           className="h-full bg-blue-500"
                           initial={{ width: 0 }}
                           animate={{ width: `${server.cpu}%` }}
-                          transition={{ delay: 0.8 + index * 0.1, duration: 0.6 }}
+                          transition={{ delay: DURATION.SLOW * 2 + DURATION.MEDIUM + index * DURATION.FAST, duration: DURATION.SLOW * 2 }}
                         />
                       </div>
                       <span className="text-[var(--color-text-tertiary)] w-10 text-right">{server.cpu}%</span>
@@ -220,18 +225,18 @@ const AdminAnalytics = () => {
                           className="h-full bg-purple-500"
                           initial={{ width: 0 }}
                           animate={{ width: `${server.memory}%` }}
-                          transition={{ delay: 0.9 + index * 0.1, duration: 0.6 }}
+                          transition={{ delay: DURATION.SLOW * 3 + index * DURATION.FAST, duration: DURATION.SLOW * 2 }}
                         />
                       </div>
                       <span className="text-[var(--color-text-tertiary)] w-10 text-right">{server.memory}%</span>
                     </div>
                   </div>
-                </motion.div>
+                </Animated>
               ))}
             </div>
-          </motion.div>
+          </Animated>
         </div>
-      </motion.div>
+      </Animated>
     </div>
   );
 };

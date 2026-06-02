@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { motion } from 'framer-motion';
+import { motion, type Transition } from 'framer-motion';
 import { useFloating } from '@/hooks/useFloating';
 import { useRefRegistryStore } from '@/stores/refRegistryStore';
 import { Z_INDEX } from '@/utils/zIndex';
+import { EASING } from '@/utils/animations';
 import type { FloatingPlacement, CollisionBoundary } from '@/hooks/useFloating';
 
 /**
@@ -75,14 +76,12 @@ interface PortalProps {
    * 适用于下拉菜单等场景，避免遮挡其他 UI 元素。
    */
   avoidRefs?: (React.RefObject<HTMLElement | null> | string)[];
+
+  /** 覆盖默认的弹簧动画过渡参数（仅 anchor / origin / draggable 模式） */
+  transition?: Transition;
 }
 
-const springTransition = {
-  type: 'spring' as const,
-  stiffness: 500,
-  damping: 40,
-};
-// TODO: expose `transition` prop so callers can override spring params per-mode
+const springTransition = EASING.SPRING;
 
 const presetStyles: Record<PresetPosition, React.CSSProperties> = {
   center: {
@@ -143,6 +142,7 @@ function AnchorContent({
   offset,
   collisionBoundary,
   avoidRefs,
+  transition = springTransition,
 }: {
   children: React.ReactNode;
   container: HTMLElement | null | undefined;
@@ -153,6 +153,7 @@ function AnchorContent({
   offset?: number;
   collisionBoundary?: CollisionBoundary;
   avoidRefs?: React.RefObject<HTMLElement | null>[];
+  transition?: Transition;
 }) {
   const internalRef = useRef<HTMLDivElement>(null);
   const floatingRef = externalRef || internalRef;
@@ -179,8 +180,8 @@ function AnchorContent({
       }}
       animate={{ left: x, top: y }}
       transition={{
-        left: springTransition,
-        top: springTransition,
+        left: transition,
+        top: transition,
       }}
     >
       {children}
@@ -203,6 +204,7 @@ function OriginContent({
   zIndex,
   collisionBoundary,
   avoidRefs,
+  transition = springTransition,
 }: {
   children: React.ReactNode;
   container: HTMLElement | null | undefined;
@@ -211,6 +213,7 @@ function OriginContent({
   zIndex?: number;
   collisionBoundary?: CollisionBoundary;
   avoidRefs?: React.RefObject<HTMLElement | null>[];
+  transition?: Transition;
 }) {
   const floatingRef = useRef<HTMLDivElement>(null);
 
@@ -235,8 +238,8 @@ function OriginContent({
       }}
       animate={{ left: x, top: y }}
       transition={{
-        left: springTransition,
-        top: springTransition,
+        left: transition,
+        top: transition,
       }}
     >
       {children}
@@ -298,12 +301,14 @@ function DraggableContent({
   defaultPosition,
   onPositionChange,
   zIndex,
+  transition = springTransition,
 }: {
   children: React.ReactNode;
   container: HTMLElement | null | undefined;
   defaultPosition?: { x: number; y: number };
   onPositionChange?: (pos: { x: number; y: number }) => void;
   zIndex?: number;
+  transition?: Transition;
   // TODO: add floatingRef prop so DraggableContent surfaces its container element
 }) {
   const [pos, setPos] = useState(defaultPosition ?? { x: 0, y: 0 });
@@ -365,7 +370,7 @@ function DraggableContent({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       animate={{ left: pos.x, top: pos.y }}
-      transition={isDragging ? { duration: 0 } : springTransition}
+      transition={isDragging ? { duration: 0 } : transition}
     >
       {children}
     </motion.div>,
@@ -447,6 +452,7 @@ export function Portal({
   zIndex,
   collisionBoundary,
   avoidRefs,
+  transition = springTransition,
 }: PortalProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -480,6 +486,7 @@ export function Portal({
         offset={offset}
         collisionBoundary={collisionBoundary}
         avoidRefs={resolvedAvoidRefs}
+        transition={transition}
       >
         {children}
       </AnchorContent>
@@ -495,6 +502,7 @@ export function Portal({
         zIndex={zIndex}
         collisionBoundary={collisionBoundary}
         avoidRefs={resolvedAvoidRefs}
+        transition={transition}
       >
         {children}
       </OriginContent>
@@ -517,6 +525,7 @@ export function Portal({
         defaultPosition={defaultPosition}
         onPositionChange={onPositionChange}
         zIndex={zIndex}
+        transition={transition}
       >
         {children}
       </DraggableContent>

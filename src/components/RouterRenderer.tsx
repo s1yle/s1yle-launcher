@@ -1,5 +1,5 @@
 import { useLocation, useParams } from "react-router-dom";
-import { AnimatePresence, motion, scale } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import React, { createContext, useContext } from "react";
 import { routes, findRouteByPath } from "../router/config";
 import {
@@ -20,9 +20,8 @@ import {
   InstanceGameSettings,
 } from '../pages';
 import { AdminServers, AdminAnalytics, AdminUpload } from '../pages/admin';
-import { useUIModeStore } from "../stores/uiModeStore";
-
-const PAGE_TRANSITION_DURATION = 0.35;
+import { useAnimation } from "../hooks/useAnimation";
+import { DURATION, pageTransition } from "../utils/animations";
 
 const componentMap: Record<string, React.FC> = {
   Home,
@@ -82,41 +81,10 @@ export const useRouteParams = (): Record<string, string> => {
   ) as Record<string, string>;
 };
 
-// TODO: 支持更多动画
-// TODO: 创建全局动画管理器
-const getAnimationValues = (enabled: boolean) => {
-  if (!enabled) {
-    return {
-      initial: {},
-      animate: {},
-      exit: {},
-    };
-  }
-
-  return {
-    initial: {
-      // opacity: 0,
-      scale: 0.95,
-      // x: 100
-    },
-    animate: {
-      // opacity: 1,
-      scale: 1,
-      // x: 0,
-    },
-    exit: {
-      // opacity: 0,
-      // scale: 0.98,
-      // x: 100
-    },
-  };
-};
-
 const RouterRenderer = () => {
   const location = useLocation();
   const currentPathname = location.pathname;
-  const { animation } = useUIModeStore();
-
+  const { enabled, transition } = useAnimation();
   const route = findRouteByPath(currentPathname, routes);
   if (!route) return null;
 
@@ -124,7 +92,7 @@ const RouterRenderer = () => {
   if (!Component) return null;
 
   const params = parseRouteParams(route.path, currentPathname);
-  const animationValues = getAnimationValues(animation.enabled);
+  const variant = enabled ? pageTransition : { initial: {}, animate: {}, exit: {} };
 
   return (
     <div className="h-full relative">
@@ -132,13 +100,11 @@ const RouterRenderer = () => {
         <motion.div
           key={currentPathname}
           className="absolute inset-0"
-          initial={animationValues.initial}
-          animate={animationValues.animate}
-          exit={animationValues.exit}
-          transition={{
-            duration: PAGE_TRANSITION_DURATION,
-            type: 'spring'
-          }}
+          variants={variant}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          transition={transition({ duration: DURATION.PAGE_TRANSITION, type: 'spring' } as const)}
         >
           <RouteParamsContext.Provider value={params}>
             <Component />

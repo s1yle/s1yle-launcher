@@ -1,14 +1,14 @@
 import { AnimatePresence, motion } from "framer-motion"
+import { DURATION } from "../utils/animations";
 
 export interface IslandLayoutProps {
     children: React.ReactNode,
     header: React.ReactNode,
     sidebar: React.ReactNode,
     sidebarWidth: number;
-    sidebar_transition_duration: number;
+    sidebarTransitionDuration: number;
     hasOwnSidebar: boolean;
     isSidebarCollapsed: boolean;
-    isNavigating: boolean;
     collapsedToggleButton: React.ReactNode;
 }
 
@@ -17,10 +17,9 @@ const IslandLayout = ({
     header,
     sidebar,
     sidebarWidth = 15,
-    sidebar_transition_duration = 0.2,
+    sidebarTransitionDuration = DURATION.SIDEBAR_TRANSITION,
     hasOwnSidebar = false,
     isSidebarCollapsed = false,
-    isNavigating = false,
     collapsedToggleButton,
 }: IslandLayoutProps) => {
     return (
@@ -33,24 +32,19 @@ const IslandLayout = ({
                     style={{ width: 'auto', height: '100%', marginTop: '80px' }}
                     exit={{ x: -sidebarWidth, opacity: 0 }}
                     transition={{
-                        duration: sidebar_transition_duration,
+                        duration: sidebarTransitionDuration,
                     }}
                 >
                     <div
                         className="flex flex-1 overflow-hidden"
                         style={{ height: '100%', }}
                     >
+                    {/* 侧边栏容器 — AnimatePresence 始终保持挂载，确保 exit 动画可执行 */}
+                    <AnimatePresence>
                         {hasOwnSidebar && !isSidebarCollapsed && (
-                            <>
-                                {/* 有独立侧边栏的页面：显示侧边栏 + 内容 */}
-                                {/* 侧边栏容器 */}
-                                <AnimatePresence>
-                                    {!isNavigating && !isSidebarCollapsed && (
-                                        sidebar
-                                    )}
-                                </AnimatePresence>
-                            </>
+                            sidebar
                         )}
+                    </AnimatePresence>
                         {children}
                     </div>
 

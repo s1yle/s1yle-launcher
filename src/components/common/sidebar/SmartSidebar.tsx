@@ -1,18 +1,14 @@
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { getSidebarGroups, routes, sidebarMenuItems, SidebarMenuItem, findRouteByPath, SidebarGroup, pagesWithOwnSidebar, RouteConfig, autoJumpToFirstChild } from '../../../router/config';
+import { getSidebarGroups, routes, sidebarMenuItems, SidebarMenuItem, findRouteByPath, SidebarGroup, pagesWithOwnSidebar, autoJumpToFirstChild } from '../../../router/config';
 import BaseSidebarLayout from './layouts/BaseSidebarLayout';
-import AccountSidebarContent from './content/group/AccountSidebarContent';
-import GameSidebarContent from './content/group/GameSidebarContent';
-import CommonSidebarContent from './content/group/CommonSidebarContent';
-import BaseChildrenContent from './content/BaseChildrenContent';
 import { logger } from '../../../helper/logger';
 import { openUrl, openFolder } from '../../../helper/rustInvoke';
 import { useInstanceStore } from '@/stores/instanceStore';
 import { Folder } from 'lucide-react';
-import { BaseSidebarContent, ConfirmPopup, useNotification } from '@/components/common';
+import { BaseSidebarContent, ConfirmPopup, useNotification, Animated } from '@/components/common';
+import { DURATION } from '@/utils/animations';
 import { useContextMenuAction } from '../../../router/contextMenuConfigs';
 
 export interface SmartSidebarProps {
@@ -222,64 +218,56 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: Sm
     return (
       <>
         <BaseSidebarLayout footer={footer} header={header}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`sidebar-all
-                sidebar-instance-${selectedFolderId || 'default'}  
-              `}
-              // 这个key也是没有的
-              className="flex flex-col" // py-2 不一样
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 10 }}
-              transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+          <Animated
+            fade
+            slide="left"
+            duration={DURATION.MEDIUM}
+            className="flex flex-col"
+          >
+            <BaseSidebarContent
+              key={location.pathname}
+              items={items}
+              onMenuClick={handleItemClick}
+              isActive={isActive}
+              isParentActive={isParentOfActive}
+              hasChildrenItems={hasChildrenItems}
+
+              isItemActive={(id) => id === `folder-${selectedFolderId}`}
+              groupTitle={currentMenuItem?.title || parentMenuItem?.title || ''}
+              groupTitleI18nKey={currentMenuItem?.titleI18nKey || parentMenuItem?.titleI18nKey}
+              onItemDelete={handleDeleteFolder}
+              onItemOpenFolder={handleOpenFolder}
+              deletableItemIds={deletableIds}
+              onContextMenuAction={handleContextMenuAction}
             >
-              <BaseSidebarContent
-                // 这个items需要根据情况调整
-                items={items}
-                onMenuClick={handleItemClick}
-                isActive={isActive}
-                isParentActive={isParentOfActive}
-                hasChildrenItems={hasChildrenItems}
+            </BaseSidebarContent>
 
-                // 不一样的点
-                isItemActive={(id) => id === `folder-${selectedFolderId}`}
-                groupTitle={currentMenuItem?.title || parentMenuItem?.title || ''}
-                groupTitleI18nKey={currentMenuItem?.titleI18nKey || parentMenuItem?.titleI18nKey}
-                onItemDelete={handleDeleteFolder}
-                onItemOpenFolder={handleOpenFolder}
-                deletableItemIds={deletableIds}
-                onContextMenuAction={handleContextMenuAction}
-              >
-              </BaseSidebarContent>
-
-              {/* 弹框确认是否删除 */}
-              {showDeleteConfirm && (
-                <ConfirmPopup
-                  isOpen={showDeleteConfirm}
-                  title={t('instances.confirmRemoveFolder', '删除游戏目录')}
-                  message={t('instances.confirmRemoveFolderDesc', '确定要删除目录 "{{name}}" 吗？此操作仅从列表中移除记录，不会删除实际文件。', { name: deletingName })}
-                  confirmText={t('common.delete', '删除')}
-                  cancelText={t('common.cancel', '取消')}
-                  confirmType="danger"
-                  showIcon
-                  iconType="warning"
-                  loading={isDeleting}
-                  onConfirm={handleConfirmDelete}
-                  onCancel={() => {
-                    setShowDeleteConfirm(false);
-                    setDeletingId(null);
-                    setDeletingName('');
-                  }}
-                  onClose={() => {
-                    setShowDeleteConfirm(false);
-                    setDeletingId(null);
-                    setDeletingName('');
-                  }}
-                />
-              )}
-            </motion.div>
-          </AnimatePresence>
+            {/* 弹框确认是否删除 */}
+            {showDeleteConfirm && (
+              <ConfirmPopup
+                isOpen={showDeleteConfirm}
+                title={t('instances.confirmRemoveFolder', '删除游戏目录')}
+                message={t('instances.confirmRemoveFolderDesc', '确定要删除目录 "{{name}}" 吗？此操作仅从列表中移除记录，不会删除实际文件。', { name: deletingName })}
+                confirmText={t('common.delete', '删除')}
+                cancelText={t('common.cancel', '取消')}
+                confirmType="danger"
+                showIcon
+                iconType="warning"
+                loading={isDeleting}
+                onConfirm={handleConfirmDelete}
+                onCancel={() => {
+                  setShowDeleteConfirm(false);
+                  setDeletingId(null);
+                  setDeletingName('');
+                }}
+                onClose={() => {
+                  setShowDeleteConfirm(false);
+                  setDeletingId(null);
+                  setDeletingName('');
+                }}
+              />
+            )}
+          </Animated>
         </BaseSidebarLayout>
       </>
     )

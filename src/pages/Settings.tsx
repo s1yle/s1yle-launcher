@@ -42,16 +42,17 @@ const Settings = () => {
           disabled={false}
         />
 
-        <SettingsPanel.Sub label='字体大小'>
-          <DropDown
+        <SettingsPanel.Item>
+          <SettingsPanel.DropDown
+            label='字体大小'
             options={fontScaleConfig.options}
             value={fontScaleConfig.options.find(
               o => o.id === fontScaleConfig.toId(fontScale)
             )}
             onSelect={handleFontScaleSelect}
-            buttonWidth='w-xs'
           />
-        </SettingsPanel.Sub>
+        </SettingsPanel.Item>
+
       </SettingsPanel>
 
       {/* 主题设置 */}
