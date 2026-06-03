@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion"
 import { DURATION } from "../utils/animations";
+import { useBackgroundStore } from "../stores/backgroundStore";
 
 export interface IslandLayoutProps {
     children: React.ReactNode,
@@ -22,13 +23,14 @@ const IslandLayout = ({
     isSidebarCollapsed = false,
     collapsedToggleButton,
 }: IslandLayoutProps) => {
+    const isCustomBg = useBackgroundStore((s) => s.config.type !== 'none');
     return (
         <>
             {header}
             {/* //外层动画容器 */}
             <AnimatePresence mode='wait'>
                 <motion.div
-                    className='bg-[var(--color-bg-secondary)]'
+                    className={isCustomBg ? 'bg-transparent' : 'bg-[var(--color-bg-secondary)]'}
                     style={{ width: 'auto', height: '100%', marginTop: '80px' }}
                     exit={{ x: -sidebarWidth, opacity: 0 }}
                     transition={{

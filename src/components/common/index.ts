@@ -130,3 +130,8 @@ export type { StartGameButtonProps } from '@/components/common/StartGameButton';
 export { Portal } from './Portal';
 export { Animated } from './Animated';
 export type { AnimatedProps } from './Animated';
+
+export { BackgroundLayer } from './BackgroundLayer';
+
+export { Slider } from './Slider';
+export type { SliderProps } from './Slider';

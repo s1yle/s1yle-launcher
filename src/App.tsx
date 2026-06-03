@@ -22,10 +22,6 @@
 // 实现《用户协议》
 //
 // TODO: The Next Phase
-// 实现账户界面初步 ui 设计
-// 支持自定义背景加载
-//
-// 页面切换及侧边栏动画重构,支持更一致、实用的动画. 将动画重构为通用基层api.
 //
 // 支持系统JAVA环境识别, java设置中提供java选项, 解析java版本
 // 重构项目的日志模块, 移除现有的cargo 日志库，改为自行实现
@@ -39,6 +35,7 @@
 // 进入启动器页面后可以通过灵动岛切换服主/玩家身份，
 // 玩家身份切换到服主身份时，验证是否有服主账号
 // 服主切换到玩家身份时，验证是否存在玩家账户
+// 根据以上实现适合的账户界面初步 ui 设计
 
 import { useEffect, useRef, useCallback } from 'react';
 import { BrowserRouter as Router, useLocation, useNavigate } from 'react-router-dom';
@@ -52,6 +49,7 @@ import { UIMode, useUIModeStore } from './stores/uiModeStore';
 import { logger } from './helper/logger';
 import { useWindowPosition } from './hooks/useWindowPosition';
 import FloatingDownloadButton from './components/FloatingDownloadButton';
+import { BackgroundLayer } from './components/common/BackgroundLayer';
 import './helper/i18n';
 import { PanelLeft, PanelLeftOpen } from 'lucide-react';
 import ClassicLayout from './AppLayouts/ClassicLayout';
@@ -269,6 +267,7 @@ function App() {
 
   return (
     <Router>
+      <BackgroundLayer />
       <MainLayout />
       <FloatingDownloadButton />
     </Router>

@@ -71,14 +71,12 @@ const AppSidebar = ({
 
   return (
     <>
-      {/* OPTIMIZE: 侧边栏阴影优化，仅保留右侧box-shadow，移除多余阴影 */}
       <motion.div
         className={`AppSidebar
           ${mode == UIMode.CLASSIC && 'relative'}
           ${mode == UIMode.ISLAND && 'fixed'}
           flex-shrink-0 left-0 top-0 bottom-0 z-30 
           border-[var(--color-border)] 
-          shadow-[var(--shadow-lg)]
           overflow-hidden
         `}
         style={{
@@ -86,7 +84,7 @@ const AppSidebar = ({
           top: mode == UIMode.ISLAND ? '80px' : '0',
         }}
         initial={enabled ? { x: -sidebarWidth, opacity: 0 } : {}}
-        exit={enabled ? { x: sidebarWidth, opacity: 0 } : {}}
+        exit={enabled ? { x: -sidebarWidth, opacity: 0 } : {}}
         animate={enabled ? { x: 0, opacity: 1 } : {}}
         transition={enabled ? { duration: transitionDuration } : { duration: 0 }}
         onAnimationComplete={onAnimationComplete}

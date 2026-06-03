@@ -176,6 +176,8 @@ const SubSettingsPanelItem = ({
 const SettingsPanelDropDown = ({
   options,
   label = '未知',
+  value,
+  defaultValue,
   onSelect,
   borderRadius,
   displayNumber,
@@ -199,6 +201,8 @@ const SettingsPanelDropDown = ({
 
         <DropDown
           options={options}
+          value={value}
+          defaultValue={defaultValue}
           onSelect={onSelect}
           borderRadius={borderRadius}
           displayNumber={displayNumber}

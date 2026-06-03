@@ -4,6 +4,20 @@ import { ThemePreset } from '@/stores/themeStore';
 export type AccentColor = 'indigo' | 'blue' | 'green' | 'purple' | 'red' | 'orange' | 'pink';
 export type Language = 'zh-CN' | 'en-US';
 
+export type BackgroundType = 'none' | 'color' | 'gradient' | 'image'
+
+export interface BackgroundConfig {
+  type: BackgroundType
+  color?: string
+  gradient?: string
+  imagePath?: string
+  imageFit?: 'cover' | 'contain' | 'fill' | 'tile'
+  opacity: number
+  blur: number
+  overlayColor: string
+  overlayOpacity: number
+}
+
 export interface ConfigEvents {
   ready: () => void;
   change: (key: string, value: any) => void;

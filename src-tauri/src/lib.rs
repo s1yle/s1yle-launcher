@@ -1,6 +1,7 @@
 // src-tauri/src/lib.rs
 
 mod account;
+mod background;
 mod config;
 mod download;
 mod instance;
@@ -330,6 +331,8 @@ pub fn run() {
             reset_config,
             export_config,
             import_config,
+            // 背景相关命令
+            background::select_background_image,
             // 路径配置命令
             config::get_path_config,
             config::update_path_config,

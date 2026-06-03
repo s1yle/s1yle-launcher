@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import RouterRenderer from "../components/RouterRenderer"
 import useLayoutStore, { LAYOUT_DEBOUNCE_DURATION, SIDEBAR_TRANSITION_DURATION } from "@/stores/layoutStore";
 import { debounce } from "@/utils/configUtils";
+import { useBackgroundStore } from "@/stores/backgroundStore";
 
 export interface AppMainProps {
   hasOwnSidebar: boolean;
@@ -37,6 +38,7 @@ const AppMain = ({
     debouncedSetWidth(width);
   }, [width, debouncedSetWidth]);
 
+  const isCustomBg = useBackgroundStore((s) => s.config.type !== 'none');
   const paddingLeft = hasOwnSidebar && !isSidebarCollapsed ? appliedWidth : 0;
 
   return (
@@ -44,7 +46,7 @@ const AppMain = ({
       <main
         className="flex-1 overflow-y-auto overflow-x-hidden relative scrollbar-custom"
         style={{
-          background: 'var(--color-bg-secondary)',
+          background: isCustomBg ? 'transparent' : 'var(--color-bg-secondary)',
           height: '100%',
           paddingLeft,
           transition: `padding-left ${SIDEBAR_TRANSITION_DURATION}s ease-in-out`,
