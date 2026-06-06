@@ -5,16 +5,17 @@ mod background;
 mod config;
 mod download;
 mod instance;
+mod java;
 mod launch;
 mod modloader;
 mod window;
-use crate::download::DownloadManager;
+
 use crate::config::{
-    AppConfig, ConfigManager, WindowPosition, 
-    get_config_value, set_config_value,
-    get_instance_config, update_instance_config, remove_instance_config,
-    reset_config, export_config, import_config
+    AppConfig, ConfigManager, WindowPosition, export_config, get_config_value, get_instance_config,
+    import_config, remove_instance_config, reset_config, set_config_value, update_instance_config,
 };
+
+use crate::download::DownloadManager;
 use std::fs;
 use std::sync::{Mutex, OnceLock};
 
@@ -22,40 +23,43 @@ pub use crate::account::{
     add_account, delete_account, get_account_list, get_current_account, init_account_manager,
     initialize_account_system, load_accounts_from_disk, save_accounts_to_disk, set_current_account,
 };
-
 pub use crate::launch::{
-    init_launch_manager, tauri_get_launch_config, tauri_get_launch_status, tauri_launch_instance,
-    tauri_stop_instance, tauri_update_launch_config, LaunchConfig, LaunchStatus,
+    LaunchConfig, LaunchStatus, init_launch_manager, tauri_get_launch_config,
+    tauri_get_launch_status, tauri_launch_instance, tauri_stop_instance,
+    tauri_update_launch_config,
 };
-pub use crate::window::{
-    get_saved_window_position, load_window_position, save_window_position
-};
+pub use crate::window::{get_saved_window_position, load_window_position, save_window_position};
 
 pub use download::{
-    cancel_download, clear_completed_tasks, deploy_version_files, deploy_version_global, deploy_version_to_instance,
-    download_file, download_and_deploy, get_download_base_path, get_download_task, get_download_tasks,
-    get_game_versions, get_version_detail, get_version_download_manifest, get_version_manifest,
-    is_version_deployed, set_download_base_path,
+    cancel_download, clear_completed_tasks, deploy_version_files, deploy_version_global,
+    deploy_version_to_instance, download_and_deploy, download_file, get_download_base_path,
+    get_download_task, get_download_tasks, get_game_versions, get_version_detail,
+    get_version_download_manifest, get_version_manifest, is_version_deployed,
+    set_download_base_path,
 };
 
 pub use crate::instance::{
-    add_known_path, set_default_folder, remove_known_path, copy_instance, create_instance, delete_instance, get_instance,
-    get_instances_path, rename_instance, scan_instances, scan_known_mc_paths, update_instance,
-    validate_folder, add_validated_folder, migrate_directory_structure,
-    GameInstance, InstanceManager,
-    get_instance_settings, update_instance_settings, get_system_memory, select_java_path,
+    GameInstance, InstanceManager, add_known_path, add_validated_folder, copy_instance,
+    create_instance, delete_instance, get_instance, get_instance_settings, get_instances_path,
+    get_system_memory, migrate_directory_structure, remove_known_path, rename_instance,
+    scan_instances, scan_known_mc_paths, select_java_path, set_default_folder, update_instance,
+    update_instance_settings, validate_folder,
 };
+
 pub use crate::modloader::{
-    build_fabric_launch_config, build_forge_launch_config, get_fabric_version_detail,
-    get_fabric_versions, get_forge_versions, get_installed_mod_loaders, LibraryInfo, ModLoaderInfo,
-    ModLoaderManager, ModLoaderType, ModLoaderVersionItem, ModLoaderVersionList,
+    LibraryInfo, ModLoaderInfo, ModLoaderManager, ModLoaderType, ModLoaderVersionItem,
+    ModLoaderVersionList, build_fabric_launch_config, build_forge_launch_config,
+    get_fabric_version_detail, get_fabric_versions, get_forge_versions, get_installed_mod_loaders,
 };
+
+pub use crate::java::{JavaInstallation, scan_java_installations};
+
 use once_cell::sync::Lazy;
 use tauri::Manager;
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
 use tracing_subscriber::fmt::time::UtcTime;
 use tracing_subscriber::prelude::*;
-use tracing_subscriber::{fmt as tracing_fmt, EnvFilter};
+use tracing_subscriber::{EnvFilter, fmt as tracing_fmt};
 
 static APP_HANDLE: OnceLock<tauri::AppHandle> = OnceLock::new();
 
@@ -341,6 +345,7 @@ pub fn run() {
             config::get_libraries_path,
             config::get_assets_path,
             config::get_natives_path,
+            scan_java_installations,
         ])
         .run(tauri::generate_context!())
         .expect("启动失败！");
