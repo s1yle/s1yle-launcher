@@ -27,8 +27,8 @@ export type { SpinnerProps } from './Loading/Spinner';
 export { default as Overlay } from './Loading/Overlay';
 export type { OverlayProps } from './Loading/Overlay';
 
-export { default as ListItem } from './ListItem';
-export type { ListItemProps } from './ListItem';
+// export { default as ListItem } from './ListItem';
+// export type { ListItemProps } from './ListItem';
 
 export {
   NotificationProvider,
@@ -102,6 +102,9 @@ export type { SettingItemProps } from '@/components/common/settings/SettingItem'
 
 export { default as SettingsSection } from '@/components/common/settings/SettingsSection';
 export type { SettingsSectionProps } from '@/components/common/settings/SettingsSection';
+
+export { default as ListItem } from '@/components/common/settings/ListItem'
+export type { ListItemProps } from '@/components/common/settings/ListItem';
 
 export { SettingsPanel } from '@/components/common/SettingsPanel/SettingPanel';
 export type {

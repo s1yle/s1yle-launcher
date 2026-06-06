@@ -141,8 +141,15 @@ export const routes: RouteConfig[] = [
     autoNavigateToFirstChild: true,
     children: [
       {
+        path: '/settings/java',
+        componentName: 'JavaSettings',
+        header: { type: SidebarType.SUB, title: 'Java 管理', titleI18nKey: 'sidebar.javaSettings' },
+        sidebarGroup: SidebarGroup.COMMON,
+        parentPath: '/',
+      },
+      {
         path: '/settings/appearance',
-        componentName: 'Settings',
+        componentName: 'AppearanceSettings',
         header: { type: SidebarType.SUB, title: '外观', titleI18nKey: 'sidebar.appearanceSettings' },
         sidebarGroup: SidebarGroup.COMMON,
         parentPath: '/',

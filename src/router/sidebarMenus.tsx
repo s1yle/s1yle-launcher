@@ -358,6 +358,15 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
         group: SidebarGroup.COMMON,
         children: [
           {
+            id: 'settings-java',
+            type: 'route',
+            title: 'Java 管理',
+            titleI18nKey: 'sidebar.javaSettings',
+            icon: <UserPlus className="w-4 h-4" />,
+            path: '/settings/java',
+            group: SidebarGroup.COMMON,
+          },
+          {
             id: 'settings-appearance',
             type: 'route',
             title: '外观',

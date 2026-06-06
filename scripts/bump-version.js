@@ -11,6 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // 配置文件路径
 const PACKAGE_JSON_PATH = path.join(__dirname, '../package.json');
 const TAURI_CONF_PATH = path.join(__dirname, '../src-tauri/tauri.conf.json');
+const CARGO_TOML_PATH = path.join(__dirname, '../src-tauri/Cargo.toml');
 
 // 版本号解析正则（符合 SemVer 2.0.0）
 const VERSION_REGEX = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z-]+)(?:\.([0-9A-Za-z-]+)))?$/;
@@ -62,14 +63,14 @@ function compareSemVer(versionA, versionB) {
   if (a.major !== b.major) return a.major - b.major > 0 ? 1 : -1;
   if (a.minor !== b.minor) return a.minor - b.minor > 0 ? 1 : -1;
   if (a.patch !== b.patch) return a.patch - b.patch > 0 ? 1 : -1;
-  
+
   // 如果都没有预发布版本，则相等
   if (!a.preRelease && !b.preRelease) return 0;
-  
+
   // 一个有预发布，一个没有（正式版 > 预发布）
   if (!a.preRelease && b.preRelease) return 1;
   if (a.preRelease && !b.preRelease) return -1;
-  
+
   // 都有预发布，比较预发布阶段
   if (a.preRelease !== b.preRelease) {
     // alpha < beta < rc
@@ -78,12 +79,12 @@ function compareSemVer(versionA, versionB) {
     const bOrder = stageOrder[b.preRelease] || 0;
     return aOrder - bOrder > 0 ? 1 : -1;
   }
-  
+
   // 预发布阶段相同，比较序号
   if (a.preReleaseNumber !== b.preReleaseNumber) {
     return a.preReleaseNumber - b.preReleaseNumber > 0 ? 1 : -1;
   }
-  
+
   return 0;
 }
 
@@ -205,11 +206,40 @@ function writeJson(filePath, data) {
   );
 }
 
+/**
+ * 读取 Cargo.toml 中的版本号
+ * @param {string} filePath 文件路径
+ * @returns {{ version: string, content: string }} 版本号和文件内容
+ */
+function readCargoVersion(filePath) {
+  const content = fs.readFileSync(filePath, 'utf8');
+  const match = content.match(/^\[package\]\s*\n(?:[^[]*\n)*?version\s*=\s*"([^"]+)"/m);
+  if (!match) {
+    throw new Error(`无法从 Cargo.toml 中解析版本号: ${filePath}`);
+  }
+  return { version: match[1], content };
+}
+
+/**
+ * 更新 Cargo.toml 中的版本号
+ * @param {string} filePath 文件路径
+ * @param {string} newVersion 新版本号
+ */
+function updateCargoVersion(filePath, newVersion) {
+  const { content } = readCargoVersion(filePath);
+  const updated = content.replace(
+    /^(\[package\]\s*\n(?:[^[]*\n)*?version\s*=\s*)"([^"]+)"/m,
+    `$1"${newVersion}"`
+  );
+  fs.writeFileSync(filePath, updated, 'utf8');
+}
+
 // 主函数
 async function main() {
   const args = process.argv.slice(2);
-  const type = args[0] || 'prerelease';
-  const preReleaseStage = args[1] || 'alpha';
+  const nonFlagArgs = args.filter(a => !a.startsWith('--'));
+  const type = nonFlagArgs[0] || 'prerelease';
+  const preReleaseStage = nonFlagArgs[1] || 'alpha';
   const dryRun = args.includes('--dry-run');
   const useGit = args.includes('--git'); // 默认不执行 git 操作
 
@@ -217,6 +247,7 @@ async function main() {
     // 读取当前版本
     const packageJson = readJson(PACKAGE_JSON_PATH);
     const tauriConf = readJson(TAURI_CONF_PATH);
+    const { version: cargoVersion } = readCargoVersion(CARGO_TOML_PATH);
     const currentVersionStr = packageJson.version;
 
     console.log(`当前版本: ${currentVersionStr}`);
@@ -226,6 +257,11 @@ async function main() {
     if (tauriVersion !== currentVersionStr) {
       console.warn(
         `⚠️  警告: tauri.conf.json 版本号 (${tauriVersion}) 与 package.json 不一致`
+      );
+    }
+    if (cargoVersion !== currentVersionStr) {
+      console.warn(
+        `⚠️  警告: Cargo.toml 版本号 (${cargoVersion}) 与 package.json 不一致`
       );
     }
 
@@ -269,8 +305,9 @@ async function main() {
 
     writeJson(PACKAGE_JSON_PATH, packageJson);
     writeJson(TAURI_CONF_PATH, tauriConf);
+    updateCargoVersion(CARGO_TOML_PATH, newVersionStr);
 
-    console.log('✅ 已更新 package.json 和 tauri.conf.json');
+    console.log('✅ 已更新 package.json、tauri.conf.json 和 Cargo.toml');
 
     // Git 操作（需要显式启用）
     if (useGit) {
@@ -284,8 +321,9 @@ async function main() {
         console.log('\n📋 即将执行以下 Git 操作:');
         console.log(`   1. git add ${PACKAGE_JSON_PATH}`);
         console.log(`   2. git add ${TAURI_CONF_PATH}`);
-        console.log(`   3. git commit -m "chore: bump version to ${newVersionStr}"`);
-        console.log(`   4. git tag v${newVersionStr}`);
+        console.log(`   3. git add ${CARGO_TOML_PATH}`);
+        console.log(`   4. git commit -m "chore: bump version to ${newVersionStr}"`);
+        console.log(`   5. git tag v${newVersionStr}`);
         console.log('');
 
         const answer = await new Promise((resolve) => {
@@ -302,7 +340,7 @@ async function main() {
         }
 
         console.log('📝 正在创建 Git 提交和标签...');
-        execSync(`git add ${PACKAGE_JSON_PATH} ${TAURI_CONF_PATH}`);
+        execSync(`git add ${PACKAGE_JSON_PATH} ${TAURI_CONF_PATH} ${CARGO_TOML_PATH}`);
         execSync(`git commit -m "chore:  bump version to ${newVersionStr}"`);
         execSync(`git tag v${newVersionStr}`);
         console.log(`✅ 已创建提交和标签: v${newVersionStr}`);

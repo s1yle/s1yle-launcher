@@ -1,6 +1,6 @@
-import { UIMode, useUIModeStore } from '../stores/uiModeStore';
-import TerminalThemePreview from '../components/common/TerminalThemePreview';
-import { Toggle } from '../components/common';
+import { UIMode, useUIModeStore } from '../../stores/uiModeStore';
+import TerminalThemePreview from '../../components/common/TerminalThemePreview';
+import { Toggle } from '../../components/common';
 import { SettingsPanel } from '@/components/common/SettingsPanel/SettingPanel';
 import { useState } from 'react';
 import DropDown from '@/components/common/DropDown';
@@ -32,7 +32,7 @@ const GRADIENT_PRESETS = [
   { id: 'night', label: '暗夜', value: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)' },
 ];
 
-const Settings = () => {
+const ApearanceSettings = () => {
   const { mode: uiMode, setMode: setUIMode, animation, setAnimation } = useUIModeStore();
   const [isCompat, setIsCompat] = useState(true)
   const fontScale = useFontSizeStore((s) => s.fontScale);
@@ -278,4 +278,4 @@ const Settings = () => {
   );
 };
 
-export default Settings;
+export default ApearanceSettings;

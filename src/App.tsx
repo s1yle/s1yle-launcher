@@ -24,6 +24,7 @@
 // TODO: The Next Phase
 //
 // 支持系统JAVA环境识别, java设置中提供java选项, 解析java版本
+//
 // 重构项目的日志模块, 移除现有的cargo 日志库，改为自行实现
 // 支持识别系统字体，并且可以选择系统字体 作为app的默认字体
 // 实现mc账户头像渲染(使用rust 自行实现)
@@ -74,7 +75,8 @@ const MainLayout = () => {
   const setCurrentPath = useNavStore((s) => s.setCurrentPath);
 
   const { mode: uiMode } = useUIModeStore();
-  const animLockRef = useRef(false);
+  const isAnimatingRef = useRef(false);
+  const pendingNavRef = useRef<string | null>(null);
 
 
   // 获取 sidebar 的收起/展开 状态
@@ -92,8 +94,21 @@ const MainLayout = () => {
     isInstanceManagePage
   );
 
+  const executeNavigation = useCallback((path: string) => {
+    isAnimatingRef.current = true;
+    pendingNavRef.current = null;
+    setCurrentPath(path);
+    navigate(path);
+    setTimeout(() => {
+      isAnimatingRef.current = false;
+      if (pendingNavRef.current) {
+        executeNavigation(pendingNavRef.current);
+      }
+    }, DURATION.PAGE_TRANSITION * 1000);
+  }, [setCurrentPath, navigate]);
+
   const handleMenuClick = (targetPath: string) => {
-    if (animLockRef.current || targetPath === location.pathname) return;
+    if (targetPath === location.pathname) return;
 
     let finalPath = targetPath;
 
@@ -108,12 +123,12 @@ const MainLayout = () => {
       }
     }
 
-    animLockRef.current = true;
-    setCurrentPath(finalPath);
-    navigate(finalPath);
-    setTimeout(() => {
-      animLockRef.current = false;
-    }, 300);
+    if (isAnimatingRef.current) {
+      pendingNavRef.current = finalPath;
+      return;
+    }
+
+    executeNavigation(finalPath);
   };
 
   useEffect(() => {

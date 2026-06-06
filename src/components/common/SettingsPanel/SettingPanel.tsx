@@ -29,14 +29,14 @@ const SettingsPanelRoot = ({
     <AnimatePresence>
       <motion.div
         className={`bg-(--color-surface)  w-full mb-10 
-                    ${overflowHidden ? 'overflow-hidden rounded-(--radius-sm)' : 'rounded-t-(--radius-sm)'} 
-                    ${className}`}
+          ${overflowHidden ? 'overflow-hidden rounded-(--radius-sm)' : 'rounded-t-(--radius-sm)'} 
+          ${className}`}
         {...rest}
       >
         {/* title */}
         <div
           className="px-4 py-2.5 border-b q
-                        hover:border-(--color-border-hover) border-(--color-border)"
+            hover:border-(--color-border-hover) border-(--color-border)"
         >
           <span className="text-(--color-text-primary) text-base font-medium">
             {label}
@@ -98,11 +98,11 @@ const SettingsPanelItem = ({
           <Spinner active={isLoading && shouldLoad}>
             <div
               className={`gap
-                                bg-(--color-surface)
-                                ${hoverable && 'hover:bg-(--color-surface-hover)'}
-                                ${noPadding ? "" : "px-3 py-2"}
-                                ${className || ""}
-                            `}
+                bg-(--color-surface)
+                ${hoverable && 'hover:bg-(--color-surface-hover)'}
+                ${noPadding ? "" : "px-3 py-2"}
+                ${className || ""}
+              `}
               onMouseEnter={() => setHovered(true)}
               onMouseLeave={() => setHovered(false)}
             >
@@ -187,14 +187,14 @@ const SettingsPanelDropDown = ({
     <AnimatePresence>
       <motion.div
         className={`
-                    flex justify-between items-center
-                `}
+          flex justify-between items-center
+        `}
       >
         <motion.span
           className={`
-                        font-light text-(--color-text-secondary) text-sm
-                        block
-                    `}
+            font-light text-sm
+            block
+          `}
         >
           {label}
         </motion.span>
