@@ -23,6 +23,7 @@
 //
 // TODO: The Next Phase
 //
+// 修复一下近三次提交msg重复的问题
 // 支持系统JAVA环境识别, java设置中提供java选项, 解析java版本
 //
 // 重构项目的日志模块, 移除现有的cargo 日志库，改为自行实现
@@ -51,6 +52,7 @@ import { logger } from './helper/logger';
 import { useWindowPosition } from './hooks/useWindowPosition';
 import FloatingDownloadButton from './components/FloatingDownloadButton';
 import { BackgroundLayer } from './components/common/BackgroundLayer';
+import { GlobalLoadingBar } from './components/common';
 import './helper/i18n';
 import { PanelLeft, PanelLeftOpen } from 'lucide-react';
 import ClassicLayout from './AppLayouts/ClassicLayout';
@@ -283,6 +285,7 @@ function App() {
   return (
     <Router>
       <BackgroundLayer />
+      <GlobalLoadingBar />
       <MainLayout />
       <FloatingDownloadButton />
     </Router>

@@ -34,6 +34,7 @@ export interface SettingsPanelItemProps {
     noPadding?: boolean;
     hoverable?: boolean;
     shouldLoad?: boolean;
+    loadingKey?: string;
 }
 
 export interface SubSettingsPanelItemProps {

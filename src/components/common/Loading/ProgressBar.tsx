@@ -1,10 +1,12 @@
 import React, { useMemo } from 'react';
 import { Check, X, Loader2 } from 'lucide-react';
+import { useLoading } from '@/hooks/useLoading';
 
 export type ProgressStatus = 'idle' | 'active' | 'completed' | 'error';
 
 export interface ProgressBarProps {
-  progress: number;
+  progress?: number;
+  loadingKey?: string;
   label?: string;
   sublabel?: string;
   status?: ProgressStatus;
@@ -18,10 +20,11 @@ export interface ProgressBarProps {
 }
 
 const ProgressBar = ({
-  progress,
+  progress: progressProp,
+  loadingKey,
   label,
   sublabel,
-  status = 'idle',
+  status: statusProp = 'idle',
   showPercentage = true,
   size = 'md',
   variant,
@@ -30,6 +33,16 @@ const ProgressBar = ({
   barClassName = '',
   formatValue,
 }: ProgressBarProps) => {
+  const loadingEntry = loadingKey ? useLoading(loadingKey) : undefined;
+
+  const entryStatus = loadingEntry?.status;
+  const progress = loadingKey ? (loadingEntry?.progress ?? 0) : (progressProp ?? 0);
+  const status = loadingKey
+    ? entryStatus === 'loading' ? 'active'
+      : entryStatus === 'success' ? 'completed'
+      : entryStatus === 'error' ? 'error'
+      : 'idle'
+    : statusProp;
   const clampedProgress = Math.min(100, Math.max(0, progress));
 
   const statusVariant = useMemo(() => {

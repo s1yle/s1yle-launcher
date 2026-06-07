@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Loader2 } from 'lucide-react';
+import { LoadingSurface } from "@/components/common";
 import Popup from "../../components/Popup";
 import {
   invokeAddAccount,
@@ -10,6 +10,7 @@ import {
   AccountInfo,
   AccountType
 } from "../../helper/rustInvoke";
+import { useLoadingAction } from "@/hooks/useLoadingAction";
 import { logger } from "../../helper/logger";
 
 
@@ -31,30 +32,27 @@ const AccountList = ({ onClickAddAccount }: AccountListProps) => {
 
   const [accounts, setAccounts] = useState<AccountInfo[]>([]);
   const [currentAccount, setCurrentAccountState] = useState<AccountInfo | null>(null);
-  const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
 
-  // 加载账户数据
-  const loadAccounts = async () => {
-    setIsLoadingAccounts(true);
-    try {
+  const loadAccounts = useLoadingAction<AccountInfo[]>({
+    key: 'account:list',
+    action: async () => {
       const [accountsData, currentAccountData] = await Promise.all([
         getAccountList(),
         getCurrentAccount()
       ]);
       setAccounts(accountsData);
       setCurrentAccountState(currentAccountData);
-    } catch (error) {
+      return accountsData;
+    },
+    onError: (error) => {
       logger.error('加载账户列表失败：', error);
-      setErrorMsg("加载账户列表失败");
-    } finally {
-      setIsLoadingAccounts(false);
     }
-  };
+  });
 
   // 初始加载
   useEffect(() => {
     loadAccounts();
-  }, []);
+  }, [loadAccounts]);
 
   const handleAddAccount = () => {
     setShowAddPopup(true);
@@ -156,9 +154,11 @@ const AccountList = ({ onClickAddAccount }: AccountListProps) => {
   };
 
   return (
-    <>
-
-    </>
+    <div className="p-4">
+      <LoadingSurface loadingKey="account:list" skeleton="list" skeletonCount={4}>
+        <div />
+      </LoadingSurface>
+    </div>
   );
 };
 

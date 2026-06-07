@@ -151,7 +151,7 @@ fn scan_java_on_linux() -> Result<Vec<JavaInstallation>, String> {
 pub fn scan_java_installations() -> Result<Vec<JavaInstallation>, String> {
     #[cfg(target_os = "linux")]
     {
-        scan_java_installations()
+        scan_java_on_linux()
     }
 }
 

@@ -24,6 +24,8 @@ export type { EmptyStateProps } from './EmptyState';
 export { default as Spinner } from './Loading/Spinner';
 export type { SpinnerProps } from './Loading/Spinner';
 
+export { default as Skeleton } from './Loading/Skeleton';
+
 export { default as Overlay } from './Loading/Overlay';
 export type { OverlayProps } from './Loading/Overlay';
 
@@ -49,6 +51,10 @@ export type { VersionListItemProps } from './Version/VersionListItem';
 
 export { default as InstallCard } from './Instance/InstallCard';
 export type { InstallCardProps, InstallCardStatus } from './Instance/InstallCard';
+
+export { default as GlobalLoadingBar } from './Loading/GlobalLoadingBar';
+export { default as LoadingSurface } from './Loading/LoadingSurface';
+export type { LoadingSurfaceProps } from './Loading/LoadingSurface';
 
 export { default as LoaderIcon } from './Loading/LoaderIcon';
 export type { LoaderIconProps } from './Loading/LoaderIcon';

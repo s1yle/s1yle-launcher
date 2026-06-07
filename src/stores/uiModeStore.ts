@@ -21,6 +21,12 @@ export interface AnimationConfig {
   enabled: boolean;
   sidebarEnabled: boolean;
   microEnabled: boolean;
+  loadingVariant: 'spinner' | 'progress' | 'skeleton' | 'topbar';
+  spinnerStyle: 'ring' | 'dots' | 'pulse' | 'bars';
+  skeletonStyle: 'shimmer' | 'pulse' | 'static';
+  globalTopbar: boolean;
+  minDurationMs: number;
+  timeoutSec: number;
 }
 
 interface UIModeState {
@@ -51,6 +57,12 @@ export const useUIModeStore = create<UIModeState>()(
         enabled: true,
         sidebarEnabled: true,
         microEnabled: true,
+        loadingVariant: 'spinner',
+        spinnerStyle: 'ring',
+        skeletonStyle: 'shimmer',
+        globalTopbar: true,
+        minDurationMs: 300,
+        timeoutSec: 30,
       },
 
       setMode: (mode) => {

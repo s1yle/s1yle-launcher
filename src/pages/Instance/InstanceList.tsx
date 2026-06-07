@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { listen } from '@tauri-apps/api/event';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Search, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { useInstanceStore } from '../../stores/instanceStore';
 import { openFolder } from '../../helper/rustInvoke';
-import { InstanceListItem, EmptyState, useNotification, IconButton } from '../../components/common';
+import { InstanceListItem, EmptyState, useNotification, IconButton, Skeleton } from '../../components/common';
 import Instance from './Instance';
 import BottomBar from '@/components/common/BottomBar/BottomBar';
 import { logger } from '@/helper/logger';
@@ -124,11 +124,9 @@ const InstanceList: React.FC = () => {
 
   const renderContent = () => {
     if (loading) {
-      console.log('[renderContent] 加载中...', { loading, instances: instances.length });
       return (
-        <div className="flex flex-col items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <span className="mt-3 text-text-tertiary">{t('instances.scanning', '正在扫描实例...')}</span>
+        <div className="py-6 px-4">
+          <Skeleton.Card count={6} />
         </div>
       );
     }

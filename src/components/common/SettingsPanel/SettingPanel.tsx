@@ -1,9 +1,10 @@
 import { AnimatePresence, motion, } from "framer-motion"
-import React, { useCallback, useEffect, useState } from "react"
+import React, { useCallback } from "react"
 import Toggle from "../Toggle";
 import { SettingsPanelDropDownProps, SettingsPanelItemContext, SettingsPanelItemProps, SettingsPanelProps, SubSettingsPanelItemProps } from "./models";
 import Spinner from "../Loading/Spinner";
 import Overlay from "../Loading/Overlay";
+import { useLoading } from "@/hooks/useLoading";
 import DropDown from "../DropDown";
 
 
@@ -63,9 +64,10 @@ const SettingsPanelItem = ({
   noPadding = false,
   hoverable = false,
   shouldLoad = false,
+  loadingKey,
 }: SettingsPanelItemProps) => {
   const [hovered, setHovered] = React.useState(false);
-  const [itemElement, setItemElement] = useState<HTMLDivElement | null>(null);
+  const [itemElement, setItemElement] = React.useState<HTMLDivElement | null>(null);
 
   const itemRef = useCallback((node: HTMLDivElement | null) => {
     setItemElement(node);
@@ -80,22 +82,17 @@ const SettingsPanelItem = ({
     [hovered, itemElement]
   );
 
-  // TODO: 适配实际的加载任务(如果有)
-  // 初始化 loading
-  const [isLoading, setIsLoading] = useState(shouldLoad);
-
-  useEffect(() => {
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 300);
-  }, [])
+  const loadingEntry = loadingKey ? useLoading(loadingKey) : undefined;
+  const isLoading = loadingKey
+    ? loadingEntry?.status === 'loading'
+    : shouldLoad;
 
   return (
     <SettingsPanelItemContext.Provider value={contextValue}>
       <div className="item-ref" ref={itemRef}>
-        <Overlay active={isLoading && shouldLoad}>
+        <Overlay active={isLoading}>
 
-          <Spinner active={isLoading && shouldLoad}>
+          <Spinner active={isLoading}>
             <div
               className={`gap
                 bg-(--color-surface)
