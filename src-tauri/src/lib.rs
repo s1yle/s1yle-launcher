@@ -58,7 +58,7 @@ pub use crate::java::{JavaInstallation, scan_java_installations};
 
 pub use logging::{init_logging, log_frontend};
 
-pub use font::get_system_fonts;
+pub use font::{get_font, get_system_fonts};
 
 static APP_HANDLE: OnceLock<tauri::AppHandle> = OnceLock::new();
 
@@ -236,6 +236,7 @@ pub fn run() {
             scan_java_installations,
             // 字体
             get_system_fonts,
+            get_font,
         ])
         .run(tauri::generate_context!())
         .expect("启动失败！");
