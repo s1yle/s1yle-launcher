@@ -1,6 +1,5 @@
 # TODO: 如果条件允许，移除以下库，改为自己实现:
 # - chrono（日期)
-# - tracing 全家桶（日志）
 # - dirs-next（路径）
 # - uuid（ID）
 # - hex（十六进制)
@@ -32,9 +31,6 @@ serde_json = "1"
 tauri = { version = "2", features = ["protocol-asset"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
-tracing = "0.1.44"
-tracing-appender = "0.2.4"
-tracing-subscriber = { version = "0.3.22", features = ["env-filter", "time"] }
 
 [dependencies.hex]
 version = "0.4"

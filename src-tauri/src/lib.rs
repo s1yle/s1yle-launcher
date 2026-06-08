@@ -7,6 +7,7 @@ mod download;
 mod instance;
 mod java;
 mod launch;
+mod logging;
 mod modloader;
 mod window;
 
@@ -16,8 +17,8 @@ use crate::config::{
 };
 
 use crate::download::DownloadManager;
-use std::fs;
-use std::sync::{Mutex, OnceLock};
+use std::sync::OnceLock;
+use tauri::Manager;
 
 pub use crate::account::{
     add_account, delete_account, get_account_list, get_current_account, init_account_manager,
@@ -54,12 +55,7 @@ pub use crate::modloader::{
 
 pub use crate::java::{JavaInstallation, scan_java_installations};
 
-use once_cell::sync::Lazy;
-use tauri::Manager;
-use tracing_appender::rolling::{RollingFileAppender, Rotation};
-use tracing_subscriber::fmt::time::UtcTime;
-use tracing_subscriber::prelude::*;
-use tracing_subscriber::{EnvFilter, fmt as tracing_fmt};
+pub use logging::{init_logging, log_frontend};
 
 static APP_HANDLE: OnceLock<tauri::AppHandle> = OnceLock::new();
 
@@ -106,121 +102,9 @@ fn get_system_info() -> Result<SystemInfo, String> {
     })
 }
 
-// 初始化日志系统
-pub fn init_logging(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    // 1. 获取日志存储目录（跨平台：app_data_dir/logs）
-    let log_dir = app.path().app_data_dir()?.join("logs");
-    fs::create_dir_all(&log_dir)?; // 自动创建目录
-
-    println!("日志存储位置，{}", log_dir.to_string_lossy());
-
-    // 2. 配置日志文件：按天滚动，保留 30 天，文件名格式 mc-launcher-2026-02-28.log
-    let file_appender = RollingFileAppender::builder()
-        .rotation(Rotation::DAILY)
-        .filename_prefix("mc-launcher")
-        .filename_suffix("log")
-        .max_log_files(30)
-        .build(log_dir)?;
-
-    // 3. 配置日志级别：从环境变量 RUST_LOG 读取，默认 info
-    // 开发时设 RUST_LOG=debug，生产默认 info
-    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
-
-    let time_format = UtcTime::rfc_3339();
-
-    // 4. 构建「控制台 layer」
-    let console_layer = tracing_fmt::layer()
-        .with_target(true)
-        .with_level(true)
-        .with_ansi(true)
-        .with_timer(time_format)
-        .with_writer(std::io::stdout);
-
-    // 5. 构建「文件 layer」
-    let file_layer = tracing_fmt::layer()
-        .with_target(true)
-        .with_level(true)
-        .with_timer(UtcTime::rfc_3339())
-        .with_ansi(false)
-        .with_writer(file_appender);
-
-    // 5. 初始化订阅者：同时输出到控制台和文件
-    tracing_subscriber::registry()
-        .with(env_filter)
-        .with(console_layer) // 控制台输出
-        .with(file_layer) // 文件输出
-        .init();
-
-    tracing::info!("日志系统初始化完成");
-    Ok(())
-}
-
-#[allow(dead_code)]
-enum LogLevel {
-    Info,
-    Warn,
-    Debug,
-    Error,
-}
-
-#[allow(dead_code)]
-struct Logger {
-    level: LogLevel,
-}
-
-impl Logger {
-    fn new(level: LogLevel) -> Self {
-        Logger { level }
-    }
-
-    fn log_internal(&self, level: LogLevel, message: impl AsRef<str>) {
-        let msg = message.as_ref();
-        match level {
-            LogLevel::Debug => tracing::debug!("[Internal] {}", msg),
-            LogLevel::Info => tracing::info!("[Internal] {}", msg),
-            LogLevel::Warn => tracing::warn!("[Internal] {}", msg),
-            LogLevel::Error => tracing::error!("[Internal] {}", msg),
-        }
-    }
-}
-
-#[allow(dead_code)]
-static GLOBAL_LOGGER: Lazy<Mutex<Logger>> = Lazy::new(|| Mutex::new(Logger::new(LogLevel::Info)));
-
-#[macro_export]
-macro_rules! log_internal {
-    ($level:expr, $($arg:tt)*) => ({
-        if let Ok(logger) = $crate::GLOBAL_LOGGER.lock() {
-            let msg = format!($($arg)*);
-            logger.log_internal($level, msg);
-        }
-    })
-}
-
-#[macro_export]
-macro_rules! log_info {
-    ($($arg:tt)*) => ($crate::log_internal!($crate::LogLevel::Info, $($arg)*));
-}
-
-#[macro_export]
-macro_rules! log_error {
-    ($($arg:tt)*) => ($crate::log_internal!($crate::LogLevel::Error, $($arg)*));
-}
-
-#[tauri::command]
-fn log_frontend(level: String, message: String) {
-    match level.as_str() {
-        "debug" => tracing::debug!("[Frontend] {}", message),
-        "info" => tracing::info!("[Frontend] {}", message),
-        "warn" => tracing::warn!("[Frontend] {}", message),
-        "error" => tracing::error!("[Frontend] {}", message),
-        _ => tracing::info!("[Frontend] [Unknown] {}", message),
-    }
-}
-
 #[tauri::command]
 fn open_url(url: String) -> Result<String, String> {
-    tracing::info!("打开链接: {}", url);
+    log_info!("打开链接: {}", url);
     tauri_plugin_opener::open_url(&url, None::<String>)
         .map_err(|e| format!("打开链接失败: {}", e))?;
     Ok(url)
@@ -228,7 +112,7 @@ fn open_url(url: String) -> Result<String, String> {
 
 #[tauri::command]
 fn open_folder(path: String) -> Result<String, String> {
-    tracing::info!("打开文件夹: {}", path);
+    log_info!("打开文件夹: {}", path);
     tauri_plugin_opener::open_path(&path, None::<&str>)
         .map_err(|e| format!("打开文件夹失败: {}", e))?;
     Ok(path)
@@ -245,8 +129,6 @@ pub fn run() {
     let app_config = AppConfig::default();
     let window_config = WindowPosition::default();
     let config_manager: ConfigManager = ConfigManager::new(app_config, window_config);
-    let _ = config_manager.load_config_from_disk();
-    log_info!("✅ 配置管理器初始化完成");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -258,6 +140,9 @@ pub fn run() {
         .setup(|app| {
             APP_HANDLE.set(app.handle().clone()).ok();
             init_logging(app)?;
+            let cm: tauri::State<'_, ConfigManager> = app.state();
+            let _ = cm.load_config_from_disk();
+            log_info!("✅ 配置管理器初始化完成");
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
