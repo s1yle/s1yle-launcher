@@ -4,6 +4,7 @@ mod account;
 mod background;
 mod config;
 mod download;
+mod font;
 mod instance;
 mod java;
 mod launch;
@@ -56,6 +57,8 @@ pub use crate::modloader::{
 pub use crate::java::{JavaInstallation, scan_java_installations};
 
 pub use logging::{init_logging, log_frontend};
+
+pub use font::get_system_fonts;
 
 static APP_HANDLE: OnceLock<tauri::AppHandle> = OnceLock::new();
 
@@ -231,6 +234,8 @@ pub fn run() {
             config::get_assets_path,
             config::get_natives_path,
             scan_java_installations,
+            // 字体
+            get_system_fonts,
         ])
         .run(tauri::generate_context!())
         .expect("启动失败！");

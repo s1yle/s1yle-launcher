@@ -153,6 +153,8 @@ pub fn scan_java_installations() -> Result<Vec<JavaInstallation>, String> {
     {
         scan_java_on_linux()
     }
+    // TODO: 实现windows平台java环境检测
+    // TODO: 实现macos平台java环境检测
 }
 
 #[test]
