@@ -21,6 +21,9 @@ const DX: f32 = -DEPTH_SCALE * ANGLE_COS;
 const DY: f32 = DEPTH_SCALE * ANGLE_SIN;
 
 // ── UV 坐标常量（64×64 皮肤）──
+//
+// 命名说明：_RIGHT 表示"视角右侧面"（isometric 投影中观众看到的右侧），
+// 对应标准 Minecraft UV 中 Steve 的左侧面 (16,8)-(24,16) / (48,8)-(56,16)
 
 const HEAD_FRONT: (u32, u32, u32, u32) = (8, 8, 16, 16);
 const HEAD_TOP: (u32, u32, u32, u32) = (8, 0, 16, 8);
@@ -29,6 +32,28 @@ const HEAD_RIGHT: (u32, u32, u32, u32) = (16, 8, 24, 16);
 const HAT_FRONT: (u32, u32, u32, u32) = (40, 8, 48, 16);
 const HAT_TOP: (u32, u32, u32, u32) = (40, 0, 48, 8);
 const HAT_RIGHT: (u32, u32, u32, u32) = (48, 8, 56, 16);
+
+// ── 全身 UV 坐标常量 ──
+
+const BODY_FRONT: (u32, u32, u32, u32) = (20, 20, 28, 32);
+const BODY_OUTER_FRONT: (u32, u32, u32, u32) = (20, 36, 28, 48);
+
+const RIGHT_ARM_FRONT: (u32, u32, u32, u32) = (44, 20, 48, 32);
+const RIGHT_ARM_OUTER_FRONT: (u32, u32, u32, u32) = (44, 36, 48, 48);
+
+const LEFT_ARM_FRONT: (u32, u32, u32, u32) = (36, 52, 40, 64);
+const LEFT_ARM_OUTER_FRONT: (u32, u32, u32, u32) = (52, 52, 56, 64);
+
+const RIGHT_LEG_FRONT: (u32, u32, u32, u32) = (4, 20, 8, 32);
+const RIGHT_LEG_OUTER_FRONT: (u32, u32, u32, u32) = (4, 36, 8, 48);
+
+const LEFT_LEG_FRONT: (u32, u32, u32, u32) = (20, 52, 24, 64);
+const LEFT_LEG_OUTER_FRONT: (u32, u32, u32, u32) = (4, 52, 8, 64);
+
+const RIGHT_ARM_FRONT_SLIM: (u32, u32, u32, u32) = (44, 20, 47, 32);
+const RIGHT_ARM_OUTER_FRONT_SLIM: (u32, u32, u32, u32) = (44, 36, 47, 48);
+const LEFT_ARM_FRONT_SLIM: (u32, u32, u32, u32) = (37, 52, 40, 64);
+const LEFT_ARM_OUTER_FRONT_SLIM: (u32, u32, u32, u32) = (53, 52, 56, 64);
 
 // ── Mojang Session API 结构体 ──
 
@@ -305,6 +330,74 @@ pub fn render_flat_avatar(skin: &RgbaImage, size: u32, show_hat: bool) -> RgbaIm
     }
 
     imageops::resize(&head, size, size, imageops::FilterType::Nearest)
+}
+
+// ── 全身正面渲染 ──
+
+/// 渲染全身正面视图
+///
+/// `is_slim`: true = Alex 模型（3px 手臂），false = Steve 模型（4px 手臂）
+/// `scale`: 像素缩放倍数（1 = 1:1 原始像素）
+pub fn render_full_body(skin: &RgbaImage, is_slim: bool, scale: u32) -> RgbaImage {
+    let arm_uv = if is_slim {
+        (RIGHT_ARM_FRONT_SLIM, RIGHT_ARM_OUTER_FRONT_SLIM, LEFT_ARM_FRONT_SLIM, LEFT_ARM_OUTER_FRONT_SLIM)
+    } else {
+        (RIGHT_ARM_FRONT, RIGHT_ARM_OUTER_FRONT, LEFT_ARM_FRONT, LEFT_ARM_OUTER_FRONT)
+    };
+
+    let arm_w = if is_slim { 3u32 } else { 4u32 };
+    let canvas_w = (arm_w + 8 + arm_w) * scale;
+    let canvas_h = (8 + 12 + 12) * scale;
+    let mut output = RgbaImage::new(canvas_w, canvas_h);
+
+    // 左肢在 MC 贴图中是右肢的水平镜像，渲染前需翻转
+    let flip_h = |uv: (u32, u32, u32, u32)| -> RgbaImage {
+        let mut img = skin.view(uv.0, uv.1, uv.2 - uv.0, uv.3 - uv.1).to_image();
+        imageops::flip_horizontal_in_place(&mut img);
+        img
+    };
+
+    // 内层 + 外层顺序组合
+    let layers: &[(RgbaImage, u32, u32)] = &[
+        // 头部
+        (skin.view(HEAD_FRONT.0, HEAD_FRONT.1, 8, 8).to_image(), arm_w * scale, 0),
+        // 身体
+        (skin.view(BODY_FRONT.0, BODY_FRONT.1, 8, 12).to_image(), arm_w * scale, 8 * scale),
+        // 右臂
+        (skin.view(arm_uv.0 .0, arm_uv.0 .1, arm_w, 12).to_image(), 0, 8 * scale),
+        // 左臂（水平翻转）
+        (flip_h(arm_uv.2), (arm_w + 8) * scale, 8 * scale),
+        // 右腿
+        (skin.view(RIGHT_LEG_FRONT.0, RIGHT_LEG_FRONT.1, 4, 12).to_image(), arm_w * scale, (8 + 12) * scale),
+        // 左腿（水平翻转）
+        (flip_h(LEFT_LEG_FRONT), (arm_w + 4) * scale, (8 + 12) * scale),
+        // 外层：夹克
+        (skin.view(BODY_OUTER_FRONT.0, BODY_OUTER_FRONT.1, 8, 12).to_image(), arm_w * scale, 8 * scale),
+        // 外层：右袖
+        (skin.view(arm_uv.1 .0, arm_uv.1 .1, arm_w, 12).to_image(), 0, 8 * scale),
+        // 外层：左袖（水平翻转）
+        (flip_h(arm_uv.3), (arm_w + 8) * scale, 8 * scale),
+        // 外层：右裤腿
+        (skin.view(RIGHT_LEG_OUTER_FRONT.0, RIGHT_LEG_OUTER_FRONT.1, 4, 12).to_image(), arm_w * scale, (8 + 12) * scale),
+        // 外层：左裤腿（水平翻转）
+        (flip_h(LEFT_LEG_OUTER_FRONT), (arm_w + 4) * scale, (8 + 12) * scale),
+    ];
+
+    for (part, dx, dy) in layers {
+        let scaled = imageops::resize(part, part.width() * scale, part.height() * scale, imageops::FilterType::Nearest);
+        for y in 0..scaled.height() {
+            for x in 0..scaled.width() {
+                let px = scaled.get_pixel(x, y);
+                if px[3] == 0 {
+                    continue;
+                }
+                let dst = output.get_pixel(x + dx, y + dy);
+                output.put_pixel(x + dx, y + dy, alpha_blend(*dst, *px));
+            }
+        }
+    }
+
+    output
 }
 
 // ── 斜二测 3D 头像渲染 ──
@@ -705,6 +798,188 @@ mod tests {
         let avatar = render_isometric_avatar(&skin, 256, true);
         assert_eq!(avatar.width(), 256);
         assert_eq!(avatar.height(), 256);
+    }
+
+    fn make_test_skin() -> RgbaImage {
+        let mut img = RgbaImage::new(64, 64);
+
+        // 基础皮肤底色
+        for y in 0..64 {
+            for x in 0..64 {
+                img.put_pixel(x, y, Rgba([0, 0, 0, 0]));
+            }
+        }
+
+        // 头部正面 (8,8)-(16,16) —— 肤色
+        for y in 8..16 {
+            for x in 8..16 {
+                img.put_pixel(x, y, Rgba([210, 180, 140, 255]));
+            }
+        }
+
+        // 左眼 (9,10)-(11,11)
+        for y in 10..12 {
+            for x in 9..11 {
+                img.put_pixel(x, y, Rgba([50, 50, 50, 255]));
+            }
+        }
+
+        // 右眼 (13,10)-(15,11)
+        for y in 10..12 {
+            for x in 13..15 {
+                img.put_pixel(x, y, Rgba([50, 50, 50, 255]));
+            }
+        }
+
+        // 嘴巴 (11,13)-(13,14)
+        for y in 13..15 {
+            for x in 11..13 {
+                img.put_pixel(x, y, Rgba([150, 80, 50, 255]));
+            }
+        }
+
+        // 帽子正面 (40,8)-(48,16) —— 红色帽子，中间有缝隙（露出眼睛）
+        for y in 10..16 {
+            for x in 40..48 {
+                // 在眼睛位置留空
+                let eye_x = x - 40 + 8;
+                if (9..11).contains(&eye_x) || (13..15).contains(&eye_x) {
+                    continue;
+                }
+                img.put_pixel(x, y, Rgba([200, 50, 50, 200]));
+            }
+        }
+        // 帽子顶部 (40,0)-(48,8)
+        for y in 0..8 {
+            for x in 40..48 {
+                img.put_pixel(x, y, Rgba([180, 30, 30, 255]));
+            }
+        }
+        // 帽子右侧（视角右 = Steve 左侧）(48,8)-(56,16)
+        for y in 8..16 {
+            for x in 48..56 {
+                img.put_pixel(x, y, Rgba([140, 20, 20, 255]));
+            }
+        }
+
+        // 头部右侧面（视角右 = Steve 左侧）(16,8)-(24,16)
+        for y in 8..16 {
+            for x in 16..24 {
+                img.put_pixel(x, y, Rgba([180, 150, 110, 255]));
+            }
+        }
+
+        // 头顶 (8,0)-(16,8)
+        for y in 0..8 {
+            for x in 8..16 {
+                img.put_pixel(x, y, Rgba([200, 170, 130, 255]));
+            }
+        }
+
+        // 身体正面 (20,20)-(28,32) —— 蓝色衬衫
+        for y in 20..32 {
+            for x in 20..28 {
+                img.put_pixel(x, y, Rgba([60, 120, 200, 255]));
+            }
+        }
+        // 身体外层 (20,36)-(28,48) —— 深蓝外套
+        for y in 36..48 {
+            for x in 20..28 {
+                img.put_pixel(x, y, Rgba([40, 90, 170, 200]));
+            }
+        }
+
+        // 右臂正面 (44,20)-(48,32) —— 蓝色袖子
+        for y in 20..32 {
+            for x in 44..48 {
+                img.put_pixel(x, y, Rgba([60, 120, 200, 255]));
+            }
+        }
+        // 右臂外层 (44,36)-(48,48) —— 深蓝袖
+        for y in 36..48 {
+            for x in 44..48 {
+                img.put_pixel(x, y, Rgba([40, 90, 170, 200]));
+            }
+        }
+
+        // 左臂正面 (36,52)-(40,64) —— 蓝色袖子（镜像）
+        for y in 52..64 {
+            for x in 36..40 {
+                img.put_pixel(x, y, Rgba([60, 120, 200, 255]));
+            }
+        }
+        // 左臂外层 (52,52)-(56,64) —— 深蓝袖（镜像）
+        for y in 52..64 {
+            for x in 52..56 {
+                img.put_pixel(x, y, Rgba([40, 90, 170, 200]));
+            }
+        }
+
+        // 右腿正面 (4,20)-(8,32) —— 棕色裤子
+        for y in 20..32 {
+            for x in 4..8 {
+                img.put_pixel(x, y, Rgba([100, 70, 50, 255]));
+            }
+        }
+        // 右腿外层 (4,36)-(8,48) —— 深棕裤
+        for y in 36..48 {
+            for x in 4..8 {
+                img.put_pixel(x, y, Rgba([80, 50, 30, 200]));
+            }
+        }
+
+        // 左腿正面 (20,52)-(24,64) —— 棕色裤子（镜像）
+        for y in 52..64 {
+            for x in 20..24 {
+                img.put_pixel(x, y, Rgba([100, 70, 50, 255]));
+            }
+        }
+        // 左腿外层 (4,52)-(8,64) —— 深棕裤（镜像）
+        for y in 52..64 {
+            for x in 4..8 {
+                img.put_pixel(x, y, Rgba([80, 50, 30, 200]));
+            }
+        }
+
+        img
+    }
+
+    #[test]
+    fn generate_preview_images() {
+        let skin = make_test_skin();
+        let out_dir = std::path::Path::new("/tmp/wecraft-render-test");
+
+        // Flat 头像（无帽子）
+        let flat = render_flat_avatar(&skin, 128, false);
+        flat.save(out_dir.join("preview_flat_no_hat.png"))
+            .expect("保存 flat_no_hat 失败");
+
+        // Flat 头像（有帽子）
+        let flat_hat = render_flat_avatar(&skin, 128, true);
+        flat_hat.save(out_dir.join("preview_flat_hat.png"))
+            .expect("保存 flat_hat 失败");
+
+        // Isometric 头像（无帽子）
+        let iso = render_isometric_avatar(&skin, 256, false);
+        iso.save(out_dir.join("preview_iso_no_hat.png"))
+            .expect("保存 iso_no_hat 失败");
+
+        // Isometric 头像（有帽子）
+        let iso_hat = render_isometric_avatar(&skin, 256, true);
+        iso_hat.save(out_dir.join("preview_iso_hat.png"))
+            .expect("保存 iso_hat 失败");
+
+        // 全身渲染（Steve 模型，缩放 4x）
+        let body = render_full_body(&skin, false, 4);
+        body.save(out_dir.join("preview_full_body.png"))
+            .expect("保存 full_body 失败");
+
+        // 全身渲染（Slim 模型，缩放 4x）
+        let body_slim = render_full_body(&skin, true, 4);
+        body_slim.save(out_dir.join("preview_full_body_slim.png"))
+            .expect("保存 full_body_slim 失败");
+
+        println!("预览图片已生成到: {:?}", out_dir);
     }
 
     #[test]
