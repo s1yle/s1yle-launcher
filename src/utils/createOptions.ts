@@ -12,7 +12,7 @@ type BaseOptionItem = {
 };
 
 /**
- * 通用选项工厂函数
+ * 通用选项工厂函数(专用于编译器，数组元素确定的)
  * 输入一个常量数组，自动生成所有需要的类型和工具函数
  */
 export function createOptions<T extends readonly BaseOptionItem[]>(
@@ -55,6 +55,16 @@ export function createOptions<T extends readonly BaseOptionItem[]>(
     /** 默认值 */
     defaultValue: defaultValue ?? rawOptions[0].value,
   } as const;
+}
+
+/**
+ * 将运行时动态对象数组转为 DropDownOption[]
+ * 适用于从 Rust 后端获取的数据（如系统字体列表）
+ */
+export function toDropDownOptions<T extends { name: string }>(
+  items: T[]
+): DropDownOption[] {
+  return items.map(item => ({ id: item.name, label: item.name }));
 }
 
 /**

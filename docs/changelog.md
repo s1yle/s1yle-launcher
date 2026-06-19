@@ -11,6 +11,26 @@
 
 ---
 
+## 2026-06-09 - 新增 Minecraft 皮肤渲染规范文档
+
+### 新增文档
+
+| 文件 | 说明 |
+|------|------|
+| `docs/skin-rendering.md` | Minecraft 皮肤渲染规范。定义 64×64 皮肤格式、完整 UV 映射坐标表、模型差异、Rust 解析与渲染示例 |
+
+**变更类型**:
+- [x] 新增文档
+- [ ] 修改内容
+- [ ] 删除内容
+
+**详细说明**:
+- 基于实际皮肤文件（`my_skin_s1yle.png`、`my_skin_other.png`）验真，确认规范中所有 UV 坐标准确无误
+- Rust 示例代码遵循项目现有架构模式（Tauri command + image crate）
+- 文档遵循 [`MAINTENANCE.md`](MAINTENANCE.md) 规范编写
+
+---
+
 ## 2026-06-02 - Portal API 重构
 
 ### 新增智能 Portal 系统

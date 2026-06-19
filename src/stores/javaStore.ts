@@ -25,7 +25,7 @@ const useJavaStore = create<JavaStoreState>()(
       },
     }),
     {
-      name: 'java_storage',
+      name: 'java-storage',
       partialize: (state) => ({
         curJava: state.curJava,
         javas: state.javas,

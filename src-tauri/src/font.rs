@@ -14,6 +14,9 @@ pub enum FontType {
     MONO,
 }
 
+// 以后 linux 下也许应该考虑，
+// 如果用户的环境中没有fontconfig工具(一般都有吧，你的linux不会没有fontconfig?!!),
+// 该怎么获取字体
 #[cfg(target_os = "linux")]
 fn list_system_font() -> Option<Vec<SystemFont>> {
     // fc-list : family style file spacing

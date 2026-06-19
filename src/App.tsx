@@ -23,7 +23,6 @@
 //
 // TODO: The Next Phase
 //
-// 支持识别系统字体，并且可以选择系统字体 作为app的默认字体
 // 实现mc账户头像渲染(使用rust 自行实现)
 //
 // 实现登陆器功能，初次进入启动器、无账号或未登录时，
@@ -58,6 +57,7 @@ import AppSidebar from './AppLayouts/AppSidebar';
 import AppMain from './AppLayouts/AppMain';
 import useLayoutStore, { LAYOUT_DEBOUNCE_DURATION, SIDEBAR_TRANSITION_DURATION } from './stores/layoutStore';
 import { DURATION } from './utils/animations';
+import useFontStore from './stores/fontStore';
 
 const LAYOUT_MODES = {
   [UIMode.CLASSIC]: ClassicLayout,
@@ -250,6 +250,7 @@ function App() {
   const initTheme = useThemeStore((s) => s.init);
   const initApp = useAppStore((s) => s.init);
   const initInstances = useInstanceStore((s) => s.init);
+  const initFont = useFontStore((s) => s.init);
   const setupDownloadListeners = useDownloadStore((s) => s.setupEventListeners);
 
   useWindowPosition();
@@ -258,7 +259,8 @@ function App() {
     initTheme();
     initApp();
     initInstances();
-  }, [initTheme, initApp, initInstances]);
+    initFont();
+  }, [initTheme, initApp, initInstances, initFont]);
 
   useEffect(() => {
     const cleanup = setupDownloadListeners();

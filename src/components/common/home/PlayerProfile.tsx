@@ -1,5 +1,7 @@
-import { Crown, User } from 'lucide-react';
+import { useState } from 'react';
+import { Crown, User, ArrowUpFromLine, Box } from 'lucide-react';
 import { UserRole } from '@/stores/userRoleStore';
+import { SkinAvatar } from '../SkinAvatar';
 
 // MC 方块人头像组件 (Steve/Alex 风格)
 const MCAvatar = ({ name = 'Steve' }: { name?: string }) => {
@@ -10,7 +12,7 @@ const MCAvatar = ({ name = 'Steve' }: { name?: string }) => {
   const hairColor = hash % 4 === 0 ? '#4a3728' : hash % 4 === 1 ? '#8b4513' : '#2d1b0e';
 
   return (
-    <div 
+    <div
       className="w-full h-full bg-[#1a1a2e] relative"
       style={{
         imageRendering: 'pixelated',
@@ -25,14 +27,14 @@ const MCAvatar = ({ name = 'Steve' }: { name?: string }) => {
       >
         {/* 帽子/头发层 */}
         <rect x="1" y="0" width="6" height="1" fill={hairColor} />
-        
+
         {/* 脸部 */}
         <rect x="1" y="1" width="6" height="4" fill={skinTone} />
-        
+
         {/* 眼睛 - 白色部分 */}
         <rect x="2" y="2" width="1" height="1" fill="#fff" />
         <rect x="5" y="2" width="1" height="1" fill="#fff" />
-        
+
         {/* 眼睛 - 瞳孔 */}
         <rect x="2" y="2" width="1" height="1" fill="#3d2817">
           <animate attributeName="fill" values="#3d2817;#5d4837;#3d2817" dur="3s" repeatCount="indefinite" />
@@ -40,21 +42,21 @@ const MCAvatar = ({ name = 'Steve' }: { name?: string }) => {
         <rect x="5" y="2" width="1" height="1" fill="#3d2817">
           <animate attributeName="fill" values="#3d2817;#5d4837;#3d2817" dur="3s" repeatCount="indefinite" />
         </rect>
-        
+
         {/* 鼻子 */}
         <rect x="3.5" y="3" width="1" height="1" fill="#a67c52" />
-        
+
         {/* 嘴巴 - 微笑 */}
         <rect x="3" y="4" width="2" height="1" fill="#6b4423" />
         <rect x="2" y="4" width="1" height="1" fill={skinTone} />
         <rect x="5" y="4" width="1" height="1" fill={skinTone} />
-        
+
         {/* 身体/衣服 */}
         <rect x="1" y="5" width="6" height="3" fill={shirtColor} />
-        
+
         {/* 衣服细节 - 领口 */}
         <rect x="3" y="5" width="2" height="1" fill={skinTone} />
-        
+
         {/* 衣服细节 - 纹理 */}
         <rect x="1" y="6" width="1" height="1" fill={shirtColor} opacity="0.8" />
         <rect x="6" y="6" width="1" height="1" fill={shirtColor} opacity="0.8" />
@@ -72,19 +74,28 @@ const PlayerProfile = ({
   name,
   role = UserRole.PLAYER
 }: PlayerProfileProps) => {
+  const [avatarMode, setAvatarMode] = useState<'flat' | 'isometric'>('flat');
+
   return (
-    <div className="flex flex-col items-center gap-3">
-      {/* 头像容器 - 简化 */}
+    <div className="flex flex-col items-center gap-1">
+      {/* 头像容器 */}
       <div className="relative">
         <div className={`
-          w-20 h-20 rounded-md overflow-hidden
-          border-2 ${role === UserRole.ADMIN ? 'border-purple-500/30' : 'border-blue-500/30'}
+          overflow-hidden
+          ${role === UserRole.ADMIN ? 'skip_border-purple-500/30' : 'skip_border-blue-500/30'}
           bg-bg-tertiary
         `}>
-          <MCAvatar name={name} />
+          {/* <MCAvatar name={name} /> */}
+          <SkinAvatar
+            // TODO: 实现通过账户管理器获取uuid并渲染皮肤
+            uuid='f8ab99b9-9e45-4001-a9ea-0f5c9ca285c8'
+            showHat={true}
+            size={128}
+            avatarMode={avatarMode}
+          />
         </div>
-        
-        {/* 角色徽章角标 - 简化 */}
+
+        {/* 角色徽章角标 */}
         <div className={`
           absolute -top-1 -right-1 w-5 h-5 rounded-full
           flex items-center justify-center
@@ -98,7 +109,44 @@ const PlayerProfile = ({
         </div>
       </div>
 
-      {/* 用户名 - 简化 */}
+      {/* 渲染模式切换 */}
+      <div className="flex items-center gap-0.5 mt-1 bg-bg-tertiary rounded-md p-0.5">
+        {/* TODO: 实现一个通用多选一组件 */}
+        {/* TODO: 切换时播放加载动画 */}
+        {/* FIXME: 修复平面模式下，部分皮肤不显示眼睛的问题 */}
+        <button
+          onClick={() => setAvatarMode('flat')}
+          className={`
+            p-1 rounded transition-colors
+            cursor-pointer
+            ${avatarMode === 'flat'
+              ? 'bg-accent text-white'
+              : 'text-text-secondary hover:text-text-primary'}
+          `}
+          aria-label="平面头像"
+          title="平面头像"
+        >
+          <ArrowUpFromLine className="w-3.5 h-3.5" />
+        </button>
+
+        {/* 该模式不稳定 */}
+        <button
+          onClick={() => setAvatarMode('isometric')}
+          className={`
+            p-1 rounded transition-colors
+            cursor-pointer
+            ${avatarMode === 'isometric'
+              ? 'bg-accent text-white'
+              : 'text-text-secondary hover:text-text-primary'}
+          `}
+          aria-label="3D 斜二侧头像"
+          title="3D 斜二侧头像(不稳定功能)"
+        >
+          <Box className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {/* 用户名 */}
       <h1 className="text-lg font-medium text-text-primary">
         {name}
       </h1>

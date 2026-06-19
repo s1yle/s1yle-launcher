@@ -79,6 +79,9 @@ interface PortalProps {
 
   /** 覆盖默认的弹簧动画过渡参数（仅 anchor / origin / draggable 模式） */
   transition?: Transition;
+
+  /** 是否从 (0,0) 动画到正确位置（默认 false，直接定位到正确位置） */
+  animateFromOrigin?: boolean;
 }
 
 const springTransition = EASING.SPRING;
@@ -143,6 +146,7 @@ function AnchorContent({
   collisionBoundary,
   avoidRefs,
   transition = springTransition,
+  animateFromOrigin,
 }: {
   children: React.ReactNode;
   container: HTMLElement | null | undefined;
@@ -154,6 +158,7 @@ function AnchorContent({
   collisionBoundary?: CollisionBoundary;
   avoidRefs?: React.RefObject<HTMLElement | null>[];
   transition?: Transition;
+  animateFromOrigin?: boolean;
 }) {
   const internalRef = useRef<HTMLDivElement>(null);
   const floatingRef = externalRef || internalRef;
@@ -167,6 +172,7 @@ function AnchorContent({
     avoidRefs,
     autoFlip: true,
     enabled: true,
+    animateFromOrigin,
   });
 
   return createPortal(
@@ -453,6 +459,7 @@ export function Portal({
   collisionBoundary,
   avoidRefs,
   transition = springTransition,
+  animateFromOrigin,
 }: PortalProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -487,6 +494,7 @@ export function Portal({
         collisionBoundary={collisionBoundary}
         avoidRefs={resolvedAvoidRefs}
         transition={transition}
+        animateFromOrigin={animateFromOrigin}
       >
         {children}
       </AnchorContent>

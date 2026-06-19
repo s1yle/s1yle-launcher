@@ -1,7 +1,8 @@
-import { createOptions, OptionValueType } from '@/utils/createOptions';
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-
+import { SystemFont } from "@/api";
+import { getFont, getSystemFonts } from "@/helper/rustInvoke";
+import { createOptions, OptionValueType } from "@/utils/createOptions";
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 export const fontScaleConfig = createOptions(
   [
@@ -19,7 +20,22 @@ export const fontScaleConfig = createOptions(
  * 用于支持无障碍访问，允许用户自定义字体大小
  */
 export type FontScale = OptionValueType<typeof fontScaleConfig>;
-export interface FontSizeState {
+
+const DEFAULT_FONT_SCALE: FontScale = 1;
+
+const FONT_SCALES: FontScale[] = [0.875, 1, 1.125, 1.25, 1.5];
+
+
+export interface FontStoreProps {
+  fonts: SystemFont[] | null;
+  font: SystemFont | null;
+}
+
+export interface FontStoreState extends FontStoreProps {
+  init: () => void;
+
+  setFont: (font: SystemFont) => void;
+
   /** 当前字体缩放比例 */
   fontScale: FontScale;
 
@@ -39,27 +55,53 @@ export interface FontSizeState {
   getScalePercentage: () => number;
 }
 
-const DEFAULT_FONT_SCALE: FontScale = 1;
-
-const FONT_SCALES: FontScale[] = [0.875, 1, 1.125, 1.25, 1.5];
-
 /**
- * 字体大小管理 Store
+ * 字体管理 Store
  * 
  * 功能:
+ * - 支持设置字体
  * - 支持用户自定义字体大小缩放
  * - 持久化存储用户偏好
  * - 提供便捷的增减方法
  * - 与 CSS 变量系统联动
  * 
  * 使用场景:
+ * - 设置页面提供 font-family 选择选项
  * - 设置页面提供字体大小调节选项
  * - 支持无障碍访问（最大 200% 缩放）
  * - 记忆用户偏好设置
  */
-export const useFontSizeStore = create<FontSizeState>()(
+const useFontStore = create<FontStoreState>()(
   persist(
     (set, get) => ({
+      init: () => {
+        getSystemFonts().then((fonts) => {
+          set({ fonts: fonts.sort((a, b) => a.name.localeCompare((b.name))) });
+        });
+        let self = get();
+        if (!self.font) {
+          getFont().then((font) => {
+            set({ font: font.CURRENT })
+          });
+        }
+      },
+      fonts: null,
+      font: null,
+
+      // 暂不知道还有没有更完善的设置字体的方式
+      // 也许以后会继续完善这个功能,不过现在就先这样吧～～
+      setFont: (font: SystemFont) => {
+        set({ font: font });
+        if (typeof document !== 'undefined') {
+          if (font) {
+            document.documentElement.style.fontFamily =
+              `"${font.name}", ui-sans-serif, system-ui, sans-serif`;
+          } else {
+            document.documentElement.style.fontFamily = '';
+          }
+        }
+      },
+
       fontScale: DEFAULT_FONT_SCALE,
 
       setFontScale: (scale: FontScale) => {
@@ -95,16 +137,21 @@ export const useFontSizeStore = create<FontSizeState>()(
       },
     }),
     {
-      name: 'font-size-preferences',
+      name: 'font-storage',
       onRehydrateStorage: () => (state) => {
         // 重新 hydrate 时更新 HTML 属性
         if (state && typeof document !== 'undefined') {
           document.documentElement.setAttribute('data-font-scale', state.fontScale.toString());
         }
       },
+      partialize: (state) => ({
+        font: state.font,
+      }),
     }
   )
-);
+)
+
+export default useFontStore;
 
 /**
  * 获取当前字体缩放比例的显示文本

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 
 /**
  * 浮动层相对触发元素的放置位置。
@@ -48,6 +48,8 @@ interface UseFloatingOptions {
   autoFlip?: boolean;
   /** 是否启用定位计算，默认 true */
   enabled?: boolean;
+  /** 是否从 (0,0) 动画到正确位置（默认 false，直接定位到正确位置） */
+  animateFromOrigin?: boolean;
 }
 
 interface UseFloatingReturn {
@@ -252,6 +254,7 @@ export function useFloating(options: UseFloatingOptions): UseFloatingReturn {
     avoidRefs = [],
     autoFlip = true,
     enabled = true,
+    animateFromOrigin = false,
   } = options;
 
   const [x, setX] = useState(0);
@@ -327,19 +330,27 @@ export function useFloating(options: UseFloatingOptions): UseFloatingReturn {
     isAnchor, isOrigin,
   ]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isActive) return;
 
-    updatePosition();
+    let rafId: number | undefined;
+
+    if (animateFromOrigin) {
+      rafId = requestAnimationFrame(() => updatePosition());
+    } else {
+      updatePosition();
+    }
+
     window.addEventListener('resize', updatePosition);
     if (isAnchor) {
       window.addEventListener('scroll', updatePosition, true);
     }
     return () => {
+      if (rafId !== undefined) cancelAnimationFrame(rafId);
       window.removeEventListener('resize', updatePosition);
       window.removeEventListener('scroll', updatePosition, true);
     };
-  }, [isActive, isAnchor, updatePosition]);
+  }, [isActive, isAnchor, updatePosition, animateFromOrigin]);
 
   return { x, y, placement, updatePosition };
 }

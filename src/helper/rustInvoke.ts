@@ -93,3 +93,6 @@ export const getNativesPath = __.invokeGetNativesPath;
 // java.ts
 export const scanJavaInstallations = __.invokeScanJavaInstallations;
 
+// font.ts
+export const getSystemFonts = __.invokeGetSystemFonts;
+export const getFont = __.invokeGetFont;

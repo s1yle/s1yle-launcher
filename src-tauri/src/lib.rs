@@ -10,6 +10,7 @@ mod java;
 mod launch;
 mod logging;
 mod modloader;
+mod render;
 mod window;
 
 use crate::config::{
@@ -237,6 +238,11 @@ pub fn run() {
             // 字体
             get_system_fonts,
             get_font,
+            // 皮肤渲染
+            render::render_avatar,
+            render::get_skin_head,
+            render::get_skin_cape,
+            render::render_isometric_avatar_cmd,
         ])
         .run(tauri::generate_context!())
         .expect("启动失败！");

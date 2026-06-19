@@ -2,14 +2,16 @@ import { UIMode, useUIModeStore } from '../../stores/uiModeStore';
 import TerminalThemePreview from '../../components/common/TerminalThemePreview';
 import { Toggle, LoadingSurface } from '../../components/common';
 import { SettingsPanel } from '@/components/common/SettingsPanel/SettingPanel';
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import DropDown from '@/components/common/DropDown';
-import { useFontSizeStore, fontScaleConfig } from '@/stores/fontSizeStore';
+import { fontScaleConfig } from '@/stores/fontStore';
 import { useBackgroundStore } from '@/stores/backgroundStore';
 import { invoke, convertFileSrc } from '@tauri-apps/api/core';
 import type { BackgroundType } from '@/config/types';
 import { Slider } from '@/components/common/Slider';
 import { useLoadingStore } from '@/stores/loadingStore';
+import useFontStore from '@/stores/fontStore';
+import { SystemFont } from '@/api';
 
 const LOADING_VARIANT_OPTIONS = [
   { id: 'spinner', label: '旋转动画' },
@@ -56,9 +58,19 @@ const GRADIENT_PRESETS = [
 const ApearanceSettings = () => {
   const { mode: uiMode, setMode: setUIMode, animation, setAnimation } = useUIModeStore();
   const [isCompat, setIsCompat] = useState(true)
-  const fontScale = useFontSizeStore((s) => s.fontScale);
-  const setFontScale = useFontSizeStore((s) => s.setFontScale);
 
+  // 字体store
+  const fontScale = useFontStore((s) => s.fontScale);
+  const setFontScale = useFontStore((s) => s.setFontScale);
+  const fonts = useFontStore((s) => s.fonts);
+  const font = useFontStore((s) => s.font);
+  const setFont = useFontStore((s) => s.setFont);
+
+  const fontOptions = useMemo(() => {
+    return (fonts ?? []).map(f => ({ id: f.name, label: f.name }));
+  }, [fonts]);
+
+  // 背景store
   const { config, setBackground, resetBackground } = useBackgroundStore();
 
   const handleAnimationSetting = () => {
@@ -91,6 +103,14 @@ const ApearanceSettings = () => {
   const handleGlobalTopbarChange = (val: boolean) => {
     setAnimation({ globalTopbar: val });
     useLoadingStore.getState().setConfig({ globalTopbar: val });
+  }
+
+  const handleFontSelect = (option: { id: string, label: string }) => {
+    let font: SystemFont = {
+      name: option.id,
+    }
+
+    setFont(font);
   }
 
   const [demoActive, setDemoActive] = useState<string | null>(null);
@@ -157,6 +177,18 @@ const ApearanceSettings = () => {
           label='开启页面动画'
           disabled={false}
         />
+
+        {/* TODO: 实现dropdown的 animateFromOrigin 开关 */}
+        <SettingsPanel.Item>
+          <SettingsPanel.DropDown
+            label='字体'
+            options={fontOptions}
+            value={fontOptions.find((f) => f.id == font?.name)}
+            onSelect={handleFontSelect}
+            showSearch
+            searchPlaceholder='请搜索'
+          />
+        </SettingsPanel.Item>
 
         <SettingsPanel.Item>
           <SettingsPanel.DropDown

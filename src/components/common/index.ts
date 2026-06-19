@@ -144,3 +144,6 @@ export { BackgroundLayer } from './BackgroundLayer';
 
 export { Slider } from './Slider';
 export type { SliderProps } from './Slider';
+
+export { SkinAvatar } from './SkinAvatar';
+export type { SkinAvatarProps } from './SkinAvatar';

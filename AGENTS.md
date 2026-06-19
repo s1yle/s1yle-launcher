@@ -527,6 +527,7 @@ pnpm typecheck            # TypeScript 类型检查
 - **更新日志**: [`docs/changelog.md`](docs/changelog.md) - 所有重大重构记录
 - **文档维护规范**: [`docs/MAINTENANCE.md`](docs/MAINTENANCE.md) - 文档编写与更新指南
 - **文档使用指南**: [`docs/GUIDE.md`](docs/GUIDE.md) - 如何查阅文档和询问 AI ⭐
+- **皮肤渲染规范**: [`docs/skin-rendering.md`](docs/skin-rendering.md) - Minecraft 皮肤格式与 UV 映射参考
 
 ---
 

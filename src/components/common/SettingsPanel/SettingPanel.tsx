@@ -6,6 +6,7 @@ import Spinner from "../Loading/Spinner";
 import Overlay from "../Loading/Overlay";
 import { useLoading } from "@/hooks/useLoading";
 import DropDown from "../DropDown";
+import { searchVersions } from "@/utils/versionFilter";
 
 
 /**
@@ -178,6 +179,8 @@ const SettingsPanelDropDown = ({
   onSelect,
   borderRadius,
   displayNumber,
+  showSearch,
+  searchPlaceholder,
 }: SettingsPanelDropDownProps) => {
 
   return (
@@ -204,6 +207,8 @@ const SettingsPanelDropDown = ({
           borderRadius={borderRadius}
           displayNumber={displayNumber}
           buttonWidth="w-xs"
+          showSearch={showSearch}
+          searchPlaceholder={searchPlaceholder}
         />
       </motion.div>
     </AnimatePresence>
