@@ -1,6 +1,7 @@
 // src-tauri/src/lib.rs
 
 mod account;
+mod admin_account;
 mod background;
 mod config;
 mod download;
@@ -25,6 +26,11 @@ use tauri::Manager;
 pub use crate::account::{
     add_account, delete_account, get_account_list, get_current_account, init_account_manager,
     initialize_account_system, load_accounts_from_disk, save_accounts_to_disk, set_current_account,
+};
+pub use crate::admin_account::{
+    bind_player_to_admin, get_admin_info, get_bound_players, init_admin_manager,
+    initialize_admin_system, is_admin_registered, login_admin, register_admin,
+    unbind_player_from_admin,
 };
 pub use crate::launch::{
     LaunchConfig, LaunchStatus, init_launch_manager, tauri_get_launch_config,
@@ -152,6 +158,20 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             greet,
             get_system_info,
+            // 管理员账号
+            register_admin,
+            login_admin,
+            bind_player_to_admin,
+            unbind_player_from_admin,
+            get_admin_info,
+            get_bound_players,
+            is_admin_registered,
+            initialize_admin_system,
+            // 窗口管理
+            window::create_main_window,
+            window::close_login_window,
+            window::close_window,
+            window::logout_and_show_login,
             add_account,
             get_account_list,
             get_current_account,

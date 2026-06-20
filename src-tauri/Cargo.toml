@@ -47,6 +47,9 @@ features = ["json", "stream"]
 [dependencies.sha1]
 version = "0.10"
 
+[dependencies.sha2]
+version = "0.10"
+
 [dependencies.tokio]
 version = "1"
 features = ["full"]

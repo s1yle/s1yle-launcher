@@ -4,7 +4,7 @@
 #[allow(unused_imports)]
 use std::env;
 
-use wecraft_launcher_lib::{init_account_manager, init_launch_manager, run};
+use wecraft_launcher_lib::{init_account_manager, init_admin_manager, init_launch_manager, run};
 
 fn main() {
     #[cfg(target_os = "windows")]
@@ -16,6 +16,7 @@ fn main() {
     }
 
     init_account_manager();
+    init_admin_manager();
     init_launch_manager();
 
     run();

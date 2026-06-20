@@ -1,4 +1,3 @@
-use crate::config;
 use chrono::Local;
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
@@ -55,21 +54,25 @@ static ACCOUNT_MANAGER: OnceCell<Mutex<AccountManager>> = OnceCell::new();
 
 // ======================== 核心逻辑：文件存储 ========================
 
+fn get_accounts_file_path() -> Result<std::path::PathBuf, String> {
+    let config_dir = &*crate::config::CONFIG_APPLICATION;
+    std::fs::create_dir_all(config_dir).map_err(|e| format!("创建配置目录失败: {}", e))?;
+    Ok(config_dir.join("accounts.json"))
+}
+
 /// 从磁盘加载账户数据（启动时调用一次）
 pub fn load_accounts_from_disk_internal() -> Result<(), String> {
-    let path = crate::config::get_config_path()?;
+    let path = get_accounts_file_path()?;
 
     if !path.exists() {
-        println!("ℹ️ 配置文件不存在，将使用空初始状态");
         return Ok(());
     }
 
-    let content = fs::read_to_string(&path).map_err(|e| format!("读取配置文件失败: {}", e))?;
+    let content = fs::read_to_string(&path).map_err(|e| format!("读取账户文件失败: {}", e))?;
 
     let loaded_manager: AccountManager = serde_json::from_str(&content)
-        .map_err(|e| format!("解析配置文件失败 (JSON格式错误): {}", e))?;
+        .map_err(|e| format!("解析账户文件失败 (JSON格式错误): {}", e))?;
 
-    // 替换全局状态
     let mut manager = ACCOUNT_MANAGER
         .get()
         .ok_or("账户管理器未初始化")?
@@ -77,13 +80,12 @@ pub fn load_accounts_from_disk_internal() -> Result<(), String> {
         .map_err(|e| format!("锁获取失败: {}", e))?;
 
     *manager = loaded_manager;
-    println!("✅ 成功加载 {} 个账户", manager.accounts.len());
     Ok(())
 }
 
 /// 将当前内存中的账户数据保存到磁盘（内部调用）
 fn save_accounts_to_disk_internal() -> Result<(), String> {
-    let path = config::get_config_path()?;
+    let path = get_accounts_file_path()?;
     let manager = ACCOUNT_MANAGER
         .get()
         .ok_or("账户管理器未初始化")?
@@ -91,11 +93,11 @@ fn save_accounts_to_disk_internal() -> Result<(), String> {
         .map_err(|e| format!("锁获取失败: {}", e))?;
 
     let json_str =
-        serde_json::to_string_pretty(&*manager).map_err(|e| format!("序列化数据失败: {}", e))?;
+        serde_json::to_string_pretty(&*manager).map_err(|e| format!("序列化账户数据失败: {}", e))?;
 
-    fs::write(&path, json_str).map_err(|e| format!("写入配置文件失败: {}", e))?;
+    fs::write(&path, json_str).map_err(|e| format!("写入账户文件失败: {}", e))?;
 
-    log_info!("账号配置文件保存成功，存放路径：{}", path.to_string_lossy());
+    log_info!("账号文件保存成功：{}", path.to_string_lossy());
 
     Ok(())
 }
