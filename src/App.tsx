@@ -34,7 +34,7 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { BrowserRouter as Router, useLocation, useNavigate } from 'react-router-dom';
-import { routes, findRouteByPath, LayoutMode, pagesWithOwnSidebar } from './router/config';
+import { routes, findRouteByPath, LayoutMode, pagesWithOwnSidebar, SidebarGroup } from './router/config';
 import { useNavStore } from './stores/navStore';
 import { useThemeStore } from './stores/themeStore';
 import { useAppStore } from './stores/appStore';
@@ -87,9 +87,10 @@ const MainLayout = () => {
   const currentRoute = findRouteByPath(location.pathname, routes) || routes[0];
 
   const isFullscreen = currentRoute.layoutMode === LayoutMode.FULLSCREEN;
+  const isNoSidebarRoute = currentRoute.sidebarGroup === SidebarGroup.NONE;
 
   const isInstanceManagePage = location.pathname.startsWith('/instance-manage/');
-  const hasOwnSidebar = uiMode === UIMode.ISLAND && (
+  const hasOwnSidebar = uiMode === UIMode.ISLAND && !isNoSidebarRoute && (
     pagesWithOwnSidebar.some(path => location.pathname.startsWith(path)) ||
     isInstanceManagePage
   );
@@ -145,7 +146,7 @@ const MainLayout = () => {
     setIsSidebarCollapsed(isSidebarCollapsed);
   }, []);
 
-  const shouldShowSidebar = !isFullscreen && !isSidebarCollapsed;
+  const shouldShowSidebar = !isFullscreen && !isSidebarCollapsed && !isNoSidebarRoute;
 
   const sidebarFooter = (
     <button
@@ -158,7 +159,7 @@ const MainLayout = () => {
     </button>
   );
 
-  const collapsedToggleButton = !isFullscreen && isSidebarCollapsed && (
+  const collapsedToggleButton = !isFullscreen && isSidebarCollapsed && !isNoSidebarRoute && (
     <button
       onClick={toggleSidebar}
       className="fixed left-3 top-1/2 -translate-y-1/2 z-20 p-2 

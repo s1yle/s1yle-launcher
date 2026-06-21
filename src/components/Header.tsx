@@ -9,12 +9,21 @@ import { getParentPath } from '../router/config';
 interface HeaderProps {
   type: 'main' | 'sub';
   title: string;
+  onBack?: () => void;
 }
 
-const Header = ({ type, title }: HeaderProps) => {
-  const location = useLocation();
-  const navigate = useNavigate();
+const Header = ({ type, title, onBack }: HeaderProps) => {
   const { t } = useTranslation();
+
+  let location: ReturnType<typeof useLocation> | null = null;
+  let navigate: ReturnType<typeof useNavigate> | null = null;
+
+  try {
+    location = useLocation();
+    navigate = useNavigate();
+  } catch {
+    // Outside <Router> — skip router hooks
+  }
 
   const handleMinimize = async () => {
     try {
@@ -35,14 +44,22 @@ const Header = ({ type, title }: HeaderProps) => {
   };
 
   const handleBack = () => {
-    const parentPath = getParentPath(location.pathname);
-    navigate(parentPath);
+    if (onBack) {
+      onBack();
+      return;
+    }
+    if (location && navigate) {
+      const parentPath = getParentPath(location.pathname);
+      navigate(parentPath);
+    }
   };
 
   return (
     <header
       id='title-bar'
-      className="bg-primary text-text-primary h-16 flex items-center justify-between px-6 z-31"
+      className="bg-primary text-text-primary h-16 
+          flex items-center justify-between px-3 z-31
+      "
       data-tauri-drag-region="true"
     >
       <div className="flex items-center gap-4" data-tauri-drag-region="true">
@@ -54,9 +71,9 @@ const Header = ({ type, title }: HeaderProps) => {
               whileTap={{ scale: 0.95 }}
               transition={{ type: "spring", stiffness: 400, damping: 15 }}
             >
-              <span className="font-bold text-text-primary text-lg">MC</span>
+              <span className="text-text-primary text-base font-bold">WeC!</span>
             </motion.div>
-            <h1 className="text-xl font-bold text-text-primary">{title}</h1>
+            <h1 className="text-xl text-text-primary">{title}</h1>
           </>
         ) : (
           <>
@@ -75,6 +92,7 @@ const Header = ({ type, title }: HeaderProps) => {
         <IconButton
           onClick={handleMinimize}
           icon={Minus}
+          variant='default'
           label={t('common.minimize', '最小化')}
         />
         <IconButton

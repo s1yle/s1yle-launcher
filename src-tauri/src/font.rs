@@ -114,6 +114,18 @@ fn get_cur_font() -> Option<HashMap<FontType, SystemFont>> {
     Some(ret_val)
 }
 
+
+#[cfg(target_os = "windows")]
+fn list_system_font() -> Option<Vec<SystemFont>> {
+    None
+}
+
+#[cfg(target_os = "windows")]
+fn get_cur_font() -> Option<HashMap<FontType, SystemFont>> {
+    None
+}
+
+
 #[tauri::command]
 pub fn get_font() -> HashMap<FontType, SystemFont> {
     get_cur_font().unwrap_or_default()

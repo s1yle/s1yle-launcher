@@ -155,6 +155,10 @@ pub fn scan_java_installations() -> Result<Vec<JavaInstallation>, String> {
     }
     // TODO: 实现windows平台java环境检测
     // TODO: 实现macos平台java环境检测
+    #[cfg(target_os = "windows")]
+    {
+        Err("未实现".to_string())
+    }
 }
 
 #[test]

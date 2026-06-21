@@ -8,7 +8,7 @@ use wecraft_launcher_lib::{init_account_manager, init_admin_manager, init_launch
 
 fn main() {
     #[cfg(target_os = "windows")]
-    {
+    unsafe {
         env::set_var(
             "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS",
             "--disable-pinch --disable-features=OverscrollHistoryNavigation",

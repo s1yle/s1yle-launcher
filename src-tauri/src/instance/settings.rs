@@ -91,24 +91,13 @@ pub fn get_system_memory() -> u64 {
     {
         use std::mem;
         
-        // Windows: 使用 GetPhysicallyInstalledSystemMemory
-        // 需要链接 kernel32.lib
-        #[link(name = "kernel32")]
-        extern "system" {
-            fn GetPhysicallyInstalledSystemMemory(memory: *mut u64) -> i32;
-        }
-        
         let mut memory: u64 = 0;
         unsafe {
-            if GetPhysicallyInstalledSystemMemory(&mut memory) != 0 {
+            use windows::Win32::System::SystemInformation::GetPhysicallyInstalledSystemMemory;
+
+            if GetPhysicallyInstalledSystemMemory(&mut memory) != Ok(()) {
                 return memory / 1024; // KB to MB
             }
-        }
-        
-        // 如果失败，尝试使用 GlobalMemoryStatusEx
-        #[link(name = "kernel32")]
-        extern "system" {
-            fn GlobalMemoryStatusEx(lp_buffer: *mut MEMORYSTATUSEX) -> i32;
         }
         
         #[repr(C)]
@@ -137,9 +126,11 @@ pub fn get_system_memory() -> u64 {
         };
         
         unsafe {
-            if GlobalMemoryStatusEx(&mut status) != 0 {
-                return status.ull_total_phys / 1024 / 1024; // Bytes to MB
-            }
+            use windows::Win32::System::SystemInformation::GlobalMemoryStatusEx;
+
+            // if GlobalMemoryStatusEx(&mut status) != Ok(()) {
+            //     return status.ull_total_phys / 1024 / 1024; // Bytes to MB
+            // }
         }
         
         // 默认值

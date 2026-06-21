@@ -38,7 +38,7 @@ pub fn get_saved_window_position(
 }
 
 #[tauri::command]
-pub fn create_main_window(app: tauri::AppHandle) -> Result<(), String> {
+pub async fn create_main_window(app: tauri::AppHandle) -> Result<(), String> {
     let _ = WebviewWindowBuilder::new(
         &app,
         "main",
@@ -49,7 +49,6 @@ pub fn create_main_window(app: tauri::AppHandle) -> Result<(), String> {
     .min_inner_size(800.0, 600.0)
     .resizable(true)
     .decorations(false)
-    .transparent(true)
     .center()
     .build()
     .map_err(|e| format!("创建主窗口失败: {}", e))?;
@@ -74,7 +73,7 @@ pub fn close_window(app: tauri::AppHandle, label: String) -> Result<(), String> 
 }
 
 #[tauri::command]
-pub fn logout_and_show_login(app: tauri::AppHandle) -> Result<(), String> {
+pub async fn logout_and_show_login(app: tauri::AppHandle) -> Result<(), String> {
     let _ = WebviewWindowBuilder::new(
         &app,
         "login",
