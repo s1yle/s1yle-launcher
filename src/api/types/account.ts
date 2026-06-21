@@ -16,3 +16,17 @@ export interface Account {
   access_token: string | null;
   refresh_token: string | null;
 }
+
+export interface AdminSession {
+  email: string;
+  admin_id: string;
+  bound_player_uuids: string[];
+  login_time: string;
+}
+
+export interface AdminAccountInfo {
+  email: string;
+  admin_id: string;
+  created_at: string;
+  bound_player_uuids: string[];
+}

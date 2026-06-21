@@ -8,6 +8,7 @@ export { default as DownloadModpack } from './Download/DownloadModpack';
 export { default as VersionDetailWithInstall } from './Download/VersionDetailWithInstall';
 export { default as MicrosoftAccount } from './AccountList/MicrosoftAccount';
 export { default as OfflineAccount } from './AccountList/OfflineAccount';
+export { default as ThirdParty } from './AccountList/ThirdParty';
 export { default as AppearanceSettings } from './Settings/AppearanceSettings';
 export { default as JavaSettings } from './Settings/JavaSettings.tsx';
 export { default as Multiplayer } from './Multiplayer';

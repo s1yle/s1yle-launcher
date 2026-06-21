@@ -3,9 +3,27 @@ import { invokeRust } from "./client";
 import { logger } from "@/helper/logger";
 import type { WindowPosition } from "./types/config";
 
-export const invokeCloseWindow = async (): Promise<string> => {
-  logger.info('调用 tauri_close_window');
-  return await invokeRust("tauri_close_window");
+export const invokeCloseWindow = async (label?: string): Promise<string> => {
+  logger.info('关闭窗口', { label });
+  if (label) {
+    return await invokeRust("close_window", { label });
+  }
+  return await invokeRust("close_window", { label: "main" });
+};
+
+export const createMainWindow = async (): Promise<void> => {
+  logger.info('创建主窗口');
+  await invokeRust("create_main_window");
+};
+
+export const closeLoginWindow = async (): Promise<void> => {
+  logger.info('关闭登录窗口');
+  await invokeRust("close_login_window");
+};
+
+export const logoutAndShowLogin = async (): Promise<void> => {
+  logger.info('退出登录，返回登录窗口');
+  await invokeRust("logout_and_show_login");
 };
 
 export const invokeSaveWindowPosition = async (

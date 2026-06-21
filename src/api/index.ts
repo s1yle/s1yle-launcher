@@ -11,6 +11,7 @@ export * from "./types/java";
 export * from "./types/font";
 
 export * from "./account";
+export * from "./admin";
 export * from "./launch";
 export * from "./download";
 export * from "./modloader";

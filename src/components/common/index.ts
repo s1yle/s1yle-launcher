@@ -147,3 +147,6 @@ export type { SliderProps } from './Slider';
 
 export { SkinAvatar } from './SkinAvatar';
 export type { SkinAvatarProps } from './SkinAvatar';
+
+export { default as RoleSelectCard } from './RoleSelectCard';
+export type { RoleSelectCardProps } from './RoleSelectCard';

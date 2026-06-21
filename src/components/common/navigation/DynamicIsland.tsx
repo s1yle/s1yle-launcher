@@ -1,8 +1,12 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Crown, User, Home, ChevronDown, HomeIcon, FileQuestionMark } from 'lucide-react';
+import { Crown, User, Home, ChevronDown, HomeIcon, FileQuestionMark, AlertTriangle, LogOut } from 'lucide-react';
 import { useUserRoleStore, UserRole } from '@/stores/userRoleStore';
+import { useAdminStore } from '@/stores/adminStore';
+import { useAccountStore } from '@/stores/accountStore';
+import { useLoginStore } from '@/stores/loginStore';
+import { logoutAndShowLogin } from '@/api/window';
 import { getNavItemsByRole, type NavItem } from '@/config/navigationConfig';
 import { autoJumpToFirstChild, findRouteByPath, routes } from '@/router/config';
 
@@ -48,6 +52,8 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
   const { currentRole, isTransitioning, switchRole } = useUserRoleStore();
   const [isExpanded, setIsExpanded] = useState(true);
   const [showRoleMenu, setShowRoleMenu] = useState(false);
+  const [showRoleGuide, setShowRoleGuide] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [bottomText, setBottomText] = useState(BOTTOM_TEXTS[0]);
   const idleTimerRef = useRef<number | null>(null);
@@ -120,6 +126,25 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
   const handleRoleSwitch = (role: UserRole) => {
     if (role === currentRole || isTransitioning) return;
 
+    // 角色切换校验
+    if (role === UserRole.ADMIN) {
+      const { isLoggedIn } = useAdminStore.getState();
+      if (!isLoggedIn) {
+        setShowRoleGuide(true);
+        setShowRoleMenu(false);
+        return;
+      }
+    }
+
+    if (role === UserRole.PLAYER) {
+      const { accounts } = useAccountStore.getState();
+      if (accounts.length === 0) {
+        setShowRoleGuide(true);
+        setShowRoleMenu(false);
+        return;
+      }
+    }
+
     const needsNavigate = location.pathname.startsWith('/');
 
     setShowRoleMenu(false);
@@ -145,6 +170,17 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
     icon: Home,
     path: '/',
     roles: [UserRole.PLAYER, UserRole.ADMIN],
+  };
+
+  const handleLogout = async () => {
+    useAdminStore.getState().logout();
+    useLoginStore.getState().setLoggedOut();
+    setShowLogoutConfirm(false);
+    try {
+      await logoutAndShowLogin();
+    } catch {
+      window.location.reload();
+    }
   };
 
   const handleDragStart = (e: React.MouseEvent) => {
@@ -264,7 +300,120 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
             />
           ))}
         </div>
+
+        {/* 退出登录按钮 */}
+        <div className="w-px h-6 bg-[var(--color-border)]/30 flex-shrink-0 z-10" />
+        <div className="relative flex-shrink-0 z-10">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowLogoutConfirm(!showLogoutConfirm);
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="p-2 rounded-full text-[var(--color-text-secondary)] hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
+            title="退出登录"
+            data-tauri-drag-region="false"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+
+          {/* 退出确认弹窗 */}
+          <AnimatePresence>
+            {showLogoutConfirm && (
+              <motion.div
+                initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                transition={{ duration: 0.15 }}
+                className="absolute top-full right-0 mt-2 w-56 p-4
+                  bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl
+                  shadow-2xl z-50"
+                data-tauri-drag-region="false"
+              >
+                <p className="text-sm text-[var(--color-text-primary)] mb-3 font-medium">
+                  确认退出登录？
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowLogoutConfirm(false);
+                    }}
+                    className="flex-1 py-1.5 rounded-lg text-xs font-medium
+                      bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)]
+                      hover:bg-[var(--color-border)] transition-colors"
+                  >
+                    取消
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleLogout();
+                    }}
+                    className="flex-1 py-1.5 rounded-lg text-xs font-medium
+                      bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+                  >
+                    退出
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
+
+      {/* 角色引导弹窗 */}
+      <AnimatePresence>
+        {showRoleGuide && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72
+              bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl
+              shadow-2xl z-50 p-4"
+            data-tauri-drag-region="false"
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-4 h-4 text-amber-400" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-sm font-semibold text-[var(--color-text-primary)] mb-1">
+                  {currentRole === UserRole.ADMIN ? '需要玩家账户' : '需要服主账号'}
+                </h4>
+                <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
+                  {currentRole === UserRole.ADMIN
+                    ? '当前没有玩家账户。请先在账户管理中添加玩家账户，再切换到玩家身份。'
+                    : '当前没有已登录的服主账号。请先在账户管理页面注册或登录服主账号。'}
+                </p>
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={() => setShowRoleGuide(false)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium
+                      bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)]
+                      hover:bg-[var(--color-border)] transition-colors"
+                  >
+                    知道了
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowRoleGuide(false);
+                      navigate('/account');
+                    }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium
+                      bg-[var(--color-primary)]/10 text-[var(--color-primary)]
+                      hover:bg-[var(--color-primary)]/20 transition-colors"
+                  >
+                    去管理
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 底部随机文本 */}
       <AnimatePresence>

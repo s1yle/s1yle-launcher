@@ -11,7 +11,7 @@ export const routes: RouteConfig[] = [
   },
   {
     path: '/account',
-    componentName: 'AccountListWithSidebar',
+        componentName: 'AccountList',
     header: { type: SidebarType.SUB, title: '账户列表', titleI18nKey: 'sidebar.accountList' },
     sidebarGroup: SidebarGroup.ACCOUNT,
     parentPath: '/',

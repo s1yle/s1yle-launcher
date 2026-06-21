@@ -11,6 +11,7 @@ export interface IconButtonProps extends Omit<HTMLMotionProps<'button'>, 'childr
   iconSize?: number;
   variant?: 'default' | 'primary' | 'danger' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
+  cursorPointer?: boolean;
   label?: string;
   iconClassName?: string;
 }
@@ -19,6 +20,7 @@ const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(({
   icon: Icon,
   iconSize = 20,
   variant = 'default',
+  cursorPointer = true,
   size = 'md',
   label,
   iconClassName,
@@ -33,26 +35,24 @@ const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(({
 
   const variantStyles = {
     default: {
-      button: 'hover:bg-surface-hover',
+      button: 'hover:bg-surface-hover active:bg-surface-hover/70',
       icon: 'group-hover:text-text-primary',
     },
     primary: {
-      button: 'bg-primary/10 hover:bg-primary/20 text-primary',
+      button: 'bg-primary/10 hover:bg-primary/20 active:bg-primary/30 text-primary',
       icon: 'text-primary group-hover:text-primary-hover',
     },
     danger: {
-      button: 'hover:bg-red-500/20',
+      button: 'hover:bg-red-500/20 active:bg-red-500/30',
       icon: 'group-hover:text-red-400',
     },
     ghost: {
-      button: 'hover:bg-surface-hover',
+      button: 'hover:bg-surface-hover active:bg-surface-hover/70',
       icon: 'group-hover:text-text-primary',
     },
   };
 
   const currentVariant = variantStyles[variant];
-  console.log('currentVariant: ', currentVariant);
-  console.log('currentVariant.button: ', currentVariant.button);
 
   return (
     <motion.button
@@ -61,6 +61,7 @@ const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(({
         'rounded-lg transition-all duration-200 flex items-center justify-center group',
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
         sizeClasses[size],
+        `${cursorPointer && "cursor-pointer"}`,
         currentVariant.button,
         className
       )}

@@ -32,7 +32,7 @@
 // 服主切换到玩家身份时，验证是否存在玩家账户
 // 根据以上实现适合的账户界面初步 ui 设计
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { BrowserRouter as Router, useLocation, useNavigate } from 'react-router-dom';
 import { routes, findRouteByPath, LayoutMode, pagesWithOwnSidebar } from './router/config';
 import { useNavStore } from './stores/navStore';
@@ -56,6 +56,10 @@ import AppMain from './AppLayouts/AppMain';
 import useLayoutStore, { LAYOUT_DEBOUNCE_DURATION, SIDEBAR_TRANSITION_DURATION } from './stores/layoutStore';
 import { DURATION } from './utils/animations';
 import useFontStore from './stores/fontStore';
+import LoginGate from './pages/Login/LoginGate';
+import { useAccountStore } from './stores/accountStore';
+import { useAdminStore } from './stores/adminStore';
+import { invokeRustFunction } from './api/client';
 
 const LAYOUT_MODES = {
   [UIMode.CLASSIC]: ClassicLayout,
@@ -245,11 +249,13 @@ const MainLayout = () => {
 };
 
 function App() {
+  const [isLoginWindow, setIsLoginWindow] = useState<boolean | null>(null);
   const initTheme = useThemeStore((s) => s.init);
   const initApp = useAppStore((s) => s.init);
   const initInstances = useInstanceStore((s) => s.init);
   const initFont = useFontStore((s) => s.init);
   const setupDownloadListeners = useDownloadStore((s) => s.setupEventListeners);
+  const initializeAccountStore = useAccountStore((s) => s.initialize);
 
   useWindowPosition();
 
@@ -258,7 +264,25 @@ function App() {
     initApp();
     initInstances();
     initFont();
-  }, [initTheme, initApp, initInstances, initFont]);
+    initializeAccountStore();
+    useAdminStore.getState();
+    invokeRustFunction("initialize_admin_system").catch(() => {});
+  }, [initTheme, initApp, initInstances, initFont, initializeAccountStore]);
+
+  // 检测是否为登录窗口
+  useEffect(() => {
+    const checkWindow = async () => {
+      try {
+        const { getCurrentWebviewWindow } = await import('@tauri-apps/api/webviewWindow');
+        const appWindow = getCurrentWebviewWindow();
+        setIsLoginWindow(appWindow.label === 'login');
+      } catch {
+        // 非 Tauri 环境（浏览器开发），默认显示登录
+        setIsLoginWindow(true);
+      }
+    };
+    checkWindow();
+  }, []);
 
   useEffect(() => {
     const cleanup = setupDownloadListeners();
@@ -277,6 +301,20 @@ function App() {
       window.removeEventListener('role-switch', handleRoleSwitch as EventListener);
     };
   }, []);
+
+  // 登录窗口：渲染 LoginGate（无路由）
+  if (isLoginWindow === true) {
+    return <LoginGate />;
+  }
+
+  // 还在检测中：显示加载
+  if (isLoginWindow === null) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-[var(--color-surface)]">
+        <div className="w-8 h-8 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <Router>
