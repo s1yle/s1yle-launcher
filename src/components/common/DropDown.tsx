@@ -139,7 +139,7 @@ const DropDown = ({
     <AnimatePresence>
       <motion.div
         ref={containerRef}
-        className={`relative ${buttonWidth} ${buttonHeight}`}
+        className={`relative cursor-pointer ${buttonWidth} ${buttonHeight}`}
         style={styleName}
       >
         <motion.button

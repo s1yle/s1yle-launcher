@@ -1,8 +1,6 @@
-import { motion } from 'framer-motion';
-import { staggerContainer, staggerSection } from '@/utils/animations';
 import { UIMode, useUIModeStore } from '../../stores/uiModeStore';
 import TerminalThemePreview from '../../components/common/TerminalThemePreview';
-import { Toggle, LoadingSurface } from '../../components/common';
+import { Toggle, LoadingSurface, Reveal, Page, PageSection } from '../../components/common';
 import { SettingsPanel } from '@/components/common/SettingsPanel/SettingPanel';
 import { useState, useCallback, useRef, useMemo } from 'react';
 import DropDown from '@/components/common/DropDown';
@@ -164,13 +162,8 @@ const ApearanceSettings = () => {
   const currentFitOption = IMAGE_FIT_OPTIONS.find((o) => o.id === (config.imageFit || 'cover'));
 
   return (
-    <motion.div
-      className="p-6 max-w-5xl mx-auto"
-      variants={staggerContainer}
-      initial="initial"
-      animate="animate"
-    >
-      <motion.div variants={staggerSection}>
+    <Page className="p-6 max-w-5xl mx-auto">
+      <PageSection>
         <SettingsPanel label="布局">
           <Toggle
             checked={uiMode == UIMode.CLASSIC}
@@ -209,9 +202,9 @@ const ApearanceSettings = () => {
             />
           </SettingsPanel.Item>
         </SettingsPanel>
-      </motion.div>
+      </PageSection>
 
-      <motion.div variants={staggerSection}>
+      <PageSection>
         <SettingsPanel label="加载动画">
           <SettingsPanel.Item>
             <SettingsPanel.DropDown
@@ -288,9 +281,9 @@ const ApearanceSettings = () => {
             </div>
           </SettingsPanel.Item>
         </SettingsPanel>
-      </motion.div>
+      </PageSection>
 
-      <motion.div variants={staggerSection}>
+      <Reveal direction="up" distance={20} duration={0.5}>
         <SettingsPanel label="主题">
           <SettingsPanel.Item shouldLoad={true} loadingKey='appearacne:theme'>
             <SettingsPanel.Sub label='终端主题'>
@@ -303,9 +296,9 @@ const ApearanceSettings = () => {
             </SettingsPanel.Sub>
           </SettingsPanel.Item>
         </SettingsPanel>
-      </motion.div>
+      </Reveal>
 
-      <motion.div variants={staggerSection}>
+      <Reveal direction="up" distance={20} duration={0.5} delay={0.1}>
         <SettingsPanel label="背景">
           <SettingsPanel.Item>
             <SettingsPanel.DropDown
@@ -462,8 +455,8 @@ const ApearanceSettings = () => {
             </div>
           </SettingsPanel.Item>
         </SettingsPanel>
-      </motion.div>
-    </motion.div>
+      </Reveal>
+    </Page>
   );
 };
 

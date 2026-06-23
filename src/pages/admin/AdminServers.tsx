@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Animated } from '@/components/common';
+import { Animated, Reveal } from '@/components/common';
 import { Server, Plus, MoreVertical, Settings, Users, Activity } from 'lucide-react';
 import { DURATION, microInteractions } from '@/utils/animations';
 
@@ -48,6 +48,7 @@ const AdminServers = () => {
         </div>
 
         {/* 服务器列表 */}
+        <Reveal direction="up" distance={20} duration={0.5}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {mockServers.map((server, index) => (
             <Animated
@@ -142,6 +143,7 @@ const AdminServers = () => {
             </Animated>
           ))}
         </div>
+        </Reveal>
       </Animated>
     </div>
   );

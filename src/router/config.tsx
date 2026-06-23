@@ -25,6 +25,7 @@ import { routes } from './routes';
 import { sidebarMenuItems } from './sidebarMenus';
 import type { RouteConfig, SidebarMenuItem } from './models';
 import { SidebarGroup } from './models';
+import { useLastVisitedStore } from '../stores/lastVisitedStore';
 
 export const pagesWithOwnSidebar = [
   '/account',
@@ -84,11 +85,16 @@ export const matchRoutePath = (routePath: string, actualPath: string): boolean =
 };
 
 
-export const autoJumpToFirstChild = (route: RouteConfig, onMenuClick: (path:string) => any ) => {
-  if (route.children) {
-    const firstChildPath = route.children[0].path;
-    if (firstChildPath !== location.pathname) {
-      if (onMenuClick) onMenuClick(firstChildPath);
-    }
+export const autoJumpToFirstChild = (route: RouteConfig, onMenuClick: (path: string) => any) => {
+  if (!route.path || !route.children?.length) return;
+
+  const lastVisited = useLastVisitedStore.getState().getLastVisited(route.path);
+  const validChildren = route.children.map(c => c.path);
+  const targetPath = (lastVisited && validChildren.includes(lastVisited))
+    ? lastVisited
+    : route.children[0].path;
+
+  if (targetPath !== location.pathname && onMenuClick) {
+    onMenuClick(targetPath);
   }
 }

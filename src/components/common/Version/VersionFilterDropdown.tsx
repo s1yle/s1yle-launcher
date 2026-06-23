@@ -66,7 +66,7 @@ const VersionFilterDropdownInner = ({
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all'
+          'flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all cursor-pointer'
         )}
         style={{ 
           backgroundColor: 'var(--color-surface-solid)', 
@@ -107,7 +107,7 @@ const VersionFilterDropdownInner = ({
             <button
               key={option.value}
               onClick={() => handleOptionClick(option.value)}
-              className="w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors"
+              className="w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors cursor-pointer"
               style={{ 
                 backgroundColor: value === option.value ? 'var(--color-surface-active)' : 'transparent',
                 color: value === option.value ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',

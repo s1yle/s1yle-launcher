@@ -1,7 +1,7 @@
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import { getSidebarGroups, routes, sidebarMenuItems, SidebarMenuItem, findRouteByPath, SidebarGroup, pagesWithOwnSidebar, autoJumpToFirstChild } from '../../../router/config';
 import BaseSidebarLayout from './layouts/BaseSidebarLayout';
 import { logger } from '../../../helper/logger';
@@ -215,10 +215,25 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: Sm
     // };
   }
 
-  const sidebarTransition = {
-    x: { duration: DURATION.MEDIUM, ease: 'easeInOut' as const },
-    opacity: { duration: DURATION.FAST, ease: 'easeOut' as const },
-  };
+  const sidebarVariants = {
+    initial: { opacity: 0, x: -16 },
+    animate: {
+      opacity: 1,
+      x: 0,
+      transition: {
+        x: { type: 'spring', stiffness: 400, damping: 22, delay: DURATION.PAGE_TRANSITION },
+        opacity: { duration: DURATION.FAST, ease: 'easeOut' as const, delay: DURATION.PAGE_TRANSITION },
+      },
+    },
+    exit: {
+      opacity: 0,
+      x: 16,
+      transition: {
+        x: { duration: DURATION.FAST, ease: 'easeIn' as const },
+        opacity: { duration: DURATION.FAST, ease: 'easeIn' as const },
+      },
+    },
+  } satisfies Variants;
 
   const renderSidebar = (items: SidebarMenuItem[]) => {
     return (
@@ -227,10 +242,10 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: Sm
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
-              initial={{ opacity: 0, x: -12 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 12 }}
-              transition={sidebarTransition}
+              variants={sidebarVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
               className="flex flex-col"
             >
               <BaseSidebarContent

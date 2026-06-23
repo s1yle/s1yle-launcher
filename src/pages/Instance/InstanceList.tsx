@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X } from 'lucide-react';
 import { useInstanceStore } from '../../stores/instanceStore';
 import { openFolder } from '../../helper/rustInvoke';
-import { InstanceListItem, EmptyState, useNotification, IconButton, Skeleton } from '../../components/common';
+import { InstanceListItem, EmptyState, useNotification, IconButton, Skeleton, Page, PageSection } from '../../components/common';
 import Instance from './Instance';
 import BottomBar from '@/components/common/BottomBar/BottomBar';
 import { logger } from '@/helper/logger';
@@ -132,7 +132,7 @@ const InstanceList: React.FC = () => {
     }
 
     if (filteredInstances.length === 0) {
-      console.log('[renderContent] 没有实例', { 
+      console.log('[renderContent] 没有实例', {
         filteredInstances: filteredInstances.length,
         instances: instances.length,
         searchQuery,
@@ -149,7 +149,7 @@ const InstanceList: React.FC = () => {
     console.log('[renderContent] 渲染实例列表', { count: filteredInstances.length });
 
     return (
-      <motion.div 
+      <motion.div
         className="h-full overflow-y-auto scrollbar-hide-x space-y-2"
         variants={staggerContainer}
         initial="initial"
@@ -167,7 +167,7 @@ const InstanceList: React.FC = () => {
                 instance={instance}
                 selected={instance.id === selectedInstanceId}
                 onSelect={() => handleSelect(instance.id)}
-                onRename={() => {}}
+                onRename={() => { }}
                 onDelete={() => handleDelete(instance.id, instance.name)}
                 onOpenFolder={() => handleOpenFolder(instance.path)}
                 index={index}
@@ -180,32 +180,34 @@ const InstanceList: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <Instance
-        knownFolders={knownFolders}
-        selectedFolderId={selectedFolderId}
-        refresh={refresh}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        filteredInstances={filteredInstances}
-        instances={instances}
-        error={error}
-        renderContent={renderContent}
-        instancesPath={instancesPath}
-        showDuplicateModal={showDuplicateModal}
-        duplicateName={duplicateName}
-        setDuplicateName={setDuplicateName}
-        handleConfirmDuplicate={handleConfirmDuplicate}
-        setShowDuplicateModal={setShowDuplicateModal}
-        setDuplicateTargetId={setDuplicateTargetId}
-      />
+    <Page className="flex flex-col h-full">
+      <PageSection>
+        <Instance
+          knownFolders={knownFolders}
+          selectedFolderId={selectedFolderId}
+          refresh={refresh}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          filteredInstances={filteredInstances}
+          instances={instances}
+          error={error}
+          renderContent={renderContent}
+          instancesPath={instancesPath}
+          showDuplicateModal={showDuplicateModal}
+          duplicateName={duplicateName}
+          setDuplicateName={setDuplicateName}
+          handleConfirmDuplicate={handleConfirmDuplicate}
+          setShowDuplicateModal={setShowDuplicateModal}
+          setDuplicateTargetId={setDuplicateTargetId}
+        />
+      </PageSection>
 
       <BottomBar
         dir='instances.instanceDir'
         cmdOpen='common.open'
         path={currentPath}
       />
-    </div>
+    </Page>
   );
 };
 

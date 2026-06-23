@@ -24,7 +24,10 @@ const AppHeader = ({
 
         {/* 顶部拖曳区域 - 覆盖灵动岛两侧的空间 */}
         <div
-          className="fixed top-0 left-0 right-0 h-20 z-40"
+          // 纠结：到底是要背景色区分开好，还是不许分开好？？？？
+          className="fixed top-0 left-0 right-0 h-20 z-40 
+            bg-(--color-bg-surface) border-b border-(--color-border)
+          "
           data-tauri-drag-region="true"
         >
           <div className="absolute inset-0" data-tauri-drag-region />

@@ -4,7 +4,7 @@ import { User, UserPlus, Trash2, LogIn, Star, Server, Loader2, UserMinus } from 
 import { useAccountStore } from "@/stores/accountStore";
 import { useAdminStore } from "@/stores/adminStore";
 import { useLoadingAction } from "@/hooks/useLoadingAction";
-import { LoadingSurface } from "@/components/common";
+import { LoadingSurface, Reveal } from "@/components/common";
 import Popup from "@/components/Popup";
 import { logger } from "@/helper/logger";
 
@@ -111,117 +111,121 @@ const AccountList = () => {
   return (
     <div className="p-4 space-y-4">
       <LoadingSurface loadingKey="account:list" skeleton="list" skeletonCount={4}>
-        {/* 当前账户 */}
-        <div className="p-4 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-border)]">
-          <h3 className="text-xs font-medium text-[var(--color-text-secondary)] mb-3 uppercase tracking-wider">
-            当前账户
-          </h3>
-          {currentAccount ? (
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--color-primary)]/80 to-[var(--color-primary)] flex items-center justify-center text-white font-semibold">
-                {currentAccount.name.charAt(0).toUpperCase()}
-              </div>
-              <div className="flex-1">
-                <div className="font-medium text-[var(--color-text-primary)]">
-                  {currentAccount.name}
-                </div>
-                <div className="text-xs text-[var(--color-text-secondary)]">
-                  {currentAccount.account_type === "microsoft" ? "Microsoft 账户" : "离线账户"}
-                  {isCurrentBound && " · 已绑定服主"}
-                </div>
-              </div>
-              {adminLoggedIn && (
-                <button
-                  onClick={isCurrentBound ? handleUnbindPlayer : handleBindPlayer}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    isCurrentBound
-                      ? "bg-red-500/10 text-red-400 hover:bg-red-500/20"
-                      : "bg-purple-500/10 text-purple-400 hover:bg-purple-500/20"
-                  }`}
-                >
-                  {isCurrentBound ? "解绑服主" : "绑定服主"}
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="text-sm text-[var(--color-text-secondary)]">未选择账户</div>
-          )}
-        </div>
-
-        {/* 账户列表 */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">
-              账户列表 ({accounts.length})
+        <Reveal direction="up" distance={16} duration={0.4}>
+          <div className="p-4 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-border)]">
+            <h3 className="text-xs font-medium text-[var(--color-text-secondary)] mb-3 uppercase tracking-wider">
+              当前账户
             </h3>
-            <button
-              onClick={() => setShowAddPopup(true)}
-              className="flex items-center gap-1 text-xs text-[var(--color-primary)] hover:text-[var(--color-primary)]/80 transition-colors"
-            >
-              <UserPlus className="w-3.5 h-3.5" />
-              <span>添加账户</span>
-            </button>
-          </div>
-
-          <div className="space-y-2">
-            {accounts.map((acc) => (
-              <div
-                key={acc.uuid}
-                className={`p-3 rounded-lg border transition-all duration-200 flex items-center gap-3 ${
-                  currentAccount?.uuid === acc.uuid
-                    ? "bg-[var(--color-primary)]/5 border-[var(--color-primary)]/30"
-                    : "bg-[var(--color-surface-hover)] border-[var(--color-border)] hover:border-[var(--color-primary)]/30"
-                }`}
-              >
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[var(--color-primary)]/80 to-[var(--color-primary)] flex items-center justify-center text-white font-semibold text-sm">
-                  {acc.name.charAt(0).toUpperCase()}
+            {currentAccount ? (
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--color-primary)]/80 to-[var(--color-primary)] flex items-center justify-center text-white font-semibold">
+                  {currentAccount.name.charAt(0).toUpperCase()}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-[var(--color-text-primary)] text-sm truncate">
-                    {acc.name}
+                <div className="flex-1">
+                  <div className="font-medium text-[var(--color-text-primary)]">
+                    {currentAccount.name}
                   </div>
-                  <div className="text-[11px] text-[var(--color-text-secondary)]">
-                    {acc.account_type === "microsoft" ? "Microsoft" : "离线"}
-                    {" · "}上次 {formatTime(acc.last_login_time)}
+                  <div className="text-xs text-[var(--color-text-secondary)]">
+                    {currentAccount.account_type === "microsoft" ? "Microsoft 账户" : "离线账户"}
+                    {isCurrentBound && " · 已绑定服主"}
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  {currentAccount?.uuid !== acc.uuid && (
-                    <button
-                      onClick={() => handleSetCurrent(acc.uuid)}
-                      className="p-1.5 rounded-lg hover:bg-[var(--color-primary)]/10 text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors"
-                      title="切换到此账户"
-                    >
-                      <LogIn className="w-3.5 h-3.5" />
-                    </button>
-                  )}
+                {adminLoggedIn && (
                   <button
-                    onClick={() => setShowDeleteConfirm(acc.uuid)}
-                    className="p-1.5 rounded-lg hover:bg-red-500/10 text-[var(--color-text-secondary)] hover:text-red-400 transition-colors"
-                    title="删除账户"
+                    onClick={isCurrentBound ? handleUnbindPlayer : handleBindPlayer}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      isCurrentBound
+                        ? "bg-red-500/10 text-red-400 hover:bg-red-500/20"
+                        : "bg-purple-500/10 text-purple-400 hover:bg-purple-500/20"
+                    }`}
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    {isCurrentBound ? "解绑服主" : "绑定服主"}
                   </button>
-                </div>
+                )}
               </div>
-            ))}
-            {accounts.length === 0 && (
-              <div className="text-center py-8 text-[var(--color-text-secondary)]">
-                <User className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">暂无账户</p>
-                <button
-                  onClick={() => setShowAddPopup(true)}
-                  className="mt-2 text-xs text-[var(--color-primary)] hover:underline"
-                >
-                  添加第一个账户
-                </button>
-              </div>
+            ) : (
+              <div className="text-sm text-[var(--color-text-secondary)]">未选择账户</div>
             )}
           </div>
-        </div>
+        </Reveal>
+
+        <Reveal direction="up" distance={16} duration={0.4} delay={0.1}>
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">
+                账户列表 ({accounts.length})
+              </h3>
+              <button
+                onClick={() => setShowAddPopup(true)}
+                className="flex items-center gap-1 text-xs text-[var(--color-primary)] hover:text-[var(--color-primary)]/80 transition-colors"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>添加账户</span>
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              {accounts.map((acc, index) => (
+                <Reveal key={acc.uuid} direction="up" distance={12} duration={0.4} delay={0.15 + index * 0.04}>
+                  <div
+                    className={`p-3 rounded-lg border transition-all duration-200 flex items-center gap-3 ${
+                      currentAccount?.uuid === acc.uuid
+                        ? "bg-[var(--color-primary)]/5 border-[var(--color-primary)]/30"
+                        : "bg-[var(--color-surface-hover)] border-[var(--color-border)] hover:border-[var(--color-primary)]/30"
+                    }`}
+                  >
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[var(--color-primary)]/80 to-[var(--color-primary)] flex items-center justify-center text-white font-semibold text-sm">
+                      {acc.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-[var(--color-text-primary)] text-sm truncate">
+                        {acc.name}
+                      </div>
+                      <div className="text-[11px] text-[var(--color-text-secondary)]">
+                        {acc.account_type === "microsoft" ? "Microsoft" : "离线"}
+                        {" · "}上次 {formatTime(acc.last_login_time)}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {currentAccount?.uuid !== acc.uuid && (
+                        <button
+                          onClick={() => handleSetCurrent(acc.uuid)}
+                          className="p-1.5 rounded-lg hover:bg-[var(--color-primary)]/10 text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors"
+                          title="切换到此账户"
+                        >
+                          <LogIn className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setShowDeleteConfirm(acc.uuid)}
+                        className="p-1.5 rounded-lg hover:bg-red-500/10 text-[var(--color-text-secondary)] hover:text-red-400 transition-colors"
+                        title="删除账户"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </Reveal>
+              ))}
+              {accounts.length === 0 && (
+                <div className="text-center py-8 text-[var(--color-text-secondary)]">
+                  <User className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">暂无账户</p>
+                  <button
+                    onClick={() => setShowAddPopup(true)}
+                    className="mt-2 text-xs text-[var(--color-primary)] hover:underline"
+                  >
+                    添加第一个账户
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </Reveal>
 
         {/* 服主信息 */}
         {adminLoggedIn && adminSession && (
+          <Reveal direction="up" distance={16} duration={0.4} delay={0.2}>
           <div className="p-4 rounded-xl bg-purple-500/5 border border-purple-500/20">
             <div className="flex items-center gap-2 mb-2">
               <Server className="w-4 h-4 text-purple-400" />
@@ -246,6 +250,7 @@ const AccountList = () => {
               </div>
             </div>
           </div>
+          </Reveal>
         )}
       </LoadingSurface>
 

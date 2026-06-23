@@ -16,7 +16,7 @@ const BaseSidebarLayout = ({
 }: BaseSidebarLayoutProps) => {
   return (
     <aside
-      className={`BaseSidebarLayout w-full h-full flex flex-col bg-transparent`}
+      className={`BaseSidebarLayout w-full h-full flex flex-col bg-transparent pt-3`}
     >
       {header && (
         <div className="border-b border-[var(--color-border)] p-3">

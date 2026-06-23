@@ -36,6 +36,7 @@ import { useEffect, useCallback, useState, useRef, useMemo } from 'react';
 import { BrowserRouter as Router, useLocation, useNavigate } from 'react-router-dom';
 import { routes, findRouteByPath, LayoutMode, pagesWithOwnSidebar, SidebarGroup } from './router/config';
 import { useNavStore } from './stores/navStore';
+import { useLastVisitedStore } from './stores/lastVisitedStore';
 import { useThemeStore } from './stores/themeStore';
 import { useAppStore } from './stores/appStore';
 import { useInstanceStore } from './stores/instanceStore';
@@ -118,8 +119,28 @@ const MainLayout = () => {
   };
 
   useEffect(() => {
-    setCurrentPath(location.pathname);
-    logger.info(`Navigated to ${location.pathname}`);
+    const currentPath = location.pathname;
+    setCurrentPath(currentPath);
+    logger.info(`Navigated to ${currentPath}`);
+
+    for (const route of routes) {
+      if (!route.path || !route.children?.length || !route.autoNavigateToFirstChild) continue;
+      for (const child of route.children) {
+        if (!child.path) continue;
+        const childSegments = child.path.split('/');
+        const actualSegments = currentPath.split('/');
+        if (childSegments.length !== actualSegments.length) continue;
+        let matches = true;
+        for (let i = 0; i < childSegments.length; i++) {
+          if (childSegments[i].startsWith(':')) continue;
+          if (childSegments[i] !== actualSegments[i]) { matches = false; break; }
+        }
+        if (matches) {
+          useLastVisitedStore.getState().setLastVisited(route.path, child.path);
+          break;
+        }
+      }
+    }
   }, [location.pathname, setCurrentPath]);
 
 
@@ -216,7 +237,7 @@ const MainLayout = () => {
   }
 
   return (
-    <div className="h-screen flex flex-col " onContextMenu={handleContextMenu}>
+    <div className="renderpage h-screen flex flex-col" onContextMenu={handleContextMenu}>
       {renderPage()}
     </div >
   );

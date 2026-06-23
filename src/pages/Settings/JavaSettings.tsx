@@ -1,6 +1,4 @@
-import { motion } from 'framer-motion';
-import { staggerContainer, staggerSection } from '@/utils/animations';
-import { ListItem, SettingsPanel, LoadingSurface } from "@/components/common";
+import { ListItem, SettingsPanel, LoadingSurface, Page, PageSection } from "@/components/common";
 import { FLEX_DIR } from "@/components/common/settings/ListItem";
 import { JavaInstallation, scanJavaInstallations } from "@/helper/rustInvoke";
 import { useLoadingAction } from "@/hooks/useLoadingAction";
@@ -44,20 +42,15 @@ const JavaSettings = () => {
   }
 
   return (
-    <motion.div
-      className="p-3"
-      variants={staggerContainer}
-      initial="initial"
-      animate="animate"
-    >
-      <motion.div variants={staggerSection}>
+    <Page className="p-3">
+      <PageSection>
         <SettingsPanel label="Java">
           <LoadingSurface loadingKey="java:scan" skeleton="list" skeletonCount={(versions ?? []).length}>
             {(versions ?? []).map(renderJavaListItem)}
           </LoadingSurface>
         </SettingsPanel>
-      </motion.div>
-    </motion.div>
+      </PageSection>
+    </Page>
   )
 }
 

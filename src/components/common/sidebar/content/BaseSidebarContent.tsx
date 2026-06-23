@@ -8,7 +8,7 @@ import { type SidebarMenuItem } from '../../../../router/config';
 import { useInstanceStore } from '../../../../stores/instanceStore';
 import ContextMenu, { ContextMenuItemData, useContextMenu } from '../../ContextMenu';
 import clsx from 'clsx';
-import { DURATION, EASING, microInteractions, transitions } from '../../../../utils/animations';
+import { DURATION, EASING, microInteractions, transitions, sidebarStaggerContainer, sidebarStaggerItem } from '../../../../utils/animations';
 import { Animated } from '../../Animated';
 import { renderIcon } from '../../../../utils/iconRenderer';
 
@@ -224,11 +224,7 @@ const BaseSidebarContent = ({
       const isExpanded = expandedGroups.has(item.id);
 
       return (
-        <Animated
-          fade
-          delay={index * 0.03}
-          duration={DURATION.SLOW}
-        >
+        <motion.div variants={sidebarStaggerItem} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
           <button
             onClick={() => item.children?.length && toggleGroup(item.id)}
             className="w-full flex items-center 
@@ -250,7 +246,7 @@ const BaseSidebarContent = ({
           <Animated accordion={isExpanded && !!item.children} className="space-y-0.5">
             {item.children?.map((child, i) => renderItem(child, level + 1, index + i + 1))}
           </Animated>
-        </Animated>
+        </motion.div>
       );
     }
 
@@ -258,11 +254,9 @@ const BaseSidebarContent = ({
     if (item.customRender) {
       const CustomComponent = item.customRender;
       return (
-        <Animated
-          fade
-          slide="left"
-          delay={index * 0.03}
-          duration={DURATION.SLOW}
+        <motion.div
+          variants={sidebarStaggerItem}
+          transition={{ type: 'spring', stiffness: 400, damping: 20 }}
           style={{
             padding: level > 0 ? `${level * 0.75}rem` : `0.75rem`,
           }}
@@ -286,16 +280,14 @@ const BaseSidebarContent = ({
           <Animated accordion={hasChildren && isExpanded && !!item.children} className="space-y-0.5 mt-0.5">
             {item.children?.map((child, i) => renderItem(child, level + 1, index + i + 1))}
           </Animated>
-        </Animated>
+        </motion.div>
       );
     }
 
     return (
-      <Animated
-        fade
-        slide="left"
-        delay={index * 0.03}
-        duration={DURATION.SLOW}
+      <motion.div
+        variants={sidebarStaggerItem}
+        transition={{ type: 'spring', stiffness: 400, damping: 20 }}
         className='BaseSidebarContent'
       >
         <motion.button
@@ -391,7 +383,7 @@ const BaseSidebarContent = ({
         <Animated accordion={hasChildren && !isActionWithContext && isExpanded && !!item.children} className="space-y-0.5 mt-0.5">
           {item.children?.map((child, i) => renderItem(child, level + 1, index + i + 1))}
         </Animated>
-      </Animated>
+      </motion.div>
     );
   };
 
@@ -406,9 +398,14 @@ const BaseSidebarContent = ({
         </div>
       )}
 
-      <div className="space-y-0.5">
+      <motion.div
+        className="space-y-0.5"
+        variants={sidebarStaggerContainer}
+        initial="initial"
+        animate="animate"
+      >
         {items.map((item, index) => renderItem(item, 0, index))}
-      </div>
+      </motion.div>
 
       <ContextMenu
         items={getContextMenuItems()}

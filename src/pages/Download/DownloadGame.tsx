@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { useDownloadStore } from '../../stores/downloadStore';
 import { GameVersion, openFolder, openUrl } from '../../helper/rustInvoke';
-import { VersionListItem, VersionFilterDropdown, EmptyState, useNotification, VirtualList } from '../../components/common';
+import { VersionListItem, VersionFilterDropdown, EmptyState, useNotification, VirtualList, Page, PageSection } from '../../components/common';
 import { useNavStore } from '../../stores/navStore';
 import { getWikiUrl } from '../../utils/modloaderCompat';
 import { VersionCategory, filterVersionsByCategory, debugVersionTypes } from '../../utils/versionFilter';
@@ -18,31 +18,31 @@ const DownloadGame: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const setCurrentPath = useNavStore((s) => s.setCurrentPath);
-const {
-  manifest,
-  installedVersions,
-  downloadingVersions,
-  completedVersions,
-  basePath,
-  loading,
-  error,
-} = useDownloadStore(
-  useShallow(s => ({
-    manifest: s.manifest,
-    installedVersions: s.installedVersions,
-    downloadingVersions: s.downloadingVersions,
-    completedVersions: s.completedVersions,
-    basePath: s.basePath,
-    loading: s.loading,
-    error: s.error,
-  }))
-);
+  const {
+    manifest,
+    installedVersions,
+    downloadingVersions,
+    completedVersions,
+    basePath,
+    loading,
+    error,
+  } = useDownloadStore(
+    useShallow(s => ({
+      manifest: s.manifest,
+      installedVersions: s.installedVersions,
+      downloadingVersions: s.downloadingVersions,
+      completedVersions: s.completedVersions,
+      basePath: s.basePath,
+      loading: s.loading,
+      error: s.error,
+    }))
+  );
 
-// 函数引用永不变化，单独取出不导致重渲染
-const loadManifest = useDownloadStore(s => s.loadManifest);
-const loadInstalledVersions = useDownloadStore(s => s.loadInstalledVersions);
-const loadBasePath = useDownloadStore(s => s.loadBasePath);
-const downloadVersion = useDownloadStore(s => s.downloadVersion);
+  // 函数引用永不变化，单独取出不导致重渲染
+  const loadManifest = useDownloadStore(s => s.loadManifest);
+  const loadInstalledVersions = useDownloadStore(s => s.loadInstalledVersions);
+  const loadBasePath = useDownloadStore(s => s.loadBasePath);
+  const downloadVersion = useDownloadStore(s => s.downloadVersion);
 
   const { error: notifyError, success, info } = useNotification();
 
@@ -91,9 +91,9 @@ const downloadVersion = useDownloadStore(s => s.downloadVersion);
     return versions;
   }, [manifest?.versions, filter, searchQuery]);
 
-  const installedSet = useMemo(() => 
+  const installedSet = useMemo(() =>
     new Set(installedVersions),
-  [installedVersions]);
+    [installedVersions]);
 
   const downloadingSet = useMemo(() => {
     const set = new Set<string>();
@@ -105,9 +105,9 @@ const downloadVersion = useDownloadStore(s => s.downloadVersion);
     return set;
   }, [downloadingVersions]);
 
-  const completedSet = useMemo(() => 
+  const completedSet = useMemo(() =>
     new Set(completedVersions),
-  [completedVersions]);
+    [completedVersions]);
 
   const handleVersionClick = useCallback((version: GameVersion) => {
     navigate(`/download/game/${encodeURIComponent(version.id)}`);
@@ -153,11 +153,11 @@ const downloadVersion = useDownloadStore(s => s.downloadVersion);
   const isLoading = loading && !manifest;
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <Page className="flex flex-col h-full min-h-0">
 
       <div className="flex-1 min-h-0 px-0 py-2 overflow-hidden">
         <div className="h-full min-h-0 flex flex-col">
-          <div className="flex flex-col sm:flex-row gap-3 mb-3 flex-shrink-0 px-4">
+          <PageSection className="flex flex-col sm:flex-row gap-3 mb-3 flex-shrink-0 px-4">
             <div className="flex-1">
               <input
                 type="text"
@@ -165,8 +165,8 @@ const downloadVersion = useDownloadStore(s => s.downloadVersion);
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 className="w-full px-4 py-2 rounded-lg text-sm transition-colors"
-                style={{ 
-                  backgroundColor: 'var(--color-surface-solid)', 
+                style={{
+                  backgroundColor: 'var(--color-surface-solid)',
                   borderColor: 'var(--color-border)',
                   color: 'var(--color-text-primary)',
                 }}
@@ -177,19 +177,22 @@ const downloadVersion = useDownloadStore(s => s.downloadVersion);
               onChange={setFilter}
               versions={manifest?.versions || []}
             />
-          </div>
-          
+          </PageSection>
+
           {manifest?.latest && (
-            <div className="p-2 rounded-lg mb-2 flex-shrink-0 px-4"
-              style={{ backgroundColor: 'var(--color-primary-bg)', borderColor: 'var(--color-primary)', borderWidth: '1px', borderStyle: 'solid' }}
-            >
-              <p className="text-sm" style={{ color: 'var(--color-primary)' }}>
-                {t('download.latestRelease')}: <span className="font-mono font-bold">{manifest.latest.release}</span>
-                {manifest.latest.snapshot !== manifest.latest.release && (
-                  <> | {t('download.latestSnapshot')}: <span className="font-mono font-bold">{manifest.latest.snapshot}</span></>
-                )}
-              </p>
-            </div>
+
+            <PageSection>
+              <div className="p-2 rounded-lg flex-shrink-0 px-4 mx-5"
+                style={{ backgroundColor: 'var(--color-primary-bg)', borderColor: 'var(--color-primary)', borderWidth: '1px', borderStyle: 'solid' }}
+              >
+                <p className="text-sm" style={{ color: 'var(--color-primary)' }}>
+                  {t('download.latestRelease')}: <span className="font-mono font-bold">{manifest.latest.release}</span>
+                  {manifest.latest.snapshot !== manifest.latest.release && (
+                    <> | {t('download.latestSnapshot')}: <span className="font-mono font-bold">{manifest.latest.snapshot}</span></>
+                  )}
+                </p>
+              </div>
+            </PageSection>
           )}
 
           {isLoading ? (
@@ -203,11 +206,13 @@ const downloadVersion = useDownloadStore(s => s.downloadVersion);
               <span className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>{t('common.loading')}</span>
             </div>
           ) : versionsToShow.length === 0 ? (
-            <EmptyState
-              icon="search"
-              title={t('download.noVersion')}
-              description={t('download.noVersionDesc')}
-            />
+            <PageSection>
+              <EmptyState
+                icon="search"
+                title={t('download.noVersion')}
+                description={t('download.noVersionDesc')}
+              />
+            </PageSection>
           ) : (
             <div className="flex-1 min-h-0 px-4">
               <VirtualList
@@ -231,8 +236,8 @@ const downloadVersion = useDownloadStore(s => s.downloadVersion);
         path={basePath}
         handleOpenDownloadFolder={handleOpenDownloadFolder}
       />
-      
-    </div>
+
+    </Page>
   );
 };
 

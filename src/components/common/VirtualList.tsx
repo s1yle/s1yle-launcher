@@ -1,4 +1,6 @@
 import React, { useState, useRef, useCallback, useMemo, memo } from 'react';
+import { Page, PageSection } from './Page';
+import { Reveal } from './Reveal';
 
 export interface VirtualListProps<T> {
   items: T[];
@@ -27,9 +29,9 @@ function VirtualListInner<T>({
   }, []);
 
   const totalHeight = items.length * itemHeight;
-  
+
   const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
-  const endIndex = items.length > 0 
+  const endIndex = items.length > 0
     ? Math.min(items.length - 1, Math.ceil((scrollTop + (typeof height === 'number' ? height : 400)) / itemHeight) + overscan)
     : -1;
 
@@ -61,21 +63,25 @@ function VirtualListInner<T>({
       className={`${className || ''} scrollbar-hide-x pt-3`}
       style={{
         height,
-        overflowY: 'auto',
-        overflowX: 'hidden',
+        // overflowY: 'auto',
+        // overflowX: 'hidden',
         position: 'relative',
         ...style,
       }}
     >
-      {items.length > 0 && (
-        <div style={{ height: totalHeight, position: 'relative' }}>
-          {visibleItems.map(({ item, index, style: itemStyle }) => (
-            <div key={index} style={itemStyle}>
-              {renderItem(item, index, itemStyle)}
+      <Page>
+          {items.length > 0 && (
+            <div style={{ height: totalHeight, position: 'relative' }}>
+              {visibleItems.map(({ item, index, style: itemStyle }) => (
+                <PageSection>
+                  <div key={index} style={itemStyle}>
+                    {renderItem(item, index, itemStyle)}
+                  </div>
+                </PageSection>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+          )}
+      </Page>
     </div>
   );
 }

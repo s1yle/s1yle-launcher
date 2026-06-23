@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Animated } from '@/components/common';
+import { Animated, Reveal } from '@/components/common';
 import { Upload, FileText, FolderOpen, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import { useState, useCallback } from 'react';
 import { DURATION, microInteractions, transitions } from '@/utils/animations';
@@ -85,6 +85,7 @@ const AdminUpload = () => {
           </p>
         </div>
 
+        <Reveal direction="up" distance={20} duration={0.5}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 上传区域 */}
           <Animated
@@ -264,6 +265,7 @@ const AdminUpload = () => {
             </button>
           </Animated>
         </div>
+        </Reveal>
       </Animated>
     </div>
   );

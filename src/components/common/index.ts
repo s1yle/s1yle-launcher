@@ -150,3 +150,9 @@ export type { SkinAvatarProps } from './SkinAvatar';
 
 export { default as RoleSelectCard } from './RoleSelectCard';
 export type { RoleSelectCardProps } from './RoleSelectCard';
+
+export { Reveal } from './Reveal';
+export type { RevealProps } from './Reveal';
+
+export { Page, PageSection } from './Page';
+export type { PageProps, PageSectionProps } from './Page';

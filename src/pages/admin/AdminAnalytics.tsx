@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Animated } from '@/components/common';
+import { Animated, Reveal } from '@/components/common';
 import { BarChart3, TrendingUp, Users, Clock, Server, Activity, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { DURATION } from '@/utils/animations';
 
@@ -66,6 +66,7 @@ const AdminAnalytics = () => {
         </div>
 
         {/* 统计卡片 */}
+        <Reveal direction="up" distance={20} duration={0.5} margin="-20px">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {statsCards.map((stat, index) => {
             const colors = colorMap[stat.color];
@@ -107,8 +108,10 @@ const AdminAnalytics = () => {
             );
           })}
         </div>
+        </Reveal>
 
         {/* 图表区域 */}
+        <Reveal direction="up" distance={24} duration={0.5} delay={0.15}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* 玩家趋势图 */}
           <Animated
@@ -236,6 +239,7 @@ const AdminAnalytics = () => {
             </div>
           </Animated>
         </div>
+        </Reveal>
       </Animated>
     </div>
   );

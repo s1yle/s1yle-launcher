@@ -196,9 +196,9 @@ export const scaleIn: Variants = {
 };
 
 export const listItem: Variants = {
-  initial: { opacity: 0, x: -20 },
-  animate: { opacity: 1, x: 0 },
-  exit: { opacity: 0, x: 20 },
+  initial: { opacity: 0, y: -20 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: 20 },
   hover: microInteractions.listItemHover,
   tap: microInteractions.listItemTap,
 };
@@ -277,6 +277,27 @@ export const staggerItem: Variants = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
   exit: { opacity: 0, y: -20 },
+};
+
+/** 侧边栏菜单项错峰入场 — spring 弹性交错 */
+export const sidebarStaggerContainer: Variants = {
+  initial: { opacity: 0 },
+  animate: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.14,
+      delayChildren: 0.15,
+    },
+  },
+};
+
+/** 侧边栏菜单单项 — 配合 sidebarStaggerContainer 使用 */
+export const sidebarStaggerItem: Variants = {
+  initial: { opacity: 0, x: -16 },
+  animate: {
+    opacity: 1,
+    x: 0,
+  },
 };
 
 /** 区块级错峰入场 — 配合 staggerContainer 使用 */
