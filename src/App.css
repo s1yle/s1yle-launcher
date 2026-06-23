@@ -76,6 +76,45 @@ select {
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ------全局滚动条样式------ */
+* {
+  scrollbar-width: thin;
+  /* scrollbar-color: var(--color-primary) transparent; */
+  scrollbar-color: var(--color-primary-bg) transparent;
+  /* padding: 10px; */
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb {
+  /* background: var(--color-primary); */
+  /* background: var(--color-bg-primary); */
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-hover);
+  /* background: var(--color-bg-primary); */
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+* {
+  scrollbar-gutter: auto;
+}
+/* ------全局滚动条样式------ */
+
 .scrollbar-custom {
   scrollbar-width: thin;
   scrollbar-color: rgba(99, 102, 241, 0.4) transparent;

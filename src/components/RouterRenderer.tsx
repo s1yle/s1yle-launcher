@@ -82,6 +82,9 @@ interface RouterRendererProps {
   sidebarTransitionDuration?: number;
 }
 
+/**
+ * 专门用于渲染页面内容
+ */
 const RouterRenderer = ({
   sidebar,
   showSidebar = false,
@@ -178,10 +181,13 @@ const RouterRenderer = ({
   }
 
   const variant = (() => {
+    console.warn("动画没有启用，跳过");
     if (!enabled) return { initial: {}, animate: {}, exit: {} };
 
     const dir = useNavStore.getState().direction;
     useNavStore.getState().setDirection(null);
+    console.warn("方向：", dir);
+    
 
     if (dir === 'right') {
       return {

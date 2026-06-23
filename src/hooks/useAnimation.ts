@@ -29,10 +29,12 @@ const noop: Record<string, undefined> = {};
  * ```
  */
 export function useAnimation() {
-  const { animation } = useUIModeStore();
+  const animation = useUIModeStore(s => s.animation);
   const prefersReducedMotion = usePrefersReducedMotion();
 
-  const enabled = animation.enabled && !prefersReducedMotion;
+  // TODO: 暂时关闭这个 prefersReducedMotion 的检测
+  // const enabled = animation.enabled && !prefersReducedMotion;
+  const enabled = animation.enabled;
 
   const transition = (preset: Transition): Transition => {
     return enabled ? preset : { duration: 0 };

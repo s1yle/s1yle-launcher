@@ -62,7 +62,7 @@ const AppSidebar = ({
   }, [sidebarWidth]);
 
   return (
-    <div className="AppSidebar h-full flex flex-col overflow-hidden border-r border-[var(--color-border)] relative">
+    <div className="AppSidebar h-full flex flex-col overflow-hidden border- border-[var(--color-border)] relative">
       <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} footer={footer} />
       <div
         className="absolute right-0 top-0 bottom-0 w-1
