@@ -283,20 +283,22 @@ const ApearanceSettings = () => {
         </SettingsPanel>
       </PageSection>
 
-      <Reveal direction="up" distance={20} duration={0.5}>
-        <SettingsPanel label="主题">
-          <SettingsPanel.Item shouldLoad={true} loadingKey='appearacne:theme'>
-            <SettingsPanel.Sub label='终端主题'>
-              <SettingsPanel.Toggle
-                checked={isCompat}
-                onChange={(enabled) => { setIsCompat(enabled) }}
-                label='简洁模式'
-              />
-              <TerminalThemePreview compact={isCompat} />
-            </SettingsPanel.Sub>
-          </SettingsPanel.Item>
-        </SettingsPanel>
-      </Reveal>
+      <PageSection>
+        <Reveal direction="up" distance={20} duration={0.5}>
+          <SettingsPanel label="主题">
+            <SettingsPanel.Item shouldLoad={true} loadingKey='appearacne:theme'>
+              <SettingsPanel.Sub label='终端主题'>
+                <SettingsPanel.Toggle
+                  checked={isCompat}
+                  onChange={(enabled) => { setIsCompat(enabled) }}
+                  label='简洁模式'
+                />
+                <TerminalThemePreview compact={isCompat} />
+              </SettingsPanel.Sub>
+            </SettingsPanel.Item>
+          </SettingsPanel>
+        </Reveal>
+      </PageSection>
 
       <Reveal direction="up" distance={20} duration={0.5} delay={0.1}>
         <SettingsPanel label="背景">

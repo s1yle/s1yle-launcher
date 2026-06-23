@@ -7,7 +7,6 @@ import { ExternalLink, Package, CheckCircle } from 'lucide-react';
 import { listItem, transitions } from '../../../utils/animations';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { Reveal } from '../Reveal';
 
 const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(inputs));
 
@@ -30,8 +29,6 @@ const VersionListItem = ({
   const [isHovered, setIsHovered] = React.useState(false);
 
   return (
-    // <Reveal duration={0.2}>
-
       <motion.div
         variants={listItem}
         whileTap="tap"
@@ -107,8 +104,6 @@ const VersionListItem = ({
           </motion.div>
         )}
       </motion.div>
-
-    // </Reveal>
   );
 };
 

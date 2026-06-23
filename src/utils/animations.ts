@@ -196,9 +196,9 @@ export const scaleIn: Variants = {
 };
 
 export const listItem: Variants = {
-  initial: { opacity: 0, y: -20 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: 20 },
+  initial: { y: -20 },
+  animate: { y: 0 },
+  exit: { y: 20 },
   hover: microInteractions.listItemHover,
   tap: microInteractions.listItemTap,
 };

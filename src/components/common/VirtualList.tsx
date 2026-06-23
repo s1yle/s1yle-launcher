@@ -1,6 +1,5 @@
 import React, { useState, useRef, useCallback, useMemo, memo } from 'react';
 import { Page, PageSection } from './Page';
-import { Reveal } from './Reveal';
 
 export interface VirtualListProps<T> {
   items: T[];
@@ -8,6 +7,7 @@ export interface VirtualListProps<T> {
   itemHeight: number;
   overscan?: number;
   renderItem: (item: T, index: number, style: React.CSSProperties) => React.ReactNode;
+  keyExtractor: (item: T) => string | number;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -18,6 +18,7 @@ function VirtualListInner<T>({
   itemHeight,
   overscan = 3,
   renderItem,
+  keyExtractor,
   className,
   style,
 }: VirtualListProps<T>) {
@@ -63,25 +64,24 @@ function VirtualListInner<T>({
       className={`${className || ''} scrollbar-hide-x pt-3`}
       style={{
         height,
-        // overflowY: 'auto',
-        // overflowX: 'hidden',
         position: 'relative',
         ...style,
       }}
     >
       <Page>
-          {items.length > 0 && (
-            <div style={{ height: totalHeight, position: 'relative' }}>
-              {visibleItems.map(({ item, index, style: itemStyle }) => (
-                <PageSection>
-                  <div key={index} style={itemStyle}>
-                    {renderItem(item, index, itemStyle)}
-                  </div>
-                </PageSection>
-              ))}
-            </div>
-          )}
+        {items.length > 0 && (
+          <div style={{ height: totalHeight, position: 'relative' }}>
+            {visibleItems.map(({ item, index, style: itemStyle }) => (
+              <PageSection key={keyExtractor(item)}>
+                <div style={itemStyle}>
+                  {renderItem(item, index, itemStyle)}
+                </div>
+              </PageSection>
+            ))}
+          </div>
+        )}
       </Page>
+
     </div>
   );
 }

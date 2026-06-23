@@ -157,66 +157,91 @@ const DownloadGame: React.FC = () => {
 
       <div className="flex-1 min-h-0 px-0 py-2 overflow-hidden">
         <div className="h-full min-h-0 flex flex-col">
-          <PageSection className="flex flex-col sm:flex-row gap-3 mb-3 flex-shrink-0 px-4">
-            <div className="flex-1">
-              <input
-                type="text"
-                placeholder={t('download.searchPlaceholder')}
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg text-sm transition-colors"
-                style={{
-                  backgroundColor: 'var(--color-surface-solid)',
-                  borderColor: 'var(--color-border)',
-                  color: 'var(--color-text-primary)',
-                }}
+
+          <PageSection>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.1, margin: '-40px' }}
+              transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+              className="flex flex-col sm:flex-row gap-3 mb-3 flex-shrink-0 px-4"
+            >
+              <div className="flex-1">
+                <input
+                  type="text"
+                  placeholder={t('download.searchPlaceholder')}
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg text-sm transition-colors"
+                  style={{
+                    backgroundColor: 'var(--color-surface-solid)',
+                    borderColor: 'var(--color-border)',
+                    color: 'var(--color-text-primary)',
+                  }}
+                />
+              </div>
+              <VersionFilterDropdown
+                value={filter}
+                onChange={setFilter}
+                versions={manifest?.versions || []}
               />
-            </div>
-            <VersionFilterDropdown
-              value={filter}
-              onChange={setFilter}
-              versions={manifest?.versions || []}
-            />
+            </motion.div>
           </PageSection>
 
           {manifest?.latest && (
-
             <PageSection>
-              <div className="p-2 rounded-lg flex-shrink-0 px-4 mx-5"
-                style={{ backgroundColor: 'var(--color-primary-bg)', borderColor: 'var(--color-primary)', borderWidth: '1px', borderStyle: 'solid' }}
+              <motion.div
+                initial={{ y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.1, margin: '-40px' }}
+                transition={{ type: 'spring', stiffness: 400, damping: 22 }}
               >
-                <p className="text-sm" style={{ color: 'var(--color-primary)' }}>
-                  {t('download.latestRelease')}: <span className="font-mono font-bold">{manifest.latest.release}</span>
-                  {manifest.latest.snapshot !== manifest.latest.release && (
-                    <> | {t('download.latestSnapshot')}: <span className="font-mono font-bold">{manifest.latest.snapshot}</span></>
-                  )}
-                </p>
-              </div>
+                <div className="p-2 rounded-lg flex-shrink-0 px-4 mx-5"
+                  style={{ backgroundColor: 'var(--color-primary-bg)', borderColor: 'var(--color-primary)', borderWidth: '1px', borderStyle: 'solid' }}
+                >
+                  <p className="text-sm" style={{ color: 'var(--color-primary)' }}>
+                    {t('download.latestRelease')}: <span className="font-mono font-bold">{manifest.latest.release}</span>
+                    {manifest.latest.snapshot !== manifest.latest.release && (
+                      <> | {t('download.latestSnapshot')}: <span className="font-mono font-bold">{manifest.latest.snapshot}</span></>
+                    )}
+                  </p>
+                </div>
+              </motion.div>
             </PageSection>
           )}
 
           {isLoading ? (
-            <div className="flex-1 flex flex-col items-center justify-center gap-3">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-              >
-                <Loader2 className="w-10 h-10" style={{ color: 'var(--color-primary)' }} />
-              </motion.div>
-              <span className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>{t('common.loading')}</span>
-            </div>
+            <PageSection>
+              <div className="flex-1 flex flex-col items-center justify-center gap-3">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                >
+                  <Loader2 className="w-10 h-10" style={{ color: 'var(--color-primary)' }} />
+                </motion.div>
+                <span className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>{t('common.loading')}</span>
+              </div>
+            </PageSection>
           ) : versionsToShow.length === 0 ? (
             <PageSection>
-              <EmptyState
-                icon="search"
-                title={t('download.noVersion')}
-                description={t('download.noVersionDesc')}
-              />
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.1, margin: '-40px' }}
+                transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+              >
+                <EmptyState
+                  icon="search"
+                  title={t('download.noVersion')}
+                  description={t('download.noVersionDesc')}
+                />
+              </motion.div>
             </PageSection>
           ) : (
             <div className="flex-1 min-h-0 px-4">
               <VirtualList
                 items={versionsToShow}
+                keyExtractor={(v) => v.id}
                 height="100%"
                 itemHeight={ITEM_HEIGHT}
                 overscan={5}
