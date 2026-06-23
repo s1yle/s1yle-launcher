@@ -32,7 +32,7 @@
 // 服主切换到玩家身份时，验证是否存在玩家账户
 // 根据以上实现适合的账户界面初步 ui 设计
 
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef, useMemo } from 'react';
 import { BrowserRouter as Router, useLocation, useNavigate } from 'react-router-dom';
 import { routes, findRouteByPath, LayoutMode, pagesWithOwnSidebar, SidebarGroup } from './router/config';
 import { useNavStore } from './stores/navStore';
@@ -53,7 +53,7 @@ import IslandLayout from './AppLayouts/IslandLayout';
 import AppHeader from './AppLayouts/AppHeader';
 import AppSidebar from './AppLayouts/AppSidebar';
 import AppMain from './AppLayouts/AppMain';
-import useLayoutStore, { LAYOUT_DEBOUNCE_DURATION, SIDEBAR_TRANSITION_DURATION } from './stores/layoutStore';
+import useLayoutStore from './stores/layoutStore';
 import { DURATION } from './utils/animations';
 import useFontStore from './stores/fontStore';
 import LoginGate from './pages/Login/LoginGate';
@@ -75,8 +75,6 @@ const MainLayout = () => {
   const setCurrentPath = useNavStore((s) => s.setCurrentPath);
 
   const { mode: uiMode } = useUIModeStore();
-  const isAnimatingRef = useRef(false);
-  const pendingNavRef = useRef<string | null>(null);
 
 
   // 获取 sidebar 的收起/展开 状态
@@ -96,16 +94,8 @@ const MainLayout = () => {
   );
 
   const executeNavigation = useCallback((path: string) => {
-    isAnimatingRef.current = true;
-    pendingNavRef.current = null;
     setCurrentPath(path);
     navigate(path);
-    setTimeout(() => {
-      isAnimatingRef.current = false;
-      if (pendingNavRef.current) {
-        executeNavigation(pendingNavRef.current);
-      }
-    }, DURATION.PAGE_TRANSITION * 1000);
   }, [setCurrentPath, navigate]);
 
   const handleMenuClick = (targetPath: string) => {
@@ -124,11 +114,6 @@ const MainLayout = () => {
       }
     }
 
-    if (isAnimatingRef.current) {
-      pendingNavRef.current = finalPath;
-      return;
-    }
-
     executeNavigation(finalPath);
   };
 
@@ -142,24 +127,47 @@ const MainLayout = () => {
     e.preventDefault();
   };
 
-  const toggleSidebar = useCallback(() => {
-    setIsSidebarCollapsed(isSidebarCollapsed);
-  }, []);
+  const pendingRestoreRef = useRef(false);
 
-  const shouldShowSidebar = !isFullscreen && !isSidebarCollapsed && !isNoSidebarRoute;
+  const effectiveSidebarCollapsed = useMemo(() => {
+    if (uiMode !== UIMode.ISLAND) return isSidebarCollapsed;
+
+    if (!hasOwnSidebar) {
+      if (!isSidebarCollapsed) {
+        pendingRestoreRef.current = true;
+      }
+      return true;
+    }
+
+    if (pendingRestoreRef.current) {
+      pendingRestoreRef.current = false;
+      return false;
+    }
+
+    return isSidebarCollapsed;
+  }, [uiMode, hasOwnSidebar, isSidebarCollapsed]);
+
+  const toggleSidebar = useCallback(() => {
+    setIsSidebarCollapsed(!effectiveSidebarCollapsed);
+  }, [effectiveSidebarCollapsed, setIsSidebarCollapsed]);
+
+  const shouldShowSidebar = !isFullscreen && !effectiveSidebarCollapsed;
 
   const sidebarFooter = (
     <button
       onClick={toggleSidebar}
       className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] transition-colors"
-      title={isSidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}
+      title={effectiveSidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}
     >
       <PanelLeft className="w-4 h-4" />
       <span>收起侧边栏</span>
     </button>
   );
 
-  const collapsedToggleButton = !isFullscreen && isSidebarCollapsed && !isNoSidebarRoute && (
+  const collapsedToggleButton = effectiveSidebarCollapsed && (
+    (uiMode === UIMode.CLASSIC && !isFullscreen) ||
+    (uiMode === UIMode.ISLAND && hasOwnSidebar)
+  ) && (
     <button
       onClick={toggleSidebar}
       className="fixed left-3 top-1/2 -translate-y-1/2 z-20 p-2 
@@ -177,67 +185,32 @@ const MainLayout = () => {
 
   const CurrentLayout = LAYOUT_MODES[uiMode];
 
-  // DEBUG: 检查组件是否正确导入
-  // console.warn('uiMode:', uiMode);
-  // console.warn('CurrentLayout:', CurrentLayout);
-  // console.warn('LAYOUT_MODES:', LAYOUT_MODES);
-  // console.warn('ClassicLayout:', ClassicLayout);
-  // console.warn('IslandLayout:', IslandLayout);
+  const showSidebar = useMemo(() => {
+    if (uiMode === UIMode.CLASSIC) return shouldShowSidebar;
+    if (uiMode === UIMode.ISLAND) return hasOwnSidebar && !effectiveSidebarCollapsed;
+    return false;
+  }, [uiMode, shouldShowSidebar, hasOwnSidebar, effectiveSidebarCollapsed]);
+
+  const canHaveSidebar = uiMode === UIMode.CLASSIC
+    ? !isFullscreen
+    : hasOwnSidebar;
+
+  const sidebarElement = canHaveSidebar ? (
+    <AppSidebar mode={uiMode} transitionDuration={DURATION.SIDEBAR_TRANSITION} handleMenuClick={handleMenuClick} footer={sidebarFooter} />
+  ) : undefined;
 
   const layoutProps = {
     header: <AppHeader mode={uiMode} currentRoute={currentRoute} handleMenuClick={handleMenuClick} />,
-    sidebar: <AppSidebar mode={uiMode} transitionDuration={DURATION.SIDEBAR_TRANSITION} handleMenuClick={handleMenuClick} footer={sidebarFooter} />,
     collapsedToggleButton: collapsedToggleButton,
-    sidebarTransitionDuration: DURATION.SIDEBAR_TRANSITION,
-    ...(uiMode === UIMode.CLASSIC
-      ? {
-        shouldShowSidebar
-      }
-      : uiMode === UIMode.ISLAND ? {
-        hasOwnSidebar,
-        isSidebarCollapsed,
-      }
-        : {}
-    )
   }
 
-  // TODO: 维护该树状结构
-  /**
-   * ```
-   * App
-   * ├─ Router
-   * │  └─ MainLayout
-   * │     ├─ CurrentLayout (ClassicLayout | IslandLayout)
-   * │     │  ├─ header → AppHeader
-   * │     │  ├─ sidebar → AppSidebar
-   * │     │  └─ children → AppMain
-   * │     │     └─ RouterRenderer (页面内容)
-   * │     └─ FloatingDownloadButton (全局悬浮下载按钮)
-   * └─ (全局事件监听)
-   * 
-   * 布局模式:
-   * ├─ Island (灵动岛)
-   * │  ├─ AppHeader: FloatingControls + DynamicIsland + 拖曳区域
-   * │  ├─ AppSidebar: SmartSidebar (固定定位，top: 80px)
-   * │  ─ AppMain: paddingLeft = hasOwnSidebar && !isSidebarCollapsed ? sidebarWidth : 0
-   * └─ Classic (经典)
-   *    ├─ AppHeader: Header 组件 (主标题/副标题)
-   *    ├─ AppSidebar: SmartSidebar (相对定位，top: 0)
-   *    └─ AppMain: paddingLeft = 0 (侧边栏由 ClassicLayout 内部处理)
-   * 
-   * 特殊页面 (有独立侧边栏):
-   * ├─ /instance-manage/:instanceId/*
-   * ├─ /instance-list
-   * └─ /download/*
-   *    → hasOwnSidebar = true (AppSidebar 显示，AppMain 设置 paddingLeft)
-   * ```
-   */
   function renderPage() {
     return (
-      <CurrentLayout
-        {...layoutProps as any}
-      >
-        <AppMain hasOwnSidebar={hasOwnSidebar} isSidebarCollapsed={isSidebarCollapsed}></AppMain>
+      <CurrentLayout {...layoutProps as any}>
+        <AppMain
+          showSidebar={showSidebar}
+          sidebarElement={sidebarElement}
+        />
       </CurrentLayout>
     )
   }

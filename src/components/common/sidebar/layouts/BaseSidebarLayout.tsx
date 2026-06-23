@@ -1,5 +1,4 @@
 import React from 'react';
-import { useBackgroundStore } from '@/stores/backgroundStore';
 
 export interface BaseSidebarLayoutProps {
   children: React.ReactNode;
@@ -15,12 +14,9 @@ const BaseSidebarLayout = ({
   footer,
   header
 }: BaseSidebarLayoutProps) => {
-  const isCustomBg = useBackgroundStore((s) => s.config.type !== 'none');
-
   return (
     <aside
-      className={`BaseSidebarLayout w-full h-full flex flex-col 
-      ${isCustomBg ? 'bg-transparent' : 'bg-[var(--color-bg-tertiary)]'} `}
+      className={`BaseSidebarLayout w-full h-full flex flex-col bg-transparent`}
     >
       {header && (
         <div className="border-b border-[var(--color-border)] p-3">

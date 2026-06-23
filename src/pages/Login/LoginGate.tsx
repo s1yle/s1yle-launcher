@@ -99,7 +99,7 @@ const LoginGateInner = () => {
           </ViewContainer>
 
           <p className="text-[10px] text-[var(--color-text-secondary)]/50">
-            v0.1.0-alpha.2
+            WeCraft! Launcher v0.1.0-alpha.2
           </p>
 
         </div>

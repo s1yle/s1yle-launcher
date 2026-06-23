@@ -1,6 +1,6 @@
 import { useLocation, useParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { routes, findRouteByPath } from "../router/config";
 import {
   Home,
@@ -24,6 +24,7 @@ import {
 import { AdminServers, AdminAnalytics, AdminUpload } from '../pages/admin';
 import { useAnimation } from "../hooks/useAnimation";
 import { DURATION, pageTransition } from "../utils/animations";
+import { useNavStore } from "../stores/navStore";
 
 const componentMap: Record<string, React.FC> = {
   Home,
@@ -48,44 +49,45 @@ const componentMap: Record<string, React.FC> = {
   AdminUpload
 };
 
-// 手动解析路由参数
 const parseRouteParams = (routePath: string, actualPath: string): Record<string, string> => {
   const params: Record<string, string> = {};
   const routeSegments = routePath.split('/');
   const actualSegments = actualPath.split('/');
 
   for (let i = 0; i < routeSegments.length; i++) {
-    const routeSegment = routeSegments[i];
-    const actualSegment = actualSegments[i];
-
-    if (routeSegment.startsWith(':')) {
-      const paramName = routeSegment.slice(1);
-      params[paramName] = actualSegment;
+    if (routeSegments[i].startsWith(':')) {
+      params[routeSegments[i].slice(1)] = actualSegments[i];
     }
   }
 
   return params;
 };
 
-// 创建路由参数的 Context
 const RouteParamsContext = createContext<Record<string, string> | null>(null);
 
-// 自定义 hook 用于获取路由参数
 export const useRouteParams = (): Record<string, string> => {
   const reactRouterParams = useParams();
   const contextParams = useContext(RouteParamsContext);
-
-  // 优先使用 context 中的参数（手动解析的）
-  // 如果没有，则使用 React Router 的参数
   const params = contextParams || reactRouterParams || {};
 
-  // 过滤掉 undefined 值，确保返回类型符合 Record<string, string>
   return Object.fromEntries(
     Object.entries(params).filter(([_, value]) => value !== undefined)
   ) as Record<string, string>;
 };
 
-const RouterRenderer = () => {
+interface RouterRendererProps {
+  sidebar?: React.ReactNode;
+  showSidebar?: boolean;
+  sidebarWidth?: number;
+  sidebarTransitionDuration?: number;
+}
+
+const RouterRenderer = ({
+  sidebar,
+  showSidebar = false,
+  sidebarWidth = 240,
+  sidebarTransitionDuration = 0.3,
+}: RouterRendererProps) => {
   const location = useLocation();
   const currentPathname = location.pathname;
   const { enabled, transition } = useAnimation();
@@ -96,23 +98,129 @@ const RouterRenderer = () => {
   if (!Component) return null;
 
   const params = parseRouteParams(route.path, currentPathname);
-  const variant = enabled ? pageTransition : { initial: {}, animate: {}, exit: {} };
+
+  // ── Drag preview ──
+  const dragPreview = useNavStore((s) => s.dragPreview);
+  const [dragProgress, setDragProgress] = useState(0);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { progress } = (e as CustomEvent).detail;
+      setDragProgress(progress);
+    };
+    window.addEventListener('nav-drag-update', handler);
+    return () => window.removeEventListener('nav-drag-update', handler);
+  }, []);
+
+  useEffect(() => {
+    if (!dragPreview?.isDragging) {
+      setDragProgress(0);
+    }
+  }, [dragPreview?.isDragging]);
+
+  const sidebarTransitionCss = `width ${sidebarTransitionDuration}s ease-in-out, opacity ${sidebarTransitionDuration}s ease-in-out`;
+
+  const sidebarStyle: React.CSSProperties = {
+    width: showSidebar ? sidebarWidth : 0,
+    opacity: showSidebar ? 1 : 0,
+    overflow: 'hidden',
+    flexShrink: 0,
+    transition: sidebarTransitionCss,
+  };
+
+  if (dragPreview?.isDragging) {
+    const fromRoute = findRouteByPath(dragPreview.fromPath, routes);
+    const toRoute = findRouteByPath(dragPreview.toPath, routes);
+    const FromComponent = fromRoute ? componentMap[fromRoute.componentName] : null;
+    const ToComponent = toRoute ? componentMap[toRoute.componentName] : null;
+    const fromParams = fromRoute ? parseRouteParams(fromRoute.path, dragPreview.fromPath) : {};
+    const toParams = toRoute ? parseRouteParams(toRoute.path, dragPreview.toPath) : {};
+    const p = dragProgress;
+
+    const fromX = dragPreview.direction === 'right'
+      ? `${-p * 100}%`
+      : `${p * 100}%`;
+
+    const toX = dragPreview.direction === 'right'
+      ? `${(1 - p) * 100}%`
+      : `${-(1 - p) * 100}%`;
+
+    return (
+      <div className="h-full relative overflow-hidden">
+        {FromComponent && (
+          <div
+            className="absolute inset-0 flex"
+            style={{ transform: `translateX(${fromX})` }}
+          >
+            {sidebar && <div style={sidebarStyle}>{sidebar}</div>}
+            <div className="flex-1 overflow-y-auto">
+              <RouteParamsContext.Provider value={fromParams}>
+                <FromComponent />
+              </RouteParamsContext.Provider>
+            </div>
+          </div>
+        )}
+        {ToComponent && (
+          <div
+            className="absolute inset-0 flex"
+            style={{ transform: `translateX(${toX})` }}
+          >
+            {sidebar && <div style={sidebarStyle}>{sidebar}</div>}
+            <div className="flex-1 overflow-y-auto">
+              <RouteParamsContext.Provider value={toParams}>
+                <ToComponent />
+              </RouteParamsContext.Provider>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const variant = (() => {
+    if (!enabled) return { initial: {}, animate: {}, exit: {} };
+
+    const dir = useNavStore.getState().direction;
+    useNavStore.getState().setDirection(null);
+
+    if (dir === 'right') {
+      return {
+        initial: { opacity: 1, x: '100%' },
+        animate: { opacity: 1, x: 0 },
+        exit: { opacity: 1, x: '-100%' },
+      };
+    }
+    if (dir === 'left') {
+      return {
+        initial: { opacity: 1, x: '-100%' },
+        animate: { opacity: 1, x: 0 },
+        exit: { opacity: 1, x: '100%' },
+      };
+    }
+    return pageTransition;
+  })();
 
   return (
-    <div className="h-full relative">
-      <AnimatePresence mode="wait">
+    <div className="h-full relative overflow-hidden">
+      <AnimatePresence mode="popLayout">
         <motion.div
           key={currentPathname}
-          className="absolute inset-0"
+          className="absolute inset-0 flex overflow-hidden"
           variants={variant}
           initial="initial"
           animate="animate"
           exit="exit"
-          transition={transition({ duration: DURATION.PAGE_TRANSITION, type: 'spring' } as const)}
+          transition={transition({
+            x: { duration: DURATION.PAGE_TRANSITION, ease: [0.25, 0.1, 0.25, 1] },
+            opacity: { duration: DURATION.PAGE_TRANSITION * 0.5, ease: 'easeOut' },
+          })}
         >
-          <RouteParamsContext.Provider value={params}>
-            <Component />
-          </RouteParamsContext.Provider>
+          <div style={sidebarStyle}>{sidebar}</div>
+          <div className="flex-1 overflow-y-auto overflow-x-hidden relative">
+            <RouteParamsContext.Provider value={params}>
+              <Component />
+            </RouteParamsContext.Provider>
+          </div>
         </motion.div>
       </AnimatePresence>
     </div>

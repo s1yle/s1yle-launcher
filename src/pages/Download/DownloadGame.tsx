@@ -10,26 +10,39 @@ import { useNavStore } from '../../stores/navStore';
 import { getWikiUrl } from '../../utils/modloaderCompat';
 import { VersionCategory, filterVersionsByCategory, debugVersionTypes } from '../../utils/versionFilter';
 import BottomBar from '@/components/common/BottomBar/BottomBar';
+import { useShallow } from 'zustand/shallow';
 
 const ITEM_HEIGHT = 72;
 
 const DownloadGame: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { setCurrentPath } = useNavStore();
-  const {
-    manifest,
-    installedVersions,
-    basePath,
-    loading,
-    error,
-    downloadVersion,
-    loadManifest,
-    loadInstalledVersions,
-    loadBasePath,
-    downloadingVersions,
-    completedVersions,
-  } = useDownloadStore();
+  const setCurrentPath = useNavStore((s) => s.setCurrentPath);
+const {
+  manifest,
+  installedVersions,
+  downloadingVersions,
+  completedVersions,
+  basePath,
+  loading,
+  error,
+} = useDownloadStore(
+  useShallow(s => ({
+    manifest: s.manifest,
+    installedVersions: s.installedVersions,
+    downloadingVersions: s.downloadingVersions,
+    completedVersions: s.completedVersions,
+    basePath: s.basePath,
+    loading: s.loading,
+    error: s.error,
+  }))
+);
+
+// 函数引用永不变化，单独取出不导致重渲染
+const loadManifest = useDownloadStore(s => s.loadManifest);
+const loadInstalledVersions = useDownloadStore(s => s.loadInstalledVersions);
+const loadBasePath = useDownloadStore(s => s.loadBasePath);
+const downloadVersion = useDownloadStore(s => s.downloadVersion);
 
   const { error: notifyError, success, info } = useNotification();
 

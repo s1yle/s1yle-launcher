@@ -9,7 +9,7 @@ interface RoleSelectorProps {
 
 export function RoleSelector({ selected, onSelect, className }: RoleSelectorProps) {
   return (
-    <div 
+    <div
       className={`relative flex rounded-full 
         bg-[var(--color-surface)]/80
         border border-[var(--color-border)]/50 shadow-xl ${className}

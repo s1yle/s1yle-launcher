@@ -1,9 +1,10 @@
 import React, { useEffect, useCallback, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { Overlay } from './common';
+import { AnimatePresence, easeIn, easeInOut, motion } from 'framer-motion';
+import { IconButton, Overlay } from './common';
 import { Portal } from './common/Portal';
 import { Z_INDEX } from '../utils/zIndex';
 import { DURATION, EASING } from '@/utils/animations';
+import { X } from 'lucide-react';
 
 export interface PopupProps {
   isOpen: boolean;
@@ -43,7 +44,7 @@ const Popup = ({
   overlayClassName = '',
   contentClassName = '',
   animation = 'slide',
-  animationDuration = DURATION.MEDIUM * 1000,
+  animationDuration = DURATION.NORMAL * 1000,
   ariaLabel,
   ariaLabelledby,
   ariaDescribedby,
@@ -92,11 +93,11 @@ const Popup = ({
   }, [shouldRender, closeOnEsc, handleKeyDown]);
 
   const sizeClasses = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
-    full: 'max-w-[90vw]',
+    sm: 'max-w-md min-w-[320px]',
+    md: 'max-w-lg min-w-[400px]',
+    lg: 'max-w-2xl min-w-[500px]',
+    xl: 'max-w-4xl min-w-[640px]',
+    full: 'max-w-[90vw] min-w-[90vw]',
   };
 
   const positionClasses = {
@@ -105,31 +106,28 @@ const Popup = ({
     bottom: 'items-end justify-center pb-8',
   };
 
-  const motionVariants = {
-    fade: {
-      initial: { opacity: 0 },
-      animate: { opacity: 1 },
-      exit: { opacity: 0 },
-    },
-    slide: {
-      initial: { opacity: 0, y: 20 },
-      animate: { opacity: 1, y: 0 },
-      exit: { opacity: 0, y: 20 },
-    },
-    scale: {
-      initial: { opacity: 0, scale: 0.95 },
-      animate: { opacity: 1, scale: 1 },
-      exit: { opacity: 0, scale: 0.95 },
-    },
-    none: {
-      initial: {},
-      animate: {},
-      exit: {},
-    },
+  const noAnimation = animation === 'none';
+  const durationSec = animationDuration / 1000;
+
+  const containerVariants = {
+    initial: noAnimation ? {} : ({ opacity: 0, scale: 0.96 } as const),
+    animate: noAnimation ? {} : ({
+      opacity: 1,
+      scale: 1,
+      transition: { staggerChildren: 0.06, delayChildren: 0.04 },
+    } as const),
+    exit: noAnimation ? {} : ({
+      opacity: 0,
+      scale: 0.97,
+      transition: { staggerChildren: 0.03, staggerDirection: -1 },
+    } as const),
   };
 
-  const variant = motionVariants[animation];
-  const durationSec = animationDuration / 1000;
+  const sectionVariants = {
+    initial: noAnimation ? {} : ({ opacity: 0, y: 10 } as const),
+    animate: noAnimation ? {} : ({ opacity: 1, y: 0 } as const),
+    exit: noAnimation ? {} : ({ opacity: 0, y: -5 } as const),
+  };
 
   const ariaProps: React.HTMLAttributes<HTMLDivElement> = {};
   if (ariaLabel) ariaProps['aria-label'] = ariaLabel;
@@ -140,10 +138,11 @@ const Popup = ({
     <Portal preset={position} zIndex={Z_INDEX.POPUP}>
       <AnimatePresence>
         {shouldRender && (
-          <Overlay active={true} zIndex={Z_INDEX.POPUP} fixed>
+          <Overlay active={true} zIndex={Z_INDEX.POPUP} fixed
+              onOverlayClick={handleOverlayClick}
+          >
             <div
               className={`w-full h-full pointer-events-auto flex ${positionClasses[position]} ${overlayClassName}`}
-              onClick={handleOverlayClick}
               role="dialog"
               aria-modal="true"
               {...ariaProps}
@@ -156,17 +155,18 @@ const Popup = ({
                   border: '1px solid var(--color-border)',
                   borderRadius: '8px',
                 }}
-                initial={variant.initial}
-                animate={variant.animate}
-                exit={variant.exit}
-                transition={{
-                  duration: durationSec,
-                  ease: EASING.DEFAULT,
-                }}
+                variants={containerVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
                 onClick={(e) => e.stopPropagation()}
               >
                 {(title || showCloseButton) && (
-                  <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--color-border)' }}>
+                  <motion.div
+                    variants={sectionVariants}
+                    className="flex items-center justify-between px-5 py-4 border-b"
+                    style={{ borderColor: 'var(--color-border)' }}
+                  >
                     {title && (
                       <div className="text-lg font-semibold" style={{ color: 'var(--color-text-primary)' }}>
                         {typeof title === 'string' ? <h2>{title}</h2> : title}
@@ -175,7 +175,10 @@ const Popup = ({
                     {showCloseButton && (
                       <button
                         onClick={onClose}
-                        className="text-text-secondary hover:text-text-primary text-xl leading-none p-1.5 transition-colors rounded-md cursor-pointer"
+                        className="text-text-secondary hover:text-text-primary 
+                          text-xl leading-none 
+                          transition-colors rounded-md cursor-pointer
+                        "
                         style={{ color: 'var(--color-text-secondary)' }}
                         aria-label="关闭弹窗"
                         onMouseEnter={(e) => {
@@ -185,20 +188,20 @@ const Popup = ({
                           e.currentTarget.style.backgroundColor = 'transparent';
                         }}
                       >
-                        ×
+                        <IconButton icon={X}/>
                       </button>
                     )}
-                  </div>
+                  </motion.div>
                 )}
 
-                <div className={`px-5 py-4 ${contentClassName}`}>
+                <motion.div variants={sectionVariants} className={`px-5 py-4 ${contentClassName}`}>
                   {children}
-                </div>
+                </motion.div>
 
                 {footer && (
-                  <div className="px-5 py-4" >
+                  <motion.div variants={sectionVariants} className="px-5 py-4" >
                     {footer}
-                  </div>
+                  </motion.div>
                 )}
               </motion.div>
             </div>

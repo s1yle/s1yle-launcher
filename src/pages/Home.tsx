@@ -1,3 +1,5 @@
+import { motion } from 'framer-motion';
+import { staggerContainer, staggerSection } from '@/utils/animations';
 import { useEffect } from 'react';
 import ActionButton from '../components/common/StartGameButton';
 import PlayerProfile from '../components/common/home/PlayerProfile';
@@ -44,18 +46,25 @@ const Home = () => {
   }, [instance_init, loadProfile]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-120px)] p-0">
-      <div className="max-w-4xl w-full space-y-8">
+    <motion.div
+      className="flex flex-col items-center justify-center min-h-[calc(100vh-120px)] p-0"
+      variants={staggerContainer}
+      initial="initial"
+      animate="animate"
+    >
+      <motion.div variants={staggerSection} className="max-w-4xl w-full space-y-8">
         <LoadingSurface loadingKey="home:profile" skeleton="profile">
           <PlayerProfile
             name={accountName}
             role={currentRole}
           />
         </LoadingSurface>
-      </div>
+      </motion.div>
 
-      <ActionButton />
-    </div>
+      <motion.div>
+        <ActionButton />
+      </motion.div>
+    </motion.div>
   );
 };
 

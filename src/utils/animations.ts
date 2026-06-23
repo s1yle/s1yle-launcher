@@ -27,6 +27,7 @@ export const DURATION = {
  * ## EASING — 缓动函数预设
  *
  * @property DEFAULT - 自定义三次贝塞尔 [0.25, 0.1, 0.25, 1]，适用于大多数 UI 动画
+ * @property DEFAULT - 自定义三次贝塞尔 [0.1, 0.15, 0.1, 0.15]
  * @property SMOOTH - easeOut，快速进入、缓慢结束
  * @property SPRING - 弹簧 stiffness:500 damping:30，通用弹性
  * @property SPRING_BOUNCY - 弹力更强 stiffness:700 damping:20
@@ -34,6 +35,7 @@ export const DURATION = {
  */
 export const EASING = {
   DEFAULT: [0.25, 0.1, 0.25, 1] as const,
+  FAST: [0.1, 0.15, 0.1, 0.15] as const,
   SMOOTH: 'easeOut' as const,
   SPRING: { type: 'spring', stiffness: 500, damping: 30 } as Transition,
   SPRING_BOUNCY: { type: 'spring', stiffness: 700, damping: 20 } as Transition,
@@ -254,16 +256,18 @@ export const progressBar: Variants = {
 };
 
 export const staggerContainer: Variants = {
-  initial: {},
+  initial: { opacity: 0 },
   animate: {
+    opacity: 1,
     transition: {
       staggerChildren: 0.05,
-      delayChildren: 0.1,
+      delayChildren: 0.08,
     },
   },
   exit: {
+    opacity: 0,
     transition: {
-      staggerChildren: 0.05,
+      staggerChildren: 0.04,
       staggerDirection: -1,
     },
   },
@@ -273,6 +277,13 @@ export const staggerItem: Variants = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
   exit: { opacity: 0, y: -20 },
+};
+
+/** 区块级错峰入场 — 配合 staggerContainer 使用 */
+export const staggerSection: Variants = {
+  initial: { opacity: 0, y: 10 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -5 },
 };
 
 export const pulse = {

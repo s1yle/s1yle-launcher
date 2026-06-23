@@ -8,16 +8,29 @@ export interface NavItem {
   children?: NavItem[];
 }
 
+export type NavDirection = 'left' | 'right' | null;
+
+export interface DragPreviewState {
+  isDragging: boolean;
+  fromPath: string;
+  toPath: string;
+  direction: 'left' | 'right';
+}
+
 interface NavState {
   currentPath: string;
   previousPath: string | null;
   isNavigating: boolean;
   sidebarVisible: boolean;
+  direction: NavDirection;
+  dragPreview: DragPreviewState | null;
 
   setCurrentPath: (path: string) => void;
   setPreviousPath: (path: string | null) => void;
   setNavigating: (navigating: boolean) => void;
   setSidebarVisible: (visible: boolean) => void;
+  setDirection: (direction: NavDirection) => void;
+  setDragPreview: (state: DragPreviewState | null) => void;
   navigate: (path: string) => void;
   goBack: () => string | null;
 }
@@ -27,6 +40,8 @@ export const useNavStore = create<NavState>((set, get) => ({
   previousPath: null,
   isNavigating: false,
   sidebarVisible: true,
+  direction: null,
+  dragPreview: null,
 
   setCurrentPath: (path: string) => {
     set({ currentPath: path });
@@ -42,6 +57,14 @@ export const useNavStore = create<NavState>((set, get) => ({
 
   setSidebarVisible: (visible: boolean) => {
     set({ sidebarVisible: visible });
+  },
+
+  setDirection: (direction: NavDirection) => {
+    set({ direction });
+  },
+
+  setDragPreview: (state: DragPreviewState | null) => {
+    set({ dragPreview: state });
   },
 
   navigate: (path: string) => {

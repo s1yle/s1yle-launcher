@@ -246,7 +246,7 @@ const BaseSidebarContent = ({
                 <ChevronDown className="w-3.5 h-3.5" />
               </motion.div>
             )}
-          </button>
+            </button>
           <Animated accordion={isExpanded && !!item.children} className="space-y-0.5">
             {item.children?.map((child, i) => renderItem(child, level + 1, index + i + 1))}
           </Animated>
@@ -262,7 +262,7 @@ const BaseSidebarContent = ({
           fade
           slide="left"
           delay={index * 0.03}
-          duration={DURATION.NORMAL}
+          duration={DURATION.SLOW}
           style={{
             padding: level > 0 ? `${level * 0.75}rem` : `0.75rem`,
           }}
@@ -295,7 +295,7 @@ const BaseSidebarContent = ({
         fade
         slide="left"
         delay={index * 0.03}
-        duration={DURATION.NORMAL}
+        duration={DURATION.SLOW}
         className='BaseSidebarContent'
       >
         <motion.button
@@ -309,14 +309,14 @@ const BaseSidebarContent = ({
           }}
           onContextMenu={canDelete ? (e) => handleContextMenu(e, item.id) : undefined}
           className={clsx(
-            'w-full flex items-center gap-3 py-2.5 cursor-pointer',
-            'border-l-[3px] transition-colors duration-200',
+            'relative w-full flex items-center gap-3 py-2.5 pl-[3px] cursor-pointer',
+            'transition-colors duration-200',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--color-bg-secondary)]',
             {
-              'text-[var(--color-error)] hover:bg-[var(--color-error-10)] border-l-transparent': item.danger && !active && !itemActive,
-              'bg-[var(--color-surface-active)] text-[var(--color-text-primary)] font-semibold border-l-[var(--color-primary)]': active || itemActive,
-              'bg-[var(--color-surface)] text-[var(--color-text-primary)] border-l-[var(--color-primary)] border-l-opacity-50': !active && !itemActive && parentActive,
-              'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] border-l-transparent': !active && !itemActive && !parentActive && !item.danger,
+              'text-[var(--color-error)] hover:bg-[var(--color-error-10)]': item.danger && !active && !itemActive,
+              'bg-[var(--color-surface-active)] text-[var(--color-text-primary)] font-semibold': active || itemActive,
+              'bg-[var(--color-surface)] text-[var(--color-text-primary)]': !active && !itemActive && parentActive,
+              'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]': !active && !itemActive && !parentActive && !item.danger,
             }
           )}
           whileTap={microInteractions.itemTap}
@@ -377,6 +377,14 @@ const BaseSidebarContent = ({
             >
               <Trash2 className="w-3.5 h-3.5" />
             </motion.div>
+          )}
+
+          {(active || itemActive) && (
+            <motion.div
+              layoutId="sidebarActiveIndicator"
+              className="absolute left-0 top-[6px] bottom-[6px] w-[3px] rounded-r-full bg-[var(--color-primary)]"
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            />
           )}
         </motion.button>
 

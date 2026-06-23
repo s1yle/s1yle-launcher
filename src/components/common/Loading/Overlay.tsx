@@ -9,6 +9,7 @@ export interface OverlayProps {
     disabled?: boolean;
     zIndex?: number;
     fixed?: boolean;
+    onOverlayClick?: (e: React.MouseEvent) => void;
 }
 
 const Overlay = ({
@@ -19,29 +20,34 @@ const Overlay = ({
     disabled = false,
     zIndex = 50,
     fixed = false,
+    onOverlayClick,
 }: OverlayProps) => {
 
     if (disabled) {
         return <>{children}</>;
     }
 
+    const maskZIndex = zIndex;
+    const contentZIndex = zIndex + 1;
+
     return (
         <ComponentStackLayer type='Overlay'>
             <div className={`Overlay relative 
-                ${className}`
-            }>
-                {children}
-
+                    ${className}`
+                }
+            >
                 {active && (
                     <div
+                        onClick={onOverlayClick}
                         className={`Overlay-Mask top-0
                             ${fixed ? 'fixed' : 'absolute'}
-                            inset-0 z-${zIndex}
+                            inset-0
                             px-5 py-5
                             backdrop-blur-[1px] ${overLayClassName}`
                         }
                         style={{
                             backgroundColor: 'var(--color-overlay)',
+                            zIndex: maskZIndex,
                         }}
                     >
 
@@ -49,6 +55,10 @@ const Overlay = ({
 
                     </div>
                 )}
+
+                <div style={{ position: 'relative', zIndex: contentZIndex }}>
+                    {children}
+                </div>
             </div>
         </ComponentStackLayer>
     );

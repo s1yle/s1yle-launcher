@@ -81,6 +81,7 @@ pub async fn logout_and_show_login(app: tauri::AppHandle) -> Result<(), String> 
     )
     .title("WeCraft! Launcher - 登录")
     .inner_size(480.0, 640.0)
+    .min_inner_size(480.0, 640.0)
     .resizable(false)
     .decorations(false)
     .center()

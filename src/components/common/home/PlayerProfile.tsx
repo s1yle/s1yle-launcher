@@ -30,7 +30,7 @@ const PlayerProfile = ({
             // mmili985 uuid: uuid='f8ab99b9-9e45-4001-a9ea-0f5c9ca285c8' 
             uuid={currentAccount?.uuid ? currentAccount.uuid : ""}
             showHat={true}
-            size={128}
+            size={90}
             avatarMode={avatarMode}
           />
         </div>

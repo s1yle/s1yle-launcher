@@ -6,7 +6,9 @@ import { useUserRoleStore, UserRole } from '@/stores/userRoleStore';
 import { useAdminStore } from '@/stores/adminStore';
 import { useAccountStore } from '@/stores/accountStore';
 import { useLoginStore } from '@/stores/loginStore';
+import { useNavStore } from '@/stores/navStore';
 import { logoutAndShowLogin } from '@/api/window';
+import { useNotification, ConfirmPopup } from '@/components/common';
 import { getNavItemsByRole, type NavItem } from '@/config/navigationConfig';
 import { autoJumpToFirstChild, findRouteByPath, routes } from '@/router/config';
 
@@ -58,6 +60,13 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
   const [bottomText, setBottomText] = useState(BOTTOM_TEXTS[0]);
   const idleTimerRef = useRef<number | null>(null);
   const islandRef = useRef<HTMLDivElement>(null);
+  const navContainerRef = useRef<HTMLDivElement>(null);
+  const longPressTimerRef = useRef<number | null>(null);
+  const pointerStartXRef = useRef(0);
+  const navDragActiveRef = useRef(false);
+  const navDragProgressRef = useRef(0);
+  const navDragDirectionRef = useRef<'left' | 'right'>('right');
+  const { error: notifyError } = useNotification();
 
   const navItems = useMemo(() => getNavItemsByRole(currentRole), [currentRole]);
 
@@ -93,6 +102,19 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
     return () => clearInterval(interval);
   }, []);
 
+  const getDirection = (targetPath: string): 'left' | 'right' => {
+    const currentPath = location.pathname;
+    const currentIndex = navItems.findIndex(
+      item => currentPath === item.path || currentPath.startsWith(item.path + '/')
+    );
+    const targetIndex = navItems.findIndex(item => item.path === targetPath);
+
+    if (currentIndex === -1 || targetIndex === -1 || targetIndex === currentIndex) {
+      return 'right';
+    }
+    return targetIndex > currentIndex ? 'right' : 'left';
+  };
+
   const handleItemClick = (item: NavItem) => {
     if (item.action) {
       item.action();
@@ -100,6 +122,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
     }
 
     if (item.path && item.path !== location.pathname) {
+      useNavStore.getState().setDirection(getDirection(item.path));
 
       const route = findRouteByPath(item.path, routes);
       if (route?.autoNavigateToFirstChild && route.children && route.children.length > 0 && onMenuClick) {
@@ -151,6 +174,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
     switchRole(role);
 
     if (needsNavigate) {
+      useNavStore.getState().setDirection('right');
       navigate('/');
     }
   };
@@ -175,11 +199,11 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
   const handleLogout = async () => {
     useAdminStore.getState().logout();
     useLoginStore.getState().setLoggedOut();
-    setShowLogoutConfirm(false);
     try {
       await logoutAndShowLogin();
-    } catch {
-      window.location.reload();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '退出登录失败';
+      notifyError('退出登录失败', msg);
     }
   };
 
@@ -190,14 +214,167 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
     }
   };
 
+  // ── Long-press drag navigation ──
+
+  const snapBackDrag = () => {
+    const startProgress = navDragProgressRef.current;
+    if (startProgress <= 0) {
+      navDragActiveRef.current = false;
+      useNavStore.getState().setDragPreview(null);
+      return;
+    }
+    const startTime = performance.now();
+    const duration = 200;
+    const dir = navDragDirectionRef.current;
+
+    const animate = (now: number) => {
+      const elapsed = now - startTime;
+      const p = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      const progress = startProgress * (1 - eased);
+
+      window.dispatchEvent(new CustomEvent('nav-drag-update', {
+        detail: { progress, direction: dir },
+      }));
+
+      if (p < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        navDragActiveRef.current = false;
+        useNavStore.getState().setDragPreview(null);
+      }
+    };
+    requestAnimationFrame(animate);
+  };
+
+  const handleNavPointerMove = (e: PointerEvent) => {
+    if (navDragActiveRef.current) {
+      const totalDeltaX = e.clientX - pointerStartXRef.current;
+      const island = islandRef.current;
+      if (!island) return;
+
+      const islandRect = island.getBoundingClientRect();
+      const itemWidth = islandRect.width / Math.max(navItems.length, 1);
+      const threshold = itemWidth * 1.2;
+      const direction = totalDeltaX > 0 ? 'right' : 'left';
+
+      const absDeltaX = Math.abs(totalDeltaX);
+      const totalPages = absDeltaX / threshold;
+      const integerPages = Math.floor(totalPages);
+      const fractionalPage = totalPages - integerPages;
+
+      navDragProgressRef.current = fractionalPage;
+      navDragDirectionRef.current = direction;
+
+      const currentPath = location.pathname;
+      const currentIndex = navItems.findIndex(
+        item => currentPath === item.path || currentPath.startsWith(item.path + '/')
+      );
+      if (currentIndex === -1) return;
+
+      const n = navItems.length;
+      let fromIndex: number;
+      let toIndex: number;
+
+      if (direction === 'right') {
+        fromIndex = currentIndex + integerPages;
+        toIndex = fromIndex + 1;
+      } else {
+        fromIndex = currentIndex - integerPages;
+        toIndex = fromIndex - 1;
+      }
+
+      if (fromIndex < 0 || fromIndex >= n || toIndex < 0 || toIndex >= n) return;
+
+      window.dispatchEvent(new CustomEvent('nav-drag-update', {
+        detail: { progress: fractionalPage, direction },
+      }));
+
+      useNavStore.getState().setDragPreview({
+        isDragging: true,
+        fromPath: navItems[fromIndex].path,
+        toPath: navItems[toIndex].path,
+        direction,
+      });
+    } else if (longPressTimerRef.current !== null) {
+      const deltaX = e.clientX - pointerStartXRef.current;
+      if (Math.abs(deltaX) > 8) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+        document.removeEventListener('pointermove', handleNavPointerMove);
+        document.removeEventListener('pointerup', handleNavPointerUpEarly);
+      }
+    }
+  };
+
+  const handleNavPointerUpEarly = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    document.removeEventListener('pointermove', handleNavPointerMove);
+    document.removeEventListener('pointerup', handleNavPointerUpEarly);
+  };
+
+  const handleNavDragPointerUp = () => {
+    if (navDragActiveRef.current) {
+      const progress = navDragProgressRef.current;
+      navDragActiveRef.current = false;
+
+      if (progress > 0.5) {
+        const dragState = useNavStore.getState().dragPreview;
+        if (dragState) {
+          const { toPath, direction } = dragState;
+          useNavStore.getState().setDirection(direction);
+          useNavStore.getState().setDragPreview(null);
+
+          const route = findRouteByPath(toPath, routes);
+          if (route?.autoNavigateToFirstChild && route.children && route.children.length > 0 && onMenuClick) {
+            autoJumpToFirstChild(route, onMenuClick);
+          } else if (onMenuClick) {
+            onMenuClick(toPath);
+          } else {
+            navigate(toPath);
+          }
+        }
+      } else {
+        snapBackDrag();
+      }
+    }
+    document.removeEventListener('pointermove', handleNavPointerMove);
+    document.removeEventListener('pointerup', handleNavPointerUpEarly);
+    document.removeEventListener('pointerup', handleNavDragPointerUp);
+    document.removeEventListener('pointercancel', handleNavDragPointerUp);
+  };
+
+  const handleNavPointerDown = (e: React.PointerEvent) => {
+    if (e.button !== 0) return;
+    if (navItems.length < 2) return;
+
+    pointerStartXRef.current = e.clientX;
+
+    document.addEventListener('pointermove', handleNavPointerMove);
+    document.addEventListener('pointerup', handleNavPointerUpEarly);
+
+    longPressTimerRef.current = window.setTimeout(() => {
+      longPressTimerRef.current = null;
+      navDragActiveRef.current = true;
+      navDragProgressRef.current = 0;
+
+      document.removeEventListener('pointerup', handleNavPointerUpEarly);
+      document.addEventListener('pointerup', handleNavDragPointerUp);
+      document.addEventListener('pointercancel', handleNavDragPointerUp);
+    }, 300);
+  };
+
   return (
     <motion.div
       className="fixed top-4 left-1/2 -translate-x-1/2 z-50"
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      initial={{ opacity: 0, y: -16, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ type: 'spring', stiffness: 350, damping: 24 }}
     >
-      <div
+      <motion.div
         ref={islandRef}
         className={`
           relative flex items-center gap-1
@@ -208,6 +385,8 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
           transition-all duration-500 ease-out
           ${isExpanded ? 'gap-2 px-6' : ''}
         `}
+        whileHover={{ scale: 1.02, y: -1 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 20 }}
         onMouseEnter={() => {
           setIsHovered(true);
           setIsExpanded(true);
@@ -234,8 +413,34 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
             `}
             data-tauri-drag-region="false"
           >
-            <currentRoleConfig.icon className="w-4 h-4" />
-            <span className="whitespace-nowrap">{currentRoleConfig.label}</span>
+            <div className="relative w-4 h-4">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={currentRole}
+                  initial={{ opacity: 0, rotateY: -180, scale: 0.6 }}
+                  animate={{ opacity: 1, rotateY: 0, scale: 1 }}
+                  exit={{ opacity: 0, rotateY: 180, scale: 0.6 }}
+                  transition={{ duration: 0.25, ease: 'easeOut' }}
+                  className="absolute inset-0"
+                >
+                  <currentRoleConfig.icon className="w-4 h-4" />
+                </motion.div>
+              </AnimatePresence>
+            </div>
+            <span className="relative">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                  key={currentRole}
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 4 }}
+                  transition={{ duration: 0.15 }}
+                  className="whitespace-nowrap"
+                >
+                  {currentRoleConfig.label}
+                </motion.span>
+              </AnimatePresence>
+            </span>
             {hasMultipleRoles && (
               <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showRoleMenu ? 'rotate-180' : ''}`} />
             )}
@@ -287,19 +492,43 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
         <div className="w-px h-6 bg-[var(--color-border)]/30 flex-shrink-0 z-10" />
 
         {/* 导航菜单项 */}
-        <div className="flex items-center gap-1 z-10">
-          {navItems.map((item, index) => (
-            <DynamicItem
-              isMainMenu={item.id === 'main'}
-              isActive={isActive(item.path)}
-              isExpanded={isExpanded}
-              isTransitioning={isTransitioning}
-              handleItemClick={handleItemClick}
-              homeItem={homeItem}
-              item={item}
-            />
+        <motion.div
+          ref={navContainerRef}
+          className="flex items-center gap-1 z-10 touch-none"
+          variants={{
+            initial: {},
+            animate: {
+              transition: {
+                staggerChildren: 0.05,
+                delayChildren: 0.08,
+              },
+            },
+          }}
+          initial="initial"
+          animate="animate"
+          onPointerDown={handleNavPointerDown}
+          style={{ touchAction: 'none' }}
+        >
+          {navItems.map((item) => (
+            <motion.div
+              key={item.id}
+              variants={{
+                initial: { opacity: 0, y: 8 },
+                animate: { opacity: 1, y: 0 },
+              }}
+            >
+              <DynamicItem
+                isMainMenu={item.id === 'main'}
+                isActive={isActive(item.path)}
+                isExpanded={isExpanded}
+                isTransitioning={isTransitioning}
+                handleItemClick={handleItemClick}
+                homeItem={homeItem}
+                item={item}
+              />
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
 
         {/* 退出登录按钮 */}
         <div className="w-px h-6 bg-[var(--color-border)]/30 flex-shrink-0 z-10" />
@@ -310,7 +539,9 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
               setShowLogoutConfirm(!showLogoutConfirm);
             }}
             onMouseDown={(e) => e.stopPropagation()}
-            className="p-2 rounded-full text-[var(--color-text-secondary)] hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
+            className="p-2 rounded-full text-[var(--color-text-secondary)] 
+              hover:text-red-400 hover:bg-red-500/10 
+                transition-all duration-200 cursor-pointer"
             title="退出登录"
             data-tauri-drag-region="false"
           >
@@ -318,49 +549,22 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
           </button>
 
           {/* 退出确认弹窗 */}
-          <AnimatePresence>
-            {showLogoutConfirm && (
-              <motion.div
-                initial={{ opacity: 0, y: -8, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                transition={{ duration: 0.15 }}
-                className="absolute top-full right-0 mt-2 w-56 p-4
-                  bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl
-                  shadow-2xl z-50"
-                data-tauri-drag-region="false"
-              >
-                <p className="text-sm text-[var(--color-text-primary)] mb-3 font-medium">
-                  确认退出登录？
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowLogoutConfirm(false);
-                    }}
-                    className="flex-1 py-1.5 rounded-lg text-xs font-medium
-                      bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)]
-                      hover:bg-[var(--color-border)] transition-colors"
-                  >
-                    取消
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleLogout();
-                    }}
-                    className="flex-1 py-1.5 rounded-lg text-xs font-medium
-                      bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
-                  >
-                    退出
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <ConfirmPopup
+            isOpen={showLogoutConfirm}
+            size='lg'
+            title="确认退出登录"
+            message="确认退出登录？"
+            confirmText="退出"
+            cancelText="取消"
+            confirmType="danger"
+            showIcon
+            iconType="warning"
+            onConfirm={handleLogout}
+            onCancel={() => setShowLogoutConfirm(false)}
+            onClose={() => setShowLogoutConfirm(false)}
+          />
         </div>
-      </div>
+      </motion.div>
 
       {/* 角色引导弹窗 */}
       <AnimatePresence>
@@ -407,7 +611,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
                       hover:bg-[var(--color-primary)]/20 transition-colors"
                   >
                     去管理
-                  </button>
+                   </button>
                 </div>
               </div>
             </div>
@@ -419,9 +623,10 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
       <AnimatePresence>
         {!isExpanded && (
           <motion.div
-            initial={{ opacity: 0, y: -3 }}
+            key={bottomText}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -3 }}
+            exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.2 }}
             className="absolute top-full left-1/2 -translate-x-1/2 mt-1 whitespace-nowrap "
           >
@@ -465,6 +670,7 @@ export const DynamicItem = ({ isMainMenu, handleItemClick, homeItem, isActive, i
       {/* 主页按钮 */}
       <motion.button
         onClick={(e) => {
+          if (useNavStore.getState().dragPreview?.isDragging) return;
           e.stopPropagation();
 
           if (isMainMenu) {
@@ -481,7 +687,7 @@ export const DynamicItem = ({ isMainMenu, handleItemClick, homeItem, isActive, i
             relative flex items-center gap-2 px-2 py-1 rounded-full
             text-sm font-medium transition-all duration-300 cursor-pointer z-10
             ${isActive
-            ? 'bg-[var(--color-primary)]/15 text-[var(--color-primary)] shadow-md'
+            ? 'text-[var(--color-primary)] shadow-md'
             : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)]'
           }
           `}
@@ -515,10 +721,9 @@ export const DynamicItem = ({ isMainMenu, handleItemClick, homeItem, isActive, i
 
         {item.path && isActive && (
           <motion.div
-            layoutId={`activeIndicator-${item.id}`}
-            className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5
-                  bg-[var(--color-primary)] rounded-full shadow-lg"
-            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            layoutId="activeIndicator"
+            className="absolute inset-0 rounded-full bg-[var(--color-primary)]/15 -z-10"
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
           />
         )}
       </motion.button>

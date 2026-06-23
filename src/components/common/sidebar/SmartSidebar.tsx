@@ -1,13 +1,14 @@
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { getSidebarGroups, routes, sidebarMenuItems, SidebarMenuItem, findRouteByPath, SidebarGroup, pagesWithOwnSidebar, autoJumpToFirstChild } from '../../../router/config';
 import BaseSidebarLayout from './layouts/BaseSidebarLayout';
 import { logger } from '../../../helper/logger';
 import { openUrl, openFolder } from '../../../helper/rustInvoke';
 import { useInstanceStore } from '@/stores/instanceStore';
 import { Folder } from 'lucide-react';
-import { BaseSidebarContent, ConfirmPopup, useNotification, Animated } from '@/components/common';
+import { BaseSidebarContent, ConfirmPopup, useNotification } from '@/components/common';
 import { DURATION } from '@/utils/animations';
 import { useContextMenuAction } from '../../../router/contextMenuConfigs';
 
@@ -214,60 +215,68 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: Sm
     // };
   }
 
+  const sidebarTransition = {
+    x: { duration: DURATION.MEDIUM, ease: 'easeInOut' as const },
+    opacity: { duration: DURATION.FAST, ease: 'easeOut' as const },
+  };
+
   const renderSidebar = (items: SidebarMenuItem[]) => {
     return (
       <>
         <BaseSidebarLayout footer={footer} header={header}>
-          <Animated
-            fade
-            slide="left"
-            duration={DURATION.MEDIUM}
-            className="flex flex-col"
-          >
-            <BaseSidebarContent
+          <AnimatePresence mode="wait">
+            <motion.div
               key={location.pathname}
-              items={items}
-              onMenuClick={handleItemClick}
-              isActive={isActive}
-              isParentActive={isParentOfActive}
-              hasChildrenItems={hasChildrenItems}
-
-              isItemActive={(id) => id === `folder-${selectedFolderId}`}
-              groupTitle={currentMenuItem?.title || parentMenuItem?.title || ''}
-              groupTitleI18nKey={currentMenuItem?.titleI18nKey || parentMenuItem?.titleI18nKey}
-              onItemDelete={handleDeleteFolder}
-              onItemOpenFolder={handleOpenFolder}
-              deletableItemIds={deletableIds}
-              onContextMenuAction={handleContextMenuAction}
+              initial={{ opacity: 0, x: -12 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 12 }}
+              transition={sidebarTransition}
+              className="flex flex-col"
             >
-            </BaseSidebarContent>
+              <BaseSidebarContent
+                items={items}
+                onMenuClick={handleItemClick}
+                isActive={isActive}
+                isParentActive={isParentOfActive}
+                hasChildrenItems={hasChildrenItems}
 
-            {/* 弹框确认是否删除 */}
-            {showDeleteConfirm && (
-              <ConfirmPopup
-                isOpen={showDeleteConfirm}
-                title={t('instances.confirmRemoveFolder', '删除游戏目录')}
-                message={t('instances.confirmRemoveFolderDesc', '确定要删除目录 "{{name}}" 吗？此操作仅从列表中移除记录，不会删除实际文件。', { name: deletingName })}
-                confirmText={t('common.delete', '删除')}
-                cancelText={t('common.cancel', '取消')}
-                confirmType="danger"
-                showIcon
-                iconType="warning"
-                loading={isDeleting}
-                onConfirm={handleConfirmDelete}
-                onCancel={() => {
-                  setShowDeleteConfirm(false);
-                  setDeletingId(null);
-                  setDeletingName('');
-                }}
-                onClose={() => {
-                  setShowDeleteConfirm(false);
-                  setDeletingId(null);
-                  setDeletingName('');
-                }}
-              />
-            )}
-          </Animated>
+                isItemActive={(id) => id === `folder-${selectedFolderId}`}
+                groupTitle={currentMenuItem?.title || parentMenuItem?.title || ''}
+                groupTitleI18nKey={currentMenuItem?.titleI18nKey || parentMenuItem?.titleI18nKey}
+                onItemDelete={handleDeleteFolder}
+                onItemOpenFolder={handleOpenFolder}
+                deletableItemIds={deletableIds}
+                onContextMenuAction={handleContextMenuAction}
+              >
+              </BaseSidebarContent>
+
+              {/* 弹框确认是否删除 */}
+              {showDeleteConfirm && (
+                <ConfirmPopup
+                  isOpen={showDeleteConfirm}
+                  title={t('instances.confirmRemoveFolder', '删除游戏目录')}
+                  message={t('instances.confirmRemoveFolderDesc', '确定要删除目录 "{{name}}" 吗？此操作仅从列表中移除记录，不会删除实际文件。', { name: deletingName })}
+                  confirmText={t('common.delete', '删除')}
+                  cancelText={t('common.cancel', '取消')}
+                  confirmType="danger"
+                  showIcon
+                  iconType="warning"
+                  loading={isDeleting}
+                  onConfirm={handleConfirmDelete}
+                  onCancel={() => {
+                    setShowDeleteConfirm(false);
+                    setDeletingId(null);
+                    setDeletingName('');
+                  }}
+                  onClose={() => {
+                    setShowDeleteConfirm(false);
+                    setDeletingId(null);
+                    setDeletingName('');
+                  }}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
         </BaseSidebarLayout>
       </>
     )

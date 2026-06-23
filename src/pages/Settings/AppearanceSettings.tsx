@@ -1,3 +1,5 @@
+import { motion } from 'framer-motion';
+import { staggerContainer, staggerSection } from '@/utils/animations';
 import { UIMode, useUIModeStore } from '../../stores/uiModeStore';
 import TerminalThemePreview from '../../components/common/TerminalThemePreview';
 import { Toggle, LoadingSurface } from '../../components/common';
@@ -162,293 +164,306 @@ const ApearanceSettings = () => {
   const currentFitOption = IMAGE_FIT_OPTIONS.find((o) => o.id === (config.imageFit || 'cover'));
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <SettingsPanel label="布局">
-        <Toggle
-          checked={uiMode == UIMode.CLASSIC}
-          onChange={(enabled) => setUIMode(enabled ? UIMode.CLASSIC : UIMode.ISLAND)}
-          label='经典模式(classic)'
-          disabled={false}
-        />
-
-        <Toggle
-          checked={animation.enabled}
-          onChange={handleAnimationSetting}
-          label='开启页面动画'
-          disabled={false}
-        />
-
-        {/* TODO: 实现dropdown的 animateFromOrigin 开关 */}
-        <SettingsPanel.Item>
-          <SettingsPanel.DropDown
-            label='字体'
-            options={fontOptions}
-            value={fontOptions.find((f) => f.id == font?.name)}
-            onSelect={handleFontSelect}
-            showSearch
-            searchPlaceholder='请搜索'
+    <motion.div
+      className="p-6 max-w-5xl mx-auto"
+      variants={staggerContainer}
+      initial="initial"
+      animate="animate"
+    >
+      <motion.div variants={staggerSection}>
+        <SettingsPanel label="布局">
+          <Toggle
+            checked={uiMode == UIMode.CLASSIC}
+            onChange={(enabled) => setUIMode(enabled ? UIMode.CLASSIC : UIMode.ISLAND)}
+            label='经典模式(classic)'
+            disabled={false}
           />
-        </SettingsPanel.Item>
 
-        <SettingsPanel.Item>
-          <SettingsPanel.DropDown
-            label='字体大小'
-            options={fontScaleConfig.options}
-            value={fontScaleConfig.options.find(
-              o => o.id === fontScaleConfig.toId(fontScale)
-            )}
-            onSelect={handleFontScaleSelect}
+          <Toggle
+            checked={animation.enabled}
+            onChange={handleAnimationSetting}
+            label='开启页面动画'
+            disabled={false}
           />
-        </SettingsPanel.Item>
-      </SettingsPanel>
 
-      <SettingsPanel label="加载动画">
-        <SettingsPanel.Item>
-          <SettingsPanel.DropDown
-            label="动画类型"
-            options={LOADING_VARIANT_OPTIONS}
-            value={LOADING_VARIANT_OPTIONS.find((o) => o.id === animation.loadingVariant)}
-            onSelect={handleLoadingVariantSelect}
-          />
-        </SettingsPanel.Item>
-
-        {animation.loadingVariant === 'spinner' && (
+          {/* TODO: 实现dropdown的 animateFromOrigin 开关 */}
           <SettingsPanel.Item>
             <SettingsPanel.DropDown
-              label="Spinner 风格"
-              options={SPINNER_STYLE_OPTIONS}
-              value={SPINNER_STYLE_OPTIONS.find((o) => o.id === animation.spinnerStyle)}
-              onSelect={handleSpinnerStyleSelect}
+              label='字体'
+              options={fontOptions}
+              value={fontOptions.find((f) => f.id == font?.name)}
+              onSelect={handleFontSelect}
+              showSearch
+              searchPlaceholder='请搜索'
             />
           </SettingsPanel.Item>
-        )}
 
-        {animation.loadingVariant === 'skeleton' && (
           <SettingsPanel.Item>
             <SettingsPanel.DropDown
-              label="骨架屏风格"
-              options={SKELETON_STYLE_OPTIONS}
-              value={SKELETON_STYLE_OPTIONS.find((o) => o.id === animation.skeletonStyle)}
-              onSelect={handleSkeletonStyleSelect}
+              label='字体大小'
+              options={fontScaleConfig.options}
+              value={fontScaleConfig.options.find(
+                o => o.id === fontScaleConfig.toId(fontScale)
+              )}
+              onSelect={handleFontScaleSelect}
             />
           </SettingsPanel.Item>
-        )}
+        </SettingsPanel>
+      </motion.div>
 
-        <Toggle
-          checked={animation.globalTopbar}
-          onChange={handleGlobalTopbarChange}
-          label="全局顶部进度条"
-        />
-
-        <SettingsPanel.Item noPadding>
-          <div className="border-t border-[var(--color-border)] px-3 py-3">
-            <span className="text-sm font-medium text-[var(--color-text-primary)] block mb-2">
-              加载动画演示
-            </span>
-            <div className="flex gap-2 mb-2">
-              {LOADING_VARIANT_OPTIONS.map((opt) => (
-                <button
-                  key={opt.id}
-                  onClick={() => triggerDemo(opt.id)}
-                  className="px-3 py-1 text-xs rounded-md border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] transition-colors"
-                >
-                  {opt.label}
-                </button>
-              ))}
-              <button
-                onClick={stopDemo}
-                className="px-3 py-1 text-xs rounded-md border border-red-500/50 text-red-400 hover:bg-red-500/10 transition-colors"
-              >
-                停止
-              </button>
-            </div>
-            <div className="rounded-md border border-[var(--color-border)] min-h-[80px] overflow-hidden bg-[var(--color-bg-secondary)]">
-              {demoActive ? (
-                <LoadingSurface loadingKey="demo:loading" skeleton="list" skeletonCount={3}>
-                  <div className="p-6 text-center text-sm text-[var(--color-text-tertiary)]">
-                    真实内容区域
-                  </div>
-                </LoadingSurface>
-              ) : (
-                <div className="flex items-center justify-center h-20 text-xs text-[var(--color-text-disabled)]">
-                  点击上方按钮触发加载演示
-                </div>
-              )}
-            </div>
-          </div>
-        </SettingsPanel.Item>
-      </SettingsPanel>
-
-      <SettingsPanel label="主题">
-        <SettingsPanel.Item shouldLoad={true} loadingKey='appearacne:theme'>
-          <SettingsPanel.Sub label='终端主题'>
-            <SettingsPanel.Toggle
-              checked={isCompat}
-              onChange={(enabled) => { setIsCompat(enabled) }}
-              label='简洁模式'
+      <motion.div variants={staggerSection}>
+        <SettingsPanel label="加载动画">
+          <SettingsPanel.Item>
+            <SettingsPanel.DropDown
+              label="动画类型"
+              options={LOADING_VARIANT_OPTIONS}
+              value={LOADING_VARIANT_OPTIONS.find((o) => o.id === animation.loadingVariant)}
+              onSelect={handleLoadingVariantSelect}
             />
-            <TerminalThemePreview compact={isCompat} />
-          </SettingsPanel.Sub>
-        </SettingsPanel.Item>
-      </SettingsPanel>
-
-      <SettingsPanel label="背景">
-        <SettingsPanel.Item>
-          <SettingsPanel.DropDown
-            label="背景类型"
-            options={BACKGROUND_TYPE_OPTIONS}
-            value={currentTypeOption}
-            onSelect={handleTypeSelect}
-          />
-        </SettingsPanel.Item>
-
-        {config.type === 'color' && (
-          <SettingsPanel.Item>
-            <div className="flex items-center justify-between px-1">
-              <span className="text-sm text-[var(--color-text-secondary)]">背景颜色</span>
-              <input
-                type="color"
-                value={config.color || '#2c577e'}
-                onChange={(e) => setBackground({ color: e.target.value })}
-                className="w-10 h-10 rounded-md border border-[var(--color-border)] bg-transparent cursor-pointer"
-              />
-            </div>
           </SettingsPanel.Item>
-        )}
 
-        {config.type === 'gradient' && (
-          <SettingsPanel.Item>
-            <div className="px-1">
-              <span className="text-sm text-[var(--color-text-secondary)] block mb-2">渐变预设</span>
-              <div className="flex gap-2 flex-wrap">
-                {GRADIENT_PRESETS.map((preset) => (
-                  <button
-                    key={preset.id}
-                    onClick={() => handleGradientPreset(preset.value)}
-                    className={`w-14 h-14 rounded-lg border-2 transition-all ${config.gradient === preset.value
-                      ? 'border-[var(--color-primary)] scale-110'
-                      : 'border-[var(--color-border)] hover:border-[var(--color-border-hover)]'
-                      }`}
-                    style={{ backgroundImage: preset.value }}
-                    title={preset.label}
-                  />
-                ))}
-              </div>
-              <div className="mt-3">
-                <span className="text-sm text-[var(--color-text-secondary)] block mb-1">自定义渐变</span>
-                <input
-                  type="text"
-                  value={config.gradient || ''}
-                  onChange={(e) => setBackground({ gradient: e.target.value })}
-                  placeholder="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-                  className="w-full px-3 py-2 text-sm bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border)] rounded-md outline-none focus:border-[var(--color-primary)]"
-                />
-              </div>
-            </div>
-          </SettingsPanel.Item>
-        )}
-
-        {config.type === 'image' && (
-          <SettingsPanel.Item>
-            <div className="px-1 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-[var(--color-text-secondary)]">选择图片</span>
-                <button
-                  onClick={handleSelectImage}
-                  className="px-4 py-1.5 text-sm rounded-md bg-[var(--color-primary)] text-white hover:opacity-90 transition-opacity"
-                >
-                  浏览...
-                </button>
-              </div>
-              {/* OPTIMIZE: 提取为通用缩略图组件 */}
-              {config.imagePath && (
-                <div className="w-6/12 h-80 rounded-md overflow-hidden border border-[var(--color-border)] bg-[var(--color-bg-secondary)]">
-                  <img
-                    src={config.imagePath}
-                    alt="背景预览"
-                    className="w-full h-full object-fill"
-                  />
-                </div>
-              )}
-              <DropDown
-                options={IMAGE_FIT_OPTIONS}
-                value={currentFitOption}
-                onSelect={handleFitSelect}
-                buttonWidth="w-xs"
-              />
-            </div>
-          </SettingsPanel.Item>
-        )}
-
-        {config.type !== 'none' && (
-          <>
+          {animation.loadingVariant === 'spinner' && (
             <SettingsPanel.Item>
-              <div className="px-1">
-                <Slider
-                  label="透明度"
-                  value={config.opacity}
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  displayValue={`${Math.round(config.opacity * 100)}%`}
-                  onChange={(v) => setBackground({ opacity: v })}
+              <SettingsPanel.DropDown
+                label="Spinner 风格"
+                options={SPINNER_STYLE_OPTIONS}
+                value={SPINNER_STYLE_OPTIONS.find((o) => o.id === animation.spinnerStyle)}
+                onSelect={handleSpinnerStyleSelect}
+              />
+            </SettingsPanel.Item>
+          )}
+
+          {animation.loadingVariant === 'skeleton' && (
+            <SettingsPanel.Item>
+              <SettingsPanel.DropDown
+                label="骨架屏风格"
+                options={SKELETON_STYLE_OPTIONS}
+                value={SKELETON_STYLE_OPTIONS.find((o) => o.id === animation.skeletonStyle)}
+                onSelect={handleSkeletonStyleSelect}
+              />
+            </SettingsPanel.Item>
+          )}
+
+          <Toggle
+            checked={animation.globalTopbar}
+            onChange={handleGlobalTopbarChange}
+            label="全局顶部进度条"
+          />
+
+          <SettingsPanel.Item noPadding>
+            <div className="border-t border-[var(--color-border)] px-3 py-3">
+              <span className="text-sm font-medium text-[var(--color-text-primary)] block mb-2">
+                加载动画演示
+              </span>
+              <div className="flex gap-2 mb-2">
+                {LOADING_VARIANT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.id}
+                    onClick={() => triggerDemo(opt.id)}
+                    className="px-3 py-1 text-xs rounded-md border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] transition-colors"
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+                <button
+                  onClick={stopDemo}
+                  className="px-3 py-1 text-xs rounded-md border border-red-500/50 text-red-400 hover:bg-red-500/10 transition-colors"
+                >
+                  停止
+                </button>
+              </div>
+              <div className="rounded-md border border-[var(--color-border)] min-h-[80px] overflow-hidden bg-[var(--color-bg-secondary)]">
+                {demoActive ? (
+                  <LoadingSurface loadingKey="demo:loading" skeleton="list" skeletonCount={3}>
+                    <div className="p-6 text-center text-sm text-[var(--color-text-tertiary)]">
+                      真实内容区域
+                    </div>
+                  </LoadingSurface>
+                ) : (
+                  <div className="flex items-center justify-center h-20 text-xs text-[var(--color-text-disabled)]">
+                    点击上方按钮触发加载演示
+                  </div>
+                )}
+              </div>
+            </div>
+          </SettingsPanel.Item>
+        </SettingsPanel>
+      </motion.div>
+
+      <motion.div variants={staggerSection}>
+        <SettingsPanel label="主题">
+          <SettingsPanel.Item shouldLoad={true} loadingKey='appearacne:theme'>
+            <SettingsPanel.Sub label='终端主题'>
+              <SettingsPanel.Toggle
+                checked={isCompat}
+                onChange={(enabled) => { setIsCompat(enabled) }}
+                label='简洁模式'
+              />
+              <TerminalThemePreview compact={isCompat} />
+            </SettingsPanel.Sub>
+          </SettingsPanel.Item>
+        </SettingsPanel>
+      </motion.div>
+
+      <motion.div variants={staggerSection}>
+        <SettingsPanel label="背景">
+          <SettingsPanel.Item>
+            <SettingsPanel.DropDown
+              label="背景类型"
+              options={BACKGROUND_TYPE_OPTIONS}
+              value={currentTypeOption}
+              onSelect={handleTypeSelect}
+            />
+          </SettingsPanel.Item>
+
+          {config.type === 'color' && (
+            <SettingsPanel.Item>
+              <div className="flex items-center justify-between px-1">
+                <span className="text-sm text-[var(--color-text-secondary)]">背景颜色</span>
+                <input
+                  type="color"
+                  value={config.color || '#2c577e'}
+                  onChange={(e) => setBackground({ color: e.target.value })}
+                  className="w-10 h-10 rounded-md border border-[var(--color-border)] bg-transparent cursor-pointer"
                 />
               </div>
             </SettingsPanel.Item>
+          )}
 
-            {config.type === 'image' && (
-              <SettingsPanel.Item>
-                <div className="px-1">
-                  <Slider
-                    label="模糊"
-                    value={config.blur}
-                    min={0}
-                    max={50}
-                    step={1}
-                    displayValue={`${config.blur}px`}
-                    onChange={(v) => setBackground({ blur: v })}
+          {config.type === 'gradient' && (
+            <SettingsPanel.Item>
+              <div className="px-1">
+                <span className="text-sm text-[var(--color-text-secondary)] block mb-2">渐变预设</span>
+                <div className="flex gap-2 flex-wrap">
+                  {GRADIENT_PRESETS.map((preset) => (
+                    <button
+                      key={preset.id}
+                      onClick={() => handleGradientPreset(preset.value)}
+                      className={`w-14 h-14 rounded-lg border-2 transition-all ${config.gradient === preset.value
+                        ? 'border-[var(--color-primary)] scale-110'
+                        : 'border-[var(--color-border)] hover:border-[var(--color-border-hover)]'
+                        }`}
+                      style={{ backgroundImage: preset.value }}
+                      title={preset.label}
+                    />
+                  ))}
+                </div>
+                <div className="mt-3">
+                  <span className="text-sm text-[var(--color-text-secondary)] block mb-1">自定义渐变</span>
+                  <input
+                    type="text"
+                    value={config.gradient || ''}
+                    onChange={(e) => setBackground({ gradient: e.target.value })}
+                    placeholder="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                    className="w-full px-3 py-2 text-sm bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border)] rounded-md outline-none focus:border-[var(--color-primary)]"
                   />
                 </div>
-              </SettingsPanel.Item>
-            )}
+              </div>
+            </SettingsPanel.Item>
+          )}
 
+          {config.type === 'image' && (
             <SettingsPanel.Item>
               <div className="px-1 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-[var(--color-text-secondary)]">叠加色</span>
-                  <input
-                    type="color"
-                    value={config.overlayColor}
-                    onChange={(e) => setBackground({ overlayColor: e.target.value })}
-                    className="w-8 h-8 rounded-md border border-[var(--color-border)] bg-transparent cursor-pointer"
-                  />
+                  <span className="text-sm text-[var(--color-text-secondary)]">选择图片</span>
+                  <button
+                    onClick={handleSelectImage}
+                    className="px-4 py-1.5 text-sm rounded-md bg-[var(--color-primary)] text-white hover:opacity-90 transition-opacity"
+                  >
+                    浏览...
+                  </button>
                 </div>
-                <Slider
-                  label="叠加强度"
-                  value={config.overlayOpacity}
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  displayValue={`${Math.round(config.overlayOpacity * 100)}%`}
-                  onChange={(v) => setBackground({ overlayOpacity: v })}
+                {/* OPTIMIZE: 提取为通用缩略图组件 */}
+                {config.imagePath && (
+                  <div className="w-6/12 h-80 rounded-md overflow-hidden border border-[var(--color-border)] bg-[var(--color-bg-secondary)]">
+                    <img
+                      src={config.imagePath}
+                      alt="背景预览"
+                      className="w-full h-full object-fill"
+                    />
+                  </div>
+                )}
+                <DropDown
+                  options={IMAGE_FIT_OPTIONS}
+                  value={currentFitOption}
+                  onSelect={handleFitSelect}
+                  buttonWidth="w-xs"
                 />
               </div>
             </SettingsPanel.Item>
-          </>
-        )}
+          )}
 
-        <SettingsPanel.Item>
-          <div className="px-1">
-            <button
-              onClick={resetBackground}
-              className="px-4 py-1.5 text-sm rounded-md border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-hover)] transition-colors"
-            >
-              重置为默认
-            </button>
-          </div>
-        </SettingsPanel.Item>
-      </SettingsPanel>
-    </div>
+          {config.type !== 'none' && (
+            <>
+              <SettingsPanel.Item>
+                <div className="px-1">
+                  <Slider
+                    label="透明度"
+                    value={config.opacity}
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    displayValue={`${Math.round(config.opacity * 100)}%`}
+                    onChange={(v) => setBackground({ opacity: v })}
+                  />
+                </div>
+              </SettingsPanel.Item>
+
+              {config.type === 'image' && (
+                <SettingsPanel.Item>
+                  <div className="px-1">
+                    <Slider
+                      label="模糊"
+                      value={config.blur}
+                      min={0}
+                      max={50}
+                      step={1}
+                      displayValue={`${config.blur}px`}
+                      onChange={(v) => setBackground({ blur: v })}
+                    />
+                  </div>
+                </SettingsPanel.Item>
+              )}
+
+              <SettingsPanel.Item>
+                <div className="px-1 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-[var(--color-text-secondary)]">叠加色</span>
+                    <input
+                      type="color"
+                      value={config.overlayColor}
+                      onChange={(e) => setBackground({ overlayColor: e.target.value })}
+                      className="w-8 h-8 rounded-md border border-[var(--color-border)] bg-transparent cursor-pointer"
+                    />
+                  </div>
+                  <Slider
+                    label="叠加强度"
+                    value={config.overlayOpacity}
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    displayValue={`${Math.round(config.overlayOpacity * 100)}%`}
+                    onChange={(v) => setBackground({ overlayOpacity: v })}
+                  />
+                </div>
+              </SettingsPanel.Item>
+            </>
+          )}
+
+          <SettingsPanel.Item>
+            <div className="px-1">
+              <button
+                onClick={resetBackground}
+                className="px-4 py-1.5 text-sm rounded-md border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-hover)] transition-colors"
+              >
+                重置为默认
+              </button>
+            </div>
+          </SettingsPanel.Item>
+        </SettingsPanel>
+      </motion.div>
+    </motion.div>
   );
 };
 
