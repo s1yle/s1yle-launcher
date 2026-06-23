@@ -11,6 +11,22 @@ use std::f32::consts::SQRT_2;
 use std::io::Cursor;
 use tauri::{AppHandle, Manager};
 
+// ── Steve/Alex 模型判定 ──
+
+/// 根据 UUID 判定默认皮肤模型
+///
+/// 规则：提取 UUID 的二进制形式第 63 位（最低有效位的第 63 位），
+/// 简化实现：取 UUID 最后一位 hex → 十进制，奇数 → Alex (slim)，偶数 → Steve (default)
+pub fn is_slim_by_uuid(uuid: &str) -> bool {
+    let last = uuid
+        .chars()
+        .filter(|c| *c != '-')
+        .last()
+        .and_then(|c| u8::from_str_radix(&c.to_string(), 16).ok())
+        .unwrap_or(0);
+    last % 2 == 1
+}
+
 // ── 斜二测投影参数 ──
 
 const DEPTH_SCALE: f32 = 0.5;
@@ -112,6 +128,89 @@ pub struct CapeTexture {
     pub url: String,
 }
 
+// ── Username → UUID API 结构体 ──
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct MinecraftUserProfile {
+    pub id: String,
+    pub name: String,
+    #[serde(default)]
+    pub legacy: Option<bool>,
+    #[serde(default)]
+    pub demo: Option<bool>,
+}
+
+// ── Username → UUID API 函数 ──
+
+/// 通过玩家名称获取 UUID（单次）
+pub async fn fetch_uuid_by_username(username: &str) -> Result<MinecraftUserProfile, String> {
+    let url = format!(
+        "https://api.mojang.com/users/profiles/minecraft/{}",
+        username
+    );
+    let resp = reqwest::get(&url)
+        .await
+        .map_err(|e| format!("UUID 请求失败: {}", e))?;
+
+    let status = resp.status();
+    if status == 404 {
+        return Err(format!("玩家不存在: {}", username));
+    }
+    if status.is_client_error() || status.is_server_error() {
+        let body = resp.text().await.unwrap_or_default();
+        return Err(format!("Mojang API 返回错误 {}: {}", status.as_u16(), body));
+    }
+
+    let profile = resp
+        .json::<MinecraftUserProfile>()
+        .await
+        .map_err(|e| format!("转换为Json失败: {}", e))?;
+
+    Ok(profile)
+}
+
+/// 批量通过玩家名称获取 UUID（最多 10 个）
+pub async fn fetch_uuids_by_usernames(usernames: Vec<String>) -> Result<Vec<MinecraftUserProfile>, String> {
+    if usernames.is_empty() || usernames.len() > 10 {
+        return Err("请求数量必须在 1 到 10 之间".to_string());
+    }
+
+    let client = reqwest::Client::new();
+    let resp = client
+        .post("https://api.mojang.com/profiles/minecraft")
+        .json(&usernames)
+        .send()
+        .await
+        .map_err(|e| format!("批量 UUID 请求失败: {}", e))?;
+
+    let status = resp.status();
+    if status == 400 {
+        let body = resp.text().await.unwrap_or_default();
+        return Err(format!("请求参数错误: {}", body));
+    }
+    if status.is_client_error() || status.is_server_error() {
+        let body = resp.text().await.unwrap_or_default();
+        return Err(format!("Mojang API 返回错误 {}: {}", status.as_u16(), body));
+    }
+
+    let profiles = resp
+        .json::<Vec<MinecraftUserProfile>>()
+        .await
+        .map_err(|e| format!("转换为Json失败: {}", e))?;
+
+    Ok(profiles)
+}
+
+#[tauri::command]
+pub async fn get_uuid_by_username(username: String) -> Result<MinecraftUserProfile, String> {
+    fetch_uuid_by_username(&username).await
+}
+
+#[tauri::command]
+pub async fn get_uuids_by_usernames(usernames: Vec<String>) -> Result<Vec<MinecraftUserProfile>, String> {
+    fetch_uuids_by_usernames(usernames).await
+}
+
 // ── Mojang API 函数 ──
 
 fn decode_texture_value(value: &str) -> Result<TextureData, String> {
@@ -196,22 +295,30 @@ fn get_texture_url(profile: &MinecraftProfile) -> Result<(String, Option<String>
     Ok((skin_url, model))
 }
 
-fn read_cached_model(cache_dir: &std::path::Path, uuid: &str) -> Option<String> {
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct SkinModelResponse {
+    pub model: String,
+    pub from_api: bool,
+}
+
+fn read_cached_model(cache_dir: &std::path::Path, uuid: &str) -> Option<(String, bool)> {
     let meta_path = cache_dir.join(format!("{}.json", uuid));
     let bytes = std::fs::read(meta_path).ok()?;
     let meta: serde_json::Value = serde_json::from_slice(&bytes).ok()?;
-    meta["model"].as_str().and_then(|s| {
-        if s.is_empty() {
-            None
-        } else {
-            Some(s.to_string())
-        }
-    })
+    let model = meta["model"].as_str().and_then(|s| {
+        if s.is_empty() { None } else { Some(s.to_string()) }
+    })?;
+    // 旧缓存无 from_api 字段 → 需要重新向 API 查询
+    let from_api = match meta.get("from_api") {
+        Some(v) => v.as_bool().unwrap_or(false),
+        None => return None, // 旧缓存，重新查询
+    };
+    Some((model, from_api))
 }
 
-fn write_cached_model(cache_dir: &std::path::Path, uuid: &str, model: Option<&str>) {
+fn write_cached_model(cache_dir: &std::path::Path, uuid: &str, model: Option<&str>, from_api: bool) {
     let meta_path = cache_dir.join(format!("{}.json", uuid));
-    let value = serde_json::json!({ "model": model.unwrap_or("") });
+    let value = serde_json::json!({ "model": model.unwrap_or(""), "from_api": from_api });
     let _ = std::fs::write(&meta_path, serde_json::to_string(&value).unwrap());
 }
 
@@ -223,23 +330,50 @@ async fn download_and_cache_skin(
     let cached_path = cache_dir.join(format!("{}.png", uuid));
 
     if cached_path.exists() {
-        let model = read_cached_model(&cache_dir, uuid);
+        let model = read_cached_model(&cache_dir, uuid).map(|(m, _)| m);
         return Ok((cached_path, model));
     }
 
-    let profile = fetch_skin_by_uuid(uuid).await?;
-    let (skin_url, model) = get_texture_url(&profile)?;
+    let (skin_bytes, model, from_api): (Vec<u8>, Option<String>, bool) =
+        match fetch_skin_by_uuid(uuid).await {
+            Ok(profile) => {
+                match get_texture_url(&profile) {
+                    Ok((skin_url, model)) => {
+                        match reqwest::get(&skin_url).await {
+                            Ok(resp) => {
+                                match resp.bytes().await {
+                                    Ok(bytes) => (bytes.to_vec(), model, true),
+                                    Err(_) => {
+                                        let is_slim = is_slim_by_uuid(uuid);
+                                        let fallback = generate_default_skin(is_slim);
+                                        (encode_png(&fallback).unwrap_or_default(), Some(if is_slim { "slim".to_string() } else { "default".to_string() }), false)
+                                    }
+                                }
+                            }
+                            Err(_) => {
+                                let is_slim = is_slim_by_uuid(uuid);
+                                let fallback = generate_default_skin(is_slim);
+                                (encode_png(&fallback).unwrap_or_default(), Some(if is_slim { "slim".to_string() } else { "default".to_string() }), false)
+                            }
+                        }
+                    }
+                    Err(_) => {
+                        let is_slim = is_slim_by_uuid(uuid);
+                        let fallback = generate_default_skin(is_slim);
+                        (encode_png(&fallback).unwrap_or_default(), Some(if is_slim { "slim".to_string() } else { "default".to_string() }), false)
+                    }
+                }
+            }
+            Err(_) => {
+                let is_slim = is_slim_by_uuid(uuid);
+                let fallback = generate_default_skin(is_slim);
+                (encode_png(&fallback).unwrap_or_default(), Some(if is_slim { "slim".to_string() } else { "default".to_string() }), false)
+            }
+        };
 
-    let skin_bytes = reqwest::get(&skin_url)
-        .await
-        .map_err(|e| format!("皮肤下载失败: {}", e))?
-        .bytes()
-        .await
-        .map_err(|e| format!("读取皮肤数据失败: {}", e))?
-        .to_vec();
-
+    let model_str = model.as_deref().unwrap_or("default");
     std::fs::write(&cached_path, &skin_bytes).map_err(|e| format!("写入缓存失败: {}", e))?;
-    write_cached_model(&cache_dir, uuid, model.as_deref());
+    write_cached_model(&cache_dir, uuid, Some(model_str), from_api);
 
     Ok((cached_path, model))
 }
@@ -278,6 +412,63 @@ pub fn load_skin_from_bytes(bytes: &[u8]) -> Result<RgbaImage, String> {
 fn load_skin(path: &std::path::Path) -> Result<RgbaImage, String> {
     let bytes = std::fs::read(path).map_err(|e| format!("读取文件失败: {}", e))?;
     load_skin_from_bytes(&bytes)
+}
+
+/// 生成默认皮肤（离线账号降级用）
+fn generate_default_skin(is_slim: bool) -> RgbaImage {
+    fn rect(img: &mut RgbaImage, x1: u32, y1: u32, x2: u32, y2: u32, color: Rgba<u8>) {
+        for y in y1..y2 {
+            for x in x1..x2 {
+                img.put_pixel(x, y, color);
+            }
+        }
+    }
+
+    let mut img = RgbaImage::new(64, 64);
+    let skin_color = Rgba([200, 168, 120, 255]);
+    let eye_color = Rgba([50, 50, 50, 255]);
+    let mouth_color = Rgba([140, 80, 50, 255]);
+    let shirt_color = Rgba([80, 140, 200, 255]);
+    let pants_color = Rgba([70, 50, 40, 255]);
+
+    // 头部正面 (8,8)-(16,16)
+    rect(&mut img, 8, 8, 16, 16, skin_color);
+    // 左眼 (9,10)-(11,11) 
+    rect(&mut img, 9, 10, 11, 11, eye_color);
+    // 右眼 (13,10)-(15,11)
+    rect(&mut img, 13, 10, 15, 11, eye_color);
+    // 嘴巴 (11,13)-(13,14)
+    rect(&mut img, 11, 13, 13, 14, mouth_color);
+    // 头顶 (8,0)-(16,8)
+    rect(&mut img, 8, 0, 16, 8, Rgba([180, 148, 100, 255]));
+    // 头部右侧 (16,8)-(24,16)
+    rect(&mut img, 16, 8, 24, 16, Rgba([170, 140, 95, 255]));
+
+    // 身体 (20,20)-(28,32)
+    rect(&mut img, 20, 20, 28, 32, shirt_color);
+    // 身体外层 (20,36)-(28,48)
+    rect(&mut img, 20, 36, 28, 48, Rgba([60, 110, 170, 150]));
+
+    // 右臂
+    let (rax1, rax2, lax1, lax2) = if is_slim {
+        (44u32, 47u32, 37u32, 40u32)
+    } else {
+        (44, 48, 36, 40)
+    };
+    rect(&mut img, rax1, 20, rax2, 32, shirt_color);
+    rect(&mut img, rax1, 36, rax2, 48, Rgba([60, 110, 170, 150]));
+    // 左臂（镜像纹理）
+    rect(&mut img, lax1, 52, lax2, 64, shirt_color);
+    rect(&mut img, 53, 52, 56, 64, Rgba([60, 110, 170, 150]));
+
+    // 右腿 (4,20)-(8,32)
+    rect(&mut img, 4, 20, 8, 32, pants_color);
+    rect(&mut img, 4, 36, 8, 48, Rgba([50, 35, 25, 150]));
+    // 左腿（镜像纹理）
+    rect(&mut img, 20, 52, 24, 64, pants_color);
+    rect(&mut img, 4, 52, 8, 64, Rgba([50, 35, 25, 150]));
+
+    img
 }
 
 /// Alpha 混合（源 over 目标）
@@ -778,6 +969,31 @@ pub async fn render_isometric_avatar_cmd(
 
     let avatar = render_isometric_avatar(&skin, output_size, show_hat);
     encode_png(&avatar)
+}
+
+#[tauri::command]
+pub async fn get_skin_model(app: AppHandle, uuid: String) -> Result<SkinModelResponse, String> {
+    let cache_dir = get_skin_cache_dir(&app)?;
+
+    if let Some((model, from_api)) = read_cached_model(&cache_dir, &uuid) {
+        return Ok(SkinModelResponse { model, from_api });
+    }
+
+    match fetch_skin_by_uuid(&uuid).await {
+        Ok(profile) => {
+            if let Ok((_, model)) = get_texture_url(&profile) {
+                let m = model.unwrap_or_else(|| "default".to_string());
+                write_cached_model(&cache_dir, &uuid, Some(&m), true);
+                return Ok(SkinModelResponse { model: m, from_api: true });
+            }
+        }
+        Err(_) => {}
+    }
+
+    let is_slim = is_slim_by_uuid(&uuid);
+    let model = if is_slim { "slim".to_string() } else { "default".to_string() };
+    write_cached_model(&cache_dir, &uuid, Some(&model), false);
+    Ok(SkinModelResponse { model, from_api: false })
 }
 
 #[cfg(test)]

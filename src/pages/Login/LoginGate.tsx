@@ -11,6 +11,7 @@ import Header from "@/components/Header";
 import { NotificationProvider } from "@/components/common/NotificationProvider";
 
 const LoginGateInner = () => {
+  // useLoginFlow hook
   const {
     view,
     role,

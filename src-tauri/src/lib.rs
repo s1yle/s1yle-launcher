@@ -263,6 +263,9 @@ pub fn run() {
             render::get_skin_head,
             render::get_skin_cape,
             render::render_isometric_avatar_cmd,
+            render::get_skin_model,
+            render::get_uuid_by_username,
+            render::get_uuids_by_usernames,
         ])
         .run(tauri::generate_context!())
         .expect("启动失败！");
