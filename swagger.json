@@ -1,0 +1,1096 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "WeCraft! Launcher 服务端 API",
+        "title": "WeCraft Server API",
+        "contact": {},
+        "version": "0.1.1"
+    },
+    "host": "localhost:8080",
+    "basePath": "/api",
+    "paths": {
+        "/admin/bind": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Associates a Minecraft player UUID with the authenticated admin",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Bind a Minecraft player to admin account",
+                "parameters": [
+                    {
+                        "description": "Player UUID and optional name",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.BindPlayerRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "player already bound",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/bind/{uuid}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Removes the binding between the admin and a Minecraft player",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Unbind a Minecraft player",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Player UUID to unbind",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "binding not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/bound-players": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns all Minecraft players bound to the authenticated admin",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Get all bound players",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.BoundPlayer"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/info": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns admin info including bound players",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Get admin profile",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.AdminInfo"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/analytics/overview": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns dashboard statistics for the authenticated admin",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "Get analytics overview",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.AnalyticsOverview"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/check": {
+            "get": {
+                "description": "Returns whether at least one admin account exists in the system",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Check if any admin is registered",
+                "responses": {
+                    "200": {
+                        "description": "registered status",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "boolean"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "description": "Authenticates an admin with email and password, returns JWT tokens",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Admin login",
+                "parameters": [
+                    {
+                        "description": "Login credentials",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.AuthResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "invalid email or password",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Invalidates the refresh token, effectively logging out the admin",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Logout admin",
+                "parameters": [
+                    {
+                        "description": "Refresh token to invalidate",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.RefreshRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/refresh": {
+            "post": {
+                "description": "Exchanges a valid refresh token for a new access/refresh token pair",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Refresh access token",
+                "parameters": [
+                    {
+                        "description": "Refresh token",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.RefreshRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.AuthResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "invalid or expired refresh token",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/register": {
+            "post": {
+                "description": "Creates a new admin account with email and password",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Register a new admin account",
+                "parameters": [
+                    {
+                        "description": "Registration info",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.RegisterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.AuthResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid request body",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "email already registered",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "description": "Returns server health status and version",
+                "tags": [
+                    "System"
+                ],
+                "summary": "Health check",
+                "responses": {
+                    "200": {
+                        "description": "status and version",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/servers": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns all Minecraft servers belonging to the authenticated admin",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Servers"
+                ],
+                "summary": "List all servers",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Server"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Adds a new Minecraft server entry for the authenticated admin",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Servers"
+                ],
+                "summary": "Create a new server",
+                "parameters": [
+                    {
+                        "description": "Server details",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateServerRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Server"
+                        }
+                    },
+                    "400": {
+                        "description": "name is required",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/servers/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns details of a specific Minecraft server by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Servers"
+                ],
+                "summary": "Get a single server",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Server ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Server"
+                        }
+                    },
+                    "404": {
+                        "description": "server not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates an existing Minecraft server's details",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Servers"
+                ],
+                "summary": "Update a server",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Server ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Fields to update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdateServerRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Server"
+                        }
+                    },
+                    "404": {
+                        "description": "server not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Removes a Minecraft server entry by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Servers"
+                ],
+                "summary": "Delete a server",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Server ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "server not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/servers/{id}/start": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Sets a server's status to 'online'",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Servers"
+                ],
+                "summary": "Start a server",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Server ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "server not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/servers/{id}/stop": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Sets a server's status to 'offline'",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Servers"
+                ],
+                "summary": "Stop a server",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Server ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "server not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/uploads": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a list of files uploaded by the authenticated admin (latest 50)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Uploads"
+                ],
+                "summary": "List uploaded files",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.UploadResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Uploads a file (image, zip, pdf, etc.) for the authenticated admin",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Uploads"
+                ],
+                "summary": "Upload a file",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "File to upload",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.UploadResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid upload or file type not allowed",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/uploads/file/{admin_id}/{filename}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the raw file content with caching headers",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "Uploads"
+                ],
+                "summary": "Serve/download an uploaded file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Admin ID",
+                        "name": "admin_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "File path (including subdirs)",
+                        "name": "filename",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "403": {
+                        "description": "access denied",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/uploads/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Removes an upload record and its physical file from disk",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Uploads"
+                ],
+                "summary": "Delete an uploaded file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Upload ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "upload not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.MessageResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "models.AdminInfo": {
+            "type": "object",
+            "properties": {
+                "bound_players": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.AnalyticsOverview": {
+            "type": "object",
+            "properties": {
+                "bound_players": {
+                    "type": "integer"
+                },
+                "daily_active": {
+                    "type": "integer"
+                },
+                "online_rate": {
+                    "type": "number"
+                },
+                "online_servers": {
+                    "type": "integer"
+                },
+                "storage_used": {
+                    "type": "integer"
+                },
+                "total_players": {
+                    "type": "integer"
+                },
+                "total_servers": {
+                    "type": "integer"
+                },
+                "total_uploads": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.AuthResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "admin": {
+                    "$ref": "#/definitions/models.AdminInfo"
+                },
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.BindPlayerRequest": {
+            "type": "object",
+            "required": [
+                "player_uuid"
+            ],
+            "properties": {
+                "player_name": {
+                    "type": "string"
+                },
+                "player_uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.BoundPlayer": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "player_name": {
+                    "type": "string"
+                },
+                "player_uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.CreateServerRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "host": {
+                    "type": "string"
+                },
+                "max_players": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "integer"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.LoginRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.MessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.RefreshRequest": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.RegisterRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 72,
+                    "minLength": 6
+                }
+            }
+        },
+        "models.Server": {
+            "type": "object",
+            "properties": {
+                "admin_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "current_players": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "host": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "max_players": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.UpdateServerRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "host": {
+                    "type": "string"
+                },
+                "max_players": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.UploadResponse": {
+            "type": "object",
+            "properties": {
+                "content_type": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "file_size": {
+                    "type": "integer"
+                },
+                "filename": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "original_name": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

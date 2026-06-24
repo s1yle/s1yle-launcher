@@ -18,7 +18,8 @@
     "version:beta": "node scripts/bump-version.js prerelease beta",
     "version:rc": "node scripts/bump-version.js prerelease rc",
     "version:reset": "node scripts/bump-version.js reset alpha",
-    "version:check": "node scripts/bump-version.js --dry-run"
+    "version:check": "node scripts/bump-version.js --dry-run",
+    "generate-api": "bash scripts/generate-api.sh"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
