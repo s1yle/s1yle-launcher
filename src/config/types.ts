@@ -1,11 +1,21 @@
 import type { AppConfig, InstanceConfig, UserPreferences, DownloadConfig } from '@/helper/rustInvoke';
 import { ThemePreset } from '@/stores/themeStore';
 
+/**
+ * 强调色类型
+ */
 export type AccentColor = 'indigo' | 'blue' | 'green' | 'purple' | 'red' | 'orange' | 'pink';
+/**
+ * 支持的语言类型
+ */
 export type Language = 'zh-CN' | 'en-US';
 
+/**
+ * 背景类型
+ */
 export type BackgroundType = 'none' | 'color' | 'gradient' | 'image'
 
+/** 背景配置 */
 export interface BackgroundConfig {
   type: BackgroundType
   color?: string
@@ -18,15 +28,19 @@ export interface BackgroundConfig {
   overlayOpacity: number
 }
 
+/** 配置系统事件映射 */
 export interface ConfigEvents {
   ready: () => void;
   change: (key: string, value: any) => void;
   error: (error: Error) => void;
 }
 
+/** 配置事件名称 */
 export type ConfigEvent = keyof ConfigEvents;
+/** 配置事件监听器类型 */
 export type ConfigEventListener<T extends ConfigEvent> = ConfigEvents[T];
 
+/** 配置键到值的映射 */
 export interface ConfigKeyMap {
   'preferences.theme': ThemePreset;
   'preferences.accent_color': AccentColor;
@@ -44,10 +58,13 @@ export interface ConfigKeyMap {
   'known_folders': any[];
 }
 
+/** 配置键类型 */
 export type ConfigKey = keyof ConfigKeyMap;
 
+/** 根据配置键获取对应的值类型 */
 export type ConfigValue<T extends ConfigKey> = ConfigKeyMap[T];
 
+/** 实例配置键到值的映射 */
 export interface InstanceConfigKeyMap {
   'java.java_path': string | null;
   'java.java_args': string[];
@@ -62,8 +79,10 @@ export interface InstanceConfigKeyMap {
   'enabled': boolean;
 }
 
+/** 实例配置键类型 */
 export type InstanceConfigKey = keyof InstanceConfigKeyMap;
 
+/** 配置状态 */
 export interface ConfigState {
   config: AppConfig | null;
   ready: boolean;
@@ -71,12 +90,14 @@ export interface ConfigState {
   error: Error | null;
 }
 
+/** 配置管理器初始化选项 */
 export interface ConfigManagerOptions {
   autoLoad?: boolean;
   cacheEnabled?: boolean;
   cacheDuration?: number;
 }
 
+/** 统一配置管理器接口 */
 export interface UnifiedConfigManager {
   initialize(): Promise<void>;
   whenReady(): Promise<void>;

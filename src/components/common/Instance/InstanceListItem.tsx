@@ -13,6 +13,7 @@ import ContextMenu, { useContextMenu, ContextMenuItemData } from "@/components/c
 import { listItem, transitions } from "@/utils/animations"
 import { inferVersionType } from "@/utils/format"
 
+/** 实例列表项组件 Props */
 interface InstanceListItemProps {
   instance: GameInstance;
   selected?: boolean;
@@ -46,6 +47,7 @@ const getLoaderIconPath = (type: ModLoaderType): string => {
   return iconMap[type] || 'grass.png';
 };
 
+/** 实例列表项组件，显示实例图标、名称、版本信息，支持右键菜单 */
 const InstanceListItem = ({
   instance,
   selected = false,

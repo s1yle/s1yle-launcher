@@ -8,6 +8,7 @@ interface SystemInfo {
   arch: string;
 }
 
+/** 启动器说明页面 - 前后端通信测试和功能预览 */
 const Hint = () => {
 
     const [greeting, setGreeting] = useState<string>('');

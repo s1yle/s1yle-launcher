@@ -22,7 +22,7 @@
     "generate-api": "bash scripts/generate-api.sh",
     "docs:gen": "pnpm docs:gen:api && pnpm docs:gen:rust && pnpm docs:gen:routes",
     "docs:gen:api": "typedoc --options typedoc.json",
-    "docs:gen:rust": "cd src-tauri && cargo doc --no-deps --document-private-items --target-dir ../docs/rust_target 2>&1 && rm -rf ../docs/rust && mv ../docs/rust_target/doc ../docs/rust && rm -rf ../docs/rust_target",
+    "docs:gen:rust": "cd src-tauri/ && cargo doc --open",
     "docs:gen:routes": "npx tsx scripts/generate-routes-doc.ts"
   },
   "dependencies": {

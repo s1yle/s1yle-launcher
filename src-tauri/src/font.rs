@@ -1,16 +1,23 @@
 use serde::Serialize;
 use std::collections::HashMap;
 
+/// 系统字体信息
 #[derive(Debug, Serialize, PartialEq, Eq, Hash)]
 pub struct SystemFont {
+    /// 字体名称
     pub name: String,
 }
 
+/// 字体类型枚举
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
 pub enum FontType {
+    /// 当前系统字体
     CURRENT,
+    /// 衬线字体
     SERIF,
+    /// 无衬线字体
     SANS,
+    /// 等宽字体
     MONO,
 }
 
@@ -126,11 +133,13 @@ fn get_cur_font() -> Option<HashMap<FontType, SystemFont>> {
 }
 
 
+/// 获取当前系统字体映射（CURRENT/SERIF/SANS/MONO）
 #[tauri::command]
 pub fn get_font() -> HashMap<FontType, SystemFont> {
     get_cur_font().unwrap_or_default()
 }
 
+/// 获取系统已安装的字体列表
 #[tauri::command]
 pub fn get_system_fonts() -> Vec<SystemFont> {
     list_system_font().unwrap_or_default()

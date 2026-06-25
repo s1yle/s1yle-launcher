@@ -6,15 +6,21 @@ use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::State;
 
+/// 模组加载器类型枚举
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ModLoaderType {
+    /// 原版（无加载器）
     Vanilla,
+    /// Fabric 加载器
     Fabric,
+    /// Forge 加载器
     Forge,
+    /// NeoForge 加载器
     NeoForge,
 }
 
 impl ModLoaderType {
+    /// 转换为字符串表示
     pub fn as_str(&self) -> &'static str {
         match self {
             ModLoaderType::Vanilla => "vanilla",
@@ -24,6 +30,7 @@ impl ModLoaderType {
         }
     }
 
+    /// 从字符串解析加载器类型
     pub fn from_str(s: &str) -> Option<Self> {
         match s.to_lowercase().as_str() {
             "vanilla" => Some(ModLoaderType::Vanilla),
@@ -35,26 +42,41 @@ impl ModLoaderType {
     }
 }
 
+/// 库文件信息
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LibraryInfo {
+    /// 库名称
     pub name: String,
+    /// 下载 URL
     pub url: String,
+    /// SHA1 校验值
     pub sha1: Option<String>,
+    /// 文件大小
     pub size: u64,
+    /// 存储路径
     pub path: String,
 }
 
+/// 模组加载器信息（启动配置）
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModLoaderInfo {
+    /// 版本标识
     pub version_id: String,
+    /// 加载器类型
     pub mod_loader_type: ModLoaderType,
+    /// Minecraft 版本
     pub minecraft_version: String,
+    /// 加载器版本
     pub loader_version: Option<String>,
+    /// 主类名
     pub main_class: String,
+    /// 库文件列表
     pub libraries: Vec<LibraryInfo>,
+    /// 是否需要客户端 jar
     pub client_jar_required: bool,
 }
 
+/// Fabric 版本信息
 #[derive(Debug, Clone, Deserialize)]
 #[allow(dead_code)]
 pub struct FabricVersion {
@@ -62,18 +84,21 @@ pub struct FabricVersion {
     pub installer: Option<FabricInstallerVersion>,
 }
 
+/// Fabric 加载器版本
 #[derive(Debug, Clone, Deserialize)]
 pub struct FabricLoaderVersion {
     pub version: String,
     pub builds: Option<i32>,
 }
 
+/// Fabric 安装器版本
 #[derive(Debug, Clone, Deserialize)]
 pub struct FabricInstallerVersion {
     pub version: String,
     pub builds: Option<i32>,
 }
 
+/// Fabric 版本 API 响应
 #[derive(Debug, Clone, Deserialize)]
 pub struct FabricVersionResponse {
     pub loader: Vec<FabricLoaderVersion>,
@@ -81,6 +106,7 @@ pub struct FabricVersionResponse {
     pub launcher_manager: Option<FabricLauncherMeta>,
 }
 
+/// Fabric 启动器元数据
 #[derive(Debug, Clone, Deserialize)]
 pub struct FabricLauncherMeta {
     pub version: String,
@@ -89,6 +115,7 @@ pub struct FabricLauncherMeta {
     pub sha1: Option<String>,
 }
 
+/// Fabric 版本详细信息
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FabricVersionDetail {
     pub id: String,
@@ -99,17 +126,20 @@ pub struct FabricVersionDetail {
     pub libraries: Vec<FabricLibrary>,
 }
 
+/// Fabric 主类名
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FabricMainClass {
     pub client: String,
 }
 
+/// Fabric 启动参数
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FabricArguments {
     pub game: Vec<serde_json::Value>,
     pub jvm: Vec<serde_json::Value>,
 }
 
+/// Fabric 库信息
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FabricLibrary {
     pub name: String,
@@ -119,6 +149,7 @@ pub struct FabricLibrary {
     pub path: Option<String>,
 }
 
+/// Forge 版本信息
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ForgeVersionInfo {
     pub mc_version: String,
@@ -130,30 +161,45 @@ pub struct ForgeVersionInfo {
     pub main_class: String,
 }
 
+/// 模组加载器版本列表
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModLoaderVersionList {
+    /// 加载器类型
     pub mod_loader_type: ModLoaderType,
+    /// Minecraft 版本
     pub minecraft_version: String,
+    /// 可用版本列表
     pub versions: Vec<ModLoaderVersionItem>,
 }
 
+/// 模组加载器版本项
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModLoaderVersionItem {
+    /// 版本号
     pub version: String,
+    /// 是否稳定
     pub stable: bool,
+    /// 下载 URL
     pub url: Option<String>,
+    /// SHA1 校验值
     pub sha1: Option<String>,
 }
 
+/// Fabric 元数据 API 基础 URL
 const FABRIC_META_BASE: &str = "https://meta.fabricmc.net/v2";
 
+/// 模组加载器管理器
 pub struct ModLoaderManager {
+    /// 基础下载路径
     pub base_path: PathBuf,
+    /// Fabric 版本缓存
     pub fabric_cache: Mutex<HashMap<String, FabricVersionResponse>>,
+    /// Forge 版本缓存
     pub forge_cache: Mutex<HashMap<String, Vec<ForgeVersionInfo>>>,
 }
 
 impl ModLoaderManager {
+    /// 创建新的 ModLoaderManager 实例
     pub fn new(base_path: PathBuf) -> Self {
         println!("ModLoaderManager base_path: {:?}", base_path);
         Self {
@@ -163,6 +209,7 @@ impl ModLoaderManager {
         }
     }
 
+    /// 获取已安装的模组加载器列表
     pub fn get_installed_mod_loaders(&self, version_id: &str) -> Vec<ModLoaderType> {
         let version_dir = self.base_path.join("versions").join(version_id);
         let mut loaders = Vec::new();
@@ -191,6 +238,7 @@ impl ModLoaderManager {
     }
 }
 
+/// 根据 Fabric 库名称生成 Maven 下载 URL 和路径
 fn get_maven_url_for_fabric_library(name: &str) -> Option<(String, String)> {
     let parts: Vec<&str> = name.split(':').collect();
     if parts.len() != 3 {
@@ -216,6 +264,7 @@ fn get_maven_url_for_fabric_library(name: &str) -> Option<(String, String)> {
     Some((url, path))
 }
 
+/// 获取指定 Minecraft 版本的 Fabric 加载器版本列表
 #[tauri::command]
 pub async fn get_fabric_versions(mc_version: String) -> Result<ModLoaderVersionList, String> {
     log_info!("获取 Fabric 版本列表 for MC {}", mc_version);
@@ -249,6 +298,7 @@ pub async fn get_fabric_versions(mc_version: String) -> Result<ModLoaderVersionL
     })
 }
 
+/// 获取指定 Minecraft 版本和加载器版本的 Fabric 详细信息
 #[tauri::command]
 pub async fn get_fabric_version_detail(
     mc_version: String,
@@ -276,6 +326,7 @@ pub async fn get_fabric_version_detail(
     Ok(detail)
 }
 
+/// 构建 Fabric 启动配置（包含库列表和主类信息）
 #[tauri::command]
 pub async fn build_fabric_launch_config(
     mc_version: String,
@@ -374,6 +425,7 @@ pub async fn build_fabric_launch_config(
     })
 }
 
+/// 获取指定 Minecraft 版本的 Forge 加载器版本列表
 #[tauri::command]
 pub async fn get_forge_versions(mc_version: String) -> Result<ModLoaderVersionList, String> {
     log_info!("获取 Forge 版本列表 for MC {}", mc_version);
@@ -421,6 +473,7 @@ pub async fn get_forge_versions(mc_version: String) -> Result<ModLoaderVersionLi
     })
 }
 
+/// 构建 Forge 启动配置（包含库列表和主类信息）
 #[tauri::command]
 pub async fn build_forge_launch_config(
     mc_version: String,
@@ -477,6 +530,7 @@ pub async fn build_forge_launch_config(
     })
 }
 
+/// 获取已安装的模组加载器类型列表
 #[tauri::command]
 pub fn get_installed_mod_loaders(
     version_id: String,

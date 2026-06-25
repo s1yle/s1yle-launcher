@@ -65,6 +65,10 @@ const parseRouteParams = (routePath: string, actualPath: string): Record<string,
 
 const RouteParamsContext = createContext<Record<string, string> | null>(null);
 
+/**
+ * 获取路由参数 Hook。
+ * 同时支持 React Router 原生 useParams 和自定义上下文中的参数。
+ */
 export const useRouteParams = (): Record<string, string> => {
   const reactRouterParams = useParams();
   const contextParams = useContext(RouteParamsContext);
@@ -83,7 +87,9 @@ interface RouterRendererProps {
 }
 
 /**
- * 专门用于渲染页面内容
+ * 路由渲染器组件。
+ * 根据当前路径匹配路由配置，动态渲染对应的页面组件。
+ * 支持页面切换动画（左右滑动）和拖拽预览模式。
  */
 const RouterRenderer = ({
   sidebar,

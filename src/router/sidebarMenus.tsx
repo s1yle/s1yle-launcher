@@ -32,6 +32,7 @@ import { SidebarGroup, type SidebarMenuItem, } from "./models";
 import InstanceManageButton from '@/components/common/sidebar/renderer/InstanceManageButton';
 import { handleAddGameFolder, handleRefreshInstances } from './actionHandler';
 
+/** 完整侧边栏菜单项配置 */
 export const sidebarMenuItems: SidebarMenuItem[] = [
   {
     id: 'account',

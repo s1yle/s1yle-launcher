@@ -1,6 +1,9 @@
 use std::fs;
 use std::path::PathBuf;
 
+/// 递归复制目录的全部内容到目标路径
+///
+/// 自动创建目标目录（若不存在），递归处理所有子目录和文件。
 pub(crate) fn copy_dir_all(src: &PathBuf, dst: &PathBuf) -> Result<(), std::io::Error> {
     if !dst.exists() {
         fs::create_dir_all(dst)?;

@@ -5,12 +5,12 @@ import { launchInstance, stopInstance, getLaunchStatus, LaunchStatus, getCurrent
 import { useInstanceStore } from '../../stores/instanceStore';
 import type { AccountInfo } from '../../helper/rustInvoke';
 
+/** 启动游戏按钮组件 Props */
 export interface StartGameButtonProps {
   onClick?: () => void;
 }
+
 /**
- * ## 启动游戏按钮
- */
 const ActionButton = ({ onClick }: StartGameButtonProps) => {
   const [status, setStatus] = useState<LaunchStatus>(LaunchStatus.Idle);
   const [isLoading, setIsLoading] = useState(false);

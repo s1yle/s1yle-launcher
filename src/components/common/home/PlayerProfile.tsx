@@ -10,6 +10,10 @@ interface PlayerProfileProps {
   role?: UserRole;
 }
 
+/**
+ * 玩家资料卡片组件。
+ * 显示玩家头像（支持平面/等距模式）、角色徽章和用户名。
+ */
 const PlayerProfile = ({
   name,
   role = UserRole.PLAYER

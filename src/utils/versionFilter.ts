@@ -1,5 +1,13 @@
 import { GameVersion } from '../helper/rustInvoke';
 
+/**
+ * 版本分类类型
+ * - all: 全部
+ * - release: 正式版
+ * - snapshot: 快照版
+ * - april: 愚人节版
+ * - old: 旧版本
+ */
 export type VersionCategory = 'all' | 'release' | 'snapshot' | 'april' | 'old';
 
 const APRIL_FOOL_IDS = new Set([
@@ -16,6 +24,11 @@ const APRIL_FOOL_IDS = new Set([
   '25w14craftmine',
 ]);
 
+/**
+ * 对游戏版本进行分类
+ * @param version - 游戏版本信息
+ * @returns 分类结果
+ */
 export const categorizeVersion = (version: GameVersion): VersionCategory => {
   const { id, type_ } = version;
 
@@ -62,6 +75,11 @@ export const categorizeVersion = (version: GameVersion): VersionCategory => {
   return 'snapshot';
 };
 
+/**
+ * 按分类统计版本数量
+ * @param versions - 版本列表
+ * @returns 各分类的计数
+ */
 export const countVersionsByCategory = (versions: GameVersion[]): Record<VersionCategory, number> => {
   const counts: Record<VersionCategory, number> = {
     all: 0,
@@ -85,6 +103,12 @@ export const countVersionsByCategory = (versions: GameVersion[]): Record<Version
   return counts;
 };
 
+/**
+ * 按分类筛选版本列表
+ * @param versions - 版本列表
+ * @param filter - 筛选分类
+ * @returns 筛选后的版本列表
+ */
 export const filterVersionsByCategory = (
   versions: GameVersion[],
   filter: VersionCategory
@@ -95,6 +119,12 @@ export const filterVersionsByCategory = (
   return versions.filter(v => categorizeVersion(v) === filter);
 };
 
+/**
+ * 搜索版本（按 ID 和名称模糊匹配）
+ * @param versions - 版本列表
+ * @param query - 搜索关键词
+ * @returns 匹配的版本列表
+ */
 export const searchVersions = (
   versions: GameVersion[],
   query: string
@@ -109,6 +139,10 @@ export const searchVersions = (
   );
 };
 
+/**
+ * 调试工具：打印版本的 type_ 字段分布和分类分布
+ * @param versions - 版本列表
+ */
 export const debugVersionTypes = (versions: GameVersion[]): void => {
   const typeCounts = new Map<string, number>();
   const categoryCounts = new Map<string, number>();

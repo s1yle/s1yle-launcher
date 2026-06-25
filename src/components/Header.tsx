@@ -12,6 +12,11 @@ interface HeaderProps {
   onBack?: () => void;
 }
 
+/**
+ * 页面头部组件。
+ * 支持 main / sub 两种模式：main 显示品牌 Logo + 标题，sub 显示返回按钮 + 标题。
+ * 同时包含窗口最小化 / 关闭按钮。
+ */
 const Header = ({ type, title, onBack }: HeaderProps) => {
   const { t } = useTranslation();
 

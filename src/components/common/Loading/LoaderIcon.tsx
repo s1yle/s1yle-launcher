@@ -4,11 +4,13 @@ import { twMerge } from 'tailwind-merge';
 
 const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(inputs));
 
+/** 加载器图标组件 Props */
 export interface LoaderIconProps {
   type: 'minecraft' | 'forge' | 'neoforge' | 'optifine' | 'fabric' | 'fabricApi' | 'quilt' | 'qsl';
   className?: string;
 }
 
+/** 加载器图标组件，根据 type 渲染对应的 Minecraft 加载器 SVG 图标 */
 const LoaderIcon = ({ type, className }: LoaderIconProps) => {
   switch (type) {
     case 'minecraft':

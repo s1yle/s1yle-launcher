@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import { ArrowRight } from "lucide-react";
 
+/** 角色选择卡片组件 Props */
 export interface RoleSelectCardProps {
   icon: LucideIcon;
   iconBgClass?: string;
@@ -13,6 +14,7 @@ export interface RoleSelectCardProps {
   onClick: () => void;
 }
 
+/** 角色选择卡片组件，显示角色图标、标题和描述，点击触发角色切换 */
 const RoleSelectCard = ({
   icon: Icon,
   iconBgClass = "bg-blue-500/20",

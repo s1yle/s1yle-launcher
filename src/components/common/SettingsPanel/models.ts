@@ -2,6 +2,7 @@ import { TargetAndTransition, VariantLabels } from "framer-motion"
 import React from "react";
 import { DropDownProps } from "../DropDown";
 
+/** 设置面板根组件 Props */
 export interface SettingsPanelProps {
     label: string;
     children: React.ReactNode;
@@ -21,6 +22,7 @@ interface SettingsPanelItemContextValue {
     hovered: boolean;
 }
 
+/** 设置面板条目上下文（用于子组件判断是否在 Item 内） */
 export const SettingsPanelItemContext = React.createContext<SettingsPanelItemContextValue>({
     isInsideItem: false,
     itemElement: null,
@@ -28,6 +30,7 @@ export const SettingsPanelItemContext = React.createContext<SettingsPanelItemCon
 });
 
 
+/** 设置面板条目组件 Props */
 export interface SettingsPanelItemProps {
     children: React.ReactNode;
     className?: string;
@@ -37,6 +40,7 @@ export interface SettingsPanelItemProps {
     loadingKey?: string;
 }
 
+/** 子设置条目组件 Props（用于嵌套） */
 export interface SubSettingsPanelItemProps {
     children: React.ReactNode;
     label: string;
@@ -45,6 +49,7 @@ export interface SubSettingsPanelItemProps {
     gap?: string;
 }
 
+/** 设置面板下拉组件 Props */
 export interface SettingsPanelDropDownProps extends DropDownProps {
     label: string | '';
 }

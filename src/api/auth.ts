@@ -5,24 +5,42 @@ let accessToken: string | null = null;
 let refreshToken: string | null = null;
 let refreshPromise: Promise<boolean> | null = null;
 
+/**
+ * 获取当前访问令牌
+ * @returns 访问令牌字符串，未登录返回 null
+ */
 export function getAccessToken(): string | null {
   return accessToken;
 }
 
+/**
+ * 获取当前刷新令牌
+ * @returns 刷新令牌字符串，未登录返回 null
+ */
 export function getRefreshToken(): string | null {
   return refreshToken;
 }
 
+/**
+ * 设置访问令牌和刷新令牌
+ * @param access 访问令牌
+ * @param refresh 刷新令牌
+ */
 export function setTokens(access: string, refresh: string): void {
   accessToken = access;
   refreshToken = refresh;
 }
 
+/** 清除所有令牌（退出登录） */
 export function clearTokens(): void {
   accessToken = null;
   refreshToken = null;
 }
 
+/**
+ * 设置服务端基础 URL
+ * @param url 服务端地址
+ */
 export function setServerBaseUrl(url: string): void {
   client.setConfig({ baseUrl: url });
 }
@@ -51,6 +69,10 @@ async function ensureValidToken(): Promise<boolean> {
   return refreshPromise;
 }
 
+/**
+ * 设置认证拦截器（自动附加 Bearer Token，401 时自动刷新）
+ * 需在应用初始化时调用一次
+ */
 export function setupAuthInterceptor(): void {
   client.setConfig({
     auth: () => (accessToken ? `Bearer ${accessToken}` : ''),
@@ -75,6 +97,10 @@ export function setupAuthInterceptor(): void {
   });
 }
 
+/**
+ * 初始化认证状态（尝试用刷新令牌恢复会话）
+ * @returns 是否成功获取有效令牌
+ */
 export async function initAuth(): Promise<boolean> {
   if (accessToken) return true;
   if (!refreshToken) return false;

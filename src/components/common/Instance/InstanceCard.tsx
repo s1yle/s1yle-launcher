@@ -13,6 +13,7 @@ import {
   FileText,
 } from 'lucide-react';
 
+/** 实例卡片组件 Props */
 export interface InstanceCardProps {
   instance: GameInstance;
   selected?: boolean;
@@ -31,6 +32,7 @@ export interface InstanceCardProps {
   viewMode?: 'grid' | 'list';
 }
 
+/** 实例卡片组件，支持 grid / list 两种视图模式和完整右键菜单 */
 const InstanceCard = ({
   instance,
   selected = false,

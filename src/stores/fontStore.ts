@@ -4,6 +4,7 @@ import { createOptions, OptionValueType } from "@/utils/createOptions";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+/** 字体缩放级别配置（87.5% ~ 150%） */
 export const fontScaleConfig = createOptions(
   [
     { value: 0.875, label: '较小 (87.5%)' },
@@ -26,14 +27,20 @@ const DEFAULT_FONT_SCALE: FontScale = 1;
 const FONT_SCALES: FontScale[] = [0.875, 1, 1.125, 1.25, 1.5];
 
 
+/** 字体 Store 的属性 */
 export interface FontStoreProps {
+  /** 系统中所有可用字体列表 */
   fonts: SystemFont[] | null;
+  /** 当前选中的字体 */
   font: SystemFont | null;
 }
 
+/** 字体 Store 的完整状态 */
 export interface FontStoreState extends FontStoreProps {
+  /** 初始化字体列表并恢复已保存的字体选择 */
   init: () => void;
 
+  /** 设置并应用选中的字体（更新 DOM style） */
   setFont: (font: SystemFont) => void;
 
   /** 当前字体缩放比例 */
@@ -151,6 +158,7 @@ const useFontStore = create<FontStoreState>()(
   )
 )
 
+/** 字体管理 Store 默认导出 */
 export default useFontStore;
 
 /**

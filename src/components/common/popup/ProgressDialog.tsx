@@ -3,6 +3,7 @@ import Popup from '../../Popup';
 import ProgressBar from '../Loading/ProgressBar';
 import { Loader2, CheckCircle, CircleX } from 'lucide-react';
 
+/** 进度弹窗组件 Props */
 export interface ProgressDialogProps {
   isOpen: boolean;
   title: string;

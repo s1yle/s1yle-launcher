@@ -43,40 +43,84 @@ function saveInstanceId(id: string | null) {
   catch { /* storage not available */ }
 }
 
+/**
+ * 实例管理 Store 的内部接口
+ *
+ * 管理 Minecraft 游戏实例（GameInstance）的 CRUD，支持多 Game Folder 和本地持久化选中状态。
+ */
 interface InstanceState {
+  /** 所有游戏实例列表 */
   instances: GameInstance[];
+  /** 已扫描到的所有 Game Folder */
   knownFolders: KnownPath[];
+  /** 当前选中的 Game Folder ID（持久化到 localStorage） */
   selectedFolderId: string | null;
+  /** 当前选中的实例 ID（持久化到 localStorage） */
   selectedInstanceId: string | null;
+  /** 当前选中的侧边栏项 ID */
   selectedSidebarItemId: string | null;
+  /** 是否正在加载 */
   loading: boolean;
+  /** 错误信息 */
   error: string | null;
+  /** 实例搜索关键词 */
   searchQuery: string;
+  /** 视图模式：网格或列表 */
   viewMode: 'grid' | 'list';
+  /** 实例所在的基础路径 */
   instancesPath: string;
+  /** 路径配置信息 */
   pathConfig: PathConfig | null;
 
+  /** 初始化 Store（加载实例、已知文件夹、路径配置、恢复选中状态） */
   init: () => Promise<void>;
+  /** 刷新实例列表和路径 */
   refresh: () => Promise<void>;
+  /** 刷新已知 Game Folder 列表 */
   refreshKnownFolders: () => Promise<void>;
+  /** 添加新的 Game Folder */
   addKnownFolder: (path: string) => Promise<void>;
+  /** 移除指定的 Game Folder */
   removeKnownFolder: (id: string) => Promise<void>;
+  /** 设为默认 Game Folder */
   setDefaultFolder: (id: string) => Promise<void>;
+  /** 选中 Game Folder（同时持久化到 localStorage） */
   setSelectedFolder: (id: string | null) => Promise<void>;
+  /** 选中实例（同时持久化到 localStorage） */
   setSelectedInstance: (id: string | null) => void;
+  /** 选中侧边栏项 */
   setSelectedSidebarItem: (id: string | null) => void;
+  /** 根据 ID 获取实例 */
   getInstance: (id: string) => GameInstance | null;
+  /** 创建新实例 */
   createNew: (name: string, version: string, loaderType?: ModLoaderType, loaderVersion?: string, iconPath?: string) => Promise<void>;
+  /** 删除指定实例 */
   remove: (id: string) => Promise<void>;
+  /** 复制实例 */
   duplicate: (id: string, newName: string) => Promise<void>;
+  /** 重命名实例 */
   rename: (id: string, newName: string) => Promise<void>;
+  /** 启用/禁用实例 */
   toggle: (id: string, enabled: boolean) => Promise<void>;
+  /** 设置搜索关键词 */
   setSearchQuery: (query: string) => void;
+  /** 设置视图模式（grid / list） */
   setViewMode: (mode: 'grid' | 'list') => void;
+  /** 根据当前搜索和文件夹筛选条件获取过滤后的实例列表 */
   getFilteredInstances: () => GameInstance[];
+  /** 获取当前选中的实例对象 */
   getSelectedInstance: () => GameInstance | null;
 }
 
+/**
+ * 实例管理 Store
+ *
+ * 功能:
+ * - 管理 Minecraft 游戏实例的全生命周期（创建/删除/复制/重命名/启用/禁用）
+ * - 管理 Game Folder 扫描和选择
+ * - 维护选中实例持久化（localStorage）
+ * - 支持按名称/版本 ID 搜索和按文件夹过滤
+ */
 export const useInstanceStore = create<InstanceState>((set, get) => ({
   instances: [],
   knownFolders: [],

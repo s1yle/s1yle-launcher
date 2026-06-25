@@ -1,6 +1,7 @@
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { DURATION, EASING } from '@/utils/animations';
 
+/** 滑动方向类型 */
 type SlideDirection = 'left' | 'right' | 'up' | 'down';
 
 /**

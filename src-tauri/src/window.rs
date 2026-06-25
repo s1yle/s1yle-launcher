@@ -1,6 +1,7 @@
 use crate::config::{window_check, ConfigManager, WindowPosition};
 use tauri::{Manager, State, WebviewWindowBuilder};
 
+/// 保存窗口位置和大小信息
 #[tauri::command]
 pub fn save_window_position(
     x: i32,
@@ -23,6 +24,7 @@ pub fn save_window_position(
     cm.update_window_pos(position)
 }
 
+/// 加载上次保存的窗口位置
 #[tauri::command]
 pub fn load_window_position(
     cm: State<'_, ConfigManager>,
@@ -30,6 +32,7 @@ pub fn load_window_position(
     cm.get_window_pos()
 }
 
+/// 获取已保存的窗口位置信息
 #[tauri::command]
 pub fn get_saved_window_position(
     cm: State<'_, ConfigManager>,
@@ -37,6 +40,7 @@ pub fn get_saved_window_position(
     cm.get_window_pos()
 }
 
+/// 创建主窗口（1200x800，无边框）
 #[tauri::command]
 pub async fn create_main_window(app: tauri::AppHandle) -> Result<(), String> {
     let _ = WebviewWindowBuilder::new(
@@ -56,6 +60,7 @@ pub async fn create_main_window(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+/// 关闭登录窗口
 #[tauri::command]
 pub fn close_login_window(app: tauri::AppHandle) -> Result<(), String> {
     if let Some(window) = app.get_webview_window("login") {
@@ -64,6 +69,7 @@ pub fn close_login_window(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+/// 关闭指定标签的窗口
 #[tauri::command]
 pub fn close_window(app: tauri::AppHandle, label: String) -> Result<(), String> {
     if let Some(window) = app.get_webview_window(&label) {
@@ -72,6 +78,7 @@ pub fn close_window(app: tauri::AppHandle, label: String) -> Result<(), String> 
     Ok(())
 }
 
+/// 退出登录并显示登录窗口（关闭主窗口）
 #[tauri::command]
 pub async fn logout_and_show_login(app: tauri::AppHandle) -> Result<(), String> {
     let _ = WebviewWindowBuilder::new(

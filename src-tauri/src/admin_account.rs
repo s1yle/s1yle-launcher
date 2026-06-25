@@ -9,24 +9,37 @@ use uuid::Uuid;
 
 use crate::log_info;
 
+/// 管理员账户信息
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct AdminAccount {
+    /// 管理员邮箱
     pub email: String,
+    /// 密码哈希值
     pub password_hash: String,
+    /// 密码加盐
     pub salt: String,
+    /// 管理员唯一标识
     pub admin_id: String,
+    /// 账户创建时间
     pub created_at: String,
+    /// 绑定的玩家 UUID 列表
     pub bound_player_uuids: Vec<String>,
 }
 
+/// 管理员登录会话信息（返回给前端）
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct AdminSession {
+    /// 管理员邮箱
     pub email: String,
+    /// 管理员唯一标识
     pub admin_id: String,
+    /// 绑定的玩家 UUID 列表
     pub bound_player_uuids: Vec<String>,
+    /// 登录时间
     pub login_time: String,
 }
 
+/// 管理员管理器（内存状态）
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct AdminManager {
     pub accounts: HashMap<String, AdminAccount>,
@@ -42,14 +55,17 @@ impl Default for AdminManager {
     }
 }
 
+/// 全局管理员管理器实例
 static ADMIN_MANAGER: OnceCell<Mutex<AdminManager>> = OnceCell::new();
 
+/// 获取管理员数据文件路径
 fn get_admin_file_path() -> Result<std::path::PathBuf, String> {
     let config_dir = &*crate::config::CONFIG_APPLICATION;
     fs::create_dir_all(config_dir).map_err(|e| format!("创建配置目录失败: {}", e))?;
     Ok(config_dir.join("admin_accounts.json"))
 }
 
+/// 使用 SHA-256 加盐哈希密码
 fn hash_password(password: &str, salt: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(salt.as_bytes());
@@ -57,10 +73,12 @@ fn hash_password(password: &str, salt: &str) -> String {
     hex::encode(hasher.finalize())
 }
 
+/// 生成随机盐值
 fn generate_salt() -> String {
     Uuid::new_v4().to_string()
 }
 
+/// 从磁盘加载管理员数据
 fn load_admin_from_disk() -> Result<(), String> {
     let path = get_admin_file_path()?;
     if !path.exists() {
@@ -79,6 +97,7 @@ fn load_admin_from_disk() -> Result<(), String> {
     Ok(())
 }
 
+/// 保存管理员数据到磁盘
 fn save_admin_to_disk() -> Result<(), String> {
     let path = get_admin_file_path()?;
     let guard = ADMIN_MANAGER
@@ -93,12 +112,14 @@ fn save_admin_to_disk() -> Result<(), String> {
     Ok(())
 }
 
+/// 初始化管理员管理器
 pub fn init_admin_manager() {
     ADMIN_MANAGER
         .set(Mutex::new(AdminManager::default()))
         .unwrap_or_else(|_| panic!("管理员管理器已初始化"));
 }
 
+/// 初始化管理员系统（加载磁盘数据），推荐在应用启动时调用
 #[command]
 pub fn initialize_admin_system() -> Result<(), String> {
     if ADMIN_MANAGER.get().is_none() {
@@ -109,6 +130,7 @@ pub fn initialize_admin_system() -> Result<(), String> {
     load_admin_from_disk()
 }
 
+/// 注册管理员账户（邮箱+密码），返回会话信息
 #[command]
 pub fn register_admin(email: String, password: String) -> Result<AdminSession, String> {
     if email.is_empty() || !email.contains('@') {
@@ -155,6 +177,7 @@ pub fn register_admin(email: String, password: String) -> Result<AdminSession, S
     })
 }
 
+/// 管理员登录，验证邮箱密码并返回会话信息
 #[command]
 pub fn login_admin(email: String, password: String) -> Result<AdminSession, String> {
     let guard = ADMIN_MANAGER
@@ -183,6 +206,7 @@ pub fn login_admin(email: String, password: String) -> Result<AdminSession, Stri
     })
 }
 
+/// 将玩家 UUID 绑定到指定的管理员账号
 #[command]
 pub fn bind_player_to_admin(email: String, player_uuid: String) -> Result<(), String> {
     let mut guard = ADMIN_MANAGER
@@ -208,6 +232,7 @@ pub fn bind_player_to_admin(email: String, player_uuid: String) -> Result<(), St
     Ok(())
 }
 
+/// 从管理员账号解绑指定玩家 UUID
 #[command]
 pub fn unbind_player_from_admin(email: String, player_uuid: String) -> Result<(), String> {
     let mut guard = ADMIN_MANAGER
@@ -229,6 +254,7 @@ pub fn unbind_player_from_admin(email: String, player_uuid: String) -> Result<()
     Ok(())
 }
 
+/// 获取指定管理员账号的详细信息
 #[command]
 pub fn get_admin_info(email: String) -> Result<Option<AdminAccount>, String> {
     let guard = ADMIN_MANAGER
@@ -240,6 +266,7 @@ pub fn get_admin_info(email: String) -> Result<Option<AdminAccount>, String> {
     Ok(guard.accounts.get(&email).cloned())
 }
 
+/// 获取指定管理员绑定的玩家 UUID 列表
 #[command]
 pub fn get_bound_players(email: String) -> Result<Vec<String>, String> {
     let guard = ADMIN_MANAGER
@@ -255,6 +282,7 @@ pub fn get_bound_players(email: String) -> Result<Vec<String>, String> {
         .unwrap_or_default())
 }
 
+/// 检查系统是否已注册至少一个管理员
 #[command]
 pub fn is_admin_registered() -> Result<bool, String> {
     let guard = ADMIN_MANAGER

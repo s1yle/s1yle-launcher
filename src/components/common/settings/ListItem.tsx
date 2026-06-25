@@ -11,6 +11,7 @@ const ListItemContext = createContext<ListItemContextType>({
   disabled: false,
 });
 
+/** 列表项组件 Props */
 export interface ListItemProps {
   children: React.ReactNode;
   selected?: boolean;
@@ -19,7 +20,7 @@ export interface ListItemProps {
   className?: string;
 }
 
-// 根组件：负责布局和状态
+/** 列表项根组件，含 Left / Right / Title / Description / Tag 子组件 */
 export default function ListItem({
   children,
   selected = false,
@@ -44,6 +45,7 @@ export default function ListItem({
   );
 }
 
+/** 弹性布局方向枚举 */
 export enum FLEX_DIR {
   COL = 'flex-col',
   ROW = 'flex-row',

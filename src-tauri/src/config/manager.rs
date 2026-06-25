@@ -7,6 +7,7 @@ use serde_json::Value;
 use std::{collections::HashMap, fs, path::PathBuf, sync::Mutex};
 
 impl ConfigManager {
+    /// 创建新的 ConfigManager，如果配置文件不存在则创建目录
     pub fn new(config: AppConfig, window: WindowPosition) -> Self {
         if !config.base_path.exists() {
             log_info!("启动器配置文件不存在，即将创建！");
@@ -22,12 +23,14 @@ impl ConfigManager {
         }
     }
 
+    /// 获取配置文件路径
     pub fn get_config_file_path() -> PathBuf {
         let config_dir = &*CONFIG_APPLICATION;
         let _ = fs::create_dir_all(config_dir);
         (*CONFIG_FILE_PATH).clone()
     }
 
+    /// 获取全局应用配置
     pub fn get_config(&self) -> Result<AppConfig, String> {
         self.config
             .lock()
@@ -35,11 +38,13 @@ impl ConfigManager {
             .map(|guard| guard.clone())
     }
 
+    /// 更新全局应用配置并保存到磁盘
     pub fn update_config(&self, new_config: AppConfig) -> Result<(), String> {
         *self.config.lock().map_err(|e| e.to_string())? = new_config;
         self.save_to_disk()
     }
 
+    /// 将配置保存到磁盘文件
     fn save_to_disk(&self) -> Result<(), String> {
         let path = Self::get_config_file_path();
         let json = serde_json::to_string_pretty(&*self.config.lock().map_err(|e| e.to_string())?)
@@ -49,6 +54,7 @@ impl ConfigManager {
         Ok(())
     }
 
+    /// 从磁盘加载配置
     pub fn load_config_from_disk(&self) -> Result<(), String> {
         let path = Self::get_config_file_path();
         if !path.exists() {
@@ -70,6 +76,7 @@ impl ConfigManager {
         Ok(())
     }
 
+    /// 获取窗口位置配置
     pub fn get_window_pos(&self) -> Result<Option<WindowPosition>, String> {
         let window_guard = self
             .window
@@ -78,6 +85,7 @@ impl ConfigManager {
         Ok(Some(window_guard.clone()))
     }
 
+    /// 根据点号分隔的路径获取配置值
     pub fn get_value(&self, key: &str) -> Result<Option<String>, String> {
         let config = self.get_config()?;
         let mut json_val =
@@ -87,6 +95,7 @@ impl ConfigManager {
         Ok(value.map(|v| v.to_string()))
     }
 
+    /// 根据点号分隔的路径写入配置值
     pub fn write_config(&self, key: &str, val: serde_json::Value) -> Result<(), String> {
         let mut config = self.get_config()?;
         let mut json_val =
@@ -101,13 +110,13 @@ impl ConfigManager {
 
     // ==================== 实例配置管理方法 ====================
 
-    /// # 获取实例配置
+    /// 获取实例配置
     pub fn get_instance_config(&self, instance_id: &str) -> Result<Option<InstanceConfig>, String> {
         let config = self.get_config()?;
         Ok(config.instance_configs.get(instance_id).cloned())
     }
 
-    /// # 更新实例配置
+    /// 更新实例配置
     pub fn update_instance_config(
         &self,
         instance_id: &str,
@@ -118,14 +127,14 @@ impl ConfigManager {
         self.update_config(config)
     }
 
-    /// # 删除实例配置
+    /// 删除实例配置
     pub fn remove_instance_config(&self, instance_id: &str) -> Result<(), String> {
         let mut config = self.get_config()?;
         config.instance_configs.remove(instance_id);
         self.update_config(config)
     }
 
-    /// # 获取所有实例配置
+    /// 获取所有实例配置
     pub fn get_all_instance_configs(&self) -> Result<HashMap<String, InstanceConfig>, String> {
         let config = self.get_config()?;
         Ok(config.instance_configs.clone())
@@ -133,7 +142,7 @@ impl ConfigManager {
 
     // ==================== 实例配置管理 ====================
 
-    /// # 保存实例配置到独立文件
+    /// 保存实例配置到独立文件
     pub fn save_instance_config_to_file(
         &self,
         instance_id: &str,
@@ -156,7 +165,7 @@ impl ConfigManager {
         Ok(())
     }
 
-    /// # 从独立文件加载实例配置
+    /// 从独立文件加载实例配置
     pub fn load_instance_config_from_file(
         &self,
         instance_id: &str,
@@ -178,7 +187,7 @@ impl ConfigManager {
         Ok(Some(config))
     }
 
-    /// # 删除实例配置文件
+    /// 删除实例配置文件
     pub fn delete_instance_config_file(&self, instance_id: &str) -> Result<(), String> {
         use crate::config::INSTANCE_CONFIGS_DIR;
         
@@ -192,7 +201,7 @@ impl ConfigManager {
         Ok(())
     }
 
-    /// # 同步实例配置（全局配置 + 独立文件）
+    /// 同步实例配置（同时更新全局配置和独立文件）
     pub fn sync_instance_config(
         &self,
         instance_id: &str,
@@ -207,20 +216,20 @@ impl ConfigManager {
         Ok(())
     }
 
-    /// # 重置配置到默认值
+    /// 重置配置到默认值
     pub fn reset_config(&self) -> Result<(), String> {
         let default = AppConfig::default();
         self.update_config(default)
     }
 
-    /// # 更新窗口位置
+    /// 更新窗口位置
     pub fn update_window_pos(&self, pos: WindowPosition) -> Result<(), String> {
         let mut config = self.get_config()?;
         config.window_position = pos;
         self.update_config(config)
     }
 
-    /// # 使用动态路径更新配置值
+    /// 使用动态路径更新配置值
     pub fn update_value(&self, key_path: &str, value: Value) -> Result<(), String> {
         let config = self.get_config()?;
         let mut config_value = serde_json::to_value(&config)
@@ -235,7 +244,7 @@ impl ConfigManager {
         self.update_config(new_config)
     }
 
-    /// # 使用动态路径删除配置值
+    /// 使用动态路径删除配置值
     pub fn remove_value(&self, key_path: &str) -> Result<(), String> {
         let config = self.get_config()?;
         let mut config_value = serde_json::to_value(&config)
@@ -250,7 +259,7 @@ impl ConfigManager {
         self.update_config(new_config)
     }
 
-    /// # 导出配置到文件
+    /// 导出配置到文件
     pub fn export_config(&self, target_path: PathBuf) -> Result<(), String> {
         let config = self.get_config()?;
         let json = serde_json::to_string_pretty(&config)
@@ -261,7 +270,7 @@ impl ConfigManager {
         Ok(())
     }
 
-    /// # 从文件导入配置
+    /// 从文件导入配置（支持版本迁移）
     pub fn import_config(&self, source_path: PathBuf) -> Result<(), String> {
         let content = fs::read_to_string(&source_path)
             .map_err(|e| format!("读取配置失败：{}", e))?;
@@ -273,7 +282,7 @@ impl ConfigManager {
         self.update_config(migrated)
     }
 
-    /// # 配置版本迁移
+    /// 配置版本迁移（支持未来版本升级）
     fn migrate_config(&self, mut config: AppConfig) -> Result<AppConfig, String> {
         let current_version = crate::config::CONFIG_VERSION;
         
@@ -299,10 +308,12 @@ impl ConfigManager {
     }
 }
 
+/// 解析点号分隔的配置键为路径段
 fn parse_key_path(key: &str) -> Vec<&str> {
     key.split('.').collect()
 }
 
+/// 根据路径段获取嵌套 JSON 值
 fn get_nested_value(value: &mut Value, path: &[&str]) -> Result<Option<Value>, String> {
     let mut current = value;
     for segment in path {
@@ -313,6 +324,7 @@ fn get_nested_value(value: &mut Value, path: &[&str]) -> Result<Option<Value>, S
     Ok(Some(current.clone()))
 }
 
+/// 根据路径段设置嵌套 JSON 值（自动创建中间节点）
 fn set_nested_value(value: &mut Value, path: &[&str], new_val: Value) -> Result<(), String> {
     let mut current = value;
     let (last, segments) = path.split_last().ok_or("空的配置路径")?;
@@ -337,6 +349,7 @@ fn set_nested_value(value: &mut Value, path: &[&str], new_val: Value) -> Result<
     Ok(())
 }
 
+/// 根据路径段删除嵌套 JSON 值
 fn remove_nested_value(value: &mut Value, path: &[&str]) -> Result<(), String> {
     if path.is_empty() {
         return Err("空的配置路径".to_string());
@@ -366,6 +379,7 @@ fn remove_nested_value(value: &mut Value, path: &[&str]) -> Result<(), String> {
     Ok(())
 }
 
+/// 校验并修正窗口位置（避免负坐标和过小尺寸）
 pub fn window_check(pos: &mut WindowPosition) {
     if pos.x <= 0 {
         pos.x = 1;
@@ -381,6 +395,7 @@ pub fn window_check(pos: &mut WindowPosition) {
     }
 }
 
+/// 获取配置文件路径（兼容旧接口）
 pub fn get_config_path() -> Result<PathBuf, String> {
     let config_dir = &*CONFIG_APPLICATION;
     fs::create_dir_all(config_dir).map_err(|e| format!("创建配置目录失败：{}", e))?;

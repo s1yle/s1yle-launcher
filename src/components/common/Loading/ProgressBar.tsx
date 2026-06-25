@@ -2,8 +2,10 @@ import React, { useMemo } from 'react';
 import { Check, X, Loader2 } from 'lucide-react';
 import { useLoading } from '@/hooks/useLoading';
 
+/** 进度状态类型 */
 export type ProgressStatus = 'idle' | 'active' | 'completed' | 'error';
 
+/** 进度条组件 Props */
 export interface ProgressBarProps {
   progress?: number;
   loadingKey?: string;
@@ -19,6 +21,7 @@ export interface ProgressBarProps {
   formatValue?: (value: number) => string;
 }
 
+/** 进度条组件，支持受控进度 / loadingKey 绑定、多种状态颜色和尺寸 */
 const ProgressBar = ({
   progress: progressProp,
   loadingKey,

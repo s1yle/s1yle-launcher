@@ -6,6 +6,7 @@ import { SettingsPanelItemContext } from './SettingsPanel/models';
 
 const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(inputs));
 
+/** 开关组件 Props */
 export interface ToggleProps {
   checked: boolean;
   onChange: (checked: boolean) => void;

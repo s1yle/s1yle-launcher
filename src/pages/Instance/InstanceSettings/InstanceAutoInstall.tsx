@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useInstanceStore } from '../../../stores/instanceStore';
 
+/** 实例自动安装页面 - 模组加载器自动安装（待实现） */
 const InstanceAutoInstall: React.FC = () => {
   const { instanceId } = useParams<{ instanceId: string }>();
   const navigate = useNavigate();

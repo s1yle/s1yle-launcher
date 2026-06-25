@@ -1,3 +1,12 @@
+/**
+ * 统一的 z-index 层级常量表
+ * - BACKGROUND: 自定义背景层
+ * - DROPDOWN: 下拉菜单、工具提示
+ * - STICKY: 粘性定位元素
+ * - POPUP: 浮动面板、通知
+ * - MODAL: 模态弹窗
+ * - TOAST: 全局通知
+ */
 export const Z_INDEX = {
   /** 自定义背景层，置于所有内容下方 */
   BACKGROUND: -1,
@@ -13,4 +22,5 @@ export const Z_INDEX = {
   TOAST: 9999,
 } as const;
 
+/** Z_INDEX 的键类型 */
 export type ZIndexKey = keyof typeof Z_INDEX;

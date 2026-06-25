@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import Popup, { PopupProps } from '../../Popup';
 
+/** 加载弹窗组件 Props */
 export interface LoadingPopupProps extends Omit<PopupProps, 'children' | 'footer' | 'title' | 'showCloseButton'> {
   /** 加载提示文本 */
   message?: React.ReactNode;

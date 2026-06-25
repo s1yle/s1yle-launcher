@@ -6,6 +6,7 @@ import { DURATION, microInteractions, transitions } from '@/utils/animations';
 import { getUploads, postUploads } from '@/server/sdk.gen';
 import type { ModelsUploadResponse } from '@/server/types.gen';
 
+/** 服主后台 - 配置上传页面 */
 const AdminUpload = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);

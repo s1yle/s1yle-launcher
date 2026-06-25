@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Inbox, Download, FolderOpen, Search, AlertTriangle, CheckCircle } from 'lucide-react';
 import { fadeInUp, transitions } from '../../utils/animations';
 
+/** 空状态占位组件 Props */
 export interface EmptyStateProps {
   icon?: 'default' | 'download' | 'folder' | 'search' | 'error' | 'success';
   title: string;
@@ -13,6 +14,7 @@ export interface EmptyStateProps {
   className?: string;
 }
 
+/** 空状态占位组件，显示图标、标题、描述和可选的按钮操作 */
 const EmptyState = ({
   icon = 'default',
   title,

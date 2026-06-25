@@ -2,36 +2,69 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 
+/// 实例目录格式类型
+///
+/// 用于标识扫描到的 Minecraft 目录采用何种目录结构，
+/// 决定兼容性评分与后续处理策略。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum InstanceFormat {
+    /// WeCraft 原生格式（versions/ 下 jars + json）
     Native,
+    /// 标准 Minecraft 目录（.minecraft 风格）
     StandardMinecraft,
+    /// 自定义目录结构
     Custom,
+    /// 无效目录（无法识别）
     Invalid,
 }
 
+/// 检测到的实例信息
+///
+/// 在目录扫描过程中发现的单个可识别版本。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DetectedInstance {
+    /// 版本名称
     pub name: String,
+    /// 版本 ID
     pub version: String,
+    /// 版本所在目录
     pub version_dir: PathBuf,
+    /// 目录格式类型
     pub format: InstanceFormat,
 }
 
+/// 文件夹校验结果
+///
+/// 包含校验状态、检测到的实例列表、兼容性评分与警告信息。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FolderValidationResult {
+    /// 是否为有效的 Minecraft 目录
     pub is_valid: bool,
+    /// 目录绝对路径
     pub path: PathBuf,
+    /// 建议的实例名称
     pub suggested_name: String,
+    /// 检测到的实例列表
     pub instances: Vec<DetectedInstance>,
+    /// 目录格式类型
     pub format: InstanceFormat,
+    /// 兼容性评分（0-100）
     pub compatibility_score: u8,
+    /// 警告信息列表
     pub warnings: Vec<String>,
 }
 
+/// 文件夹校验器
+///
+/// 检测给定路径是否为有效的 Minecraft 目录，
+/// 支持原生格式和标准 .minecraft 格式的自动识别。
 pub struct FolderValidator;
 
 impl FolderValidator {
+    /// 校验指定文件夹是否为有效的 Minecraft 目录
+    ///
+    /// 按优先级依次尝试 `detect_native_format` 和 `detect_standard_minecraft`，
+    /// 返回包含所有检测结果和兼容性评分的校验结果。
     pub fn validate(folder_path: &PathBuf) -> FolderValidationResult {
         let mut result = FolderValidationResult {
             is_valid: false,

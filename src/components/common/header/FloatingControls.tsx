@@ -2,6 +2,10 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { motion } from 'framer-motion';
 import { Minus, X, Square } from 'lucide-react';
 
+/**
+ * 浮动窗口控制按钮组件。
+ * 固定在窗口右上角，提供最小化 / 最大化 / 关闭三个按钮。
+ */
 const FloatingControls = () => {
   const handleMinimize = async () => {
     try {

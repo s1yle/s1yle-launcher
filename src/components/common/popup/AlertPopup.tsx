@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import Popup, { PopupProps } from '../../Popup';
 import { CheckCircle, AlertTriangle, CircleX, Info, Loader2 } from 'lucide-react';
 
+/** 警告弹窗组件 Props */
 export interface AlertPopupProps extends Omit<PopupProps, 'children' | 'footer' | 'title'> {
   message: React.ReactNode;
   confirmText?: string;

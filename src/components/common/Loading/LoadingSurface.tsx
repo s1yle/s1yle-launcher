@@ -8,6 +8,7 @@ import Skeleton from './Skeleton';
 
 const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(inputs));
 
+/** 加载表面组件 Props */
 export interface LoadingSurfaceProps {
   loadingKey: string;
   skeleton?: 'list' | 'card' | 'profile' | 'form' | 'text';
@@ -24,6 +25,7 @@ const SKELETON_MAP = {
   text: Skeleton.Text,
 } as const;
 
+/** 加载表面组件，根据 loadingEntry 的 variant 自动切换旋转器 / 进度条 / 骨架屏 */
 const LoadingSurface = ({
   loadingKey,
   skeleton: skeletonType,

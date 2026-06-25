@@ -3,6 +3,7 @@ import { t } from "i18next";
 import { Search, X } from "lucide-react";
 import { JSX, useRef } from "react";
 
+/** 实例列表组件的 Props */
 export interface InstanceProps {
     knownFolders: KnownPath[];
     selectedFolderId: string | null;
@@ -22,6 +23,7 @@ export interface InstanceProps {
     setDuplicateTargetId: (id: string | null) => void;
 }
 
+/** 实例列表布局组件 - 封装搜索、筛选和复制弹窗 */
 const Instance: React.FC<InstanceProps> = ({
     knownFolders,
     selectedFolderId,

@@ -1,5 +1,6 @@
 import React from 'react';
 
+/** 微软账户页面 - 微软登录流程（待实现） */
 const MicrosoftAccount: React.FC = () => {
   return (
     <div className="p-8">

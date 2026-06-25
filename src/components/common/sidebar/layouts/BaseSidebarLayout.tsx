@@ -1,5 +1,6 @@
 import React from 'react';
 
+/** 基础侧边栏布局组件 Props */
 export interface BaseSidebarLayoutProps {
   children: React.ReactNode;
   title?: string;
@@ -8,6 +9,7 @@ export interface BaseSidebarLayoutProps {
   header?: React.ReactNode;
 }
 
+/** 基础侧边栏布局组件，包含头部、可滚动内容和底部区域 */
 const BaseSidebarLayout = ({
   children, title = "SMCL",
   subtitle = "使用 Rust 重写的 MC 启动器",

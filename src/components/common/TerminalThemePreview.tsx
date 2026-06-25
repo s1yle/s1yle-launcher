@@ -9,6 +9,7 @@ interface TerminalThemePreviewProps {
   compact?: boolean;
 }
 
+/** 终端主题预览组件，展示所有预设主题卡片并支持点击切换 */
 const TerminalThemePreview = ({
   onSelect, compact = false
 }: TerminalThemePreviewProps) => {

@@ -3,6 +3,7 @@ import { BadgePosition } from "./models";
 import { Badge, Check, X } from "lucide-react";
 import { useDebugComponentStack, useGetParentComponentType } from "../ContextStack/ContextStack";
 
+/** 是/否 徽标组件 Props */
 export interface YesOrNoBadgeProps {
     state?: boolean;
     position?: BadgePosition;
@@ -23,6 +24,7 @@ export interface YesOrNoBadgeProps {
  * @param zIndex
  * @param size 尺寸
  */
+/** ✅ / ❎ 徽标组件，在父容器指定位置显示对号或叉号 */
 const YesOrNoBadge = ({
     state = true,
     position = BadgePosition.TOP_RIGHT,

@@ -11,6 +11,7 @@ use std::path::PathBuf;
 use tauri::{Emitter, Manager, State};
 use zip;
 
+/// 部署进度信息
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub struct DeployProgress {
@@ -20,6 +21,7 @@ pub struct DeployProgress {
     pub status: String,
 }
 
+/// 部署版本文件到指定实例路径
 #[tauri::command]
 pub async fn deploy_version_files(
     version_id: String,
@@ -30,7 +32,7 @@ pub async fn deploy_version_files(
     deploy_version_to_instance(instance_path, version_id, download_manager).await
 }
 
-/// # 版本部署（全局资源共享）
+/// 版本部署（全局资源共享模式）
 #[tauri::command]
 pub async fn deploy_version_global(
     version_id: String,
@@ -176,6 +178,7 @@ pub async fn deploy_version_global(
     Ok(format!("版本 {} 已部署 ({} / {} 文件)", version_id, deployed_count, total_count))
 }
 
+/// 解压 jar 文件中的内容到指定目录（用于原生库）
 fn extract_jar(jar_path: &PathBuf, dest_dir: &PathBuf) -> Result<(), String> {
     let file = fs::File::open(jar_path).map_err(|e| format!("打开 jar 文件失败：{}", e))?;
 
@@ -209,6 +212,7 @@ fn extract_jar(jar_path: &PathBuf, dest_dir: &PathBuf) -> Result<(), String> {
     Ok(())
 }
 
+/// 检查版本是否已部署（检查 jar 文件是否存在）
 #[tauri::command]
 pub fn is_version_deployed(
     version_id: String,
@@ -222,6 +226,7 @@ pub fn is_version_deployed(
     version_jar.exists()
 }
 
+/// 将下载的版本文件部署到指定的实例路径
 #[tauri::command]
 pub async fn deploy_version_to_instance(
     instance_path: String,
@@ -247,7 +252,6 @@ pub async fn deploy_version_to_instance(
         manifest.libraries.len(), manifest.assets.len(), manifest.natives.len());
 
     let instance_dir = PathBuf::from(&instance_path);
-    // ✅ 修复：部署目标：{instance_path}/versions/{version_name}/
     let versions_dir = instance_dir.join("versions");
     let version_base_dir = versions_dir.join(&version_name);
     let libraries_dir = version_base_dir.join("libraries");
@@ -389,6 +393,7 @@ pub async fn deploy_version_to_instance(
     Ok(format!("版本 {} 已部署到实例 ({} / {} 文件)", version_id, deployed_count, total_count))
 }
 
+/// 部署单个文件到目标路径（已弃用）
 #[allow(dead_code)]
 fn deploy_file_to_path(base_path: &PathBuf, file: &FileDownload) -> Result<String, String> {
     let dest_path = base_path.join(&file.path);
@@ -411,26 +416,41 @@ fn deploy_file_to_path(base_path: &PathBuf, file: &FileDownload) -> Result<Strin
     Ok(dest_path.to_string_lossy().to_string())
 }
 
+/// 部署选项（下载并部署请求参数）
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeployOptions {
+    /// 实例名称
     pub instance_name: String,
+    /// 版本 ID
     pub version_id: String,
+    /// 加载器类型
     pub loader_type: ModLoaderType,
+    /// 加载器版本
     pub loader_version: Option<String>,
+    /// 目标已存在实例（可选）
     pub target_existing_instance: Option<String>,
 }
 
+/// 部署结果
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeployResult {
+    /// 是否成功
     pub success: bool,
+    /// 实例 ID
     pub instance_id: String,
+    /// 实例名称
     pub instance_name: String,
+    /// 版本
     pub version: String,
+    /// 已部署文件数
     pub deployed_files_count: usize,
+    /// 总文件数
     pub total_files_count: usize,
+    /// 消息
     pub message: String,
 }
 
+/// 下载并部署版本到目标实例（包含下载、部署、配置写入全流程）
 #[tauri::command]
 pub async fn download_and_deploy(
     options: DeployOptions,
@@ -624,6 +644,7 @@ pub async fn download_and_deploy(
     })
 }
 
+/// 将实例配置写入应用全局配置
 async fn write_instance_config_to_app_config(
     app_handle: &tauri::AppHandle,
     instance_id: &str,
@@ -668,6 +689,7 @@ async fn write_instance_config_to_app_config(
     Ok(())
 }
 
+/// 内部部署函数：将版本文件从下载目录复制到实例目录
 async fn deploy_version_internal(
     instance_path: &PathBuf,
     version_id: &str,

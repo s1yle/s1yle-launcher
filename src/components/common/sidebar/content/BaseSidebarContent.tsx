@@ -12,6 +12,7 @@ import { DURATION, EASING, microInteractions, transitions, sidebarStaggerContain
 import { Animated } from '../../Animated';
 import { renderIcon } from '../../../../utils/iconRenderer';
 
+/** 基础侧边栏内容组件 Props */
 export interface BaseSidebarContentProps {
   items: SidebarMenuItem[];
   onMenuClick?: (item: SidebarMenuItem) => void;
@@ -29,6 +30,7 @@ export interface BaseSidebarContentProps {
   enableClickToExpand?: boolean;
 }
 
+/** 基础侧边栏内容组件，渲染菜单项树并支持展开/折叠、右键菜单 */
 const BaseSidebarContent = ({
   items,
   onMenuClick,

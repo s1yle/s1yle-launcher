@@ -4,6 +4,13 @@ import { useAccountStore } from "@/stores/accountStore";
 import { useAdminStore } from "@/stores/adminStore";
 import { useUserRoleStore, UserRole } from "@/stores/userRoleStore";
 
+/**
+ * 登录流程视图类型
+ * - player-login: 玩家登录
+ * - player-add: 添加玩家账户
+ * - admin-login: 管理员登录
+ * - admin-register: 管理员注册
+ */
 export type LoginView = "player-login" | "player-add" | "admin-login" | "admin-register";
 
 const VIEW_STACK: Record<LoginView, LoginView | null> = {
@@ -13,6 +20,10 @@ const VIEW_STACK: Record<LoginView, LoginView | null> = {
   "admin-register": "admin-login",
 };
 
+/**
+ * 登录流程控制 hook - 管理角色选择、视图切换、账户操作
+ * @returns 登录流程的状态和方法
+ */
 export function useLoginFlow() {
   const [view, setView] = useState<LoginView>("player-login");
   const [role, setRole] = useState<"player" | "admin">("player");

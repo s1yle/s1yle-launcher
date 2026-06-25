@@ -1,3 +1,4 @@
+/** 多人联机页面 - 服务器列表和管理 */
 const Multiplayer = () => {
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] p-8">

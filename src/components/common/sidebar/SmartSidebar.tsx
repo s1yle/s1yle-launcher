@@ -12,6 +12,7 @@ import { BaseSidebarContent, ConfirmPopup, useNotification } from '@/components/
 import { DURATION } from '@/utils/animations';
 import { useContextMenuAction } from '../../../router/contextMenuConfigs';
 
+/** 智能侧边栏组件 Props */
 export interface SmartSidebarProps {
   onMenuClick?: (path: string) => void;
   showAllGroups?: boolean;
@@ -19,6 +20,7 @@ export interface SmartSidebarProps {
   header?: React.ReactNode;
 }
 
+/** 智能侧边栏组件，根据当前路由自动切换菜单项，支持动态文件夹和右键菜单 */
 const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: SmartSidebarProps) => {
   const location = useLocation();
   const { t } = useTranslation();

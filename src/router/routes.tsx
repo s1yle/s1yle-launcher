@@ -1,6 +1,7 @@
 import { LayoutMode, RouteConfig, SidebarGroup, SidebarType } from "./models";
 
 
+/** 完整路由配置列表 */
 export const routes: RouteConfig[] = [
   {
     path: '/',

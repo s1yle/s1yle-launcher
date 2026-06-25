@@ -15,12 +15,16 @@ import { type LucideIcon } from 'lucide-react';
  * - 提供统一的 className 处理
  */
 
+/** 图标渲染组件的 Props */
 export interface IconRendererProps {
   icon?: LucideIcon | React.ReactNode;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
 }
 
+/**
+ * 图标尺寸映射表
+ */
 export const sizeMap: Record<string, string> = {
   sm: 'w-3.5 h-3.5',
   md: 'w-4 h-4',
@@ -66,8 +70,10 @@ export function renderIcon(
 }
 
 /**
- * React 组件版本的图标渲染器
- * 可以直接在 JSX 中使用
+ * React 组件版本的图标渲染器，可以直接在 JSX 中使用
+ * @param props.icon - 图标组件或元素
+ * @param props.className - 额外的 className
+ * @param props.size - 图标大小
  */
 export const Icon: React.FC<IconRendererProps> = ({
   icon,
@@ -79,6 +85,8 @@ export const Icon: React.FC<IconRendererProps> = ({
 
 /**
  * 判断一个值是否是有效的图标
+ * @param icon - 待判断的值
+ * @returns 是否为有效的图标类型
  */
 export function isValidIcon(icon: unknown): icon is LucideIcon | React.ReactElement {
   if (!icon) return false;

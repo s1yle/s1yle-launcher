@@ -3,27 +3,47 @@ import { persist } from 'zustand/middleware';
 
 //TODO: 实现自定义主题功能，支持外部注入
 
+/** 强调色枚举，定义所有可用的主题强调色 */
 export enum AccentColor {
+  /** 靛蓝色 */
   INDIGO,
+  /** 蓝色 */
   BLUE,
+  /** 绿色 */
   GREEN,
+  /** 紫色 */
   PURPLE,
+  /** 红色 */
   RED,
+  /** 橙色 */
   ORANGE,
+  /** 粉色 */
   PINK,
+  /** GitHub 风格蓝 */
   GITHUB,
+  /** One Dark Pro 风格 */
   ONEDARK,
+  /** Nord 极光风格 */
   NORD,
 }
 
+/** 强调色 CSS 变量映射 */
 export interface AccentMapProps {
+  /** 主色变量 */
   primary: string;
+  /** Hover 状态色变量 */
   hover: string;
+  /** Active 状态色变量 */
   active: string;
+  /** 背景色变量 */
   bg: string;
+  /** 5% 透明度色变量 */
   '5': string;
+  /** 10% 透明度色变量 */
   '10': string;
+  /** 15% 透明度色变量 */
   '15': string;
+  /** 20% 透明度色变量 */
   '20': string;
 }
 
@@ -51,16 +71,25 @@ const accentMap: Record<AccentColor, AccentMapProps> = {
   [AccentColor.NORD]: createAccentMap('nord'),
 };
 
+/** 主题预设定义 */
 export interface ThemePreset {
+  /** 预设唯一标识 */
   id: string;
+  /** 名称 */
   name: string;
+  /** 名称的国际化 key */
   nameI18nKey: string;
+  /** 描述 */
   description: string;
+  /** 描述的国际化 key */
   descriptionI18nKey: string;
+  /** 关联的强调色 */
   accentColor: AccentColor;
+  /** 预览颜色配置 */
   previewColors: { bg: string; surface: string; accent: string; text: string };
 }
 
+/** 内置主题预设列表（深蓝、青灰、GitHub Midnight、One Dark Pro、Nord Polar） */
 export const themePresets: ThemePreset[] = [
   {
     id: 'dark-blue',
@@ -110,17 +139,37 @@ export const themePresets: ThemePreset[] = [
   },
 ];
 
+/**
+ * 主题配置
+ */
 interface ThemeConfig {
+  /** 当前强调色 */
   accentColor: AccentColor;
+  /** 当前活跃的主题预设 */
   activeTheme: ThemePreset;
 }
 
+/**
+ * 主题 Store 的内部接口
+ */
 interface ThemeState extends ThemeConfig {
+  /** 设置强调色并应用到 DOM */
   setAccentColor: (color: AccentColor) => void;
+  /** 应用主题预设（包含强调色和主题类名） */
   applyPreset: (preset: ThemePreset) => void;
+  /** 初始化将已保存的主题应用到 DOM */
   init: () => void;
 }
 
+/**
+ * 主题 Store
+ *
+ * 功能:
+ * - 管理强调色（AccentColor 枚举）
+ * - 管理主题预设（themePresets）
+ * - 持久化到 localStorage
+ * - 自动将主题应用到 DOM（CSS 变量 + class）
+ */
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set, get) => ({

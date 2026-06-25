@@ -1,3 +1,8 @@
+/**
+ * 格式化文件大小（字节 → 人类可读）
+ * @param bytes - 字节数
+ * @returns 格式化后的字符串，如 "1.5 MB"
+ */
 export const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 B';
   const k = 1024;
@@ -6,6 +11,11 @@ export const formatFileSize = (bytes: number): string => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
+/**
+ * 格式化日期字符串
+ * @param dateStr - 日期字符串
+ * @returns 本地化日期格式（zh-CN）
+ */
 export const formatDate = (dateStr: string): string => {
   try {
     const date = new Date(dateStr);
@@ -15,6 +25,11 @@ export const formatDate = (dateStr: string): string => {
   }
 };
 
+/**
+ * 获取版本类型的显示标签
+ * @param type - 版本类型（release/snapshot/old_beta/old_alpha）
+ * @returns 中文标签
+ */
 export const getVersionTypeLabel = (type: string): string => {
   const labels: Record<string, string> = {
     release: '正式版',
@@ -25,6 +40,11 @@ export const getVersionTypeLabel = (type: string): string => {
   return labels[type] || type;
 };
 
+/**
+ * 获取版本类型的 Tailwind 样式类名
+ * @param type - 版本类型
+ * @returns 样式类名字符串
+ */
 export const getVersionTypeColor = (type: string): string => {
   const colors: Record<string, string> = {
     release: 'bg-green-500/20 text-green-400 border-green-500/30',
@@ -35,6 +55,11 @@ export const getVersionTypeColor = (type: string): string => {
   return colors[type] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
 };
 
+/**
+ * 获取版本类型的背景色类名
+ * @param type - 版本类型
+ * @returns 背景色类名
+ */
 export const getVersionTypeBgColor = (type: string): string => {
   const colors: Record<string, string> = {
     release: 'bg-green-500',
@@ -45,6 +70,11 @@ export const getVersionTypeBgColor = (type: string): string => {
   return colors[type] || 'bg-gray-500';
 };
 
+/**
+ * 根据版本 ID 推断版本类型
+ * @param versionId - 版本 ID
+ * @returns 推断出的版本类型中文名称
+ */
 export const inferVersionType = (versionId: string): string => {
   const version = versionId.toLowerCase();
   

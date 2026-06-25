@@ -1,5 +1,6 @@
 import { getVersionTypeLabel, getVersionTypeColor, getVersionTypeBgColor } from '../../../utils/format';
 
+/** 版本徽标组件 Props */
 export interface VersionBadgeProps {
   type: 'release' | 'snapshot' | 'old_beta' | 'old_alpha' | string;
   label?: string;
@@ -8,6 +9,7 @@ export interface VersionBadgeProps {
   className?: string;
 }
 
+/** 版本徽标组件，根据版本类型显示对应颜色和标签 */
 const VersionBadge = ({
   type,
   label,

@@ -18,6 +18,7 @@ import SettingItem from '@/components/common/settings/SettingItem'
 import MemorySlider from '@/components/common/settings/MemorySlider';
 import { useRouteParams } from '@/components/RouterRenderer';
 
+/** 实例游戏设置页面 - Java 配置、内存分配、窗口设置 */
 const InstanceGameSettings = () => {
   const { t } = useTranslation();
   const { instanceId } = useRouteParams();

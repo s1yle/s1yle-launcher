@@ -4,6 +4,12 @@ import { logger } from "@/helper/logger";
 import { LaunchStatus } from "./types/launch";
 import type { LaunchConfig } from "./types/launch";
 
+/**
+ * 启动 Minecraft 实例
+ * @param config 启动配置（可选）
+ * @param options Tauri invoke 选项
+ * @returns 启动结果字符串
+ */
 export const invokeLaunchInstance = async (
   config?: LaunchConfig,
   options?: InvokeOptions
@@ -15,6 +21,7 @@ export const invokeLaunchInstance = async (
   return result;
 };
 
+/** 停止 Minecraft 实例 */
 export const invokeStopInstance = async (
   options?: InvokeOptions
 ): Promise<string> => {
@@ -23,6 +30,11 @@ export const invokeStopInstance = async (
   return result;
 };
 
+/**
+ * 获取启动状态
+ * @param options Tauri invoke 选项
+ * @returns 当前启动状态
+ */
 export const invokeGetLaunchStatus = async (
   options?: InvokeOptions
 ): Promise<LaunchStatus> => {
@@ -45,6 +57,11 @@ export const invokeGetLaunchStatus = async (
   }
 };
 
+/**
+ * 获取当前启动配置
+ * @param options Tauri invoke 选项
+ * @returns 启动配置
+ */
 export const invokeGetLaunchConfig = async (
   options?: InvokeOptions
 ): Promise<LaunchConfig> => {
@@ -55,6 +72,12 @@ export const invokeGetLaunchConfig = async (
   return result as LaunchConfig;
 };
 
+/**
+ * 更新启动配置
+ * @param config 新的启动配置
+ * @param options Tauri invoke 选项
+ * @returns 操作结果字符串
+ */
 export const invokeUpdateLaunchConfig = async (
   config: LaunchConfig,
   options?: InvokeOptions

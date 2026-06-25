@@ -13,6 +13,7 @@ import { logger } from '@/helper/logger';
 
 import { UserRole } from '@/stores/userRoleStore';
 
+/** 导航项配置 */
 export interface NavItem {
   id: string;
   label: string;
@@ -25,6 +26,7 @@ export interface NavItem {
   isVisible?: boolean;
 }
 
+/** 主菜单导航项（首页） */
 export const mainMenuNavItem: NavItem = {
   id: 'main',
   label: '主页',
@@ -35,6 +37,7 @@ export const mainMenuNavItem: NavItem = {
 }
 
 // 备用 player / admin NavItems
+/** 默认玩家角色导航项列表 */
 export const defaultPlayerNavItems: NavItem[] = [
   mainMenuNavItem,
   {
@@ -55,6 +58,7 @@ export const defaultPlayerNavItems: NavItem[] = [
   },
 ];
 
+/** 默认管理员角色导航项列表 */
 export const defaultAdminNavItems: NavItem[] = [
   mainMenuNavItem,
   {
@@ -145,10 +149,19 @@ function getAdminNavItems(): NavItem[] {
   return navItems;
 }
 
+/**
+ * 根据角色获取导航项列表
+ * @param role - 用户角色
+ * @returns 导航项列表
+ */
 export function getNavItemsByRole(role: UserRole): NavItem[] {
   return role === UserRole.PLAYER ? getPlayerNavItems() : getAdminNavItems();
 }
 
+/**
+ * 获取当前角色的导航项列表
+ * @returns 导航项列表
+ */
 export function getCurrentNavItems(): NavItem[] {
   const role = useUserRoleStore.getState().currentRole;
   return getNavItemsByRole(role);

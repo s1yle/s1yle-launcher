@@ -8,32 +8,44 @@ use uuid::Uuid;
 use crate::log_info;
 
 // ======================== 类型定义 ========================
+
+/// 账户类型枚举
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum AccountType {
+    /// 微软正版账户
     #[serde(rename = "microsoft")]
     Microsoft,
+    /// 离线账户
     #[serde(rename = "offline")]
     Offline,
 }
 
+/// 账户基本信息（公开暴露给前端）
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct AccountInfo {
+    /// 玩家名
     pub name: String,
+    /// 账户类型
     pub account_type: AccountType,
+    /// 账户 UUID
     pub uuid: String,
+    /// 创建时间
     pub create_time: String,
+    /// 最后登录时间
     pub last_login_time: Option<String>,
 }
 
-// 注意：现在 Account 也可以序列化了
+/// 完整账户信息（含 Token）
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Account {
     pub info: AccountInfo,
+    /// 微软账户访问令牌
     pub access_token: Option<String>,
+    /// 微软账户刷新令牌
     pub refresh_token: Option<String>,
 }
 
-// 注意：AccountManager 现在也可以序列化了
+/// 账户管理器（内存状态）
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct AccountManager {
     accounts: HashMap<String, Account>,
@@ -54,6 +66,7 @@ static ACCOUNT_MANAGER: OnceCell<Mutex<AccountManager>> = OnceCell::new();
 
 // ======================== 核心逻辑：文件存储 ========================
 
+/// 获取账户数据文件路径
 fn get_accounts_file_path() -> Result<std::path::PathBuf, String> {
     let config_dir = &*crate::config::CONFIG_APPLICATION;
     std::fs::create_dir_all(config_dir).map_err(|e| format!("创建配置目录失败: {}", e))?;
@@ -106,6 +119,7 @@ fn save_accounts_to_disk_internal() -> Result<(), String> {
 
 // ======================== 核心方法 ========================
 impl Account {
+    /// 创建新账户，自动生成 UUID 和创建时间
     pub fn new(
         name: String,
         account_type: AccountType,
@@ -137,12 +151,15 @@ impl Account {
         }
     }
 
+    /// 更新最后登录时间为当前时间
     pub fn update_last_login(&mut self) {
         self.info.last_login_time = Some(Local::now().to_rfc3339());
     }
 }
 
 // ======================== 全局状态操作 ========================
+
+/// 初始化全局账户管理器
 pub fn init_account_manager() {
     ACCOUNT_MANAGER
         .set(Mutex::new(AccountManager::default()))
@@ -150,6 +167,7 @@ pub fn init_account_manager() {
     println!("✅ 账户管理器初始化完成");
 }
 
+/// 向管理器添加账户并自动保存到磁盘
 pub fn add_account_to_manager(account: Account) -> Result<(), String> {
     let mut manager = ACCOUNT_MANAGER
         .get()
@@ -171,6 +189,7 @@ pub fn add_account_to_manager(account: Account) -> Result<(), String> {
     Ok(())
 }
 
+/// 设置当前活动账户（内部使用）
 #[allow(dead_code)]
 pub fn set_current_account_internal(uuid: &str) -> Result<(), String> {
     let mut manager = ACCOUNT_MANAGER
@@ -197,7 +216,7 @@ pub fn set_current_account_internal(uuid: &str) -> Result<(), String> {
 
 // ======================== Tauri 前端命令 ========================
 
-/// 初始化命令（推荐在前端应用启动时调用一次）
+/// 初始化账户系统（加载磁盘中的账户数据），推荐在应用启动时调用一次
 #[command]
 pub fn initialize_account_system() -> Result<(), String> {
     // 确保账户管理器已初始化
@@ -211,6 +230,7 @@ pub fn initialize_account_system() -> Result<(), String> {
     Ok(())
 }
 
+/// 添加新账户（支持 microsoft/offline 两种类型）
 #[command]
 pub fn add_account(
     name: String,
@@ -245,6 +265,7 @@ pub fn add_account(
     Ok(format!("账户创建成功，UUID: {}", uuid))
 }
 
+/// 获取所有已保存账户的列表
 #[command]
 pub fn get_account_list() -> Result<Vec<AccountInfo>, String> {
     let manager = ACCOUNT_MANAGER
@@ -256,6 +277,7 @@ pub fn get_account_list() -> Result<Vec<AccountInfo>, String> {
     Ok(manager.accounts.values().map(|a| a.info.clone()).collect())
 }
 
+/// 获取当前选中的活动账户信息
 #[command]
 pub fn get_current_account() -> Result<Option<AccountInfo>, String> {
     let manager = ACCOUNT_MANAGER
@@ -271,6 +293,7 @@ pub fn get_current_account() -> Result<Option<AccountInfo>, String> {
         .map(|a| a.info.clone()))
 }
 
+/// 删除指定 UUID 的账户
 #[command]
 pub fn delete_account(uuid: String) -> Result<String, String> {
     let mut manager = ACCOUNT_MANAGER
@@ -293,6 +316,7 @@ pub fn delete_account(uuid: String) -> Result<String, String> {
     Ok(format!("账户 {} 删除成功", uuid))
 }
 
+/// 设置指定 UUID 的账户为当前活动账户
 #[command]
 pub fn set_current_account(uuid: String) -> Result<String, String> {
     let mut manager = ACCOUNT_MANAGER
@@ -317,11 +341,13 @@ pub fn set_current_account(uuid: String) -> Result<String, String> {
     Ok(format!("账户 {} 已设为当前账户", uuid))
 }
 
+/// 手动保存账户数据到磁盘
 #[command]
 pub fn save_accounts_to_disk() -> Result<(), String> {
     save_accounts_to_disk_internal()
 }
 
+/// 手动从磁盘加载账户数据
 #[command]
 pub fn load_accounts_from_disk() -> Result<(), String> {
     load_accounts_from_disk_internal()

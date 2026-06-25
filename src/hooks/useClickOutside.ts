@@ -1,5 +1,12 @@
 import { useEffect, useRef } from 'react';
 
+/**
+ * 点击外部检测 hook
+ * @param handler - 点击外部时的回调函数
+ * @param enabled - 是否启用检测，默认 true
+ * @param extraRefs - 额外的 ref 元素，点击这些元素内部不会触发 handler
+ * @returns ref - 需要绑定到被检测元素的 ref
+ */
 export function useClickOutside<T extends HTMLElement = HTMLElement>(
   handler: (event: MouseEvent | TouchEvent) => void,
   enabled: boolean = true,

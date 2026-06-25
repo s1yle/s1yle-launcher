@@ -31,6 +31,7 @@ interface DeployPhase {
   progress?: number;
 }
 
+/** 版本详情与安装页面 - 选择安装方式并执行部署 */
 const VersionDetailWithInstall: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();

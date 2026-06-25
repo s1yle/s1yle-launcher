@@ -2,35 +2,34 @@ import { NavItem } from "@/config/navigationConfig";
 import { ReactNode } from "react";
 
 
-/**
- * ## 侧边栏级别(主、次、从)
- */
+/** 侧边栏级别（主/次/从） */
 export enum SidebarType {
   MAIN = 'main',
   SUB = 'sub',
   SECONDARY = 'secondary'
 }
 
-/**
- * ## RouteConfig 类型使用的
- */
+/** 页面头部配置 */
 export interface HeaderConfig {
   type: SidebarType;
   title: string;
   titleI18nKey?: string;
 }
 
+/** 路由在导航中的位置 */
 export enum RoutePosition {
   TOP = 'top',
   BOTTOM = 'bottom',
   HIDDEN = 'hidden'
 }
 
+/** 布局模式 */
 export enum LayoutMode {
   STANDARD = 'standard',
   FULLSCREEN = 'fullscreen'
 }
 
+/** 侧边栏分组 */
 export enum SidebarGroup {
   ACCOUNT = 'account',
   GAME = 'game',
@@ -38,11 +37,10 @@ export enum SidebarGroup {
   NONE = 'none'
 }
 
-/**
- * ## 该type 不同于HeaderConfig 类型中的 type
- */
+/** 侧边栏菜单项类型 */
 export type SidebarItemType = 'route' | 'action' | 'external' | 'divider' | 'header';
 
+/** 侧边栏菜单项 */
 export interface SidebarMenuItem {
   id: string;
   type: SidebarItemType;
@@ -65,6 +63,7 @@ export interface SidebarMenuItem {
   }>;
 }
 
+/** 上下文菜单子项 */
 export interface ContextMenuChildItem {
   id: string;
   type: 'action';
@@ -75,6 +74,7 @@ export interface ContextMenuChildItem {
   danger?: boolean;
 }
 
+/** 路由配置 */
 export interface RouteConfig {
   path: string;
   componentName: string;

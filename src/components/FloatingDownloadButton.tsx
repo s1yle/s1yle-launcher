@@ -11,10 +11,16 @@ const PANEL_WIDTH = 380;
 const PANEL_MAX_HEIGHT = 480;
 const DRAG_THRESHOLD = 5;
 
+/** 浮动下载按钮组件 Props */
 interface FloatingDownloadButtonProps {
   className?: string;
 }
 
+/**
+ * 浮动下载按钮组件。
+ * 显示当前下载进度，可展开面板查看详细下载任务列表。
+ * 支持拖拽移动位置。
+ */
 export const FloatingDownloadButton: React.FC<FloatingDownloadButtonProps> = ({
   className = '',
 }) => {

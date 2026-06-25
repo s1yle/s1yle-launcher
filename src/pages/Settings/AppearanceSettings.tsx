@@ -56,6 +56,7 @@ const GRADIENT_PRESETS = [
   { id: 'night', label: '暗夜', value: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)' },
 ];
 
+/** 外观设置页面 - 布局模式、字体、加载动画、主题、背景 */
 const ApearanceSettings = () => {
   const { mode: uiMode, setMode: setUIMode, animation, setAnimation } = useUIModeStore();
   const [isCompat, setIsCompat] = useState(true)

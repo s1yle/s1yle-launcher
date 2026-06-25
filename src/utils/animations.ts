@@ -152,49 +152,56 @@ export const accordionExpand: Variants = {
   exit: { opacity: 0, height: 0 },
 };
 
-// ── Existing variants (backward-compatible, now reference constants) ──
+/** 淡入变体 */
 export const fadeIn: Variants = {
   initial: { opacity: 0 },
   animate: { opacity: 1 },
   exit: { opacity: 0 },
 };
 
+/** 淡入 + 上移变体 */
 export const fadeInUp: Variants = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
   exit: { opacity: 0, y: -10 },
 };
 
+/** 淡入 + 下移变体 */
 export const fadeInDown: Variants = {
   initial: { opacity: 0, y: -20 },
   animate: { opacity: 1, y: 0 },
   exit: { opacity: 0, y: 10 },
 };
 
+/** 淡入 + 缩放变体 */
 export const fadeInScale: Variants = {
   initial: { opacity: 0, scale: 0.9 },
   animate: { opacity: 1, scale: 1 },
   exit: { opacity: 0, scale: 0.95 },
 };
 
+/** 右侧滑入变体 */
 export const slideInRight: Variants = {
   initial: { opacity: 0, x: 20 },
   animate: { opacity: 1, x: 0 },
   exit: { opacity: 0, x: -10 },
 };
 
+/** 左侧滑入变体 */
 export const slideInLeft: Variants = {
   initial: { opacity: 0, x: -20 },
   animate: { opacity: 1, x: 0 },
   exit: { opacity: 0, x: 10 },
 };
 
+/** 缩放入场变体 */
 export const scaleIn: Variants = {
   initial: { scale: 0.8, opacity: 0 },
   animate: { scale: 1, opacity: 1 },
   exit: { scale: 0.9, opacity: 0 },
 };
 
+/** 列表项入场 + 悬停/点击变体 */
 export const listItem: Variants = {
   initial: { y: -20 },
   animate: { y: 0 },
@@ -203,6 +210,7 @@ export const listItem: Variants = {
   tap: microInteractions.listItemTap,
 };
 
+/** 卡片悬停 + 点击变体 */
 export const cardHover: Variants = {
   initial: { scale: 1 },
   hover: {
@@ -214,47 +222,55 @@ export const cardHover: Variants = {
   tap: { scale: 0.99, transition: { duration: DURATION.INSTANT } },
 };
 
+/** 按钮悬停 + 点击变体 */
 export const buttonHover: Variants = {
   initial: { scale: 1 },
   hover: { scale: 1.05, transition: transitions.fast },
   tap: { scale: 0.95, transition: transitions.fast },
 };
 
+/** 图标按钮悬停 + 点击变体（带旋转） */
 export const iconButtonHover: Variants = {
   initial: { scale: 1 },
   hover: { scale: 1.15, rotate: 5, transition: transitions.spring },
   tap: { scale: 0.9, transition: transitions.fast },
 };
 
+/** 模态弹窗遮罩层变体 */
 export const modalOverlay: Variants = {
   initial: { opacity: 0 },
   animate: { opacity: 1 },
   exit: { opacity: 0 },
 };
 
+/** 模态弹窗内容变体 */
 export const modalContent: Variants = {
   initial: { opacity: 0, scale: 0.95, y: 20 },
   animate: { opacity: 1, scale: 1, y: 0 },
   exit: { opacity: 0, scale: 0.95, y: 20 },
 };
 
+/** 下拉菜单变体 */
 export const dropdown: Variants = {
   initial: { opacity: 0, scale: 0.95, y: -10 },
   animate: { opacity: 1, scale: 1, y: 0 },
   exit: { opacity: 0, scale: 0.95, y: -10 },
 };
 
+/** 通知弹窗变体（右侧滑入） */
 export const notification: Variants = {
   initial: { opacity: 0, x: 300, scale: 0.9 },
   animate: { opacity: 1, x: 0, scale: 1 },
   exit: { opacity: 0, x: 300, scale: 0.9 },
 };
 
+/** 进度条宽度动画变体 */
 export const progressBar: Variants = {
   initial: { width: 0 },
   animate: (width: number) => ({ width: `${width}%` }),
 };
 
+/** 错峰容器变体（子元素依次入场） */
 export const staggerContainer: Variants = {
   initial: { opacity: 0 },
   animate: {
@@ -273,6 +289,7 @@ export const staggerContainer: Variants = {
   },
 };
 
+/** 错峰子项变体 */
 export const staggerItem: Variants = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
@@ -307,6 +324,7 @@ export const staggerSection: Variants = {
   exit: { opacity: 0, y: -5 },
 };
 
+/** 脉冲动画 */
 export const pulse = {
   scale: [1, 1.05, 1],
   transition: {
@@ -316,6 +334,7 @@ export const pulse = {
   },
 };
 
+/** 流光动画（骨架屏加载） */
 export const shimmer = {
   x: ['-100%', '100%'],
   transition: {
@@ -325,6 +344,11 @@ export const shimmer = {
   },
 };
 
+/**
+ * 创建错峰容器变体
+ * @param delay - 子项间的延迟时间（秒），默认 0.05
+ * @returns Variants 对象
+ */
 export const createStaggerVariants = (delay: number = 0.05): Variants => ({
   initial: {},
   animate: {
@@ -341,6 +365,11 @@ export const createStaggerVariants = (delay: number = 0.05): Variants => ({
   },
 });
 
+/**
+ * 创建指定方向的滑入变体
+ * @param direction - 滑动方向，默认 up
+ * @returns Variants 对象
+ */
 export const createSlideVariants = (direction: 'left' | 'right' | 'up' | 'down' = 'up'): Variants => {
   const offset = 20;
   const directions = {

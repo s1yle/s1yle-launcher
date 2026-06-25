@@ -9,10 +9,25 @@ use super::utils::copy_dir_all;
 use crate::modloader::ModLoaderType;
 use crate::{config, APP_HANDLE, log_error, log_info};
 
+/// 迁移结果
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct MigrationResult {
+    /// 已迁移的版本列表
+    pub migrated_versions: Vec<String>,
+    /// 已迁移的库文件数
+    pub migrated_libraries: usize,
+    /// 已迁移的资源文件数
+    pub migrated_assets: usize,
+    /// 迁移过程中的错误列表
+    pub errors: Vec<String>,
+}
+
+/// 实例管理器，负责实例的 CRUD、扫描、路径管理、目录迁移等
 #[derive(Debug)]
 pub struct InstanceManager;
 
 impl InstanceManager {
+    /// 创建新的实例管理器，初始化目录结构
     pub fn new() -> Self {
         // 创建新目录结构
         fs::create_dir_all(&*config::MINECRAFT_DIR).ok();
@@ -29,10 +44,12 @@ impl InstanceManager {
         (*config::DEAMON_BASE_PATH).clone()
     }
 
+    /// 获取指定实例的 versions 目录
     fn get_versions_dir(&self, name: &str) -> PathBuf {
         self.get_legacy_minecraft_dir().join(name).join("versions")
     }
 
+    /// 获取集中式元数据文件路径
     fn get_meta_path(&self) -> PathBuf {
         (*config::INSTANCE_META_PATH).clone()
     }
@@ -54,7 +71,7 @@ impl InstanceManager {
         (*config::INSTANCE_CONFIGS_DIR).join(format!("{}.json", instance_id))
     }
 
-    /// 扫描版本目录
+    /// 扫描版本目录中的实例
     fn scan_versions(&self) -> Vec<GameInstance> {
         let versions_dir = &*config::VERSIONS_DIR;
         let mut instances = Vec::new();
@@ -85,7 +102,7 @@ impl InstanceManager {
         instances
     }
 
-    /// 加载单个版本
+    /// 加载单个版本作为实例
     fn load_version(&self, version_id: &str) -> Option<GameInstance> {
         let version_dir = self.get_version_dir(version_id);
         
@@ -164,7 +181,7 @@ impl InstanceManager {
         })
     }
 
-    /// 加载实例配置
+    /// 加载实例配置（优先从独立文件，然后从全局配置）
     pub fn load_instance_config(&self, version_id: &str) -> Option<crate::config::InstanceConfig> {
         // 首先尝试从独立文件加载
         let config_path = self.get_instance_config_path(version_id);
@@ -189,7 +206,7 @@ impl InstanceManager {
         None
     }
 
-    /// 保存实例配置
+    /// 保存实例配置到独立文件
     pub fn save_instance_config(&self, config: &crate::config::InstanceConfig) -> Result<(), String> {
         // 保存到独立文件
         let config_path = self.get_instance_config_path(&config.id);
@@ -255,6 +272,7 @@ impl InstanceManager {
         self.write_all_metas(&all)
     }
 
+    /// 读取所有集中式元数据
     fn read_all_metas(&self) -> HashMap<String, InstanceMeta> {
         let meta_path = self.get_meta_path();
         if meta_path.exists() {
@@ -267,6 +285,7 @@ impl InstanceManager {
         HashMap::new()
     }
 
+    /// 写入所有集中式元数据
     fn write_all_metas(&self, metas: &HashMap<String, InstanceMeta>) -> Result<(), String> {
         let meta_path = self.get_meta_path();
         if let Some(parent) = meta_path.parent() {
@@ -278,7 +297,7 @@ impl InstanceManager {
         Ok(())
     }
 
-    /// 加载实例元数据（支持双模式）
+    /// 加载实例元数据（支持分布式/集中式双模式）
     pub fn load_meta(&self, name: &str) -> Option<InstanceMeta> {
         match *config::INSTANCE_META_MODE {
             config::MetaMode::Distributed => {
@@ -337,6 +356,7 @@ impl InstanceManager {
         Ok(())
     }
 
+    /// 发现实例目录中的版本列表
     fn discover_versions(&self, name: &str) -> Vec<String> {
         let versions_dir = self.get_versions_dir(name);
         let mut versions = Vec::new();
@@ -354,6 +374,7 @@ impl InstanceManager {
         versions
     }
 
+    /// 从旧版实例目录加载单个实例
     fn load_instance(&self, name: &str) -> Option<GameInstance> {
         let minecraft_dir = self.get_legacy_minecraft_dir();
         if !minecraft_dir.is_dir() {
@@ -431,6 +452,7 @@ impl InstanceManager {
         })
     }
 
+    /// 扫描旧版实例目录中的版本
     fn scan_legacy_versions(&self, name: &str, instances: &mut Vec<GameInstance>) {
         let minecraft_dir = self.get_legacy_minecraft_dir();
         let instance_dir = minecraft_dir.join(name);
@@ -547,6 +569,7 @@ impl InstanceManager {
         }
     }
 
+    /// 扫描所有实例（新版版本目录 + 旧版兼容）
     pub fn scan_instances(&self) -> Vec<GameInstance> {
         let mut instances = Vec::new();
 
@@ -587,10 +610,12 @@ impl InstanceManager {
         instances
     }
 
+    /// 获取指定 ID 的实例
     pub fn get_instance(&self, id: &str) -> Option<GameInstance> {
         self.scan_instances().into_iter().find(|i| i.id == id)
     }
 
+    /// 创建新实例（创建目录结构）
     pub fn create_instance(&self, name: &str, version: &str) -> Result<GameInstance, String> {
         let instance_dir = self.get_legacy_minecraft_dir().join(name);
         let versions_dir = self.get_versions_dir(name);
@@ -617,6 +642,7 @@ impl InstanceManager {
         Ok(instance)
     }
 
+    /// 删除指定 ID 的实例（删除目录）
     pub fn delete_instance(&self, id: &str) -> Result<(), String> {
         let instance = self
             .get_instance(id)
@@ -630,6 +656,7 @@ impl InstanceManager {
         Ok(())
     }
 
+    /// 复制实例到新名称
     pub fn copy_instance(&self, id: &str, new_name: &str) -> Result<GameInstance, String> {
         let instance = self
             .get_instance(id)
@@ -650,6 +677,7 @@ impl InstanceManager {
             .ok_or_else(|| "复制实例后加载失败".to_string())
     }
 
+    /// 重命名实例
     pub fn rename_instance(&self, id: &str, new_name: &str) -> Result<GameInstance, String> {
         let instance = self
             .get_instance(id)
@@ -675,6 +703,7 @@ impl InstanceManager {
             .ok_or_else(|| "重命名实例后加载失败".to_string())
     }
 
+    /// 更新实例信息
     pub fn update_instance(
         &self,
         id: &str,
@@ -695,10 +724,12 @@ impl InstanceManager {
         Ok(instance)
     }
 
+    /// 获取实例目录路径
     pub fn get_instances_path(&self) -> String {
         self.get_legacy_minecraft_dir().to_string_lossy().to_string()
     }
 
+    /// 扫描指定文件夹中的实例
     pub fn scan_instances_in_folder(&self, folder_path: &PathBuf) -> Vec<GameInstance> {
         let mut instances = Vec::new();
         if !folder_path.exists() || !folder_path.is_dir() {
@@ -741,6 +772,7 @@ impl InstanceManager {
         instances
     }
 
+    /// 从指定路径加载实例
     fn load_instance_from_path(&self, name: &str, instance_dir: &PathBuf) -> Option<GameInstance> {
         let mut version = None;
 
@@ -845,6 +877,7 @@ impl InstanceManager {
         })
     }
 
+    /// 从指定路径加载元数据
     fn load_meta_from_path(&self, meta_path: &PathBuf) -> Option<InstanceMeta> {
         if let Ok(content) = fs::read_to_string(meta_path) {
             if let Ok(meta) = serde_json::from_str::<InstanceMeta>(&content) {
@@ -854,6 +887,7 @@ impl InstanceManager {
         None
     }
 
+    /// 保存元数据到指定路径
     fn save_meta_to_path(&self, meta: &InstanceMeta, meta_path: &PathBuf) -> Result<(), String> {
         if let Some(parent) = meta_path.parent() {
             fs::create_dir_all(parent).map_err(|e| format!("创建元数据目录失败: {}", e))?;
@@ -864,8 +898,8 @@ impl InstanceManager {
         Ok(())
     }
 
+    /// 从 ConfigManager 加载已知路径列表
     fn load_known_paths(&self) -> Vec<KnownPath> {
-        // ✅ 通过 APP_HANDLE 获取 ConfigManager
         let app_handle = match APP_HANDLE.get() {
             Some(h) => h,
             None => {
@@ -878,7 +912,6 @@ impl InstanceManager {
         
         match config_manager.get_config() {
             Ok(config) => {
-                // 将 serde_json::Value 转换为 KnownPath
                 let mut result = Vec::new();
                 for value in &config.known_folders {
                     if let Ok(kp) = serde_json::from_value::<KnownPath>(value.clone()) {
@@ -894,8 +927,8 @@ impl InstanceManager {
         }
     }
 
+    /// 保存已知路径列表到 ConfigManager
     fn save_known_paths(&self, paths: &[KnownPath]) -> Result<(), String> {
-        // ✅ 通过 APP_HANDLE 获取 ConfigManager
         let app_handle = APP_HANDLE.get()
             .ok_or_else(|| "APP_HANDLE 未初始化".to_string())?;
         
@@ -910,6 +943,7 @@ impl InstanceManager {
         Ok(())
     }
 
+    /// 扫描已知的 Minecraft 路径（默认、官方、用户自定义）
     pub fn scan_known_paths(&self) -> Vec<KnownPath> {
         let mut paths = Vec::new();
 
@@ -957,6 +991,7 @@ impl InstanceManager {
         paths
     }
 
+    /// 添加已知路径
     pub fn add_known_path(&self, path: &str) -> Result<KnownPath, String> {
         let p = PathBuf::from(path);
         if !p.exists() {
@@ -999,6 +1034,7 @@ impl InstanceManager {
         Ok(new_path)
     }
 
+    /// 添加已知路径（指定显示名称）
     pub async fn add_known_path_with_name(&self, path: &str, display_name: &str) -> Result<KnownPath, String> {
         let p = PathBuf::from(path);
         if !p.exists() {
@@ -1036,6 +1072,7 @@ impl InstanceManager {
         Ok(new_path)
     }
 
+    /// 设置默认文件夹
     pub fn set_default_folder(&self, id: &str) -> Result<(), String> {
         let mut existing = self.load_known_paths();
         let mut found = false;
@@ -1057,6 +1094,7 @@ impl InstanceManager {
         Ok(())
     }
 
+    /// 从已知路径中移除指定文件夹
     pub fn remove_known_path(&self, id: &str) -> Result<(), String> {
         let mut existing = self.load_known_paths();
         let original_len = existing.len();
@@ -1173,6 +1211,7 @@ impl InstanceManager {
         Ok(result)
     }
 
+    /// 迁移版本文件（jar、json、natives）
     fn migrate_version_files(&self, source_dir: &PathBuf, target_dir: &PathBuf, version_id: &str) -> Result<(), String> {
         fs::create_dir_all(target_dir)
             .map_err(|e| format!("创建版本目录失败：{}", e))?;
@@ -1207,6 +1246,7 @@ impl InstanceManager {
         Ok(())
     }
 
+    /// 迁移库文件到全局目录
     fn migrate_libraries(&self, instance_dir: &PathBuf) -> Result<(), String> {
         use crate::config::LIBRARIES_DIR;
         
@@ -1226,6 +1266,7 @@ impl InstanceManager {
         Ok(())
     }
 
+    /// 迁移资源文件到全局目录
     fn migrate_assets(&self, instance_dir: &PathBuf) -> Result<(), String> {
         use crate::config::ASSETS_DIR;
         
@@ -1245,6 +1286,7 @@ impl InstanceManager {
         Ok(())
     }
 
+    /// 递归复制目录，跳过已存在的文件
     fn copy_dir_skip_existing(&self, source: &PathBuf, target: &PathBuf) -> Result<(), String> {
         if !source.is_dir() {
             return Ok(());
@@ -1272,13 +1314,4 @@ impl InstanceManager {
 
         Ok(())
     }
-}
-
-/// 迁移结果
-#[derive(Debug, Clone, serde::Serialize)]
-pub struct MigrationResult {
-    pub migrated_versions: Vec<String>,
-    pub migrated_libraries: usize,
-    pub migrated_assets: usize,
-    pub errors: Vec<String>,
 }

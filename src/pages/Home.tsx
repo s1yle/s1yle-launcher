@@ -11,6 +11,7 @@ import { useLoadingAction } from '@/hooks/useLoadingAction';
 import { useState } from 'react';
 import { pagesWithOwnSidebar } from '@/router/config';
 
+/** 主页 - 显示玩家档案和快捷启动按钮 */
 const Home = () => {
   const instance_init = useInstanceStore(s => s.init);
   const { currentRole } = useUserRoleStore();

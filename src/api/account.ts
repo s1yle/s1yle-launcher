@@ -4,6 +4,15 @@ import { logger } from "@/helper/logger";
 import { AccountType } from "./types/account";
 import type { AccountInfo } from "./types/account";
 
+/**
+ * 添加账户
+ * @param accountName 账户名称（1-16 字符）
+ * @param accountType 账户类型（microsoft / offline）
+ * @param accessToken 微软账户的访问令牌（可选）
+ * @param refreshToken 微软账户的刷新令牌（可选）
+ * @param options Tauri invoke 选项
+ * @returns 操作结果字符串
+ */
 export const invokeAddAccount = async (
   accountName: string,
   accountType: string,
@@ -34,6 +43,11 @@ export const invokeAddAccount = async (
   return await invokeRust("add_account", args, options);
 };
 
+/**
+ * 获取账户列表
+ * @param options Tauri invoke 选项
+ * @returns 账户信息数组
+ */
 export const invokeGetAccountList = async (
   options?: InvokeOptions
 ): Promise<AccountInfo[]> => {
@@ -42,6 +56,11 @@ export const invokeGetAccountList = async (
   return result as AccountInfo[];
 };
 
+/**
+ * 获取当前选中的账户
+ * @param options Tauri invoke 选项
+ * @returns 当前账户信息，未选中返回 null
+ */
 export const invokeGetCurrentAccount = async (
   options?: InvokeOptions
 ): Promise<AccountInfo | null> => {
@@ -50,6 +69,12 @@ export const invokeGetCurrentAccount = async (
   return result as AccountInfo | null;
 };
 
+/**
+ * 删除账户
+ * @param uuid 要删除的账户 UUID
+ * @param options Tauri invoke 选项
+ * @returns 操作结果字符串
+ */
 export const invokeDeleteAccount = async (
   uuid: string,
   options?: InvokeOptions
@@ -58,6 +83,12 @@ export const invokeDeleteAccount = async (
   return await invokeRust("delete_account", { uuid }, options);
 };
 
+/**
+ * 设置当前账户
+ * @param uuid 要设为当前的账户 UUID
+ * @param options Tauri invoke 选项
+ * @returns 操作结果字符串
+ */
 export const invokeSetCurrentAccount = async (
   uuid: string,
   options?: InvokeOptions
@@ -66,6 +97,12 @@ export const invokeSetCurrentAccount = async (
   return await invokeRust("set_current_account", { uuid }, options);
 };
 
+/**
+ * 保存账户列表到磁盘
+ * @param args 额外参数（可选）
+ * @param options Tauri invoke 选项
+ * @returns Rust 命令返回结果
+ */
 export const invokeSaveAccount = async (
   args?: InvokeArgs,
   options?: InvokeOptions
@@ -74,6 +111,12 @@ export const invokeSaveAccount = async (
   return await invokeRust("save_accounts_to_disk", args, options);
 };
 
+/**
+ * 从磁盘加载账户列表
+ * @param args 额外参数（可选）
+ * @param options Tauri invoke 选项
+ * @returns Rust 命令返回结果
+ */
 export const invokeLoadAccount = async (
   args?: InvokeArgs,
   options?: InvokeOptions
@@ -82,6 +125,12 @@ export const invokeLoadAccount = async (
   return await invokeRust("load_accounts_from_disk", args, options);
 };
 
+/**
+ * 初始化账户系统
+ * @param args 额外参数（可选）
+ * @param options Tauri invoke 选项
+ * @returns Rust 命令返回结果
+ */
 export const invokeAccInit = async (
   args?: InvokeArgs,
   options?: InvokeOptions

@@ -1,3 +1,4 @@
+/** 滑块组件 Props */
 export interface SliderProps {
   value: number
   min: number
@@ -8,6 +9,7 @@ export interface SliderProps {
   displayValue?: string
 }
 
+/** 滑块组件，支持自定义标签和显示值 */
 export function Slider({ value, min, max, step, onChange, label, displayValue }: SliderProps) {
   const pct = ((value - min) / (max - min)) * 100
 

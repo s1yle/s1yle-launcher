@@ -30,6 +30,13 @@ const withErrorTransform: Middleware = (next) => async (fn, args) => {
 const compose = (middlewares: Middleware[]): Next =>
   middlewares.reduceRight((acc, mw) => mw(acc), core);
 
+/**
+ * 调用 Rust 后端命令（经过中间件链：日志 + 错误转换）
+ * @param fn Rust 命令名称
+ * @param args 命令参数
+ * @param options Tauri invoke 选项（可选）
+ * @returns Rust 命令返回结果
+ */
 export const invokeRust = async (
   fn: string,
   args: InvokeArgs = {},
@@ -41,4 +48,5 @@ export const invokeRust = async (
   );
 };
 
+/** {@link invokeRust} 的别名 */
 export const invokeRustFunction = invokeRust;

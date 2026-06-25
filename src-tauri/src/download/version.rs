@@ -6,9 +6,11 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use tauri::State;
 
+/// Mojang 版本清单 API URL
 const VERSION_MANIFEST_URL: &str =
     "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
 
+/// 获取 Minecraft 版本列表（从 Mojang API）
 #[tauri::command]
 pub async fn get_version_manifest() -> Result<VersionManifest, String> {
     log_info!("正在获取游戏版本列表...");
@@ -26,6 +28,7 @@ pub async fn get_version_manifest() -> Result<VersionManifest, String> {
     Ok(manifest)
 }
 
+/// 获取指定版本的详细信息（原始 JSON）
 #[tauri::command]
 pub async fn get_version_detail(version_id: String) -> Result<serde_json::Value, String> {
     log_info!("正在获取版本详情: {}", version_id);
@@ -49,6 +52,7 @@ pub async fn get_version_detail(version_id: String) -> Result<serde_json::Value,
     Ok(detail)
 }
 
+/// 解析版本 JSON，提取下载清单（客户端、库、资源、原生库等）
 pub async fn parse_version_downloads(
     version_json: &serde_json::Value,
 ) -> Result<VersionDownloadManifest, String> {
@@ -181,6 +185,7 @@ pub async fn parse_version_downloads(
     })
 }
 
+/// 从 Mojang API 获取资源索引中的对象列表
 async fn fetch_asset_objects(url: &str) -> Result<HashMap<String, AssetObject>, String> {
     if url.is_empty() {
         return Ok(HashMap::new());
@@ -203,6 +208,7 @@ async fn fetch_asset_objects(url: &str) -> Result<HashMap<String, AssetObject>, 
     Ok(index.objects)
 }
 
+/// 获取版本的下载清单（带缓存），返回库文件、资源文件等列表
 #[tauri::command]
 pub async fn get_version_download_manifest(
     version_id: String,

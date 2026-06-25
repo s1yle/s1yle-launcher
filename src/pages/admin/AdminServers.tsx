@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { getServers, postServers, deleteServersById, postServersByIdStart, postServersByIdStop } from '@/server/sdk.gen';
 import type { ModelsServer } from '@/server/types.gen';
 
+/** 服主后台 - 服务器列表管理页面 */
 const AdminServers = () => {
   const [servers, setServers] = useState<ModelsServer[]>([]);
 

@@ -2,7 +2,7 @@
 import { useInstanceStore } from "@/stores/instanceStore";
 import { open } from "@tauri-apps/plugin-dialog";
 
-// 在组件中（或创建一个小 hook）
+/** 添加游戏目录 - 弹出系统文件选择对话框 */
 export const handleAddGameFolder = async () => {
     const addKnownFolder = useInstanceStore.getState().addKnownFolder;
 
@@ -16,6 +16,7 @@ export const handleAddGameFolder = async () => {
 
 };
 
+/** 刷新实例列表 */
 export const handleRefreshInstances = async () => {
     const refresh = useInstanceStore.getState().refresh;
     await refresh();

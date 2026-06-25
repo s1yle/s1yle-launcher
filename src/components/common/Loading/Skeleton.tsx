@@ -16,6 +16,7 @@ function useSkeleton(extra?: string): string {
   return cn('rounded', bg, anim, extra);
 }
 
+/** 骨架屏方块 Props */
 export interface SkeletonBoxProps {
   className?: string;
   style?: CSSProperties;
@@ -25,6 +26,7 @@ const Box = ({ className, style }: SkeletonBoxProps) => (
   <div className={useSkeleton(className)} style={style} />
 );
 
+/** 骨架屏文本 Props */
 export interface SkeletonTextProps {
   lines?: number;
   className?: string;
@@ -48,6 +50,7 @@ const Text = ({ lines = 3, className, lastLineWidth = '60%' }: SkeletonTextProps
   );
 };
 
+/** 骨架屏圆形 Props */
 export interface SkeletonCircleProps {
   size?: number;
   className?: string;
@@ -60,6 +63,7 @@ const Circle = ({ size = 40, className }: SkeletonCircleProps) => (
   />
 );
 
+/** 骨架屏列表 Props */
 export interface SkeletonListProps {
   count?: number;
   className?: string;
@@ -82,6 +86,7 @@ const List = ({ count = 3, className }: SkeletonListProps) => {
   );
 };
 
+/** 骨架屏卡片 Props */
 export interface SkeletonCardProps {
   count?: number;
   className?: string;
@@ -107,6 +112,7 @@ const Card = ({ count = 3, className }: SkeletonCardProps) => {
   );
 };
 
+/** 骨架屏用户资料 Props */
 export interface SkeletonProfileProps {
   className?: string;
 }
@@ -124,6 +130,7 @@ const Profile = ({ className }: SkeletonProfileProps) => {
   );
 };
 
+/** 骨架屏表单 Props */
 export interface SkeletonFormProps {
   fields?: number;
   className?: string;
@@ -143,5 +150,9 @@ const Form = ({ fields = 4, className }: SkeletonFormProps) => {
   );
 };
 
+/**
+ * 骨架屏复合组件。
+ * 包含 Box / Text / Circle / List / Card / Profile / Form 七种子组件。
+ */
 export const Skeleton = { Box, Text, Circle, List, Card, Profile, Form };
 export default Skeleton;

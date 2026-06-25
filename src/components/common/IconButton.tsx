@@ -6,6 +6,7 @@ import { twMerge } from 'tailwind-merge';
 
 const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(inputs));
 
+/** 图标按钮组件 Props */
 export interface IconButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'> {
   icon: LucideIcon;
   iconSize?: number;

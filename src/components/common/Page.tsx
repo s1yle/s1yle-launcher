@@ -18,11 +18,13 @@ const pageSection: Variants = {
   animate: { opacity: 1, y: 0 },
 };
 
+/** 页面容器 Props */
 export interface PageProps {
   children: ReactNode;
   className?: string;
 }
 
+/** 页面容器组件，带交错入场动画 */
 export function Page({ children, className }: PageProps) {
   return (
     <motion.div
@@ -36,11 +38,13 @@ export function Page({ children, className }: PageProps) {
   );
 }
 
+/** 页面区块 Props */
 export interface PageSectionProps {
   children: ReactNode;
   className?: string;
 }
 
+/** 页面区块组件，带弹簧入场动画 */
 export function PageSection({ children, className }: PageSectionProps) {
   return (
     <motion.div

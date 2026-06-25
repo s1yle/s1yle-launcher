@@ -27,15 +27,27 @@ import type {
   ModLoaderInfo,
 } from '../helper/rustInvoke';
 
+/**
+ * 单个版本的下载进度信息
+ */
 interface VersionDownloadProgress {
+  /** 版本 ID */
   versionId: string;
+  /** 下载进度（0-100） */
   progress: number;
+  /** 状态：下载中 / 已完成 / 出错 */
   status: 'downloading' | 'completed' | 'error';
+  /** 错误信息（仅 status 为 error 时） */
   error?: string;
 }
 
+/**
+ * 版本清单的本地缓存结构
+ */
 interface ManifestCache {
+  /** 缓存的版本清单数据 */
   data: VersionManifest;
+  /** 缓存时间戳 */
   timestamp: number;
 }
 
@@ -67,40 +79,84 @@ const saveManifestToCache = (manifest: VersionManifest) => {
   }
 };
 
+/**
+ * 下载管理 Store 的内部接口
+ *
+ * 管理 Minecraft 版本的下载、部署、进度追踪等全流程。
+ */
 interface DownloadState {
+  /** 版本清单（所有可用版本列表） */
   manifest: VersionManifest | null;
+  /** 已安装的版本 ID 列表 */
   installedVersions: string[];
+  /** 后台下载任务列表 */
   downloadTasks: DownloadTask[];
+  /** 正在下载的各版本进度映射 */
   downloadingVersions: Map<string, VersionDownloadProgress>;
+  /** 已完成的版本 ID 列表 */
   completedVersions: string[];
+  /** 下载基路径 */
   basePath: string;
+  /** 是否正在加载 */
   loading: boolean;
+  /** 错误信息 */
   error: string | null;
 
+  /** 初始化 Store（加载清单、已安装版本、任务、路径） */
   init: () => Promise<void>;
+  /** 加载版本清单（含本地缓存） */
   loadManifest: () => Promise<void>;
+  /** 加载已安装版本列表 */
   loadInstalledVersions: () => Promise<void>;
+  /** 加载下载任务列表 */
   loadDownloadTasks: () => Promise<void>;
+  /** 加载下载基路径 */
   loadBasePath: () => Promise<void>;
+  /** 设置下载基路径 */
   setBasePath: (path: string) => Promise<void>;
+  /** 下载指定版本（含并发限流和重试） */
   downloadVersion: (versionId: string) => Promise<void>;
+  /** 部署指定版本到当前实例 */
   deployVersion: (versionId: string) => Promise<void>;
+  /** 取消指定下载任务 */
   cancelDownloadTask: (taskId: string) => Promise<void>;
+  /** 清空已完成的下载任务 */
   clearCompletedDownloadTasks: () => Promise<void>;
+  /** 检查指定版本是否正在下载 */
   isVersionDownloading: (versionId: string) => boolean;
+  /** 获取指定版本的下载进度 */
   getVersionProgress: (versionId: string) => number;
+  /** 获取指定 MC 版本的 Fabric 加载器版本列表 */
   getFabricVersions: (mcVersion: string) => Promise<ModLoaderVersionList>;
+  /** 获取指定 Fabric 加载器的详细信息 */
   getFabricVersionDetail: (mcVersion: string, loaderVersion: string) => Promise<FabricVersionDetail>;
+  /** 构建 Fabric 启动配置 */
   buildFabricLaunchConfig: (mcVersion: string, loaderVersion: string, gameDir: string, assetsDir: string, username: string, uuid: string, accessToken?: string, javaPath?: string, memoryMb?: number) => Promise<ModLoaderInfo>;
+  /** 开始追踪版本的下载进度 */
   startDownloadProgress: (versionId: string) => void;
+  /** 更新版本的下载进度 */
   updateDownloadProgress: (versionId: string, progress: number) => void;
+  /** 标记版本下载完成 */
   completeDownloadProgress: (versionId: string) => void;
+  /** 标记版本下载出错 */
   errorDownloadProgress: (versionId: string, error: string) => void;
+  /** 设置 Tauri 事件监听（deploy-progress / deploy-complete），返回清理函数 */
   setupEventListeners: () => () => void;
 }
 
 const CONCURRENT_LIMIT = 16;
 
+/**
+ * 下载管理 Store
+ *
+ * 功能:
+ * - 获取并缓存版本清单
+ * - 按版本 ID 下载（client jar / libraries / assets / natives）
+ * - 并发限流（16 路并行）与自动重试（最多 3 次）
+ * - 部署到实例目录
+ * - 进度追踪（启动/更新/完成/出错）
+ * - 通过 Tauri 事件监听处理部署进度
+ */
 export const useDownloadStore = create<DownloadState>((set, get) => ({
   manifest: null,
   installedVersions: [],

@@ -320,7 +320,7 @@ class UnifiedConfigManager implements UnifiedConfigManagerType {
   }
 }
 
-// 导出单例
+/** 统一配置管理器单例 */
 export const config = new UnifiedConfigManager();
 
 // 导出类型

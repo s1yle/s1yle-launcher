@@ -1,5 +1,6 @@
 import React from 'react';
 
+/** 整合包下载页面（待实现） */
 const DownloadModpack: React.FC = () => {
   return (
     <div className="p-8">

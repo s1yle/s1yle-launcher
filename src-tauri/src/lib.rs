@@ -67,8 +67,10 @@ pub use logging::{init_logging, log_frontend};
 
 pub use font::{get_font, get_system_fonts};
 
+/// 全局 Tauri AppHandle，用于在非命令上下文中访问 Tauri 状态
 static APP_HANDLE: OnceLock<tauri::AppHandle> = OnceLock::new();
 
+/// 测试用的问候命令
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! 来自Rust后端的问候", name)
@@ -81,7 +83,7 @@ struct SystemInfo {
     arch: String,
 }
 
-/// get_system_info命令
+/// 获取当前操作系统和架构信息
 #[tauri::command]
 fn get_system_info() -> Result<SystemInfo, String> {
     let os = if cfg!(target_os = "windows") {
@@ -112,6 +114,7 @@ fn get_system_info() -> Result<SystemInfo, String> {
     })
 }
 
+/// 使用系统默认浏览器打开指定 URL
 #[tauri::command]
 fn open_url(url: String) -> Result<String, String> {
     log_info!("打开链接: {}", url);
@@ -120,6 +123,7 @@ fn open_url(url: String) -> Result<String, String> {
     Ok(url)
 }
 
+/// 使用系统文件管理器打开指定文件夹
 #[tauri::command]
 fn open_folder(path: String) -> Result<String, String> {
     log_info!("打开文件夹: {}", path);

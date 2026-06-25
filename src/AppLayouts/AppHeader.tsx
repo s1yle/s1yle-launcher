@@ -3,12 +3,14 @@ import Header from "../components/Header"
 import { RouteConfig } from "../router/models"
 import { UIMode } from "../stores/uiModeStore"
 
+/** AppHeader 组件的 Props */
 export interface AppHeaderProps {
   mode: UIMode,
   currentRoute: RouteConfig | undefined
   handleMenuClick: (targetPath: string) => void
 }
 
+/** 应用顶部导航栏 - 灵动岛模式或经典模式标题 */
 const AppHeader = ({
   mode = UIMode.ISLAND,
   currentRoute,

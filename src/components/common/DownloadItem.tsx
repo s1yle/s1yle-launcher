@@ -3,6 +3,7 @@ import { ProgressBar } from '../common';
 import { formatFileSize } from '../../utils/format';
 import { Check, X, Download, Clock } from 'lucide-react';
 
+/** 下载项组件 Props */
 export interface DownloadItemProps {
   filename: string;
   url?: string;
@@ -16,6 +17,7 @@ export interface DownloadItemProps {
   sublabel?: string;
 }
 
+/** 下载项组件，显示文件名、进度条、状态图标及取消/重试操作 */
 const DownloadItem = ({
   filename,
   downloaded,

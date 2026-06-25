@@ -8,12 +8,14 @@ import { GameVersion } from '../../../helper/rustInvoke';
 
 const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(inputs));
 
+/** 版本筛选选项 */
 export interface VersionFilterOption {
   value: VersionCategory;
   label: string;
   count?: number;
 }
 
+/** 版本筛选下拉组件 Props */
 export interface VersionFilterDropdownProps {
   value: VersionCategory;
   onChange: (value: VersionCategory) => void;
@@ -21,6 +23,7 @@ export interface VersionFilterDropdownProps {
   className?: string;
 }
 
+/** 版本筛选下拉组件，按分类过滤游戏版本列表 */
 const VersionFilterDropdownInner = ({
   value,
   onChange,

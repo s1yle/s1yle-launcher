@@ -26,6 +26,7 @@ interface LoaderState {
   reason?: string;
 }
 
+/** 版本安装页面 - 选择模组加载器并执行安装 */
 const VersionInstall = () => {
   const { t } = useTranslation();
   const { versionId } = useParams<{ versionId: string }>();

@@ -8,6 +8,7 @@ use tauri::Manager;
 
 // ==================== LogLevel ====================
 
+/// 日志级别枚举
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum LogLevel {
     Debug = 1,
@@ -17,6 +18,7 @@ pub enum LogLevel {
 }
 
 impl LogLevel {
+    /// 返回日志级别对应的字符串
     pub fn as_str(&self) -> &'static str {
         match self {
             LogLevel::Debug => "DEBUG",
@@ -26,6 +28,7 @@ impl LogLevel {
         }
     }
 
+    /// 从字符串解析日志级别
     pub fn from_str(s: &str) -> Option<Self> {
         match s.to_lowercase().as_str() {
             "debug" | "1" => Some(LogLevel::Debug),
@@ -36,6 +39,7 @@ impl LogLevel {
         }
     }
 
+    /// 返回 ANSI 颜色代码
     fn ansi_color(&self) -> &'static str {
         match self {
             LogLevel::Debug => "\x1b[36m",
@@ -45,10 +49,12 @@ impl LogLevel {
         }
     }
 
+    /// 返回 ANSI 重置代码
     fn ansi_reset() -> &'static str {
         "\x1b[0m"
     }
 
+    /// 返回 ANSI 暗淡代码
     fn ansi_dim() -> &'static str {
         "\x1b[2m"
     }
@@ -56,6 +62,7 @@ impl LogLevel {
 
 // ==================== RotatingFileWriter ====================
 
+/// 按日期轮转的文件写入器，自动清理旧日志
 struct RotatingFileWriter {
     dir: PathBuf,
     prefix: String,
@@ -138,6 +145,7 @@ impl RotatingFileWriter {
 
 // ==================== Logger ====================
 
+/// 日志记录器，支持控制台彩色输出和按日轮转的文件输出
 struct Logger {
     min_level: LogLevel,
     file: Mutex<RotatingFileWriter>,
@@ -186,10 +194,12 @@ impl Logger {
 
 // ==================== Global State ====================
 
+/// 全局 Logger 实例
 static LOGGER: OnceLock<Logger> = OnceLock::new();
 
 // ==================== Macros ====================
 
+/// 记录 INFO 级别日志的宏
 #[macro_export]
 macro_rules! log_info {
     ($($arg:tt)*) => {
@@ -201,6 +211,7 @@ macro_rules! log_info {
     };
 }
 
+/// 记录 ERROR 级别日志的宏
 #[macro_export]
 macro_rules! log_error {
     ($($arg:tt)*) => {
@@ -212,6 +223,7 @@ macro_rules! log_error {
     };
 }
 
+/// 记录 DEBUG 级别日志的宏
 #[macro_export]
 macro_rules! log_debug {
     ($($arg:tt)*) => {
@@ -223,6 +235,7 @@ macro_rules! log_debug {
     };
 }
 
+/// 记录 WARN 级别日志的宏
 #[macro_export]
 macro_rules! log_warn {
     ($($arg:tt)*) => {
@@ -236,6 +249,7 @@ macro_rules! log_warn {
 
 // ==================== Public API ====================
 
+/// 内部初始化日志系统
 fn init_inner(log_dir: PathBuf, min_level: LogLevel) {
     let level = std::env::var("WE_LOG")
         .ok()
@@ -246,6 +260,7 @@ fn init_inner(log_dir: PathBuf, min_level: LogLevel) {
     LOGGER.set(logger).ok();
 }
 
+/// 初始化日志系统（在应用启动时调用）
 pub fn init_logging(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let log_dir = app.path().app_data_dir()?.join("logs");
     fs::create_dir_all(&log_dir)?;
@@ -256,6 +271,7 @@ pub fn init_logging(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> 
     Ok(())
 }
 
+/// 内部日志记录函数，被 log_info!/log_error! 等宏调用
 pub fn log_internal(level: LogLevel, target: &str, message: String) {
     if let Some(logger) = LOGGER.get() {
         logger.log(level, target, &message);
@@ -274,6 +290,7 @@ pub fn log_internal(level: LogLevel, target: &str, message: String) {
 
 // ==================== Tauri Commands ====================
 
+/// 从前端接收日志并记录到后端日志系统
 #[tauri::command]
 pub fn log_frontend(level: String, message: String) {
     match level.as_str() {

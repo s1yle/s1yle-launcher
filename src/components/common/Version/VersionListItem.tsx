@@ -10,6 +10,7 @@ import { twMerge } from 'tailwind-merge';
 
 const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(inputs));
 
+/** 版本列表项组件 Props */
 export interface VersionListItemProps {
   version: GameVersion;
   installed: boolean;
@@ -19,6 +20,7 @@ export interface VersionListItemProps {
   index?: number;
 }
 
+/** 版本列表项组件，显示版本号、类型徽标和 Wiki 链接 */
 const VersionListItem = ({
   version,
   installed,

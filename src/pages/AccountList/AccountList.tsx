@@ -8,6 +8,7 @@ import { LoadingSurface, Reveal } from "@/components/common";
 import Popup from "@/components/Popup";
 import { logger } from "@/helper/logger";
 
+/** 账户列表页面 - 管理所有 Minecraft 账户 */
 const AccountList = () => {
   const navigate = useNavigate();
   const {

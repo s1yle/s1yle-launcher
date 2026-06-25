@@ -6,6 +6,7 @@ import { Z_INDEX } from '../utils/zIndex';
 import { DURATION, EASING } from '@/utils/animations';
 import { X } from 'lucide-react';
 
+/** 通用弹窗组件 Props */
 export interface PopupProps {
   isOpen: boolean;
   onClose: () => void;
@@ -28,6 +29,11 @@ export interface PopupProps {
   ariaDescribedby?: string;
 }
 
+/**
+ * 通用弹窗组件。
+ * 基于 Portal + Overlay 实现，支持 fade / slide / scale 三种动画，
+ * 多种尺寸和位置，可自定义 footer。
+ */
 const Popup = ({
   isOpen,
   onClose,

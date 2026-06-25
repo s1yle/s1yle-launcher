@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 
+/** 设置项组件 Props */
 export interface SettingItemProps {
   label: string;
   labelI18nKey?: string;
@@ -9,6 +10,7 @@ export interface SettingItemProps {
   className?: string;
 }
 
+/** 设置项组件，包含标签、描述和子控制区 */
 const SettingItem = ({
   label,
   description,

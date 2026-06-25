@@ -12,6 +12,7 @@ import BottomBar from '@/components/common/BottomBar/BottomBar';
 import { logger } from '@/helper/logger';
 import { staggerContainer, staggerItem } from '../../utils/animations';
 
+/** 实例列表页面 - 展示所有已安装的游戏实例 */
 const InstanceList: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();

@@ -4,10 +4,14 @@ use sha1::{Digest, Sha1};
 use std::fs;
 use std::io::Read;
 
+/// 分块下载的块大小（4MB）
 pub const CHUNK_SIZE: u64 = 4 * 1024 * 1024;
+/// 最大并发分块数
 pub const MAX_CHUNKS: usize = 8;
+/// 最大重试次数
 pub const MAX_RETRIES: u32 = 3;
 
+/// 计算文件的 SHA1 哈希值
 fn calculate_file_sha1(path: &std::path::Path) -> Result<String, String> {
     let mut file = fs::File::open(path).map_err(|e| format!("打开文件失败: {}", e))?;
 
@@ -28,6 +32,7 @@ fn calculate_file_sha1(path: &std::path::Path) -> Result<String, String> {
     Ok(hex::encode(result))
 }
 
+/// 验证文件的 SHA1 哈希值是否与期望值匹配
 pub fn verify_file_sha1(path: &std::path::Path, expected_sha1: &str) -> Result<bool, String> {
     let actual_sha1 = calculate_file_sha1(path)?;
     let matches = actual_sha1.eq_ignore_ascii_case(expected_sha1);
@@ -39,6 +44,7 @@ pub fn verify_file_sha1(path: &std::path::Path, expected_sha1: &str) -> Result<b
     Ok(matches)
 }
 
+/// 获取当前操作系统名称（用于规则匹配）
 pub fn get_current_os() -> &'static str {
     if cfg!(target_os = "windows") {
         "windows"
@@ -51,6 +57,7 @@ pub fn get_current_os() -> &'static str {
     }
 }
 
+/// 获取当前 CPU 架构（用于规则匹配）
 pub fn get_current_arch() -> &'static str {
     if cfg!(target_arch = "x86_64") {
         "x64"
@@ -61,6 +68,7 @@ pub fn get_current_arch() -> &'static str {
     }
 }
 
+/// 判断库文件是否应在当前平台使用（根据规则列表）
 pub fn should_use_library(library: &Library) -> bool {
     if library.rules.is_empty() {
         return true;
@@ -109,6 +117,7 @@ pub fn should_use_library(library: &Library) -> bool {
     allowed
 }
 
+/// 获取当前平台的原生库分类器名称
 pub fn get_native_classifier(library: &Library) -> Option<(String, String)> {
     let natives = library.natives.as_ref()?;
     let os = get_current_os();

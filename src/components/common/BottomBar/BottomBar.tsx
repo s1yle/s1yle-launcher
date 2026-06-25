@@ -4,6 +4,7 @@ import React, { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useNotification } from "..";
 
+/** 底部状态栏组件 Props */
 export interface BottomBarProps {
     dir: string;
     cmdOpen: string;
@@ -13,6 +14,7 @@ export interface BottomBarProps {
 }
 
 
+/** 底部状态栏组件，显示当前路径并支持打开目录 */
 const BottomBar = ({
     dir = "目录",
     cmdOpen = "打开",

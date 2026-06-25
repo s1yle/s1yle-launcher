@@ -243,6 +243,7 @@ const MainLayout = () => {
   );
 };
 
+/** 应用根组件 - 初始化各系统、检测登录窗口、渲染主布局 */
 function App() {
   const [isLoginWindow, setIsLoginWindow] = useState<boolean | null>(null);
   const initTheme = useThemeStore((s) => s.init);

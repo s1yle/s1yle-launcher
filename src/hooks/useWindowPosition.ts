@@ -4,6 +4,12 @@ import { saveWindowPosition, loadWindowPosition } from '../helper/rustInvoke';
 
 const DEBOUNCE_MS = 500;
 
+/**
+ * 窗口位置持久化 hook - 自动保存、恢复窗口位置和大小
+ * - 启动时恢复上次保存的窗口位置
+ * - 窗口移动/缩放时自动保存（防抖 500ms）
+ * - 最小化时不保存位置
+ */
 export const useWindowPosition = () => {
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRestoredRef = useRef(false);

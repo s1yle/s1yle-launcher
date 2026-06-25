@@ -2,11 +2,13 @@ import { useState } from "react";
 import { LogIn, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useNotification } from "@/components/common/NotificationProvider";
 
+/** AdminLogin 组件的 Props */
 interface AdminLoginProps {
   onLogin: (email: string, password: string) => Promise<boolean>;
   onNavigate: (view: "admin-register") => void;
 }
 
+/** 管理员登录视图 - 邮箱密码登录服主账号 */
 export function AdminLogin({ onLogin, onNavigate }: AdminLoginProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

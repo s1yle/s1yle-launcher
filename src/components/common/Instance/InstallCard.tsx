@@ -5,8 +5,10 @@ import { twMerge } from 'tailwind-merge';
 
 const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(inputs));
 
+/** 安装卡片状态类型 */
 export type InstallCardStatus = 'not_installed' | 'installing' | 'installed' | 'incompatible';
 
+/** 安装卡片组件 Props */
 export interface InstallCardProps {
   icon: React.ReactNode;
   title: string;
@@ -16,6 +18,7 @@ export interface InstallCardProps {
   onClick: () => void;
 }
 
+/** 安装卡片组件，根据兼容性和状态显示不同的交互样式 */
 const InstallCard = ({
   icon,
   title,

@@ -1,5 +1,6 @@
 import React from 'react';
 
+/** 离线账户页面 - 离线账户管理（待实现） */
 const OfflineAccount: React.FC = () => {
   return (
     <div className="p-8">

@@ -9,11 +9,13 @@ import { Z_INDEX } from "@/utils/zIndex";
 
 const cn = (...inputs: (string | boolean | MotionStyle | undefined)[]) => twMerge(clsx(inputs));
 
+/** 下拉选项 */
 export interface DropDownOption {
   id: string;
   label: string;
 }
 
+/** 下拉组件 Props */
 export interface DropDownProps {
   options: DropDownOption[];
   /** 受控模式：当前选中项（传入时组件由父组件控制选中状态） */
@@ -34,6 +36,7 @@ export interface DropDownProps {
   searchPlaceholder?: string;
 }
 
+/** 下拉选择组件，支持受控/非受控模式、搜索过滤和 Portal 浮动定位 */
 const DropDown = ({
   options,
   value,

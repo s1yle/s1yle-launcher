@@ -16,6 +16,7 @@ import type { FloatingPlacement, CollisionBoundary } from '@/hooks/useFloating';
  * - `top` / `bottom`：顶部 / 底部通栏
  * - `top-left` / `top-right` / `bottom-left` / `bottom-right`：四角固定（间距 16px）
  */
+/** Portal 预设位置类型 */
 export type PresetPosition =
   | 'center'
   | 'top' | 'bottom'

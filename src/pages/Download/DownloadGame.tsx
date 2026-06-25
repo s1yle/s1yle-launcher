@@ -14,6 +14,7 @@ import { useShallow } from 'zustand/shallow';
 
 const ITEM_HEIGHT = 72;
 
+/** 游戏下载页面 - 浏览和下载 Minecraft 版本 */
 const DownloadGame: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();

@@ -5,14 +5,20 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::Mutex;
 
+/// 下载管理器，管理下载任务、文件路径和清单缓存
 pub struct DownloadManager {
+    /// 下载任务映射
     pub tasks: Mutex<HashMap<String, DownloadTask>>,
+    /// 基础下载路径
     pub base_path: Mutex<PathBuf>,
+    /// 版本下载清单缓存
     pub manifest_cache: Mutex<HashMap<String, VersionDownloadManifest>>,
+    /// HTTP 客户端
     pub client: reqwest::Client,
 }
 
 impl DownloadManager {
+    /// 创建新的下载管理器，自动创建基础路径
     pub fn new(base_path: PathBuf) -> Self {
         fs::create_dir_all(&base_path).ok();
 
@@ -41,26 +47,31 @@ impl DownloadManager {
         base.join("temp")
     }
 
+    /// 添加下载任务
     pub fn add_task(&self, task: DownloadTask) {
         let mut tasks = self.tasks.lock().unwrap();
         tasks.insert(task.id.clone(), task);
     }
 
+    /// 获取指定 ID 的下载任务
     pub fn get_task(&self, id: &str) -> Option<DownloadTask> {
         let tasks = self.tasks.lock().unwrap();
         tasks.get(id).cloned()
     }
 
+    /// 更新下载任务
     pub fn update_task(&self, task: DownloadTask) {
         let mut tasks = self.tasks.lock().unwrap();
         tasks.insert(task.id.clone(), task);
     }
 
+    /// 移除下载任务
     pub fn remove_task(&self, id: &str) {
         let mut tasks = self.tasks.lock().unwrap();
         tasks.remove(id);
     }
 
+    /// 获取所有下载任务
     pub fn get_all_tasks(&self) -> Vec<DownloadTask> {
         let tasks = self.tasks.lock().unwrap();
         tasks.values().cloned().collect()

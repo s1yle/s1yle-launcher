@@ -1,3 +1,4 @@
+/** 徽标位置枚举 */
 export enum BadgePosition {
     LEFT,
     RIGHT,

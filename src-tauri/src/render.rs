@@ -73,6 +73,7 @@ const LEFT_ARM_OUTER_FRONT_SLIM: (u32, u32, u32, u32) = (53, 52, 56, 64);
 
 // ── Mojang Session API 结构体 ──
 
+/// Minecraft 玩家资料（从 Mojang API 获取）
 #[derive(serde::Deserialize, Debug)]
 pub struct MinecraftProfile {
     pub id: String,
@@ -82,6 +83,7 @@ pub struct MinecraftProfile {
     pub properties: Vec<ProfileProperty>,
 }
 
+/// 玩家资料属性
 #[derive(serde::Deserialize, Debug)]
 pub struct ProfileProperty {
     pub name: String,
@@ -90,6 +92,7 @@ pub struct ProfileProperty {
     pub value: String,
 }
 
+/// 皮肤纹理数据（从 Base64 解码得到）
 #[derive(serde::Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct TextureData {
@@ -101,6 +104,7 @@ pub struct TextureData {
     pub textures: Textures,
 }
 
+/// 纹理映射容器
 #[derive(serde::Deserialize, Debug)]
 #[serde(rename_all = "UPPERCASE")]
 pub struct Textures {
@@ -110,6 +114,7 @@ pub struct Textures {
     pub cape: Option<CapeTexture>,
 }
 
+/// 皮肤纹理信息
 #[derive(serde::Deserialize, Debug)]
 pub struct SkinTexture {
     pub url: String,
@@ -117,12 +122,14 @@ pub struct SkinTexture {
     pub metadata: Option<SkinMetadata>,
 }
 
+/// 皮肤元数据
 #[derive(serde::Deserialize, Debug)]
 pub struct SkinMetadata {
     #[serde(default)]
     pub model: Option<String>,
 }
 
+/// 披风纹理信息
 #[derive(serde::Deserialize, Debug)]
 pub struct CapeTexture {
     pub url: String,
@@ -130,6 +137,7 @@ pub struct CapeTexture {
 
 // ── Username → UUID API 结构体 ──
 
+/// Minecraft 玩家档案（用户名→UUID 查询结果）
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct MinecraftUserProfile {
     pub id: String,
@@ -142,7 +150,7 @@ pub struct MinecraftUserProfile {
 
 // ── Username → UUID API 函数 ──
 
-/// 通过玩家名称获取 UUID（单次）
+/// 通过玩家名称获取 UUID（单次查询）
 pub async fn fetch_uuid_by_username(username: &str) -> Result<MinecraftUserProfile, String> {
     let url = format!(
         "https://api.mojang.com/users/profiles/minecraft/{}",
@@ -201,11 +209,13 @@ pub async fn fetch_uuids_by_usernames(usernames: Vec<String>) -> Result<Vec<Mine
     Ok(profiles)
 }
 
+/// 通过用户名获取 UUID（Tauri 命令）
 #[tauri::command]
 pub async fn get_uuid_by_username(username: String) -> Result<MinecraftUserProfile, String> {
     fetch_uuid_by_username(&username).await
 }
 
+/// 批量通过用户名获取 UUID（Tauri 命令）
 #[tauri::command]
 pub async fn get_uuids_by_usernames(usernames: Vec<String>) -> Result<Vec<MinecraftUserProfile>, String> {
     fetch_uuids_by_usernames(usernames).await
@@ -213,6 +223,7 @@ pub async fn get_uuids_by_usernames(usernames: Vec<String>) -> Result<Vec<Minecr
 
 // ── Mojang API 函数 ──
 
+/// 解码 Base64 编码的纹理数据
 fn decode_texture_value(value: &str) -> Result<TextureData, String> {
     use base64::Engine;
     let bytes = base64::engine::general_purpose::STANDARD
@@ -223,6 +234,7 @@ fn decode_texture_value(value: &str) -> Result<TextureData, String> {
     Ok(data)
 }
 
+/// 通过 UUID 从 Mojang API 获取皮肤数据
 async fn fetch_skin_by_uuid(uuid: &str) -> Result<MinecraftProfile, String> {
     let profile_url = format!(
         "https://sessionserver.mojang.com/session/minecraft/profile/{}",
@@ -253,6 +265,7 @@ async fn fetch_skin_by_uuid(uuid: &str) -> Result<MinecraftProfile, String> {
 
 // ── 缓存工具 ──
 
+/// 获取皮肤缓存目录
 fn get_skin_cache_dir(app: &AppHandle) -> Result<std::path::PathBuf, String> {
     let dir = app
         .path()
@@ -263,6 +276,7 @@ fn get_skin_cache_dir(app: &AppHandle) -> Result<std::path::PathBuf, String> {
     Ok(dir)
 }
 
+/// 获取头像缓存目录
 fn get_avatar_cache_dir(app: &AppHandle) -> Result<std::path::PathBuf, String> {
     let dir = app
         .path()
@@ -273,6 +287,7 @@ fn get_avatar_cache_dir(app: &AppHandle) -> Result<std::path::PathBuf, String> {
     Ok(dir)
 }
 
+/// 从玩家资料中提取皮肤纹理 URL 和模型类型
 fn get_texture_url(profile: &MinecraftProfile) -> Result<(String, Option<String>), String> {
     let prop = profile
         .properties
@@ -295,12 +310,16 @@ fn get_texture_url(profile: &MinecraftProfile) -> Result<(String, Option<String>
     Ok((skin_url, model))
 }
 
+/// 皮肤模型响应（用于前端判断 slim/default）
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct SkinModelResponse {
+    /// 模型类型 ("default" 或 "slim")
     pub model: String,
+    /// 是否来自 API（false 表示通过 UUID 推断）
     pub from_api: bool,
 }
 
+/// 从缓存读取皮肤模型信息
 fn read_cached_model(cache_dir: &std::path::Path, uuid: &str) -> Option<(String, bool)> {
     let meta_path = cache_dir.join(format!("{}.json", uuid));
     let bytes = std::fs::read(meta_path).ok()?;
@@ -316,12 +335,14 @@ fn read_cached_model(cache_dir: &std::path::Path, uuid: &str) -> Option<(String,
     Some((model, from_api))
 }
 
+/// 写入皮肤模型信息到缓存
 fn write_cached_model(cache_dir: &std::path::Path, uuid: &str, model: Option<&str>, from_api: bool) {
     let meta_path = cache_dir.join(format!("{}.json", uuid));
     let value = serde_json::json!({ "model": model.unwrap_or(""), "from_api": from_api });
     let _ = std::fs::write(&meta_path, serde_json::to_string(&value).unwrap());
 }
 
+/// 下载并缓存皮肤图片，返回缓存路径和模型类型
 async fn download_and_cache_skin(
     app: &AppHandle,
     uuid: &str,
@@ -378,6 +399,7 @@ async fn download_and_cache_skin(
     Ok((cached_path, model))
 }
 
+/// 将 RGBA 图像编码为 PNG 字节
 fn encode_png(img: &RgbaImage) -> Result<Vec<u8>, String> {
     let mut bytes = Vec::new();
     image::DynamicImage::ImageRgba8(img.clone())
@@ -388,7 +410,7 @@ fn encode_png(img: &RgbaImage) -> Result<Vec<u8>, String> {
 
 // ── 工具函数 ──
 
-/// 加载皮肤图片，自动处理 64×32 旧格式
+/// 加载皮肤图片，自动处理 64×32 旧格式并扩展到 64×64
 pub fn load_skin_from_bytes(bytes: &[u8]) -> Result<RgbaImage, String> {
     let img = load_from_memory(bytes)
         .map_err(|e| format!("图片加载失败: {}", e))?
@@ -409,6 +431,7 @@ pub fn load_skin_from_bytes(bytes: &[u8]) -> Result<RgbaImage, String> {
     Err(format!("皮肤尺寸必须为 64×64 或 64×32，实际为 {}×{}", w, h))
 }
 
+/// 从文件路径加载皮肤图片
 fn load_skin(path: &std::path::Path) -> Result<RgbaImage, String> {
     let bytes = std::fs::read(path).map_err(|e| format!("读取文件失败: {}", e))?;
     load_skin_from_bytes(&bytes)
@@ -433,7 +456,7 @@ fn generate_default_skin(is_slim: bool) -> RgbaImage {
 
     // 头部正面 (8,8)-(16,16)
     rect(&mut img, 8, 8, 16, 16, skin_color);
-    // 左眼 (9,10)-(11,11) 
+    // 左眼 (9,10)-(11,11)
     rect(&mut img, 9, 10, 11, 11, eye_color);
     // 右眼 (13,10)-(15,11)
     rect(&mut img, 13, 10, 15, 11, eye_color);
@@ -498,7 +521,7 @@ fn alpha_blend(dst: Rgba<u8>, src: Rgba<u8>) -> Rgba<u8> {
 
 // ── Flat 模式：平面正面头像 ──
 
-/// 渲染平面正面头像
+/// 渲染平面正面头像，支持带帽子和不带帽子两种模式
 pub fn render_flat_avatar(skin: &RgbaImage, size: u32, show_hat: bool) -> RgbaImage {
     let (x1, y1, x2, y2) = HEAD_FRONT;
     let mut head = skin.view(x1, y1, x2 - x1, y2 - y1).to_image();
@@ -593,6 +616,7 @@ pub fn render_full_body(skin: &RgbaImage, is_slim: bool, scale: u32) -> RgbaImag
 
 // ── 斜二测 3D 头像渲染 ──
 
+/// 3D 立方体面渲染描述
 struct Face {
     indices: [usize; 4],
     uv: (u32, u32, u32, u32),
@@ -600,7 +624,7 @@ struct Face {
     flip_v: bool,
 }
 
-/// 渲染斜二测 3D 头像
+/// 渲染斜二测 3D 头像（Cabinet Projection）
 pub fn render_isometric_avatar(skin: &RgbaImage, size: u32, show_hat: bool) -> RgbaImage {
     let mut output = RgbaImage::new(size, size);
     let half: f32 = 4.0;
@@ -726,6 +750,7 @@ pub fn render_isometric_avatar(skin: &RgbaImage, size: u32, show_hat: bool) -> R
     output
 }
 
+/// 渲染单个 3D 面片到输出图像
 fn render_face(
     output: &mut RgbaImage,
     skin: &RgbaImage,
@@ -803,6 +828,7 @@ fn render_face(
     }
 }
 
+/// 判断点是否在四边形内并返回 UV 坐标
 fn point_in_quad(pts: &[(f32, f32); 4], px: f32, py: f32) -> Option<(f32, f32)> {
     if let Some(bary) = point_in_triangle(pts[0], pts[1], pts[2], px, py) {
         let (u, v, w) = bary;
@@ -821,6 +847,7 @@ fn point_in_quad(pts: &[(f32, f32); 4], px: f32, py: f32) -> Option<(f32, f32)> 
     None
 }
 
+/// 使用重心坐标判断点是否在三角形内
 fn point_in_triangle(
     a: (f32, f32),
     b: (f32, f32),
@@ -862,6 +889,7 @@ fn point_in_triangle(
 
 // ── Tauri 命令 ──
 
+/// 渲染玩家平面头像（带缓存），返回 PNG 字节
 #[tauri::command]
 pub async fn render_avatar(
     app: AppHandle,
@@ -893,6 +921,7 @@ pub async fn render_avatar(
     Ok(png_bytes)
 }
 
+/// 获取玩家皮肤头部渲染（无缓存），返回 PNG 字节
 #[tauri::command]
 pub async fn get_skin_head(
     app: AppHandle,
@@ -909,6 +938,7 @@ pub async fn get_skin_head(
     encode_png(&render_flat_avatar(&skin, output_size, show_hat))
 }
 
+/// 获取玩家披风纹理，返回 PNG 字节（支持缓存和无披风标记）
 #[tauri::command]
 pub async fn get_skin_cape(app: AppHandle, uuid: String) -> Result<Option<Vec<u8>>, String> {
     let cache_dir = get_skin_cache_dir(&app)?;
@@ -954,6 +984,7 @@ pub async fn get_skin_cape(app: AppHandle, uuid: String) -> Result<Option<Vec<u8
     Ok(Some(cape_bytes))
 }
 
+/// 渲染玩家斜二测 3D 头像，返回 PNG 字节
 #[tauri::command]
 pub async fn render_isometric_avatar_cmd(
     app: AppHandle,
@@ -971,6 +1002,7 @@ pub async fn render_isometric_avatar_cmd(
     encode_png(&avatar)
 }
 
+/// 获取玩家皮肤模型类型（"default" 或 "slim"），优先从 API 获取，失败时根据 UUID 推断
 #[tauri::command]
 pub async fn get_skin_model(app: AppHandle, uuid: String) -> Result<SkinModelResponse, String> {
     let cache_dir = get_skin_cache_dir(&app)?;

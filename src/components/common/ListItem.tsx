@@ -6,6 +6,7 @@ import { ChevronRight } from 'lucide-react';
 
 const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(inputs));
 
+/** 列表项组件 Props */
 export interface ListItemProps {
   title: string;
   subtitle?: string;
@@ -22,6 +23,7 @@ export interface ListItemProps {
   className?: string;
 }
 
+/** 列表项组件，支持标题/副标题/图标/右侧内容/标签/选中态 */
 const ListItem = ({
   title,
   subtitle,

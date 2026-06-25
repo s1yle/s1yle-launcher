@@ -3,6 +3,11 @@ import { invokeRust } from "./client";
 import { logger } from "@/helper/logger";
 import type { AppConfig, InstanceConfig, PathConfig } from "./types/config";
 
+/**
+ * 获取全局应用配置
+ * @param options Tauri invoke 选项
+ * @returns 全局配置对象
+ */
 export const invokeGetConfig = async (
   options?: InvokeOptions
 ): Promise<AppConfig> => {
@@ -10,6 +15,11 @@ export const invokeGetConfig = async (
   return await invokeRust("get_config", {}, options);
 };
 
+/**
+ * 更新全局配置（完整覆盖）
+ * @param newConfig 新的全局配置
+ * @param options Tauri invoke 选项
+ */
 export const invokeUpdateConfig = async (
   newConfig: AppConfig,
   options?: InvokeOptions
@@ -18,6 +28,12 @@ export const invokeUpdateConfig = async (
   return await invokeRust("config::update_config", { new_config: newConfig }, options);
 };
 
+/**
+ * 获取单个配置值
+ * @param key 配置键（点号分隔路径）
+ * @param options Tauri invoke 选项
+ * @returns 配置值字符串，不存在返回 null
+ */
 export const invokeGetConfigValue = async (
   key: string,
   options?: InvokeOptions
@@ -26,6 +42,12 @@ export const invokeGetConfigValue = async (
   return await invokeRust("get_config_value", { key }, options);
 };
 
+/**
+ * 设置单个配置值（增量更新，推荐使用）
+ * @param key 配置键（点号分隔路径）
+ * @param value 配置值
+ * @param options Tauri invoke 选项
+ */
 export const invokeSetConfigValue = async <T>(
   key: string,
   value: T,
@@ -35,6 +57,12 @@ export const invokeSetConfigValue = async <T>(
   return await invokeRust("set_config_value", { key, value }, options);
 };
 
+/**
+ * 获取实例配置
+ * @param instanceId 实例 ID
+ * @param options Tauri invoke 选项
+ * @returns 实例配置，不存在返回 null
+ */
 export const invokeGetInstanceConfig = async (
   instanceId: string,
   options?: InvokeOptions
@@ -43,6 +71,12 @@ export const invokeGetInstanceConfig = async (
   return await invokeRust("get_instance_config", { instance_id: instanceId }, options);
 };
 
+/**
+ * 更新实例配置
+ * @param instanceId 实例 ID
+ * @param config 新的实例配置
+ * @param options Tauri invoke 选项
+ */
 export const invokeUpdateInstanceConfig = async (
   instanceId: string,
   config: InstanceConfig,
@@ -55,6 +89,11 @@ export const invokeUpdateInstanceConfig = async (
   }, options);
 };
 
+/**
+ * 删除实例配置
+ * @param instanceId 实例 ID
+ * @param options Tauri invoke 选项
+ */
 export const invokeRemoveInstanceConfig = async (
   instanceId: string,
   options?: InvokeOptions
@@ -63,6 +102,7 @@ export const invokeRemoveInstanceConfig = async (
   return await invokeRust("remove_instance_config", { instance_id: instanceId }, options);
 };
 
+/** 重置配置到默认值 */
 export const invokeResetConfig = async (
   options?: InvokeOptions
 ): Promise<void> => {
@@ -70,6 +110,11 @@ export const invokeResetConfig = async (
   return await invokeRust("reset_config", {}, options);
 };
 
+/**
+ * 导出配置到文件
+ * @param targetPath 目标文件路径
+ * @param options Tauri invoke 选项
+ */
 export const invokeExportConfig = async (
   targetPath: string,
   options?: InvokeOptions
@@ -78,6 +123,11 @@ export const invokeExportConfig = async (
   return await invokeRust("export_config", { target_path: targetPath }, options);
 };
 
+/**
+ * 从文件导入配置
+ * @param sourcePath 源文件路径
+ * @param options Tauri invoke 选项
+ */
 export const invokeImportConfig = async (
   sourcePath: string,
   options?: InvokeOptions
@@ -86,11 +136,21 @@ export const invokeImportConfig = async (
   return await invokeRust("import_config", { source_path: sourcePath }, options);
 };
 
+/**
+ * 获取路径配置
+ * @param options Tauri invoke 选项
+ * @returns 路径配置对象
+ */
 export const invokeGetPathConfig = async (options?: InvokeOptions): Promise<PathConfig> => {
   logger.info('获取路径配置');
   return await invokeRust("get_path_config", {}, options);
 };
 
+/**
+ * 更新路径配置
+ * @param pathConfig 新的路径配置
+ * @param options Tauri invoke 选项
+ */
 export const invokeUpdatePathConfig = async (
   pathConfig: PathConfig,
   options?: InvokeOptions
@@ -99,6 +159,12 @@ export const invokeUpdatePathConfig = async (
   return await invokeRust("update_path_config", { path_config: pathConfig }, options);
 };
 
+/**
+ * 获取实例路径
+ * @param instanceName 实例名称
+ * @param options Tauri invoke 选项
+ * @returns 实例绝对路径
+ */
 export const invokeGetInstancePath = async (
   instanceName: string,
   options?: InvokeOptions
@@ -107,6 +173,12 @@ export const invokeGetInstancePath = async (
   return await invokeRust("get_instance_path", { instance_name: instanceName }, options);
 };
 
+/**
+ * 获取实例的 versions 目录路径
+ * @param instanceName 实例名称
+ * @param options Tauri invoke 选项
+ * @returns versions 目录绝对路径
+ */
 export const invokeGetVersionsPath = async (
   instanceName: string,
   options?: InvokeOptions
@@ -115,6 +187,12 @@ export const invokeGetVersionsPath = async (
   return await invokeRust("get_versions_path", { instance_name: instanceName }, options);
 };
 
+/**
+ * 获取实例的 libraries 目录路径
+ * @param instanceName 实例名称
+ * @param options Tauri invoke 选项
+ * @returns libraries 目录绝对路径
+ */
 export const invokeGetLibrariesPath = async (
   instanceName: string,
   options?: InvokeOptions
@@ -123,6 +201,12 @@ export const invokeGetLibrariesPath = async (
   return await invokeRust("get_libraries_path", { instance_name: instanceName }, options);
 };
 
+/**
+ * 获取实例的 assets 目录路径
+ * @param instanceName 实例名称
+ * @param options Tauri invoke 选项
+ * @returns assets 目录绝对路径
+ */
 export const invokeGetAssetsPath = async (
   instanceName: string,
   options?: InvokeOptions
@@ -131,6 +215,12 @@ export const invokeGetAssetsPath = async (
   return await invokeRust("get_assets_path", { instance_name: instanceName }, options);
 };
 
+/**
+ * 获取实例的 natives 目录路径
+ * @param instanceName 实例名称
+ * @param options Tauri invoke 选项
+ * @returns natives 目录绝对路径
+ */
 export const invokeGetNativesPath = async (
   instanceName: string,
   options?: InvokeOptions

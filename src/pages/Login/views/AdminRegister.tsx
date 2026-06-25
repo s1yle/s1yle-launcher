@@ -3,11 +3,13 @@ import { ChevronLeft, Loader2, UserPlus, Mail, Lock, Eye, EyeOff } from "lucide-
 import { IconButton } from "@/components/common";
 import { useNotification } from "@/components/common/NotificationProvider";
 
+/** AdminRegister 组件的 Props */
 interface AdminRegisterProps {
   onRegister: (email: string, password: string) => Promise<boolean>;
   onBack: () => void;
 }
 
+/** 管理员注册视图 - 邮箱密码注册服主账号 */
 export function AdminRegister({ onRegister, onBack }: AdminRegisterProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

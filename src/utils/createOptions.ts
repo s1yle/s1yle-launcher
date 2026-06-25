@@ -61,6 +61,11 @@ export function createOptions<T extends readonly BaseOptionItem[]>(
  * 将运行时动态对象数组转为 DropDownOption[]
  * 适用于从 Rust 后端获取的数据（如系统字体列表）
  */
+/**
+ * 将运行时动态对象数组转为 DropDownOption[]
+ * @param items - 包含 name 字段的对象数组
+ * @returns DropDownOption 数组
+ */
 export function toDropDownOptions<T extends { name: string }>(
   items: T[]
 ): DropDownOption[] {
@@ -70,6 +75,9 @@ export function toDropDownOptions<T extends { name: string }>(
 /**
  * 从createOptions返回值中提取值的类型
  * ✅ 修复：添加了完整的泛型约束，解决所有索引错误
+ */
+/**
+ * 从 createOptions 返回值中提取值的类型
  */
 export type OptionValueType<T> = T extends { raw: infer R }
   ? R extends readonly BaseOptionItem[]

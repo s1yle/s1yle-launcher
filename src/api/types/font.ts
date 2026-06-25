@@ -1,4 +1,6 @@
+/** 系统字体信息 */
 export interface SystemFont {
+  /** 字体名称 */
   name: string,
 }
 

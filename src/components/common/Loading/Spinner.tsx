@@ -8,6 +8,7 @@ import { useLoadingStore } from '@/stores/loadingStore';
 
 const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(inputs));
 
+/** 加载旋转器组件 Props */
 export interface SpinnerProps {
   active?: boolean;
   loadingKey?: string;

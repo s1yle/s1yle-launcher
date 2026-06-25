@@ -10,6 +10,7 @@ import { AdminRegister } from "./views/AdminRegister";
 import Header from "@/components/Header";
 import { NotificationProvider } from "@/components/common/NotificationProvider";
 
+/** 登录门禁内部组件 - 管理登录流程的视图渲染 */
 const LoginGateInner = () => {
   // useLoginFlow hook
   const {
@@ -108,6 +109,7 @@ const LoginGateInner = () => {
   );
 };
 
+/** 登录门禁组件 - 玩家/管理员登录/注册的入口包装 */
 const LoginGate = () => (
   <NotificationProvider>
     <LoginGateInner />

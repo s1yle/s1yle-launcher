@@ -3,10 +3,10 @@ use std::{collections::HashMap, path::PathBuf, sync::Mutex};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 
-/// # 配置文件版本
+/// 配置文件版本
 pub const CONFIG_VERSION: u32 = 1;
 
-/// # BASE_PATH (使用 exe 所在目录而非当前工作目录)
+/// BASE_PATH (使用 exe 所在目录而非当前工作目录)
 pub static BASE_PATH: Lazy<PathBuf> =
     Lazy::new(|| {
         std::env::current_exe()
@@ -15,41 +15,41 @@ pub static BASE_PATH: Lazy<PathBuf> =
             .unwrap_or_else(|| PathBuf::from(""))
     });
 
-/// # minecraft 根目录（旧版，保持兼容）
+/// minecraft 根目录（旧版，保持兼容）
 pub static DEAMON_BASE_PATH: Lazy<PathBuf> = Lazy::new(|| BASE_PATH.join("minecraft"));
 
-/// # 默认的 实例名称（旧版，保持兼容）
+/// 默认的实例名称（旧版，保持兼容）
 pub static DEFAULT_DEAMON_PATH: Lazy<PathBuf> =
     Lazy::new(|| BASE_PATH.join("minecraft").join("default"));
 
-/// # Minecraft 根目录
+/// Minecraft 根目录
 pub static MINECRAFT_DIR: Lazy<PathBuf> = Lazy::new(|| BASE_PATH.join(".minecraft"));
 
-/// # 版本库目录
+/// 版本库目录
 pub static VERSIONS_DIR: Lazy<PathBuf> = Lazy::new(|| MINECRAFT_DIR.join("versions"));
 
-/// # 共享库目录
+/// 共享库目录
 pub static LIBRARIES_DIR: Lazy<PathBuf> = Lazy::new(|| MINECRAFT_DIR.join("libraries"));
 
-/// # 资源目录
+/// 资源目录
 pub static ASSETS_DIR: Lazy<PathBuf> = Lazy::new(|| MINECRAFT_DIR.join("assets"));
 
-/// # 实例配置目录
+/// 实例配置目录
 pub static INSTANCE_CONFIGS_DIR: Lazy<PathBuf> = 
     Lazy::new(|| CONFIG_APPLICATION.join("instance_configs"));
 
-/// # 下载路径（ /.smcl/download/versions/）
+/// 下载路径（/.smcl/download/）
 pub static DOWNLOAD_BASE_PATH: Lazy<PathBuf> = 
     Lazy::new(|| CONFIG_APPLICATION.join("download").join("versions"));
 
-/// # 实例元数据文件名（旧版，保持兼容）
+/// 实例元数据文件名（旧版，保持兼容）
 pub static INSTANCE_META_FILE_NAME: &str = "instance_meta.json";
 
-/// # InstanceMeta 路径（旧版，保持兼容）
+/// InstanceMeta 路径（旧版，保持兼容）
 pub static INSTANCE_META_PATH: Lazy<PathBuf> =
     Lazy::new(|| DEAMON_BASE_PATH.join(INSTANCE_META_FILE_NAME));
 
-/// # 元数据存储模式
+/// 元数据存储模式
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum MetaMode {
@@ -65,28 +65,28 @@ impl Default for MetaMode {
     }
 }
 
-/// # 元数据存储模式（运行时配置）
+/// 元数据存储模式（运行时配置）
 pub static INSTANCE_META_MODE: Lazy<MetaMode> = Lazy::new(|| {
     // 默认使用分布式模式
     // 后续可以从配置文件读取
     MetaMode::Distributed
 });
 
-/// # 应用配置目录（隐藏文件夹）
+/// 应用配置目录（隐藏文件夹 /.smcl）
 pub static CONFIG_APPLICATION: Lazy<PathBuf> = Lazy::new(|| {
     Lazy::<PathBuf>::get(&BASE_PATH)
         .unwrap_or(&PathBuf::new())
         .join(".smcl")
 });
 
-/// # 应用配置文件名  /.smcl/app_config.json
+/// 应用配置文件名 /.smcl/app_config.json
 pub static CONFIG_FILE_PATH: Lazy<PathBuf> = Lazy::new(|| {
     Lazy::<PathBuf>::get(&CONFIG_APPLICATION)
         .unwrap_or(&PathBuf::from(".smcl"))
         .join("app_config.json")
 });
 
-/// # 隐藏文件夹属性（Windows）
+/// 隐藏文件夹属性（Windows）
 #[cfg(target_os = "windows")]
 pub fn _set_hidden_attribute(path: &std::path::Path) -> Result<(), String> {
     use std::os::windows::ffi::OsStrExt;
@@ -110,14 +110,14 @@ pub fn _set_hidden_attribute(path: &std::path::Path) -> Result<(), String> {
     Ok(())
 }
 
-/// # 隐藏文件夹属性（跨平台）
+/// 隐藏文件夹属性（跨平台）
 #[cfg(not(target_os = "windows"))]
 pub fn _set_hidden_attribute(_path: &std::path::Path) -> Result<(), String> {
     // Unix-like 系统使用 . 前缀已经是隐藏文件夹
     Ok(())
 }
 
-/// # 路径配置结构
+/// 路径配置结构
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PathConfig {
     /// 实例根目录（默认：{base}/minecraft）
@@ -152,27 +152,27 @@ impl PathConfig {
         self.daemon_base_path.join(INSTANCE_META_FILE_NAME)
     }
     
-    /// 获取指定实例的目录路径（旧版，保持兼容）
+    /// 获取指定实例的目录路径
     pub fn get_instance_dir(&self, instance_name: &str) -> PathBuf {
         self.daemon_base_path.join(instance_name)
     }
     
-    /// 获取指定实例的 versions 目录（旧版，保持兼容）
+    /// 获取指定实例的 versions 目录
     pub fn get_versions_dir(&self, instance_name: &str) -> PathBuf {
         self.get_instance_dir(instance_name).join("versions")
     }
     
-    /// 获取指定实例的 libraries 目录（旧版，保持兼容）
+    /// 获取指定实例的 libraries 目录
     pub fn get_libraries_dir(&self, instance_name: &str) -> PathBuf {
         self.get_instance_dir(instance_name).join("libraries")
     }
     
-    /// 获取指定实例的 assets 目录（旧版，保持兼容）
+    /// 获取指定实例的 assets 目录
     pub fn get_assets_dir(&self, instance_name: &str) -> PathBuf {
         self.get_instance_dir(instance_name).join("assets")
     }
     
-    /// 获取指定实例的 natives 目录（旧版，保持兼容）
+    /// 获取指定实例的 natives 目录
     pub fn get_natives_dir(&self, instance_name: &str) -> PathBuf {
         self.get_instance_dir(instance_name).join("natives")
     }
@@ -200,15 +200,15 @@ impl PathConfig {
     }
 }
 
-/// # 最小窗口宽度
+/// 最小窗口宽度
 pub static MIN_WIDTH: Lazy<u32> = Lazy::new(|| 800);
 
-/// # 最小窗口高度
+/// 最小窗口高度
 pub static MIN_HEIGHT: Lazy<u32> = Lazy::new(|| 600);
 
 // ==================== 配置结构体 ====================
 
-/// # 全局应用配置
+/// 全局应用配置
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct AppConfig {
     /// 配置文件版本
@@ -262,12 +262,18 @@ impl Default for AppConfig {
     }
 }
 
+/// 窗口位置和大小配置
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
 pub struct WindowPosition {
+    /// 窗口 X 坐标
     pub x: i32,
+    /// 窗口 Y 坐标
     pub y: i32,
+    /// 窗口宽度
     pub width: u32,
+    /// 窗口高度
     pub height: u32,
+    /// 是否最大化
     pub maximized: bool,
 }
 
@@ -283,9 +289,10 @@ impl Default for WindowPosition {
     }
 }
 
+/// 最后保存的窗口位置（运行时缓存）
 pub static SAVED_POSITION: Lazy<Mutex<Option<WindowPosition>>> = Lazy::new(|| Mutex::new(None));
 
-/// # 用户偏好配置
+/// 用户偏好配置
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct UserPreferences {
     /// 主题模式 (dark/light/system)
@@ -311,12 +318,13 @@ fn default_language() -> String { "zh-CN".to_string() }
 fn default_true() -> bool { true }
 
 impl UserPreferences {
+    /// 创建默认用户偏好
     pub fn new() -> Self {
         Self::default()
     }
 }
 
-/// # 下载配置
+/// 下载配置
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct DownloadConfig {
     /// 下载目录路径
@@ -343,7 +351,7 @@ impl Default for DownloadConfig {
     }
 }
 
-/// # 实例配置结构
+/// 实例配置结构
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct InstanceConfig {
     /// 实例 ID（与 GameInstance.id 一致）
@@ -411,7 +419,7 @@ impl Default for InstanceConfig {
     }
 }
 
-/// # Java 配置
+/// Java 配置
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct JavaConfig {
     /// Java 可执行文件路径
@@ -436,7 +444,7 @@ impl Default for JavaConfig {
     }
 }
 
-/// # 内存配置
+/// 内存配置
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct MemoryConfig {
     /// 最小内存 (MB)
@@ -460,7 +468,7 @@ impl Default for MemoryConfig {
     }
 }
 
-/// # 图形配置
+/// 图形配置
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct GraphicsConfig {
     /// 窗口宽度
@@ -489,8 +497,11 @@ impl Default for GraphicsConfig {
     }
 }
 
+/// 配置管理器（Tauri 可管理状态）
 pub struct ConfigManager {
+    /// 应用配置（线程安全）
     pub config: Mutex<AppConfig>,
+    /// 窗口位置（线程安全）
     pub window: Mutex<WindowPosition>,
 }
 

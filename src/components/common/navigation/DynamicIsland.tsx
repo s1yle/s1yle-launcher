@@ -12,6 +12,7 @@ import { useNotification, ConfirmPopup } from '@/components/common';
 import { getNavItemsByRole, type NavItem } from '@/config/navigationConfig';
 import { autoJumpToFirstChild, findRouteByPath, routes } from '@/router/config';
 
+/** 灵动岛导航组件 Props */
 export interface DynamicIslandProps {
   onMenuClick?: (path: string) => void;
 }
@@ -48,6 +49,10 @@ const BOTTOM_TEXTS = [
   '今天玩什么？',
 ];
 
+/**
+ * 灵动岛导航组件。
+ * 悬浮式胶囊导航（顶部居中），毛玻璃背景，支持窗口拖曳 + 角色切换 180° 旋转动画。
+ */
 const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -640,6 +645,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
   );
 };
 
+/** 动态导航项组件 Props */
 export interface DynamicItemProps {
   isMainMenu: boolean;
   handleItemClick: (item: NavItem) => void;
@@ -658,6 +664,7 @@ let def_item: NavItem = {
   roles: [UserRole.PLAYER]
 }
 
+/** 动态导航项组件，渲染灵动岛中的单个导航按钮，带活动指示器动画 */
 export const DynamicItem = ({ isMainMenu, handleItemClick, homeItem, isActive, isExpanded, isTransitioning, item }: DynamicItemProps) => {
 
   if (!item) {

@@ -7,11 +7,13 @@ use super::validator::{FolderValidator, FolderValidationResult};
 use crate::log_info;
 use crate::modloader::ModLoaderType;
 
+/// 扫描所有已安装的实例
 #[tauri::command]
 pub fn scan_instances(instance_manager: State<'_, InstanceManager>) -> Vec<GameInstance> {
     instance_manager.scan_instances()
 }
 
+/// 获取指定 ID 的实例信息
 #[tauri::command]
 pub fn get_instance(
     id: String,
@@ -20,6 +22,7 @@ pub fn get_instance(
     instance_manager.get_instance(&id)
 }
 
+/// 创建新实例（指定名称、版本、加载器类型等）
 #[tauri::command]
 pub fn create_instance(
     name: String,
@@ -44,6 +47,7 @@ pub fn create_instance(
         .ok_or_else(|| "获取实例失败".to_string())
 }
 
+/// 删除指定 ID 的实例
 #[tauri::command]
 pub fn delete_instance(
     id: String,
@@ -53,6 +57,7 @@ pub fn delete_instance(
     instance_manager.delete_instance(&id)
 }
 
+/// 复制指定实例为新名称
 #[tauri::command]
 pub fn copy_instance(
     id: String,
@@ -62,6 +67,7 @@ pub fn copy_instance(
     instance_manager.copy_instance(&id, &new_name)
 }
 
+/// 重命名指定实例
 #[tauri::command]
 pub fn rename_instance(
     id: String,
@@ -71,6 +77,7 @@ pub fn rename_instance(
     instance_manager.rename_instance(&id, &new_name)
 }
 
+/// 更新实例信息（名称、启用状态等）
 #[tauri::command]
 pub fn update_instance(
     id: String,
@@ -81,16 +88,19 @@ pub fn update_instance(
     instance_manager.update_instance(&id, name, enabled)
 }
 
+/// 获取实例目录路径
 #[tauri::command]
 pub fn get_instances_path(instance_manager: State<'_, InstanceManager>) -> String {
     instance_manager.get_instances_path()
 }
 
+/// 扫描已知的 Minecraft 路径
 #[tauri::command]
 pub fn scan_known_mc_paths(instance_manager: State<'_, InstanceManager>) -> Vec<KnownPath> {
     instance_manager.scan_known_paths()
 }
 
+/// 添加已知的 Minecraft 文件夹路径
 #[tauri::command]
 pub fn add_known_path(
     path: String,
@@ -100,6 +110,7 @@ pub fn add_known_path(
     instance_manager.add_known_path(&path)
 }
 
+/// 设置默认实例文件夹
 #[tauri::command]
 pub fn set_default_folder(
     id: String,
@@ -109,6 +120,7 @@ pub fn set_default_folder(
     instance_manager.set_default_folder(&id)
 }
 
+/// 从已知路径中移除指定文件夹
 #[tauri::command]
 pub fn remove_known_path(
     id: String,
@@ -118,6 +130,7 @@ pub fn remove_known_path(
     instance_manager.remove_known_path(&id)
 }
 
+/// 验证文件夹是否为有效的 Minecraft 实例目录
 #[tauri::command]
 pub fn validate_folder(path: String) -> Result<FolderValidationResult, String> {
     let folder_path = PathBuf::from(&path);
@@ -132,6 +145,7 @@ pub fn validate_folder(path: String) -> Result<FolderValidationResult, String> {
     Ok(FolderValidator::validate(&folder_path))
 }
 
+/// 验证并添加 Minecraft 文件夹到已知路径列表
 #[tauri::command]
 pub async fn add_validated_folder(
     path: String,
@@ -157,6 +171,7 @@ pub async fn add_validated_folder(
     instance_manager.add_known_path_with_name(&path, &display_name).await
 }
 
+/// 迁移目录结构（旧版实例目录 → 新版结构）
 #[tauri::command]
 pub fn migrate_directory_structure(
     instance_manager: State<'_, InstanceManager>,

@@ -168,8 +168,8 @@ const SubSettingsPanelItem = ({
 };
 
 /**
- * ## 设置面板定制 Dropdown,  
- * - 该接口继承自 DropDownProps
+ * 设置面板定制 DropDown。
+ * 该组件继承自 DropDownProps，自动适配设置面板样式。
  */
 const SettingsPanelDropDown = ({
   options,
@@ -216,7 +216,7 @@ const SettingsPanelDropDown = ({
 }
 
 // TODO: 为后续可能需要用到的组件（如Toggle）实现条目包装器
-// 复合组件export
+/** 设置面板复合组件（含 Root / Item / Sub / Toggle / DropDown） */
 export const SettingsPanel = Object.assign(SettingsPanelRoot, {
   Item: SettingsPanelItem,
   Sub: SubSettingsPanelItem,

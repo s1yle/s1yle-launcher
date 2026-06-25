@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { invokeGetSkinHead, invokeRenderIsometricAvatar, invokeGetSkinModel, getCanonicalSkinUuid, ensureCanonicalSkinUuids } from '@/api/skin';
 
+/** 皮肤头像组件 Props */
 export interface SkinAvatarProps {
   uuid: string;
   size?: number;
@@ -11,6 +12,10 @@ export interface SkinAvatarProps {
   isSlim?: boolean;
 }
 
+/**
+ * 皮肤头像组件。
+ * 根据玩家 UUID 获取 Minecraft 皮肤头像，支持平面 / 等距两种渲染模式。
+ */
 export const SkinAvatar = ({
   uuid,
   size = 64,

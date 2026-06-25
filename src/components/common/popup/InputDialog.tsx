@@ -5,6 +5,7 @@ import { twMerge } from 'tailwind-merge';
 
 const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(inputs));
 
+/** 输入对话框组件 Props */
 export interface InputDialogProps {
   isOpen: boolean;
   title: string;

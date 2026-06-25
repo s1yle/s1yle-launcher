@@ -4,8 +4,10 @@ import { Portal } from './Portal';
 import { Z_INDEX } from '../../utils/zIndex';
 import { Check, X, AlertTriangle, Info, Bug } from 'lucide-react';
 
+/** 通知类型 */
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';
 
+/** 通知选项 */
 export interface NotificationOptions {
   type?: NotificationType;
   title: string;
@@ -15,6 +17,7 @@ export interface NotificationOptions {
   onClose?: () => void;
 }
 
+/** 通知项（含 ID） */
 export interface NotificationItem extends NotificationOptions {
   id: string;
 }
@@ -32,6 +35,10 @@ interface NotificationContextValue {
 
 const NotificationContext = createContext<NotificationContextValue | null>(null);
 
+/**
+ * 通知 Hook。
+ * 用于在任意组件中显示通知（success / error / warning / info）。
+ */
 export const useNotification = (): NotificationContextValue => {
   const context = useContext(NotificationContext);
   if (!context) {
@@ -46,6 +53,11 @@ interface NotificationProviderProps {
   defaultDuration?: number;
 }
 
+/**
+ * 通知 Provider 组件。
+ * 包裹在应用根节点，提供全局通知上下文，
+ * 子组件可通过 useNotification() 调用通知。
+ */
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   children,
   maxNotifications = 5,

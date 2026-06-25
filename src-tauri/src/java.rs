@@ -30,14 +30,20 @@ use std::path::PathBuf;
 // │Windows                                   │注册表 HKLM\SOFTWARE\JavaSoft\*、Program Files\Java\*、Program Files (x86)\Java\*                                                          │
 // └──────────────────────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 
+/// Java 安装信息结构体
 #[derive(Serialize, Clone, Debug)]
 pub struct JavaInstallation {
+    /// Java 可执行文件的绝对路径
     pub path: PathBuf,
+    /// 完整版本号，如 "17.0.1"
     pub version: String,
+    /// 发行商，如 "OpenJDK"、"Oracle"
     pub vendor: String,
+    /// 是否为 JDK（而非 JRE）
     pub is_jdk: bool,
 }
 
+/// 在 Linux 系统上扫描 Java 安装
 fn scan_java_on_linux() -> Result<Vec<JavaInstallation>, String> {
     use std::fs;
     use std::fs::symlink_metadata;
@@ -147,6 +153,7 @@ fn scan_java_on_linux() -> Result<Vec<JavaInstallation>, String> {
     }
 }
 
+/// 扫描系统上所有可用的 Java 安装
 #[tauri::command]
 pub fn scan_java_installations() -> Result<Vec<JavaInstallation>, String> {
     #[cfg(target_os = "linux")]

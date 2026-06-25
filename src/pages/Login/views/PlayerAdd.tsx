@@ -3,11 +3,13 @@ import { ChevronLeft, Loader2, UserPlus } from "lucide-react";
 import { IconButton } from "@/components/common";
 import { useNotification } from "@/components/common/NotificationProvider";
 
+/** PlayerAdd 组件的 Props */
 interface PlayerAddProps {
   onAdd: (name: string, type: "microsoft" | "offline") => Promise<string>;
   onBack: () => void;
 }
 
+/** 添加玩家账户视图 - 创建离线或微软账户 */
 export function PlayerAdd({ onAdd, onBack }: PlayerAddProps) {
   const [name, setName] = useState("");
   const [type, setType] = useState<"microsoft" | "offline">("offline");

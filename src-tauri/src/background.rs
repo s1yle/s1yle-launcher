@@ -2,6 +2,7 @@ use std::fs;
 use std::path::Path;
 use tauri::{AppHandle, Manager};
 
+/// 通过系统文件选择器选择背景图片，并复制到应用数据目录
 #[tauri::command]
 pub async fn select_background_image(app: AppHandle) -> Result<Option<String>, String> {
     use tauri_plugin_dialog::DialogExt;

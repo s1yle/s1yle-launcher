@@ -7,6 +7,7 @@ import { formatDate } from '../../../utils/format';
 import { Loader2, Package } from 'lucide-react';
 import { cardHover, transitions } from '../../../utils/animations';
 
+/** 版本卡片组件 Props */
 export interface VersionCardProps {
   version: GameVersion;
   installed: boolean;
@@ -21,6 +22,7 @@ export interface VersionCardProps {
   index?: number;
 }
 
+/** 版本卡片组件，显示版本信息、已安装状态、下载/部署操作 */
 const VersionCard = ({
   version,
   installed,

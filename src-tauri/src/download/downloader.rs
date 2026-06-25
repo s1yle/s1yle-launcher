@@ -9,6 +9,7 @@ use std::io::{Seek, SeekFrom, Write};
 use tauri::State;
 use tokio;
 
+/// 通过 HEAD 请求获取文件总大小
 async fn get_content_length(client: &reqwest::Client, url: &str) -> Result<u64, String> {
     let resp = client
         .head(url)
@@ -20,11 +21,13 @@ async fn get_content_length(client: &reqwest::Client, url: &str) -> Result<u64, 
         .ok_or_else(|| "无法获取文件大小".to_string())
 }
 
+/// 分块下载结果
 struct ChunkResult {
     chunk_index: usize,
     data: Vec<u8>,
 }
 
+/// 下载单个分块（支持 Range 请求）
 async fn download_chunk(
     client: &reqwest::Client,
     url: &str,
@@ -58,6 +61,7 @@ async fn download_chunk(
     })
 }
 
+/// 分块下载大文件（并发下载多个分块）
 async fn download_file_chunked(
     client: &reqwest::Client,
     url: &str,
@@ -127,6 +131,7 @@ async fn download_file_chunked(
     Ok(downloaded)
 }
 
+/// 单线程下载小文件（含自动重试）
 async fn download_file_single(
     client: &reqwest::Client,
     url: &str,
@@ -161,6 +166,7 @@ async fn download_file_single(
     Err("下载失败：超过最大重试次数".to_string())
 }
 
+/// 执行单次下载尝试（流式写入文件并更新进度）
 async fn download_attempt(
     client: &reqwest::Client,
     url: &str,
@@ -200,9 +206,10 @@ async fn download_attempt(
     Ok(downloaded)
 }
 
+/// 下载单个文件（支持分块下载和 SHA1 校验），返回下载进度
 #[tauri::command]
 pub async fn download_file(
-    version_id: String,             // ← 移到最前面
+    version_id: String,
     url: String,
     filename: String,
     sha1: Option<String>,

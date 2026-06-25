@@ -5,11 +5,13 @@ use std::fs;
 use std::path::PathBuf;
 use tauri::State;
 
+/// 获取所有下载任务列表
 #[tauri::command]
 pub fn get_download_tasks(download_manager: State<'_, DownloadManager>) -> Vec<DownloadTask> {
     download_manager.get_all_tasks()
 }
 
+/// 获取指定 ID 的下载任务
 #[tauri::command]
 pub fn get_download_task(
     task_id: String,
@@ -18,6 +20,7 @@ pub fn get_download_task(
     download_manager.get_task(&task_id)
 }
 
+/// 取消指定 ID 的下载任务（删除已下载的文件）
 #[tauri::command]
 pub fn cancel_download(
     task_id: String,
@@ -35,6 +38,7 @@ pub fn cancel_download(
     Err(format!("任务 {} 不存在", task_id))
 }
 
+/// 清理所有已完成状态的下载任务
 #[tauri::command]
 pub fn clear_completed_tasks(
     download_manager: State<'_, DownloadManager>,
@@ -53,6 +57,7 @@ pub fn clear_completed_tasks(
     Ok(format!("已清理 {} 个已完成任务", removed))
 }
 
+/// 获取已下载的游戏版本列表
 #[tauri::command]
 pub fn get_game_versions(
     download_manager: State<'_, DownloadManager>,
@@ -75,6 +80,7 @@ pub fn get_game_versions(
     Ok(versions)
 }
 
+/// 获取下载基础路径
 #[tauri::command]
 pub fn get_download_base_path(download_manager: State<'_, DownloadManager>) -> String {
     download_manager
@@ -85,6 +91,7 @@ pub fn get_download_base_path(download_manager: State<'_, DownloadManager>) -> S
         .to_string()
 }
 
+/// 设置下载基础路径
 #[tauri::command]
 pub fn set_download_base_path(
     path: String,

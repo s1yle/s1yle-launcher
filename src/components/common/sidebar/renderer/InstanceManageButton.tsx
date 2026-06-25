@@ -25,6 +25,7 @@ const LOADER_ICONS: Record<ModLoaderType, React.ComponentType<{ className?: stri
   [ModLoaderType.Quilt]: Package,
 };
 
+/** 实例管理按钮组件（侧边栏自定义渲染） */
 const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
   item,
   isActive,

@@ -11,24 +11,37 @@ use std::sync::Mutex;
 /// 启动状态枚举
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum LaunchStatus {
-    Idle,      // 未启动
-    Launching, // 启动中
-    Running,   // 运行中
-    Crashed,   // 崩溃
-    Stopped,   // 已停止
+    /// 未启动
+    Idle,
+    /// 启动中
+    Launching,
+    /// 运行中
+    Running,
+    /// 已崩溃
+    Crashed,
+    /// 已停止
+    Stopped,
 }
 
 /// 启动配置结构体
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct LaunchConfig {
-    pub java_path: String,            // Java可执行文件路径
-    pub memory_mb: u32,               // 内存大小（MB）
-    pub version: String,              // Minecraft版本
-    pub game_dir: String,             // 游戏目录
-    pub assets_dir: String,           // 资源目录
-    pub username: String,             // 用户名
-    pub uuid: String,                 // 用户UUID
-    pub access_token: Option<String>, // 访问令牌（微软账户）
+    /// Java 可执行文件路径
+    pub java_path: String,
+    /// 内存大小（MB）
+    pub memory_mb: u32,
+    /// Minecraft 版本
+    pub version: String,
+    /// 游戏目录
+    pub game_dir: String,
+    /// 资源目录
+    pub assets_dir: String,
+    /// 用户名
+    pub username: String,
+    /// 用户 UUID
+    pub uuid: String,
+    /// 访问令牌（微软账户）
+    pub access_token: Option<String>,
 }
 
 impl Default for LaunchConfig {
@@ -277,26 +290,31 @@ pub fn update_launch_config(config: LaunchConfig) -> Result<String, String> {
 
 // ======================== Tauri 前端命令 ========================
 
+/// 前端命令：启动 Minecraft 实例
 #[tauri::command]
 pub fn tauri_launch_instance(config: Option<LaunchConfig>) -> Result<String, String> {
     launch_instance(config)
 }
 
+/// 前端命令：停止 Minecraft 实例
 #[tauri::command]
 pub fn tauri_stop_instance() -> Result<String, String> {
     stop_instance()
 }
 
+/// 前端命令：获取当前启动状态
 #[tauri::command]
 pub fn tauri_get_launch_status() -> Result<LaunchStatus, String> {
     get_launch_status()
 }
 
+/// 前端命令：获取启动配置
 #[tauri::command]
 pub fn tauri_get_launch_config() -> Result<LaunchConfig, String> {
     get_launch_config()
 }
 
+/// 前端命令：更新启动配置
 #[tauri::command]
 pub fn tauri_update_launch_config(config: LaunchConfig) -> Result<String, String> {
     update_launch_config(config)

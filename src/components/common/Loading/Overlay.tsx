@@ -1,6 +1,7 @@
 import React from 'react';
 import { ComponentStackLayer } from '../ContextStack/ContextStack';
 
+/** 遮罩层组件 Props */
 export interface OverlayProps {
     active: boolean;
     children: React.ReactNode;
@@ -12,6 +13,7 @@ export interface OverlayProps {
     onOverlayClick?: (e: React.MouseEvent) => void;
 }
 
+/** 遮罩层组件，激活时显示半透明背景，子内容保持在顶层 */
 const Overlay = ({
     active,
     children,

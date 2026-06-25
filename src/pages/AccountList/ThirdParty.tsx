@@ -1,3 +1,4 @@
+/** 第三方账户页面 - 第三方登录（待实现） */
 const ThirdParty = () => {
   return (
     <div className="p-4">

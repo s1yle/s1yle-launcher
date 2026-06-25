@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { type ReactNode } from 'react';
 import { EASING } from '@/utils/animations';
 
+/** 滚动显现动画组件 Props */
 export interface RevealProps {
   children: ReactNode;
   className?: string;

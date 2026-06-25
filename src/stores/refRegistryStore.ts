@@ -16,6 +16,7 @@ interface RefRegistryState {
   unregister: (key: string) => void;
 }
 
+/** DOM 元素注册表 Store — 通过字符串 key 跨组件共享 DOM ref */
 export const useRefRegistryStore = create<RefRegistryState>((set) => ({
   refs: {},
   register: (key, element) =>

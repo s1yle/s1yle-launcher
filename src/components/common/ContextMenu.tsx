@@ -7,6 +7,7 @@ import { Z_INDEX } from '@/utils/zIndex';
 import { dropdown, transitions } from '../../utils/animations';
 import { renderIcon } from '../../utils/iconRenderer';
 
+/** 右键菜单项数据 */
 export interface ContextMenuItemData {
   id: string;
   label: string;
@@ -16,6 +17,7 @@ export interface ContextMenuItemData {
   divider?: boolean;
 }
 
+/** 右键菜单组件 Props */
 export interface ContextMenuProps {
   items: ContextMenuItemData[];
   position: { x: number; y: number };
@@ -25,6 +27,7 @@ export interface ContextMenuProps {
   className?: string;
 }
 
+/** 右键菜单组件，基于 Portal 浮动定位，支持动画和点击外部关闭 */
 const ContextMenu = ({
   items,
   position,
@@ -109,6 +112,11 @@ const ContextMenu = ({
   );
 };
 
+/**
+ * 右键菜单 Hook。
+ * 提供 showContextMenu / hideContextMenu 方法及 contextMenuState 状态，
+ * 用于在任意元素上触发右键菜单。
+ */
 export const useContextMenu = () => {
   const [contextMenuState, setContextMenuState] = useState<{
     visible: boolean;

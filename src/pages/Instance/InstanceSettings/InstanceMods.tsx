@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useInstanceStore } from '../../../stores/instanceStore';
 
+/** 实例模组管理页面（待实现） */
 const InstanceMods: React.FC = () => {
   const { instanceId } = useParams<{ instanceId: string }>();
   const navigate = useNavigate();

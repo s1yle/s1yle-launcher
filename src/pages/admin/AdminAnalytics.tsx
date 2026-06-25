@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { getAnalyticsOverview } from '@/server/sdk.gen';
 import type { ModelsAnalyticsOverview } from '@/server/types.gen';
 
+/** 服主后台 - 数据看板页面 */
 const AdminAnalytics = () => {
   const [overview, setOverview] = useState<ModelsAnalyticsOverview | null>(null);
 

@@ -6,6 +6,7 @@ import useJavaStore from "@/stores/javaStore";
 import { CheckIcon } from "lucide-react";
 import { useEffect } from "react";
 
+/** Java 设置页面 - 扫描和管理 Java 安装 */
 const JavaSettings = () => {
   const { curJava, setCurJava, javas: versions, setJavas: setVersions } = useJavaStore();
 

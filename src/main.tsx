@@ -16,6 +16,7 @@ import './styles/themes/light.css';
 import './styles/themes/terminal.css'; // 极客终端风格主题
 import './styles/animations.css'; // 加载动画关键帧
 
+/** 应用初始化 - 按序初始化账户、配置、主题、实例、下载系统 */
 async function initApp() {
   try {
     logger.info("🚀 应用初始化开始...");

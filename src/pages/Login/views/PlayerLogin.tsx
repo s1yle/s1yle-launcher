@@ -5,6 +5,7 @@ import ContextMenu, { ContextMenuItemData } from "@/components/common/ContextMen
 import { useNotification } from "@/components/common/NotificationProvider";
 import { AccountCard } from "../components/AccountCard";
 
+/** PlayerLogin 组件的 Props */
 interface PlayerLoginProps {
   accounts: ReturnType<typeof import("../hooks/useLoginFlow").useLoginFlow>["accounts"];
   onLogin: (uuid: string) => Promise<void>;
@@ -32,6 +33,7 @@ function savePinned(uuids: string[]) {
   } catch {}
 }
 
+/** 玩家登录视图 - 账户选择和登录 */
 export function PlayerLogin({ accounts, onLogin, onDeleteAccount, onNavigate }: PlayerLoginProps) {
   const [selectedUuid, setSelectedUuid] = useState<string | null>(null);
   const [markedUuid, setMarkedUuid] = useState<string | null>(null);

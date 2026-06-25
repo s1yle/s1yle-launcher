@@ -3,11 +3,13 @@ import useLayoutStore from "@/stores/layoutStore";
 import { useBackgroundStore } from "@/stores/backgroundStore";
 import { DURATION } from "@/utils/animations";
 
+/** AppMain 组件的 Props */
 export interface AppMainProps {
   showSidebar: boolean;
   sidebarElement?: React.ReactNode;
 }
 
+/** 应用主内容区域 - 包含 RouterRenderer */
 const AppMain = ({
   showSidebar = false,
   sidebarElement,

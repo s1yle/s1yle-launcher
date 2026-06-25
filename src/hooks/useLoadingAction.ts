@@ -1,6 +1,10 @@
 import { useCallback, useRef } from 'react';
 import { useLoadingStore, type LoadingVariant } from '@/stores/loadingStore';
 
+/**
+ * useLoadingAction 的配置选项
+ * @template T - 异步操作的返回值类型
+ */
 export interface UseLoadingActionOptions<T = void> {
   key: string;
   action?: () => Promise<T>;
@@ -12,6 +16,13 @@ export interface UseLoadingActionOptions<T = void> {
   minDurationMs?: number;
 }
 
+/**
+ * 加载状态管理 hook - 包装异步操作，自动管理加载状态的注册和完成
+ * @template T - 异步操作的返回值类型
+ * @param optionsOrKey - 配置对象或加载 key 字符串
+ * @param action - 要执行的异步函数（可选，也可在 options 中传递）
+ * @returns 包装后的异步执行函数
+ */
 export function useLoadingAction<T = void>(
   optionsOrKey: string | UseLoadingActionOptions<T>,
   action?: () => Promise<T>,

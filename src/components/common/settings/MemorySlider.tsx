@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getSystemMemory } from '../../../helper/rustInvoke';
 
+/** 内存滑块组件 Props */
 export interface MemorySliderProps {
   minMemory?: number;
   maxMemory?: number;
@@ -12,6 +13,7 @@ export interface MemorySliderProps {
   disabled?: boolean;
 }
 
+/** 内存滑块组件，显示系统内存信息，支持自动/手动分配 */
 const MemorySlider = ({
   minMemory = 4096,
   maxMemory = 4096,

@@ -60,6 +60,11 @@ function GradientBackground({ gradient, opacity }: { gradient: string; opacity: 
   );
 }
 
+/**
+ * 背景层组件。
+ * 根据 backgroundStore 的配置渲染颜色 / 渐变 / 图片背景，
+ * 支持叠加遮罩层和模糊效果。
+ */
 export function BackgroundLayer() {
   const config = useBackgroundStore((s) => s.config);
 

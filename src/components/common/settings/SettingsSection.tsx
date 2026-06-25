@@ -1,5 +1,6 @@
 import React, { ReactNode } from 'react';
 
+/** 设置区块组件 Props */
 export interface SettingsSectionProps {
   title: string;
   titleI18nKey?: string;
@@ -8,7 +9,7 @@ export interface SettingsSectionProps {
   className?: string;
 }
 
-// 设置项容器
+/** 设置区块容器组件，包含标题图标和子项列表 */
 const SettingsSection = ({
   title,
   icon,

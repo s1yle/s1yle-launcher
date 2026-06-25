@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useMemo, memo } from 'react';
 import { Page, PageSection } from './Page';
 
+/** 虚拟列表组件 Props */
 export interface VirtualListProps<T> {
   items: T[];
   height?: number | string;
@@ -86,6 +87,7 @@ function VirtualListInner<T>({
   );
 }
 
+/** 虚拟列表组件，只渲染可见区域以提高长列表性能 */
 const VirtualList = memo(VirtualListInner) as typeof VirtualListInner;
 
 export default VirtualList;

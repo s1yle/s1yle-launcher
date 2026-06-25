@@ -1,4 +1,6 @@
-// 统一导出所有页面组件
+/**
+ * 统一导出所有页面组件
+ */
 export { default as Home } from './Home';
 export { default as AccountList } from './AccountList/AccountList';
 export { default as InstanceManage } from './Instance/InstanceManage';
