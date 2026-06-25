@@ -1,20 +1,55 @@
 import { motion } from 'framer-motion';
 import { Animated, Reveal } from '@/components/common';
 import { Upload, FileText, FolderOpen, CheckCircle, AlertCircle, Clock } from 'lucide-react';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { DURATION, microInteractions, transitions } from '@/utils/animations';
+import { getUploads, postUploads } from '@/server/sdk.gen';
+import type { ModelsUploadResponse } from '@/server/types.gen';
 
 const AdminUpload = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadComplete, setUploadComplete] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploads, setUploads] = useState<ModelsUploadResponse[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const recentUploads = [
-    { name: 'server.properties', size: '2.4 KB', time: '2分钟前', status: 'success' },
-    { name: 'config.yml', size: '15.8 KB', time: '1小时前', status: 'success' },
-    { name: 'plugins/', size: '125 MB', time: '昨天', status: 'success' },
-  ];
+  const loadUploads = async () => {
+    const { data } = await getUploads();
+    if (data) setUploads(data);
+  };
+
+  useEffect(() => {
+    loadUploads();
+  }, []);
+
+  const doUpload = async (file: File) => {
+    setIsUploading(true);
+    setUploadComplete(false);
+    setUploadError(null);
+    setUploadProgress(0);
+
+    try {
+      const { data, error } = await postUploads({
+        body: { file },
+      });
+      if (error) {
+        setUploadError((error as any)?.message ?? '上传失败');
+        setIsUploading(false);
+        return;
+      }
+      if (data) {
+        setUploadProgress(100);
+        setIsUploading(false);
+        setUploadComplete(true);
+        loadUploads();
+      }
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : '上传失败');
+      setIsUploading(false);
+    }
+  };
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -29,41 +64,38 @@ const AdminUpload = () => {
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    
-    // 模拟上传
-    setIsUploading(true);
-    setUploadComplete(false);
-    setUploadProgress(0);
-
-    const interval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsUploading(false);
-          setUploadComplete(true);
-          return 100;
-        }
-        return prev + Math.random() * 15;
-      });
-    }, 200);
+    const file = e.dataTransfer.files[0];
+    if (file) doUpload(file);
   }, []);
 
-  const simulateUpload = () => {
-    setIsUploading(true);
-    setUploadComplete(false);
-    setUploadProgress(0);
+  const handleFileSelect = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
 
-    const interval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsUploading(false);
-          setUploadComplete(true);
-          return 100;
-        }
-        return prev + Math.random() * 12;
-      });
-    }, 250);
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) doUpload(file);
+    e.target.value = '';
+  }, []);
+
+  const formatTime = (t?: string) => {
+    if (!t) return '';
+    try {
+      const diff = Date.now() - new Date(t).getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1) return '刚刚';
+      if (mins < 60) return `${mins}分钟前`;
+      const hours = Math.floor(mins / 60);
+      if (hours < 24) return `${hours}小时前`;
+      return `${Math.floor(hours / 24)}天前`;
+    } catch { return t; }
+  };
+
+  const formatSize = (bytes?: number) => {
+    if (bytes == null) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   };
 
   return (
@@ -74,7 +106,6 @@ const AdminUpload = () => {
         duration={DURATION.SLOW * 2}
         className="max-w-7xl mx-auto"
       >
-        {/* 页面标题 */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-[var(--color-text-primary)] mb-2 flex items-center gap-3">
             <Upload className="w-8 h-8 text-[var(--color-primary)]" />
@@ -87,7 +118,6 @@ const AdminUpload = () => {
 
         <Reveal direction="up" distance={20} duration={0.5}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* 上传区域 */}
           <Animated
             fade
             slide="left"
@@ -101,23 +131,21 @@ const AdminUpload = () => {
               onDrop={handleDrop}
               className={`
                 relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300
-                ${isDragging 
-                  ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5 scale-[1.02]' 
+                ${isDragging
+                  ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5 scale-[1.02]'
                   : uploadComplete
                     ? 'border-green-500 bg-green-500/5'
                     : isUploading
                       ? 'border-blue-500 bg-blue-500/5'
-                      : 'border-[var(--color-border)] hover:border-[var(--color-border-hover)] hover:bg-[var(--color-surface-hover)]'
+                      : uploadError
+                        ? 'border-red-500 bg-red-500/5'
+                        : 'border-[var(--color-border)] hover:border-[var(--color-border-hover)] hover:bg-[var(--color-surface-hover)]'
                 }
               `}
             >
-              {!isUploading && !uploadComplete && (
+              {!isUploading && !uploadComplete && !uploadError && (
                 <>
-                  <Animated
-                    fade
-                    scale={0.9}
-                    className="mb-4"
-                  >
+                  <Animated fade scale={0.9} className="mb-4">
                     <Upload className={`w-16 h-16 mx-auto ${isDragging ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-tertiary)'} transition-colors`} />
                   </Animated>
 
@@ -132,7 +160,7 @@ const AdminUpload = () => {
                     <motion.button
                       whileHover={microInteractions.secondaryButtonHover}
                       whileTap={microInteractions.secondaryButtonTap}
-                      onClick={simulateUpload}
+                      onClick={handleFileSelect}
                       className="flex items-center gap-2 px-6 py-2.5 bg-[var(--color-primary)] text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
                     >
                       <FileText className="w-5 h-5" />
@@ -152,16 +180,19 @@ const AdminUpload = () => {
                   <p className="text-xs text-[var(--color-text-tertiary)]">
                     支持 .properties .yml .json .jar 等格式，单文件最大 500MB
                   </p>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
                 </>
               )}
 
               {isUploading && (
                 <div className="space-y-6">
-                  <Animated
-                    fade
-                    scale={0.8}
-                    className="mb-4"
-                  >
+                  <Animated fade scale={0.8} className="mb-4">
                     <Clock className="w-16 h-16 mx-auto text-blue-400" />
                   </Animated>
 
@@ -191,11 +222,7 @@ const AdminUpload = () => {
               )}
 
               {uploadComplete && (
-                <Animated
-                  fade
-                  scale={0.8}
-                  className="space-y-4"
-                >
+                <Animated fade scale={0.8} className="space-y-4">
                   <CheckCircle className="w-20 h-20 mx-auto text-green-400" />
 
                   <h3 className="text-2xl font-bold text-green-400">
@@ -216,10 +243,32 @@ const AdminUpload = () => {
                   </motion.button>
                 </Animated>
               )}
+
+              {uploadError && (
+                <Animated fade scale={0.8} className="space-y-4">
+                  <AlertCircle className="w-20 h-20 mx-auto text-red-400" />
+
+                  <h3 className="text-2xl font-bold text-red-400">
+                    上传失败
+                  </h3>
+
+                  <p className="text-[var(--color-text-secondary)]">
+                    {uploadError}
+                  </p>
+
+                  <motion.button
+                    whileHover={microInteractions.secondaryButtonHover}
+                    whileTap={microInteractions.secondaryButtonTap}
+                    onClick={() => setUploadError(null)}
+                    className="mt-4 px-6 py-2.5 bg-red-500/15 text-red-400 rounded-xl font-medium hover:bg-red-500/25 transition-colors cursor-pointer"
+                  >
+                    重试
+                  </motion.button>
+                </Animated>
+              )}
             </div>
           </Animated>
 
-          {/* 最近上传记录 */}
           <Animated
             fade
             slide="right"
@@ -233,9 +282,9 @@ const AdminUpload = () => {
             </h3>
 
             <div className="space-y-3">
-              {recentUploads.map((file, index) => (
+              {uploads.map((file, index) => (
                 <Animated
-                  key={file.name}
+                  key={file.id}
                   fade
                   slide="left"
                   delay={DURATION.SLOW + DURATION.MEDIUM + index * DURATION.FAST}
@@ -248,16 +297,21 @@ const AdminUpload = () => {
 
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-[var(--color-text-primary)] truncate group-hover:text-[var(--color-primary)] transition-colors">
-                      {file.name}
+                      {file.original_name ?? file.filename}
                     </p>
-                    <p className="text-xs text-[var(--color-text-tertiary)]">{file.size} · {file.time}</p>
+                    <p className="text-xs text-[var(--color-text-tertiary)]">
+                      {formatSize(file.file_size)}{file.created_at ? ` · ${formatTime(file.created_at)}` : ''}
+                    </p>
                   </div>
 
-                  {file.status === 'success' && (
-                    <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-1" />
-                  )}
+                  <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-1" />
                 </Animated>
               ))}
+              {uploads.length === 0 && (
+                <div className="text-center py-8 text-sm text-[var(--color-text-secondary)]">
+                  暂无上传记录
+                </div>
+              )}
             </div>
 
             <button className="w-full mt-4 py-2.5 text-sm font-medium text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 rounded-xl transition-colors cursor-pointer">

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "name": "WeCraft! Launcher",
+  "entryPoints": [
+    "src/api/index.ts",
+    "src/components/common/index.ts",
+    "src/config/index.ts",
+    "src/pages/index.ts",
+    "src/stores/index.ts",
+    "src/hooks/index.ts",
+    "src/utils/index.ts",
+    "src/helper/index.ts",
+    "src/AppLayouts/index.ts",
+    "src/router/models.ts"
+  ],
+  "out": "docs/api/auto",
+  "plugin": ["typedoc-plugin-markdown"],
+  "tsconfig": "tsconfig.json",
+  "hideBreadcrumbs": true,
+  "hidePageHeader": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "skipErrorChecking": true,
+  "readme": "none",
+  "entryFileName": "README",
+  "indexFormat": "table",
+  "parametersFormat": "table",
+  "propertiesFormat": "table",
+  "typeDeclarationFormat": "table",
+  "useHTMLAnchors": false,
+  "groupOrder": [
+    "Functions",
+    "Interfaces",
+    "Type Aliases",
+    "Enumerations",
+    "Variables",
+    "*"
+  ]
+}

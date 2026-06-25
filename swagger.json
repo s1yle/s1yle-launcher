@@ -1,7 +1,10 @@
 {
+    "schemes": [
+        "http"
+    ],
     "swagger": "2.0",
     "info": {
-        "description": "WeCraft! Launcher 服务端 API",
+        "description": "WeCraft! Launcher 服主后台服务端 API",
         "title": "WeCraft Server API",
         "contact": {},
         "version": "0.1.1"

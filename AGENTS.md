@@ -1,67 +1,43 @@
-# WeCraft! Launcher - 快速参考指南
+# WeCraft! Launcher — 快速参考
 
-> **最后更新**: 2026-06-02  
-> **项目版本**: 0.1.0-alpha.2  
-> **最新更新**: Portal API 重构（新增智能 Portal、浮动定位引擎、DOM 注册表、z-index 常量）
+> **最后更新**: 2026-06-25 | **项目版本**: 0.1.0-alpha.2
 
 ---
 
 ## 0. Agent 操作规范
 
-> **重要提醒**: 在执行任何命令或操作前，请先询问用户的意见。禁止使用任何 git 操作。
-
-- 执行任何 Shell 命令前需征得用户同意
-- 禁止使用 git 操作，除非用户明确要求
-- 修改代码前先展示方案，征得用户确认后再执行
-- 对于复杂的重构，需要先输出详细方案
-- **代码风格**: 遵循现有代码约定，不添加注释（除非明确要求）
+- 执行 Shell 命令前先征得同意
+- 禁止使用 git 操作（除非用户明确要求）
+- 修改代码前先展示方案，确认后再执行
+- 不添加注释（除非明确要求）
 
 ---
 
 ## 1. 项目概述
 
-WeCraft! Launcher 是一个现代化的 Minecraft 启动器，采用 Tauri 2 + React 19 技术栈构建。
+Minecraft 启动器，Tauri 2 + React 19。
 
-**核心特性**:
-- Minecraft 版本管理（下载、安装、启动）
-- 多账户支持（微软账号、离线账号）
-- 模组加载器支持（Fabric、Forge、NeoForge）
-- 文件完整性校验（SHA1）
-- 跨平台支持（Windows、Linux、macOS）
-- 国际化支持（中文、英文）
-- 主题系统（暗色/亮色预设 + 7 种强调色 + 3 种终端主题）
-- 实例管理（版本化目录结构，全局资源共享）
-- **灵动岛导航系统**（悬浮式胶囊导航、毛玻璃效果）
-- **双角色身份系统**（玩家 ↔ 服主无缝切换）
-- **服主后台**（服务器管理、数据看板、配置上传）
+**核心特性**: 版本管理 · 多账户 · 模组加载器 · SHA1 校验 · i18n · 主题系统 · 实例管理 · 灵动岛导航 · 双角色系统 · 服主后台
 
-**详细文档**:
-- 架构设计：[`docs/architecture.md`](docs/architecture.md)
-- 组件文档：[`docs/components.md`](docs/components.md)
-- API 文档：[`docs/api.md`](docs/api.md)
-- 更新日志：[`docs/changelog.md`](docs/changelog.md)
+**代码代替文档**: API 层和路由表已支持自动生成，运行 `pnpm docs:gen` 更新：
+- 自动生成 API 文档 → `docs/api/auto/`
+- 自动生成路由表 → `docs/generated/routes.md`
 
 ---
 
 ## 2. 技术栈
 
-### 前端
-- **框架**: React 19.1.0 + React Router DOM 7.3.0
-- **构建工具**: Vite 7.0.4
-- **样式**: TailwindCSS 4.1.18 + PostCSS
-- **动画**: Framer Motion 12.34.3
-- **状态管理**: Zustand 5.0 (带 persist 中间件)
-- **国际化**: i18next 26.0 + react-i18next 17.0
-- **图标**: lucide-react 1.7
-- **语言**: TypeScript 5.8.3
-
-### 后端 (Rust)
-- **框架**: Tauri 2
-- **异步运行时**: Tokio 1 (full features)
-- **HTTP 客户端**: reqwest 0.12 (json, stream)
-- **序列化**: serde 1 + serde_json 1
-- **日志**: tracing 0.1.44 + tracing-subscriber 0.3.22
-- **校验**: sha1 0.10, hex 0.4
+| 层 | 技术 | 版本 |
+|----|------|------|
+| 框架 | React + React Router DOM | 19.1.0 / 7.3.0 |
+| 构建 | Vite | 7.0.4 |
+| 样式 | TailwindCSS + PostCSS | 4.1.18 |
+| 动画 | Framer Motion | 12.34.3 |
+| 状态管理 | Zustand (persist) | 5.0 |
+| 国际化 | i18next + react-i18next | 26.0 / 17.0 |
+| 后端 | Tauri 2 + Tokio | — |
+| HTTP | reqwest (json, stream) | 0.12 |
+| 校验 | sha1 + hex | 0.10 / 0.4 |
 
 ---
 
@@ -69,565 +45,252 @@ WeCraft! Launcher 是一个现代化的 Minecraft 启动器，采用 Tauri 2 + R
 
 ```
 src/
-├── components/               # React 组件
-│   ├── common/              # 通用组件
-│   │   ├── Badge/           # 徽章组件
-│   │   ├── BottomBar/       # 底部栏
-│   │   ├── ContextStack/    # 上下文栈
-│   │   ├── Instance/        # 实例相关组件
-│   │   ├── Loading/         # 加载组件
-│   │   ├── SettingsPanel/   # 设置面板
-│   │   ├── Version/         # 版本相关组件
-│   │   └── Portal.tsx       # 智能 Portal（5 种浮动定位模式）
-│   ├── navigation/          # 导航组件（灵动岛）
-│   ├── home/                # 主页组件
-│   ├── header/              # 头部组件
-│   ├── sidebar/             # 侧边栏组件
-│   ├── popup/               # 弹窗组件
-│   └── settings/            # 设置组件
-├── pages/                    # 页面组件
-│   ├── Home.tsx
-│   ├── Settings.tsx
-│   ├── AccountList/          # 账户页面
-│   ├── Download/             # 下载页面
-│   ├── Instance/             # 实例页面
-│   │   └── InstanceSettings/ # 实例设置子页面
-│   ├── Feedback/             # 反馈页面
-│   └── admin/                # 服主后台
-├── stores/                   # Zustand 状态管理
-│   ├── userRoleStore.ts     # 角色状态
-│   ├── uiModeStore.ts       # UI 模式
-│   ├── layoutStore.ts       # 布局状态
-│   ├── appStore.ts          # 应用全局状态
-│   ├── refRegistryStore.ts  # 全局 DOM 元素注册表
-│   ├── configStore.ts       # 配置状态
-│   └── ...
-├── config/                   # 配置管理
-│   ├── index.ts             # 统一配置入口
-│   ├── types.ts             # 配置类型定义
-│   └── navigationConfig.ts  # 导航配置
-├── router/                   # 路由系统
-│   ├── config.tsx           # 路由配置
-│   └── routes.tsx           # 路由定义
-├── helper/                   # 辅助工具
-│   ├── rustInvoke.ts        # Rust API 调用
-│   ├── logger.ts            # 日志工具
-│   └── i18n.ts              # 国际化
-├── hooks/                    # 自定义 Hooks
-│   ├── useFloating.ts       # 浮动定位引擎（anchor/origin 模式）
-│   └── useClickOutside.ts   # 点击外部检测
-├── utils/                    # 工具函数
-│   └── zIndex.ts            # Z-index 层级常量表
-├── styles/                   # 样式文件
-│   └── themes/              # 主题 CSS
-├── types/                    # TypeScript 类型
-├── main.tsx                  # 入口文件
-└── App.tsx                   # 主应用组件
-```
+├── api/              # 统一 API 层 → pnpm docs:gen:api
+│   ├── client.ts     # IPC 中间件链（日志 + 错误转换）
+│   ├── auth.ts       # JWT 令牌管理
+│   └── *.ts          # 按功能模块拆分
+├── components/
+│   └── common/       # 通用组件（见 docs/api/auto）
+├── pages/            # 页面组件
+│   ├── Home.tsx, Login/, Settings/
+│   ├── AccountList/, Instance/, Download/
+│   └── admin/        # 服主后台
+├── stores/           # Zustand 状态（19 个 store）
+├── config/           # 统一配置管理器
+├── router/           # 路由系统 → pnpm docs:gen:routes
+│   ├── routes.tsx    # 路由定义
+│   └── config.tsx    # 路由工具
+├── hooks/            # 自定义 Hooks
+├── utils/            # 工具函数
+├── locales/          # i18n（en-US, zh-CN）
+├── AppLayouts/       # 布局组件
+└── server/           # 服务端 SDK（OpenAPI 生成）
 
-**详细目录结构**: 见 [`docs/architecture.md`](docs/architecture.md) §2
+src-tauri/src/
+├── lib.rs            # ~70+ 命令注册
+├── account.rs, launch.rs, window.rs, modloader.rs
+├── admin_account.rs, background.rs, logging.rs
+├── font.rs, java.rs, render.rs
+├── config/           # 配置模块
+├── download/         # 下载模块
+└── instance/         # 实例模块
+```
 
 ---
 
-## 4. 核心路由
+## 4. 路由
 
-```
-/                              # 主页（玩家/服主个人中心）
-/account                       # 账户列表（含侧边栏）
-/account/microsoft             # 微软账号
-/account/offline               # 离线账号
-/account/thirdparty            # 第三方账号
-/instance-manage/:instanceId   # 实例管理（自动跳转子路由）
-/instance-manage/:instanceId/game-settings    # 游戏设置
-/instance-manage/:instanceId/auto-install     # 自动安装
-/instance-manage/:instanceId/mods             # 模组管理
-/instance-manage/:instanceId/resource-packs   # 材质包
-/instance-manage/:instanceId/worlds           # 世界管理
-/instance-list                 # 游戏列表
-/download                      # 下载（自动跳转到 /download/game）
-/download/game                 # 游戏下载
-/download/game/:versionId      # 版本安装（全屏模式）
-/download/modpack              # 整合包下载
-/settings                      # 设置（自动跳转子路由）
-/settings/appearance           # 外观设置
-/hint                          # 启动器说明
-/admin/servers                 # 服主后台 - 服务器管理
-/admin/analytics               # 服主后台 - 数据看板
-/admin/upload                  # 服主后台 - 配置上传
-```
+自动生成 → [`docs/generated/routes.md`](docs/generated/routes.md)（共 22 条路由）
 
-**已移除的页面**:
-- ~~`/multiplayer`~~ - 多人联机
-- ~~`/feedback`~~ - 反馈
-
-**详细路由配置**: 见 [`src/router/config.tsx`](src/router/config.tsx)
+| 分组 | 路径 |
+|------|------|
+| 主页 | `/` |
+| 账户 | `/account` /microsoft /offline /thirdparty |
+| 实例管理 | `/instance-manage/:id` /game-settings /auto-install /mods /resource-packs /worlds |
+| 实例列表 | `/instance-list` /instance-list/game-folder:default |
+| 下载 | `/download` /game /modpack /game/:versionId |
+| 设置 | `/settings` /java /appearance |
+| 服主后台 | `/admin/servers` /analytics /upload |
+| 其它 | `/hint` |
 
 ---
 
 ## 5. 状态管理
 
-**核心 Stores**:
+**核心 Stores**（共 19 个，详见 `src/stores/`）：
 
 | Store | 文件 | 用途 |
 |-------|------|------|
-| `userRoleStore` | `src/stores/userRoleStore.ts` | 用户角色（玩家/服主/创作者） |
-| `uiModeStore` | `src/stores/uiModeStore.ts` | UI 模式（灵动岛/经典）、页面动画 |
-| `layoutStore` | `src/stores/layoutStore.ts` | 布局状态（侧边栏宽度、折叠） |
-| `themeStore` | `src/stores/themeStore.ts` | 主题管理（预设、强调色） |
+| `userRoleStore` | `src/stores/userRoleStore.ts` | 用户角色（player/admin/creator） |
+| `uiModeStore` | `src/stores/uiModeStore.ts` | UI 模式（灵动岛/经典） |
+| `themeStore` | `src/stores/themeStore.ts` | 主题（预设/强调色） |
 | `navStore` | `src/stores/navStore.ts` | 导航状态（路径、历史） |
-| `appStore` | `src/stores/appStore.ts` | 应用全局状态（系统信息、初始化） |
-| `configStore` | `src/stores/configStore.ts` | 全局配置状态（AppConfig） |
-| `instanceStore` | `src/stores/instanceStore.ts` | 实例管理（列表、文件夹、CRUD） |
-| `downloadStore` | `src/stores/downloadStore.ts` | 下载管理（版本清单、任务、部署） |
+| `layoutStore` | `src/stores/layoutStore.ts` | 布局（侧边栏宽度/折叠） |
+| `appStore` | `src/stores/appStore.ts` | 全局状态（系统信息） |
+| `configStore` | `src/stores/configStore.ts` | 配置状态 |
+| `instanceStore` | `src/stores/instanceStore.ts` | 实例 CRUD |
+| `downloadStore` | `src/stores/downloadStore.ts` | 下载管理 |
 | `accountStore` | `src/stores/accountStore.ts` | 账户管理 |
-| `refRegistryStore` | `src/stores/refRegistryStore.ts` | 全局 DOM 元素注册表 |
-
-**使用示例**:
-```typescript
-import { useUserRoleStore } from '@/stores/userRoleStore';
-
-const { currentRole, switchRole } = useUserRoleStore();
-<button onClick={() => switchRole('admin')}>切换到服主</button>
-```
-
-**详细状态管理**: 见 [`docs/architecture.md`](docs/architecture.md) §4
+| `adminStore` | `src/stores/adminStore.ts` | 管理员会话 |
+| `refRegistryStore` | `src/stores/refRegistryStore.ts` | DOM 元素注册表 |
+| `avatarStore` | `src/stores/avatarStore.ts` | 头像渲染模式 |
+| `backgroundStore` | `src/stores/backgroundStore.ts` | 背景配置 |
+| `fontStore` | `src/stores/fontStore.ts` | 字体管理 |
+| `javaStore` | `src/stores/javaStore.ts` | Java 安装 |
+| `lastVisitedStore` | `src/stores/lastVisitedStore.ts` | 子路由记忆 |
+| `loadingStore` | `src/stores/loadingStore.ts` | 全局加载 |
+| `loginStore` | `src/stores/loginStore.ts` | 登录状态 |
 
 ---
 
 ## 6. 配置系统
 
-### 6.1 分层架构
+三层存储: localStorage(L1) → 配置文件(L2) → 加密存储(L3)
 
-- **L1: localStorage** - UI 配置（立即同步）
-- **L2: 配置文件** - 业务配置（防抖异步保存）
-- **L3: 加密存储** - 敏感数据（立即异步保存）
+**统一入口**: `src/config/index.ts`
 
-### 6.2 统一配置入口
-
-**核心文件**:
-- `src/config/index.ts` - 统一配置管理器
-- `src/config/types.ts` - 配置类型定义
-
-**使用示例**:
 ```typescript
 import { config } from '@/config';
-
-// 读取配置
-const theme = await config.getConfig('theme.mode');
-
-// 更新配置
+await config.getConfig('theme.mode');
 await config.setConfigValue('theme.accentColor', 'blue');
 ```
 
-**详细配置系统**: 见 [`docs/architecture.md`](docs/architecture.md) §3
-
 ---
 
-## 7. 后端 API
+## 7. API
 
-### 7.1 统一 API 层
+自动生成 → [`docs/api/auto/`](docs/api/auto/)
 
-**核心文件**: `src/helper/rustInvoke.ts`
+调用链: 前端代码 → `src/api/*.ts` → `src/api/client.ts` (IPC) → Rust 命令
 
-**使用示例**:
+**封装函数**（`src/helper/rustInvoke.ts` 转发自 `src/api/`）:
 ```typescript
-import { getConfig, updateConfig } from '@/helper/rustInvoke';
-
-// 获取配置
-const theme = await getConfig('theme.mode');
-
-// 更新配置
-await updateConfig('theme.accentColor', 'blue');
+import { getConfig, updateConfig, launchInstance } from '@/helper/rustInvoke';
 ```
 
-### 7.2 主要 API 命令
+### 主要命令分类
 
-| 分类 | 命令 | TypeScript 封装 | 说明 |
-|------|------|----------------|------|
-| **配置** | `get_config` | `getConfig(key)` | 获取配置 |
-| | `set_config_value` | `setConfigValue(path, value)` | 设置配置值 |
-| | `get_config_value` | `getConfigValue(path)` | 获取配置值 |
-| | `reset_config` | `resetConfig()` | 重置配置 |
-| | `export_config` / `import_config` | `exportConfig()` / `importConfig()` | 导入导出配置 |
-| **路径配置** | `get_path_config` | `getPathConfig()` | 获取路径配置 |
-| | `update_path_config` | `updatePathConfig(config)` | 更新路径配置 |
-| **实例** | `scan_instances` | `scanInstances()` | 扫描实例 |
-| | `create_instance` | `createInstance(config)` | 创建实例 |
-| | `delete_instance` | `deleteInstance(id)` | 删除实例 |
-| | `copy_instance` | `copyInstance(id)` | 复制实例 |
-| | `rename_instance` | `renameInstance(id, name)` | 重命名实例 |
-| | `update_instance` | `updateInstance(id, data)` | 更新实例 |
-| **实例设置** | `get_instance_settings` | `getInstanceSettings(id)` | 获取实例设置 |
-| | `update_instance_settings` | `updateInstanceSettings(id, s)` | 更新实例设置 |
-| | `get_system_memory` | `getSystemMemory()` | 获取系统内存 |
-| | `select_java_path` | `selectJavaPath()` | 选择 Java 路径 |
-| **下载** | `get_version_manifest` | `getVersionManifest()` | 获取版本清单 |
-| | `download_and_deploy` | `downloadAndDeploy(config)` | 下载并部署 |
-| | `cancel_download` | `cancelDownload(taskId)` | 取消下载 |
-| | `deploy_version_to_instance` | `deployVersionToInstance(opts)` | 部署到实例 |
-| | `is_version_deployed` | `isVersionDeployed(id)` | 检查版本是否已部署 |
-| **模组加载器** | `get_fabric_versions` | `getFabricVersions()` | 获取 Fabric 版本 |
-| | `get_forge_versions` | `getForgeVersions()` | 获取 Forge 版本 |
-| | `install_with_loaders` | `installWithLoaders(config)` | 安装含加载器 |
-| **账户** | `add_account` | `invokeAddAccount()` | 添加账户 |
-| | `get_account_list` | `getAccountList()` | 获取账户列表 |
-| | `get_current_account` | `getCurrentAccount()` | 获取当前账户 |
-| | `delete_account` | `deleteAccount(uuid)` | 删除账户 |
-| | `set_current_account` | `setCurrentAccount(uuid)` | 设置当前账户 |
-| **启动** | `tauri_launch_instance` | `launchInstance(config)` | 启动实例 |
-| | `tauri_stop_instance` | `stopInstance()` | 停止实例 |
-| | `tauri_get_launch_status` | `getLaunchStatus()` | 获取启动状态 |
-| **窗口** | `save_window_position` | `saveWindowPosition(pos)` | 保存窗口位置 |
-| | `load_window_position` | `loadWindowPosition()` | 加载窗口位置 |
-| **系统** | `open_folder` | `openFolder(path)` | 打开文件夹 |
-| | `open_url` | `openUrl(url)` | 打开外部链接 |
-| | `get_system_info` | — | 获取系统信息 |
+| 分类 | 命令示例 | TypeScript 封装 |
+|------|----------|----------------|
+| **配置** | `get_config`, `set_config_value`, `reset_config`, `export_config` | `getConfig()`, `setConfigValue()` 等 |
+| **路径** | `get_path_config`, `update_path_config`, `get_instance_path` 等 | `getPathConfig()`, `getInstancePath()` 等 |
+| **实例** | `scan_instances`, `create_instance`, `delete_instance` 等 | `scanInstances()`, `createInstance()` 等 |
+| **实例设置** | `get_instance_settings`, `update_instance_settings`, `get_system_memory` | `getInstanceSettings()` 等 |
+| **下载** | `get_version_manifest`, `download_and_deploy`, `cancel_download` 等 | `getVersionManifest()`, `downloadAndDeploy()` 等 |
+| **模组加载器** | `get_fabric_versions`, `get_forge_versions`, `install_with_loaders` 等 | `getFabricVersions()`, `installWithLoaders()` 等 |
+| **账户** | `add_account`, `get_account_list`, `delete_account` 等 | `invokeAddAccount()`, `getAccountList()` 等 |
+| **管理员** | `register_admin`, `login_admin`, `bind_player_to_admin` 等 | `apiRegisterAdmin()`, `apiLoginAdmin()` 等 |
+| **启动** | `tauri_launch_instance`, `tauri_stop_instance`, `tauri_get_launch_status` | `launchInstance()`, `stopInstance()` 等 |
+| **窗口** | `save_window_position`, `load_window_position`, `close_window` | `saveWindowPosition()` 等 |
+| **系统** | `open_folder`, `open_url`, `get_system_info`, `log_frontend` | `openFolder()`, `openUrl()` 等 |
+| **Java** | `scan_java_installations`, `select_java_path` | `scanJavaInstallations()` 等 |
+| **字体** | `get_system_fonts`, `get_font` | `getSystemFonts()` 等 |
+| **皮肤渲染** | `render_avatar`, `get_skin_head`, `get_skin_cape`, `get_uuid_by_username` | `invokeRenderAvatar()` 等 |
+| **背景** | `select_background_image` | 直接 `invoke` |
 
-**详细 API 文档**: 见 [`docs/api.md`](docs/api.md)
+**注意事项**:
+- 更新配置必须用 `setConfigValue()` 增量更新，禁止用 `update_config()` 完整覆盖
+- 外部链接使用 Tauri `openUrl` API
+- Rust 后端命令通过 `lib.rs` 的 `generate_handler!` 注册（~70+ 命令）
 
 ---
 
 ## 8. 通用组件
 
-**核心组件**:
-- `ProgressBar` - 线性进度条
-- `CircularProgress` / `Spinner` - 圆形进度指示器/转圈加载动画
-- `DownloadItem` - 下载项组件
-- `StatusBadge` / `VersionBadge` / `YesOrNoBadge` - 版本类型徽章
-- `Toggle` - 开关组件
-- `EmptyState` - 空状态组件
-- `ListItem` - 列表项组件
-- `ContextMenu` - 上下文菜单
-- `ConfirmPopup` / `AlertPopup` / `InputDialog` / `LoadingPopup` / `ProgressDialog` - 弹窗组件
-- `VirtualList` - 虚拟列表
-- `IconButton` - 图标按钮
-- `NotificationProvider` - 通知提供者
-- `StartGameButton` - 启动游戏按钮
-- `VersionCard` / `VersionFilterDropdown` / `VersionListItem` - 版本相关组件
-- `InstanceCard` / `InstallCard` / `InstanceListItem` - 实例相关组件
-- `TerminalThemePreview` - 主题预览组件
-- `Overlay` - 覆盖层组件
-- `LoaderIcon` - 加载图标
-- `MemorySlider` - 内存滑块
-- `SettingItem` / `SettingsSection` / `SettingPanel` - 设置相关组件
-- `FloatingControls` - 窗口头部悬浮控件
-- `PlayerProfile` - 玩家资料组件
-- `DynamicIsland` - 灵动岛导航组件
-- `BottomBar` - 底部栏组件
-- `ContextStack` - 上下文栈组件
-- `Portal` - 智能 Portal（5 种浮动定位模式）
+自动生成组件 API → [`docs/api/auto/`](docs/api/auto/)
 
-**组件子目录**:
-- `src/components/common/Badge/` - 徽章组件
-- `src/components/common/BottomBar/` - 底部栏
-- `src/components/common/ContextStack/` - 上下文栈
-- `src/components/common/Instance/` - 实例相关组件
-- `src/components/common/Loading/` - 加载组件
-- `src/components/common/SettingsPanel/` - 设置面板
-- `src/components/common/Version/` - 版本相关组件
-- `src/components/common/header/` - 头部控件
-- `src/components/common/home/` - 主页组件
-- `src/components/common/navigation/` - 导航组件
-- `src/components/common/popup/` - 弹窗组件
-- `src/components/common/settings/` - 设置组件
-- `src/components/common/sidebar/` - 侧边栏组件
-- `src/components/common/Portal.tsx` - 智能 Portal（5 种浮动定位模式）
+**位置**: `src/components/common/`
 
-**使用示例**:
-```typescript
-import { ProgressBar, useNotification, Portal } from '@/components/common';
-
-// 进度条
-<ProgressBar progress={75} status="active" showPercentage />
-
-// 通知
-const { success } = useNotification();
-success('操作成功', '文件已保存');
-
-// Portal 锚定浮动层
-<Portal anchorTo={buttonRef} placement="bottom-start">
-  <DropdownMenu />
-</Portal>
-
-// Portal 可拖拽浮动按钮
-<Portal draggable defaultPosition={{x:100,y:16}}>
-  <FloatingWidget />
-</Portal>
-```
-
-**详细组件文档**: 见 [`docs/components.md`](docs/components.md)
+| 分类 | 组件 | 说明 |
+|------|------|------|
+| **加载** | `ProgressBar`, `CircularProgress`, `Spinner`, `Skeleton`, `Overlay`, `LoaderIcon`, `GlobalLoadingBar`, `LoadingSurface` | 进度条/加载动画 |
+| **弹窗** | `ConfirmPopup`, `AlertPopup`, `InputDialog`, `LoadingPopup`, `ProgressDialog` | 各种弹窗 |
+| **徽章** | `VersionBadge`, `YesOrNoBadge` | 状态标签 |
+| **版本** | `VersionCard`, `VersionFilterDropdown`, `VersionListItem` | 版本选择 |
+| **实例** | `InstanceCard`, `InstanceListItem`, `InstallCard` | 实例管理 |
+| **设置** | `SettingItem`, `SettingsSection`, `MemorySlider`, `SettingPanel`, `ListItem` | 设置页面 |
+| **导航** | `DynamicIsland`, `SmartSidebar`, `BottomBar`, `FloatingControls`, `DynamicItem` | 导航组件 |
+| **侧边栏** | `BaseSidebarContent`, `BaseSidebarLayout`, `AccountSidebarContent`, `CommonSidebarContent`, `GameSidebarContent` | 侧边栏系统 |
+| **通用** | `Toggle`, `EmptyState`, `IconButton`, `VirtualList`, `ContextMenu`, `DownloadItem`, `DropDown` | 通用 UI |
+| **Portal** | `Portal` (5 种模式), `Animated`, `Reveal`, `Slider` | 浮动定位/动画 |
+| **用户** | `PlayerProfile`, `SkinAvatar`, `RoleSelectCard`, `StartGameButton`, `NotificationProvider` | 用户相关 |
+| **布局** | `Page`, `PageSection`, `BackgroundLayer` | 页面骨架 |
 
 ---
 
 ## 9. UI 架构
 
-### 9.1 灵动岛导航系统
+### 灵动岛导航
+悬浮式胶囊导航（顶部居中），毛玻璃背景，支持窗口拖曳 + 角色切换 180° 旋转动画。
 
-**核心组件**: `src/components/navigation/DynamicIsland.tsx`
+### 双角色系统
+- 类型: `player` | `admin` | `creator`
+- 切换: ≤2 角色直接点击，>2 角色下拉菜单
+- 从 admin 页面切回时自动跳转到主页
 
-**特性**:
-- 悬浮式胶囊导航，顶部居中
-- 毛玻璃背景 (`backdrop-blur-2xl`)
-- 响应式布局
-- 支持窗口拖曳
-- 角色切换动画（图标 180° 旋转）
-
-**布局结构**:
-```
-┌─────────────────────────────────────────────┐
-│  [最小化] [最大化] [关闭]   ← FloatingControls
-│
-│        ┌──────────────────┐
-│        │  🏝️ 灵动岛导航    │
-│        └──────────────────┘
-│
-│  ──────────┬──────────────────┐
-│  │ 侧边栏   │   主内容区域      │  ← 可选（特定页面）
-│  └─────────┴──────────────────┘
-└─────────────────────────────────────────────┘
-```
-
-### 9.2 双角色系统
-
-**角色类型**: `player` | `admin` | `creator` (未来扩展)
-
-**切换逻辑**:
-- ≤2 角色：直接点击切换
-- >2 角色：下拉菜单选择
-- 自动导航：从 admin 页面切回时跳转到主页
-
-**详细 UI 架构**: 见 [`docs/architecture.md`](docs/architecture.md) §6
+### 布局模式
+- `ClassicLayout` — 侧边栏 + 主内容
+- `IslandLayout` — 灵动岛 + 主内容（默认）
+- `FULLSCREEN` — `/download/game/:versionId` 全屏模式
 
 ---
 
 ## 10. 编码规范
 
-### 10.1 TypeScript
-
-- 使用 TypeScript 严格模式
-- 所有函数和组件必须有明确的类型定义
-- 使用 interface 定义 props 和状态
-- 避免使用 `any`，使用 `unknown` 代替
-
-### 10.2 React
-
-- 使用函数组件 + Hooks
-- 组件名使用 PascalCase
-- 使用解构 props
-- 避免内联函数（使用 useCallback）
-
-### 10.3 样式
-
-- 使用 Tailwind CSS 语义化类名
-- 使用 CSS 变量（`var(--color-*)`）
-- 禁止硬编码颜色值（`bg-white/XX`）
-- 响应式设计使用 Tailwind 断点
-
-### 10.4 命名规范
-
-```typescript
-// 组件：PascalCase
-const PlayerProfile = () => { ... };
-
-// 函数/变量：camelCase
-const handleRoleSwitch = () => { ... };
-const currentRole = 'player';
-
-// 类型：PascalCase
-interface UserRole { ... };
-type ThemeMode = 'dark' | 'light';
-
-// 文件：PascalCase（组件）或 camelCase（工具）
-PlayerProfile.tsx
-rustInvoke.ts
-
-// 常量：UPPER_SNAKE_CASE
-const MAX_RETRY_COUNT = 3;
-```
-
-### 10.5 文档编号规范
-
-**核心原则**：使用自动编号 + 锚点引用，禁止手动编号
-
-```markdown
-✅ 正确：
-## 通用组件 {#common-components}
-### 进度条 {#progress-bar}
-### 圆形进度指示器 {#circular-progress}
-
-引用：[进度条](components.md#progress-bar)
-
-❌ 错误：
-## 1.1 进度条
-## 1.2 圆形进度指示器
-
-引用：components.md §1.1
-```
-
-**锚点命名规则**：
-- 使用小写英文字母
-- 单词间用连字符分隔：`common-components`
-- 保持语义清晰：使用组件英文名
-- 中文标题使用英文翻译
-
-**引用规范**：
-- 使用 Markdown 链接：`[文本](文件路径#锚点)`
-- 禁止使用 § 符号：`§数字`
-- 优先使用相对路径
-
-**详细规范**：[`docs/MAINTENANCE.md`](docs/MAINTENANCE.md) - 文档维护规范
+- **TypeScript**: 严格模式，避免 `any`，用 `unknown`
+- **React**: 函数组件 + Hooks，PascalCase 命名
+- **样式**: Tailwind CSS 变量，禁止硬编码 `bg-white/XX`
+- **文件命名**: 组件 PascalCase，工具 camelCase，常量 UPPER_SNAKE_CASE
+- **z-index**: 使用 `Z_INDEX` 常量（`src/utils/zIndex.ts`）
 
 ---
 
-## 11. 常用命令
+## 11. 注意事项
+
+- 前端调用 Rust 使用 `@tauri-apps/api/core` 的 `invoke`（经 `src/api/client.ts` 中间件）
+- 窗口无边框，自定义标题栏需要 `data-tauri-drag-region`
+- 最小化时不保存窗口位置（避免 -32000 坐标）
+- Webview 右键菜单已禁用（`App.tsx` 中 `e.preventDefault()`）
+- Portal 组件: `draggable` 模式尚未集成 `avoidRefs`/`collisionBoundary`；`simple` 模式忽略 `zIndex` prop
+- Portal 锚定: 使用 `useRegisterRef(key)` 注册 DOM 元素，`avoidRefs` 支持 string key 自动查找
+- i18n 初始化在 `src/helper/i18n.ts`，主题 CSS 在 `main.tsx` 中导入
+
+---
+
+## 12. 命令
 
 ```bash
-# 前端开发
-pnpm dev                  # 启动开发服务器
-pnpm build                # 构建生产版本
-pnpm preview              # 预览生产构建
-
-# Tauri 开发
-pnpm tauri dev            # 启动 Tauri 开发环境
-pnpm tauri build          # 构建生产版本
-
-# 代码质量
-pnpm lint                 # ESLint 检查
-pnpm typecheck            # TypeScript 类型检查
+pnpm dev              # 开发服务器
+pnpm build            # 构建
+pnpm tauri dev        # Tauri 开发
+pnpm tauri build      # 构建生产
+pnpm docs:gen         # 生成全部自动文档（新 clone 后必须跑一次）
+pnpm docs:gen:api     # TypeDoc: src/api + components + stores + ... → docs/api/auto/
+pnpm docs:gen:rust    # cargo doc: src-tauri/ → docs/rust/
+pnpm docs:gen:routes  # 脚本: src/router/routes.tsx → docs/generated/routes.md
 ```
 
 ---
 
-## 12. 注意事项
+## 13. 文档维护
 
-- 前端调用 Rust 使用 `@tauri-apps/api/core` 的 `invoke` 函数
-- Rust 后端的所有命令通过 `lib.rs` 的 `generate_handler!` 宏注册（共 49 个命令）
-- 后端命令按模块组织：`config/`、`download/`、`instance/` + 顶层文件（`account.rs`、`launch.rs`、`window.rs`、`modloader.rs`）
-- 窗口使用无边框模式，自定义标题栏需要实现拖动区域
-- 文件下载使用 `async-fetcher`，SHA1 校验使用 `sha1` crate
-- i18n 初始化在 `src/helper/i18n.ts`，已在 `App.tsx` 中导入
-- 主题 CSS 变量在 `main.tsx` 中导入
-- `Popup` 组件使用 `isOpen` 属性（不是 `visible`）
-- `router/config` 文件扩展名为 `.tsx`（需要 JSX 支持）
-- 外部链接使用 Tauri `openUrl` API
-- **窗口位置保存**: 最小化时不保存位置，避免保存 -32000 坐标
-- **Webview 右键菜单**: 已禁用，在 `App.tsx` 中通过 `e.preventDefault()` 实现
-- **配置管理**: 更新配置时必须使用 `ConfigManager.update_value()` 增量更新，**禁止**使用 `update_config()` 完整覆盖
-- **Portal 锚定**: 使用 `useRegisterRef(key)` 注册 DOM 元素，Portal 的 `avoidRefs` 支持 string key 自动查找
-- **Portal 约束**: `draggable` 模式尚未集成 `avoidRefs`/`collisionBoundary`；`simple` 模式忽略 `zIndex` prop
-- **z-index 层级**: 使用 `Z_INDEX` 常量统一管理，见 [`src/utils/zIndex.ts`](src/utils/zIndex.ts)
+> ⚠️ 自动生成的文档已加入 `.gitignore`，新 clone 项目后必须先运行 `pnpm docs:gen`
 
----
+### 体系总览
 
-## 13. 相关文档
-
-- **架构设计**: [`docs/architecture.md`](docs/architecture.md) - 技术架构、目录结构、配置系统
-- **组件文档**: [`docs/components.md`](docs/components.md) - 所有组件的详细说明
-- **API 文档**: [`docs/api.md`](docs/api.md) - 后端 API 调用指南
-- **更新日志**: [`docs/changelog.md`](docs/changelog.md) - 所有重大重构记录
-- **文档维护规范**: [`docs/MAINTENANCE.md`](docs/MAINTENANCE.md) - 文档编写与更新指南
-- **文档使用指南**: [`docs/GUIDE.md`](docs/GUIDE.md) - 如何查阅文档和询问 AI ⭐
-- **皮肤渲染规范**: [`docs/skin-rendering.md`](docs/skin-rendering.md) - Minecraft 皮肤格式与 UV 映射参考
-
----
-
-**文档分层结构**:
 ```
-Level 1: AGENTS.md (本文件) - 快速参考 (~800 行)
-    ↓ 链接到
-Level 2: docs/*.md - 详细文档
-    ↓ 链接到
-Level 3: 代码注释 - JSDoc/Rust doc comments
+docs/
+├── api/auto/              ← 自动生成 (pnpm docs:gen:api)
+│   ├── api/               #   src/api/ (106 functions, 45 interfaces, 6 enums)
+│   ├── components/common/ #   src/components/common/ (47 functions, 48 interfaces)
+│   ├── stores/            #   src/stores/ (3 enums, 10 interfaces, 7 types)
+│   ├── hooks/             #   src/hooks/ (11 functions, 2 interfaces)
+│   ├── utils/             #   src/utils/ (6 functions)
+│   ├── AppLayouts/        #   src/AppLayouts/ (5 functions, 5 interfaces)
+│   ├── pages/             #   src/pages/ (10 functions)
+│   ├── config/            #   src/config/ (7 types)
+│   └── helper/            #   src/helper/ (re-exports from api/)
+├── rust/                  ← 自动生成 (pnpm docs:gen:rust, cargo doc)
+├── generated/routes.md    ← 自动生成 (pnpm docs:gen:routes, 22 条路由)
+├── AGENTS.md              ← 人工维护 (本文件)
+├── architecture.md        ← 人工维护
+├── GUIDE.md               ← 人工维护
+└── changelog.md           ← 人工维护
 ```
 
----
+### 更新触发
 
-## 💡 快速帮助
-
-### 如何询问 AI？
-
-**推荐方式**:
-```markdown
-**背景**: 我是新开发者，想了解 [具体概念]
-**已查阅文档**: [列出已阅读的文档章节]
-**具体问题**: 
-1. [问题 1]
-2. [问题 2]
-**期望答案**: [概念解释/代码示例/最佳实践]
-```
-
-**示例**:
-- "我想了解状态管理架构，特别是用户角色切换时如何通知其他组件？
-  已查阅 docs/architecture.md §4，请给出详细说明。"
-  
-- "我要添加玩家管理页面，需要新增哪些文件？
-  参考 docs/architecture.md §2 目录结构和 docs/components.md"
-
-### 让 AI 全权实现功能 ⭐
-
-**适用场景**:
-- ✅ 重复性高的功能（CRUD 页面、列表管理）
-- ✅ 标准组件开发（基于现有组件库）
-- ✅ 文档驱动的功能实现（需求明确）
-
-**提问模板**:
-```markdown
-**目标**: 实现 [功能名称]
-
-**需求描述**:
-- 功能描述：[详细描述]
-- 用户角色：[玩家/服主]
-- UI 要求：[参考页面/组件]
-- 数据流：[状态管理/API 调用]
-
-**实现范围**:
-- [ ] 前端页面和组件
-- [ ] 状态管理（Store）
-- [ ] 路由配置
-- [ ] 后端 API（如需要）
-- [ ] 文档更新
-
-**参考文档**:
-- docs/architecture.md §[章节]
-- docs/components.md §[章节]
-
-**期望输出**:
-1. 完整的代码实现
-2. 需要修改的文件列表
-3. 文档更新建议
-```
-
-**示例**:
-```markdown
-**目标**: 实现玩家管理页面（服主后台）
-
-**需求描述**:
-- 功能描述：服主可以查看玩家列表、添加/删除玩家、设置权限
-- 用户角色：服主（admin）
-- UI 要求：参考 /admin/servers 页面，使用列表布局 + 弹窗
-- 数据流：调用后端 API 获取数据，本地 Store 管理
-
-**实现范围**:
-- [x] 前端页面和组件（PlayerList, PlayerItem, PlayerPopup）
-- [x] 状态管理（playerStore）
-- [x] 路由配置（/admin/players）
-- [x] 后端 API 调用（get_players, add_player, remove_player）
-- [x] 文档更新
-
-**参考文档**:
-- docs/architecture.md §2 目录结构
-- docs/architecture.md §5 路由配置
-- docs/components.md ListItem, ConfirmPopup 组件
-
-**期望输出**:
-1. 完整的代码实现（遵循 AGENTS.md §10 编码规范）
-2. 需要修改/新增的文件列表
-3. 文档更新建议（需要更新哪些文档）
-```
-
-**AI 实现后**:
-- AI 会输出文档更新建议清单
-- 你需要：审查代码 → 测试功能 → 更新文档
-- 遵循 [`docs/MAINTENANCE.md`](docs/MAINTENANCE.md) 中的更新流程
-
-**详细指南**: 见 [`docs/GUIDE.md`](docs/GUIDE.md) - 包含完整提问模板和最佳实践
+| 修改范围 | 运行命令 |
+|----------|----------|
+| `src/api/*.ts` | `pnpm docs:gen:api` |
+| `src/components/common/*` | `pnpm docs:gen:api` |
+| `src/stores/*.ts` | `pnpm docs:gen:api` |
+| `src/hooks/*.ts` | `pnpm docs:gen:api` |
+| `src/utils/*.ts` | `pnpm docs:gen:api` |
+| `src/AppLayouts/*.tsx` | `pnpm docs:gen:api` |
+| `src/pages/*` | `pnpm docs:gen:api` |
+| `src/config/*.ts` | `pnpm docs:gen:api` |
+| `src/helper/*.ts` | `pnpm docs:gen:api` |
+| `src-tauri/src/**/*.rs` | `pnpm docs:gen:rust` |
+| `src/router/routes.tsx` | `pnpm docs:gen:routes` |
+| 全部 | `pnpm docs:gen` |

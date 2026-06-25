@@ -37,3 +37,8 @@ local
 .local
 env
 .env
+
+docs/rust_target
+docs/api
+docs/generated
+docs/rust

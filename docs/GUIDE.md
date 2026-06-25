@@ -1,602 +1,113 @@
 # WeCraft! Launcher - 文档使用指南
 
-> **版本**: 1.1  
-> **最后更新**: 2026-05-27
+> **最后更新**: 2026-06-25
 
 ---
 
-## 📖 快速导航
+请先使用命令生成文档
 
-### 场景 1：我想了解项目架构
-
-**推荐文档**: [`docs/architecture.md`](architecture.md)
-
-**阅读顺序**:
-1. [技术架构](architecture.md#tech-architecture) - 了解整体技术栈
-2. [目录结构](architecture.md#directory-structure) - 理解文件组织
-3. [配置系统](architecture.md#config-system) - 理解配置管理
-4. [状态管理](architecture.md#state-management) - 理解数据流
-5. [路由系统](architecture.md#routes) - 理解页面导航
-6. [UI 架构](architecture.md#ui-architecture) - 理解界面设计
-
-**预计时间**: 1-2 小时
-
+```bash
+pnpm generate-api
+pnpm docs:gen
+pnpm docs:gen:api
+pnpm docs:gen:rust
+pnpm docs:gen:routes
+```
 ---
 
-### 场景 2：我要开发新功能
+## 文档体系
 
-**推荐流程**:
-
-#### 步骤 1: 查看现有架构
 ```
-阅读：docs/architecture.md
-  - [状态管理](architecture.md#state-management) → 是否需要新增 Store?
-  - [路由系统](architecture.md#routes) → 是否需要新增路由？
-  - [后端 API](architecture.md#backend-api) → 是否需要新增 API?
-```
-
-#### 步骤 2: 查看组件库
-```
-阅读：docs/components.md
-  - 查找是否有可复用的组件
-  - 了解组件 Props 接口规范
-  - 参考使用示例
-```
-
-#### 步骤 3: 查看 API 规范
-```
-阅读：docs/api.md
-  - 了解后端 API 调用方式
-  - 查看错误处理示例
-```
-
-#### 步骤 4: 遵循编码规范
-```
-查阅：AGENTS.md [编码规范](AGENTS.md#coding-standards)
-  - TypeScript 规范
-  - React 规范
-  - 样式规范
-  - 命名规范
-```
-
-#### 步骤 5: 更新文档
-```
-遵循：docs/MAINTENANCE.md [何时更新](docs/MAINTENANCE.md#when-to-update)
-  - 判断是否触发文档更新
-  - 按照流程更新相关文档
+AGENTS.md              → 快速参考（约定、注意事项、常用命令）
+docs/architecture.md   → 架构决策记录（配置系统、UI 架构、设计原则）
+docs/api/auto/         → 前端 API 自动生成（pnpm docs:gen:api）
+│  ├── api/            #   Rust IPC 调用封装
+│  ├── components/     #   通用组件 + Props 接口
+│  ├── stores/         #   Zustand 状态管理
+│  ├── hooks/          #   自定义 React Hooks
+│  ├── pages/          #   页面组件
+│  ├── utils/          #   工具函数
+│  ├── AppLayouts/     #   布局组件
+│  └── config/         #   配置类型定义
+docs/rust/             → Rust 后端文档（pnpm docs:gen:rust, cargo doc）
+docs/generated/        → 路由表（pnpm docs:gen:routes）
+docs/changelog.md      → 变更历史
 ```
 
 ---
 
-### 场景 3：我遇到了问题
+## 快速导航
 
-**问题类型** → **查阅文档**
+### 场景 1：了解项目
 
-#### 问题：路由不工作
-```
-1. 查阅 AGENTS.md [核心路由](AGENTS.md#core-routes) - 确认路由是否存在
-2. 查阅 docs/architecture.md [路由配置](docs/architecture.md#routes) - 了解路由配置
-3. 查阅 src/router/config.tsx - 查看实际配置
-```
+1. **AGENTS.md** — 目录结构、技术栈、路由总览
+2. **docs/architecture.md** — 配置系统、UI 架构、设计原则
+3. **docs/generated/routes.md** — 完整路由表
 
-#### 问题：状态不更新
-```
-1. 查阅 AGENTS.md [状态管理](AGENTS.md#state-management) - 确认 Store 是否正确
-2. 查阅 docs/architecture.md [状态管理](docs/architecture.md#state-management) - 了解状态流转
-3. 查阅对应 Store 文件 - 查看实现
-```
+### 场景 2：开发新功能
 
-#### 问题：配置不生效
-```
-1. 查阅 AGENTS.md [配置系统](AGENTS.md#config-system) - 了解配置分层
-2. 查阅 docs/architecture.md [配置系统](docs/architecture.md#config-system) - 了解配置系统
-3. 查阅 docs/MAINTENANCE.md [配置管理](docs/MAINTENANCE.md#config-management) - 查看配置管理注意事项
-```
+1. **AGENTS.md §3** 查看目录结构
+2. **AGENTS.md §5** 查看 Store 列表，确认是否需要新增
+3. **docs/api/auto/api/** 查看现有 Rust IPC 封装
+4. **AGENTS.md §10** 编码规范
 
-#### 问题：组件不渲染
-```
-1. 查阅 docs/components.md - 确认 Props 是否正确
-2. 查阅组件源码 - 查看实现细节
-3. 查阅 AGENTS.md [注意事项](AGENTS.md#notes) - 查看注意事项
-```
+### 场景 3：调用后端 API
+
+1. 查看 `docs/api/auto/api/` 自动生成的 API 文档
+2. 或查看 `docs/rust/` Rust 端命令文档
+3. 调用链: `组件 → src/api/*.ts → client.ts → Rust`
+
+### 场景 4：查看组件库
+
+1. **AGENTS.md §8** 查看组件分类索引
+2. 查看 `docs/api/auto/components/` 各组件的 Props 接口
+3. 直接读 `src/components/common/` 源码
+
+### 场景 5：修改路由
+
+1. 修改 `src/router/routes.tsx`
+2. 运行 `pnpm docs:gen:routes` 更新路由表
+3. 如有需要，更新 AGENTS.md §4 的路由分组描述
 
 ---
 
-### 场景 5：让 AI 全权实现功能 ⭐
+## AI 全权实现功能
 
-**适用场景**:
-- ✅ 重复性高的功能（CRUD 页面、列表管理）
-- ✅ 标准组件开发（基于现有组件库扩展）
-- ✅ 文档驱动的功能实现（需求明确）
-- ✅ 批量文件创建（路由、Store、组件）
-- ❌ 核心架构设计（需要人工决策）
-- ❌ 复杂业务逻辑（需要深入理解）
+### 提问模板
 
-**完整提问模板**:
-
-```markdown
+```
 **目标**: 实现 [功能名称]
 
 **需求描述**:
-- 功能描述：[详细描述功能用途]
-- 用户角色：[玩家/服主/两者]
-- UI 要求：[参考页面/布局偏好]
-- 数据流：[本地状态/后端 API/配置文件]
-
-**实现范围**:
-- [ ] 前端页面和组件
-- [ ] 状态管理（Store）
-- [ ] 路由配置
-- [ ] 后端 API（如需要）
-- [ ] 文档更新
+- 功能描述：[详细描述]
+- 用户角色：[玩家/服主]
+- UI 要求：[参考页面/组件]
+- 数据流：[状态管理/API 调用]
 
 **参考文档**:
-- docs/architecture.md §[章节] - [参考内容]
-- docs/components.md §[章节] - [参考组件]
-- docs/api.md §[章节] - [参考 API]
+- AGENTS.md §[章节]
+- docs/architecture.md §[章节]
 
 **期望输出**:
 1. 完整的代码实现
-2. 需要修改/新增的文件列表
+2. 需要修改的文件列表
 3. 文档更新建议
 ```
 
-**示例**:
+### AI 实现后的文档更新
 
-```markdown
-**目标**: 实现玩家管理页面（服主后台）
-
-**需求描述**:
-- 功能描述：服主可以查看玩家列表、添加/删除玩家、设置玩家权限
-- 用户角色：服主（admin）
-- UI 要求：参考 /admin/servers 页面，使用列表布局 + 弹窗操作
-- 数据流：调用后端 API 获取玩家数据，本地状态管理
-
-**实现范围**:
-- [x] 前端页面和组件（PlayerList, PlayerItem, PlayerPopup）
-- [x] 状态管理（playerStore）
-- [x] 路由配置（/admin/players）
-- [x] 后端 API 调用（get_players, add_player, remove_player）
-- [ ] 后端 API 实现（已存在）
-- [x] 文档更新
-
-**参考文档**:
-- docs/architecture.md [目录结构](docs/architecture.md#directory-structure) - 目录结构
-- docs/architecture.md [路由配置](docs/architecture.md#routes) - 路由配置
-- docs/components.md - [列表项](docs/components.md#list-item), [确认弹窗](docs/components.md#confirm-popup) 组件
-- docs/api.md - 后端 API 调用方式
-
-**期望输出**:
-1. 完整的代码实现（遵循 AGENTS.md [编码规范](AGENTS.md#coding-standards)）
-2. 需要修改/新增的文件列表
-3. 文档更新建议（需要更新哪些文档）
-```
-
-**AI 实现后的审查要点**:
-
-1. **代码规范审查**
-   ```
-   ✓ 类型定义是否完整（无 any）
-   ✓ 命名是否符合 PascalCase/camelCase
-   ✓ 是否使用 Tailwind 语义化类名
-   ✓ 是否遵循 React 最佳实践（useCallback, useMemo）
-   ```
-
-2. **架构一致性审查**
-   ```
-   ✓ Store 设计是否符合现有模式
-   ✓ 组件结构是否遵循项目约定
-   ✓ 路由配置是否正确
-   ✓ API 调用是否使用 rustInvoke 封装
-   ```
-
-3. **功能测试**
-   ```
-   ✓ 页面是否能正常访问
-   ✓ 数据是否正确加载
-   ✓ 操作是否生效（增删改查）
-   ✓ 错误处理是否完善
-   ```
-
-4. **文档更新责任**
-   ```
-   AI 责任：
-   - 列出需要更新的文档清单
-   - 提供文档更新建议
-   
-   开发者责任：
-   - 审查代码质量
-   - 测试功能是否正常
-   - 更新相关文档（遵循 MAINTENANCE.md）
-   ```
+AI 应输出文档更新建议清单，开发者审查代码后：
+1. 确认代码质量
+2. 测试功能
+3. 更新 AGENTS.md（如需）
+4. 更新 changelog
 
 ---
 
-### 场景 4：我要询问 AI 助手
+## 文档自动生成
 
-#### ❌ 糟糕的提问方式
-
+```bash
+pnpm docs:gen         # 更新 API 文档 + 路由表
+pnpm docs:gen:api     # 仅 API 文档
+pnpm docs:gen:routes  # 仅路由表
 ```
-"这个项目的架构是什么？"
-  → 太宽泛，AI 无法给出有针对性的答案
-
-"怎么写一个组件？"
-  → 缺少上下文，AI 不知道你要写什么组件
-
-"路由怎么配置？"
-  → 太笼统，AI 不知道你要配置哪个路由
-```
-
-#### ✅ 推荐的提问方式
-
-**场景 4.1: 了解架构**
-```
-"我想了解 WeCraft! Launcher 的状态管理架构，特别是用户角色切换
-时如何通知其他组件？请结合 [状态管理](docs/architecture.md#state-management) 说明。"
-
-"能解释一下灵动岛导航系统的实现原理吗？参考 
-[UI 架构](docs/architecture.md#ui-architecture) 和 src/components/navigation/DynamicIsland.tsx"
-```
-
-**场景 4.2: 开发新功能**
-```
-"我要添加一个新的服主功能：玩家管理页面。
-1. 需要在路由中配置什么？(参考 [路由配置](docs/architecture.md#routes))
-2. 需要新增哪些组件？(参考 docs/components.md)
-3. 需要调用哪些后端 API？(参考 docs/api.md)
-请给出完整的实现方案。"
-
-"我想新增一个全局主题切换按钮，应该放在哪里？
-需要修改哪些文件？请参考 AGENTS.md 中的编码规范。"
-```
-
-**场景 4.3: 排查问题**
-```
-"我在修改 themeStore 后发现主题切换不生效。
-1. 我修改了 src/stores/themeStore.ts 的 switchTheme 方法
-2. 添加了 console.log 确认方法被调用
-3. 但 UI 没有更新
-
-请帮我分析可能的原因，参考 [状态管理](docs/architecture.md#state-management) 部分。"
-
-"配置更新后没有持久化，我使用了 config.set() 方法。
-查阅 [配置系统](docs/architecture.md#config-system) 后，发现应该使用
-ConfigManager.update_value() 增量更新。
-请解释这两种方式的区别。"
-```
-
-**场景 4.4: 代码审查**
-```
-"我写了以下代码，请根据 AGENTS.md [编码规范](AGENTS.md#coding-standards) 进行审查：
-[粘贴代码]
-
-需要检查：
-1. TypeScript 类型定义是否完整
-2. 命名是否符合规范
-3. 是否遵循 React 最佳实践
-4. 样式是否使用 Tailwind 语义化类名
-```
-
----
-
-## 🎯 提问模板
-
-### 模板 1: 了解概念
-
-```markdown
-**背景**: 我是 [新开发者/临时查阅]，想了解 [具体概念]
-
-**已查阅文档**: [列出已阅读的文档章节]
-
-**具体问题**: 
-1. [问题 1]
-2. [问题 2]
-
-**期望答案**: [概念解释/代码示例/最佳实践]
-```
-
-**示例**:
-```markdown
-**背景**: 我是新开发者，想了解 WeCraft! Launcher 的配置系统
-
-**已查阅文档**: 
-- AGENTS.md [配置系统](AGENTS.md#config-system)
-- docs/architecture.md [配置系统](docs/architecture.md#config-system)
-
-**具体问题**: 
-1. L1/L2/L3 三层配置有什么区别？
-2. 什么时候使用 config.set()，什么时候使用 ConfigManager.update_value()?
-
-**期望答案**: 概念解释 + 使用场景示例
-```
-
-### 模板 2: 开发功能
-
-```markdown
-**目标**: 我要实现 [功能描述]
-
-**需求分析**:
-- 前端需要：[组件/Store/路由]
-- 后端需要：[API 命令]
-- 配置需要：[新增配置项]
-
-**已查阅文档**:
-- docs/architecture.md [章节](docs/architecture.md#章节锚点)
-- docs/components.md [章节](docs/components.md#章节锚点)
-- docs/api.md [章节](docs/api.md#章节锚点)
-
-**具体问题**:
-1. 这个功能应该放在哪个目录？
-2. 需要新增哪些文件？
-3. 如何与现有代码集成？
-
-**期望答案**: 实现方案 + 代码示例
-```
-
-### 模板 3: 排查问题
-
-```markdown
-**问题描述**: [详细描述问题现象]
-
-**已尝试的方法**:
-1. [方法 1] - 结果：[成功/失败]
-2. [方法 2] - 结果：[成功/失败]
-
-**已查阅文档**:
-- [文档名称] §[章节] - 收获：[学到了什么]
-
-**代码片段**:
-[粘贴相关代码]
-
-**错误信息**:
-[粘贴错误日志]
-
-**期望答案**: 问题分析 + 解决方案
-```
-
-### 模板 4: 代码审查
-
-```markdown
-**审查类型**: [新增功能/Bug 修复/重构优化]
-
-**涉及文件**:
-- src/xxx.tsx
-- src/yyy.ts
-
-**已遵循的规范**:
-- AGENTS.md [编码规范](AGENTS.md#coding-standards) ✓
-- docs/components.md 组件 Props 规范 ✓
-- docs/MAINTENANCE.md 文档更新流程 ✓
-
-**特别关注点**:
-1. 类型定义是否完整
-2. 性能是否有优化空间
-3. 是否有更好的实现方式
-
-**代码**:
-[粘贴代码]
-
-**期望答案**: 问题列表 + 改进建议
-```
-
----
-
-## 📚 文档速查表
-
-### 快速查找指南
-
-| 我想知道... | 查阅文档 | 章节 |
-|------------|---------|------|
-| 项目用什么技术？ | AGENTS.md | [技术栈](AGENTS.md#tech-stack) |
-| 文件放在哪里？ | AGENTS.md | [目录结构](AGENTS.md#directory-structure) |
-| 有哪些路由？ | AGENTS.md | [核心路由](AGENTS.md#core-routes) |
-| 怎么管理状态？ | AGENTS.md | [状态管理](AGENTS.md#state-management) |
-| 怎么配置系统？ | AGENTS.md | [配置系统](AGENTS.md#config-system) |
-| 怎么调用后端？ | AGENTS.md | [后端 API](AGENTS.md#backend-api) |
-| 有哪些组件？ | AGENTS.md | [通用组件](AGENTS.md#common-components) |
-| UI 怎么设计的？ | AGENTS.md | [UI 架构](AGENTS.md#ui-architecture) |
-| 代码规范？ | AGENTS.md | [编码规范](AGENTS.md#coding-standards) |
-| 常用命令？ | AGENTS.md | [常用命令](AGENTS.md#commands) |
-| 注意事项？ | AGENTS.md | [注意事项](AGENTS.md#notes) |
-| 架构详解？ | docs/architecture.md | 全部章节 |
-| 组件 API? | docs/components.md | 按组件名查找 |
-| 后端 API 详解？ | docs/api.md | 按命令名查找 |
-| 更新历史？ | docs/changelog.md | 按日期查找 |
-| 怎么维护文档？ | docs/MAINTENANCE.md | 全部章节 |
-
----
-
-## 🔍 文档搜索技巧
-
-### 在 IDE 中搜索
-
-**VS Code / Trae**:
-```
-Ctrl+P (Windows/Linux) 或 Cmd+P (Mac)
-输入：@symbols 或 #关键词
-
-示例:
-- @DynamicIsland - 查找组件定义
-- #userRoleStore - 查找状态管理
-- :config - 查找配置文件
-```
-
-### 在文档中搜索
-
-**关键词搜索**:
-```
-AGENTS.md:
-- "路由" - 查找所有路由相关
-- "Store" - 查找状态管理
-- "配置" - 查找配置系统
-
-docs/architecture.md:
-- "状态管理" - §4
-- "配置系统" - §3
-- "路由系统" - §5
-```
-
-### 交叉引用导航
-
-所有文档都建立了交叉引用网络：
-
-```
-AGENTS.md
-  ↓ 链接到
-docs/architecture.md ↔ docs/components.md
-  ↓                      ↓
-docs/api.md ←→ docs/changelog.md
-  ↓
-docs/MAINTENANCE.md
-```
-
-**使用方法**:
-- 在 Markdown 文件中 `Ctrl+Click` 链接即可跳转
-- 或查看文档底部的"相关文档"部分
-
----
-
-## 💡 最佳实践
-
-### ✅ 推荐做法
-
-1. **先查阅文档，再提问**
-   ```
-   遇到问题 → 查阅 AGENTS.md [注意事项](AGENTS.md#notes)
-          → 查阅 docs/architecture.md
-          → 仍然不懂 → 询问 AI
-   ```
-
-2. **提问时提供上下文**
-   ```
-   ✅ "我在实现玩家管理页面时，路由配置不生效，
-       已查阅 [路由配置](docs/architecture.md#routes)，
-       这是我的配置：[代码]"
-   
-   ❌ "路由怎么配置？"
-   ```
-
-3. **遵循文档驱动开发**
-   ```
-   阅读文档 → 设计方案 → 编写代码 → 更新文档
-   ```
-
-4. **使用提问模板**
-   ```
-   背景 + 已查阅文档 + 具体问题 + 期望答案
-   ```
-
-### ❌ 避免做法
-
-1. **不查阅文档直接提问**
-   ```
-   ❌ "这个项目有哪些路由？"
-   ✅ "我查阅了 AGENTS.md [核心路由](AGENTS.md#core-routes)，想确认 /admin/* 
-       路由是否都需要权限守卫？"
-   ```
-
-2. **问题太宽泛**
-   ```
-   ❌ "怎么开发新功能？"
-   ✅ "我要添加玩家管理页面，需要新增哪些文件？
-       参考 [目录结构](docs/architecture.md#directory-structure)"
-   ```
-
-3. **不提供错误信息**
-   ```
-   ❌ "我的代码不工作"
-   ✅ "编译报错：TypeScript 错误 TS2304，
-       错误信息：[粘贴]，代码：[粘贴]"
-   ```
-
----
-
-##  学习路径
-
-### 新开发者入职
-
-**第 1 天**: 快速上手
-```
-1. 阅读 AGENTS.md (30 分钟)
-2. 运行项目：pnpm tauri dev
-3. 浏览目录结构
-```
-
-**第 2-3 天**: 深入理解
-```
-1. 阅读 docs/architecture.md (2 小时)
-2. 阅读 docs/components.md (按需查阅)
-3. 完成一个小功能
-```
-
-**第 1 周**: 独立开发
-```
-1. 阅读 docs/api.md (1 小时)
-2. 阅读 docs/MAINTENANCE.md (30 分钟)
-3. 独立开发一个完整功能
-4. 更新相关文档
-```
-
-**第 1 个月**: 贡献代码
-```
-1. 熟悉所有文档
-2. 参与代码审查
-3. 优化文档结构
-4. 分享开发经验
-```
-
----
-
-## 📞 获取帮助
-
-### 文档找不到答案？
-
-1. **检查文档版本**
-   ```
-   查看文档头部：最后更新 和 项目版本
-   确认是否与当前代码一致
-   ```
-
-2. **查阅代码注释**
-   ```
-   JSDoc 注释 (TypeScript)
-   Rust doc comments (Rust)
-   ```
-
-3. **询问 AI 助手**
-   ```
-   使用提问模板，提供：
-   - 背景
-   - 已查阅文档
-   - 具体问题
-   - 代码片段
-   ```
-
-4. **联系团队**
-   ```
-   - 文档维护负责人
-   - 代码审查者
-   - 项目负责人
-   ```
-
----
-
-## 📊 文档使用统计
-
-### 推荐查阅频率
-
-| 文档 | 推荐频率 | 用途 |
-|------|---------|------|
-| AGENTS.md | 每天 | 快速参考 |
-| docs/architecture.md | 每周 | 架构理解 |
-| docs/components.md | 按需 | 组件查询 |
-| docs/api.md | 按需 | API 查询 |
-| docs/changelog.md | 每月 | 了解更新 |
-| docs/MAINTENANCE.md | 每季度 | 文档规范 |
-
----
-
-**记住**: 文档是你的朋友，越用越熟悉！
-
-**维护者**: WeCraft! Launcher 开发团队  
-**最后更新**: 2026-05-18

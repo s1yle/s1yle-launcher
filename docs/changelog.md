@@ -3,11 +3,49 @@
 > **项目版本**: 0.1.0-alpha.2  
 > **更新日志**: 记录所有重大重构和功能更新
 
-**相关文档**:
-- 文档维护规范：[`MAINTENANCE.md`](MAINTENANCE.md) - 文档编写与更新指南
-- 架构设计：[`architecture.md`](architecture.md) - 技术架构、目录结构
-- 组件文档：[`components.md`](components.md) - 所有组件的详细说明
-- API 文档：[`api.md`](api.md) - 后端 API 调用指南
+---
+
+## 2026-06-25 - 文档体系重构：全覆盖自动生成 + 精简人工维护
+
+### 更新概述
+
+文档策略从"全人工维护"改为"混合模式"：TypeDoc + cargo doc + 脚本覆盖全部源码目录，人工仅维护架构决策和项目约定（AGENTS.md + architecture.md + GUIDE.md）。
+
+### 变更
+
+1. **新增自动生成系统**
+   - `typedoc.json` — TypeDoc 多入口配置，覆盖 `src/api/`、`src/components/common/`、`src/stores/`、`src/hooks/`、`src/utils/`、`src/AppLayouts/`、`src/pages/`、`src/config/`、`src/helper/`
+   - `scripts/generate-routes-doc.ts` — 从 `src/router/routes.tsx` 提取路由表
+   - `pnpm docs:gen` / `docs:gen:api` / `docs:gen:rust` / `docs:gen:routes` 命令
+   - 生成结果：`docs/api/auto/`（200+ 函数/接口/enum）+ `docs/rust/`（cargo doc）+ `docs/generated/routes.md`（22 条路由）
+
+2. **新增 barrel 文件**
+   - `src/hooks/index.ts` — 8 个 hooks 统一导出
+   - `src/helper/index.ts` — i18n / logger / rustInvoke 统一导出
+   - `src/AppLayouts/index.ts` — 5 个布局组件统一导出
+   - `src/stores/index.ts` — 19 个 stores 统一导出
+
+3. **删除过时文档**
+   - `docs/plans/` 和 `docs/archives/` → 移至 `~/Documents/note/`
+   - `docs/components.md`、`docs/api.md`、`docs/MAINTENANCE.md`、`docs/POPUP_COMPONENTS_README.md`、`docs/QUICK_GUIDE.md`、`docs/README.md`、`docs/skin-rendering.md`
+
+4. **重写核心文档**
+   - `AGENTS.md` — 完整版（Store 表、API 分类、组件索引、注意事项），新增文档维护表
+   - `docs/architecture.md` — 架构决策 + Rust 后端模块详解
+   - `docs/GUIDE.md` — 按新体系重写，覆盖全场景
+
+**影响文件**:
+- `AGENTS.md` — 全面重写
+- `docs/architecture.md` — 重写
+- `docs/GUIDE.md` — 重写
+- `docs/changelog.md` — 更新
+- `package.json` — 新增 docs:gen 系列命令
+- `typedoc.json` — 多入口配置
+- `scripts/generate-routes-doc.ts` — 新增
+- `src/hooks/index.ts` — 新增
+- `src/helper/index.ts` — 新增
+- `src/AppLayouts/index.ts` — 新增
+- `src/stores/index.ts` — 新增
 
 ---
 

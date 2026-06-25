@@ -1,8 +1,8 @@
-import { useState } from 'react';
 import { Crown, User, ArrowUpFromLine, Box } from 'lucide-react';
 import { UserRole } from '@/stores/userRoleStore';
 import { SkinAvatar } from '../SkinAvatar';
 import { useAccountStore } from '@/stores/accountStore';
+import { useAvatarStore } from '@/stores/avatarStore';
 
 
 interface PlayerProfileProps {
@@ -14,7 +14,8 @@ const PlayerProfile = ({
   name,
   role = UserRole.PLAYER
 }: PlayerProfileProps) => {
-  const [avatarMode, setAvatarMode] = useState<'flat' | 'isometric'>('flat');
+  const avatarMode = useAvatarStore((s) => s.mode);
+  const setAvatarMode = useAvatarStore((s) => s.setMode);
   const currentAccount = useAccountStore((s) => s.currentAccount);
 
   return (
@@ -50,41 +51,9 @@ const PlayerProfile = ({
       </div>
 
       {/* 渲染模式切换 */}
-      <div className="flex items-center gap-0.5 mt-1 bg-bg-tertiary rounded-md p-0.5">
-        {/* TODO: 实现一个通用多选一组件 */}
-        {/* TODO: 切换时播放加载动画 */}
-        {/* FIXME: 修复平面模式下，部分皮肤不显示眼睛的问题 */}
-        <button
-          onClick={() => setAvatarMode('flat')}
-          className={`
-            p-1 rounded transition-colors
-            cursor-pointer
-            ${avatarMode === 'flat'
-              ? 'bg-accent text-white'
-              : 'text-text-secondary hover:text-text-primary'}
-          `}
-          aria-label="平面头像"
-          title="平面头像"
-        >
-          <ArrowUpFromLine className="w-3.5 h-3.5" />
-        </button>
-
-        {/* 该模式不稳定 */}
-        <button
-          onClick={() => setAvatarMode('isometric')}
-          className={`
-            p-1 rounded transition-colors
-            cursor-pointer
-            ${avatarMode === 'isometric'
-              ? 'bg-accent text-white'
-              : 'text-text-secondary hover:text-text-primary'}
-          `}
-          aria-label="3D 斜二侧头像"
-          title="3D 斜二侧头像(不稳定功能)"
-        >
-          <Box className="w-3.5 h-3.5" />
-        </button>
-      </div>
+      {/* TODO: 实现一个通用多选一组件 */}
+      {/* TODO: 切换时播放加载动画 */}
+      {/* FIXME: 修复平面模式下，部分皮肤不显示眼睛的问题 */}
 
       {/* 用户名 */}
       <h1 className="text-lg font-medium text-text-primary">

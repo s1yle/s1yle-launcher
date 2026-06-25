@@ -19,7 +19,11 @@
     "version:rc": "node scripts/bump-version.js prerelease rc",
     "version:reset": "node scripts/bump-version.js reset alpha",
     "version:check": "node scripts/bump-version.js --dry-run",
-    "generate-api": "bash scripts/generate-api.sh"
+    "generate-api": "bash scripts/generate-api.sh",
+    "docs:gen": "pnpm docs:gen:api && pnpm docs:gen:rust && pnpm docs:gen:routes",
+    "docs:gen:api": "typedoc --options typedoc.json",
+    "docs:gen:rust": "cd src-tauri && cargo doc --no-deps --document-private-items --target-dir ../docs/rust_target 2>&1 && rm -rf ../docs/rust && mv ../docs/rust_target/doc ../docs/rust && rm -rf ../docs/rust_target",
+    "docs:gen:routes": "npx tsx scripts/generate-routes-doc.ts"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
@@ -45,6 +49,8 @@
     "postcss": "^8.5.6",
     "postcss-nested": "^7.0.2",
     "tailwindcss": "^4.1.18",
+    "typedoc": "^0.28.19",
+    "typedoc-plugin-markdown": "^4.12.0",
     "typescript": "~5.8.3",
     "vite": "^7.0.4"
   }

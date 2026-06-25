@@ -12,6 +12,7 @@ import { Slider } from '@/components/common/Slider';
 import { useLoadingStore } from '@/stores/loadingStore';
 import useFontStore from '@/stores/fontStore';
 import { SystemFont } from '@/api';
+import { useAvatarStore } from '@/stores/avatarStore';
 
 const LOADING_VARIANT_OPTIONS = [
   { id: 'spinner', label: '旋转动画' },
@@ -104,6 +105,18 @@ const ApearanceSettings = () => {
     setAnimation({ globalTopbar: val });
     useLoadingStore.getState().setConfig({ globalTopbar: val });
   }
+
+  const avatarMode = useAvatarStore((s) => s.mode);
+  const setAvatarMode = useAvatarStore((s) => s.setMode);
+
+  const AVATAR_MODE_OPTIONS = [
+    { id: 'flat', label: '平面 2D' },
+    { id: 'isometric', label: '立体 3D' },
+  ];
+
+  const handleAvatarModeSelect = (option: { id: string; label: string }) => {
+    setAvatarMode(option.id as 'flat' | 'isometric');
+  };
 
   const handleFontSelect = (option: { id: string, label: string }) => {
     let font: SystemFont = {
@@ -199,6 +212,15 @@ const ApearanceSettings = () => {
                 o => o.id === fontScaleConfig.toId(fontScale)
               )}
               onSelect={handleFontScaleSelect}
+            />
+          </SettingsPanel.Item>
+
+          <SettingsPanel.Item>
+            <SettingsPanel.DropDown
+              label='头像显示'
+              options={AVATAR_MODE_OPTIONS}
+              value={AVATAR_MODE_OPTIONS.find((o) => o.id === avatarMode)}
+              onSelect={handleAvatarModeSelect}
             />
           </SettingsPanel.Item>
         </SettingsPanel>
