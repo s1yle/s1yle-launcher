@@ -10,7 +10,6 @@ export interface StartGameButtonProps {
   onClick?: () => void;
 }
 
-/**
 const ActionButton = ({ onClick }: StartGameButtonProps) => {
   const [status, setStatus] = useState<LaunchStatus>(LaunchStatus.Idle);
   const [isLoading, setIsLoading] = useState(false);

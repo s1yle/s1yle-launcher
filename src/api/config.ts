@@ -1,7 +1,7 @@
 import { InvokeOptions } from "@tauri-apps/api/core";
 import { invokeRust } from "./client";
 import { logger } from "@/helper/logger";
-import type { AppConfig, InstanceConfig, PathConfig } from "./types/config";
+import type { AppConfig, InstanceConfig, PathConfig, StoreLoginState } from "./types/config";
 
 /**
  * 获取全局应用配置
@@ -134,6 +134,30 @@ export const invokeImportConfig = async (
 ): Promise<void> => {
   logger.info('导入配置', { sourcePath });
   return await invokeRust("import_config", { source_path: sourcePath }, options);
+};
+
+/**
+ * 保存登录状态（玩家登录/管理员登录成功后调用）
+ * @param loginState 登录状态
+ * @param options Tauri invoke 选项
+ */
+export const invokeSaveLoginState = async (
+  loginState: StoreLoginState,
+  options?: InvokeOptions
+): Promise<void> => {
+  logger.info('保存登录状态', { loginState });
+  return await invokeRust("save_login_state", { loginState: loginState }, options);
+};
+
+/**
+ * 清除登录状态（登出时调用）
+ * @param options Tauri invoke 选项
+ */
+export const invokeClearLoginState = async (
+  options?: InvokeOptions
+): Promise<void> => {
+  logger.info('清除登录状态');
+  return await invokeRust("clear_login_state", {}, options);
 };
 
 /**

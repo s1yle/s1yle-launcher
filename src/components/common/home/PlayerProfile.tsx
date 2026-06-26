@@ -1,7 +1,7 @@
 import { Crown, User, ArrowUpFromLine, Box } from 'lucide-react';
 import { UserRole } from '@/stores/userRoleStore';
 import { SkinAvatar } from '../SkinAvatar';
-import { useAccountStore } from '@/stores/accountStore';
+import { useAuthStore } from '@/stores/authStore';
 import { useAvatarStore } from '@/stores/avatarStore';
 
 
@@ -20,7 +20,7 @@ const PlayerProfile = ({
 }: PlayerProfileProps) => {
   const avatarMode = useAvatarStore((s) => s.mode);
   const setAvatarMode = useAvatarStore((s) => s.setMode);
-  const currentAccount = useAccountStore((s) => s.currentAccount);
+  const currentAccount = useAuthStore((s) => s.currentAccount);
 
   return (
     <div className="flex flex-col items-center gap-1">

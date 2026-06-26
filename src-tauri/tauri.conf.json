@@ -7,12 +7,19 @@
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "pnpm build",
-    "frontendDist": "../dist"
+    "frontendDist": "../dist",
+    "removeUnusedCommands": true
   },
   "app": {
     "windows": [
       {
+        "create": false,
+        "visible": false,
+        "transparent": true,
+        "focus": false,
+        "focusable": false,
         "title": "WeCraft! Launcher - 登录",
+        "label": "login",
         "width": 480,
         "height": 640,
         "resizable": false,
@@ -20,17 +27,20 @@
         "decorations": false,
         "dragDropEnabled": false,
         "theme": "Dark",
-        "label": "login",
         "minWidth": 480,
         "minHeight": 640,
         "center": true,
-        "focus": true,
-        "visible": true,
         "maximizable": false,
         "minimizable": false,
         "closable": true,
         "zoomHotkeysEnabled": false,
-        "backgroundThrottling": "disabled"
+        "backgroundThrottling": "disabled",
+        "browserExtensionsEnabled": false,
+        "scrollBarStyle": "fluentOverlay",
+        "shadow": true,
+        "skipTaskbar": false,
+        "tabbingIdentifier": "tool",
+        "windowClassname": "WeCraftLauncher"
       }
     ],
     "security": {

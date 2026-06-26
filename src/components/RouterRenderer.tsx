@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { routes, findRouteByPath } from "../router/config";
 import {
+  Loading,
   Home,
   AccountList,
   InstanceManage,
@@ -27,6 +28,7 @@ import { DURATION, pageTransition } from "../utils/animations";
 import { useNavStore } from "../stores/navStore";
 
 const componentMap: Record<string, React.FC> = {
+  Loading,
   Home,
   AccountList,
   InstanceManage,

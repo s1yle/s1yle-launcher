@@ -28,7 +28,6 @@ pub enum FontType {
 fn list_system_font() -> Option<Vec<SystemFont>> {
     // fc-list : family style file spacing
     //        Lists the filename and spacing value for each font face. ``:'' is an empty pattern that matches all fonts.
-    println!("---------------linux) list_system_font------------------");
     use std::{collections::HashSet, process::Command};
 
     let output = Command::new("fc-list")
@@ -42,7 +41,6 @@ fn list_system_font() -> Option<Vec<SystemFont>> {
     let mut fonts: Vec<SystemFont> = Vec::new();
 
     for line in stdout.lines() {
-        println!("line: {}", line);
         let name = line.trim();
         if !name.is_empty()
             && seen.insert(SystemFont {
@@ -53,11 +51,7 @@ fn list_system_font() -> Option<Vec<SystemFont>> {
                 name: name.to_string(),
             });
         }
-
-        println!("      name:{:?}", name);
     }
-
-    println!("---------------linux) list_system_font------------------");
 
     Some(fonts)
 }
@@ -121,7 +115,6 @@ fn get_cur_font() -> Option<HashMap<FontType, SystemFont>> {
     Some(ret_val)
 }
 
-
 #[cfg(target_os = "windows")]
 fn list_system_font() -> Option<Vec<SystemFont>> {
     None
@@ -131,7 +124,6 @@ fn list_system_font() -> Option<Vec<SystemFont>> {
 fn get_cur_font() -> Option<HashMap<FontType, SystemFont>> {
     None
 }
-
 
 /// 获取当前系统字体映射（CURRENT/SERIF/SANS/MONO）
 #[tauri::command]

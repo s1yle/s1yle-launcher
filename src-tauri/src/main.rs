@@ -8,8 +8,10 @@
 
 #[allow(unused_imports)]
 use std::env;
+use std::fmt::format;
 
-use wecraft_launcher_lib::{init_account_manager, init_admin_manager, init_launch_manager, run};
+use tauri::Manager;
+use wecraft_launcher_lib::{init_account_manager, init_admin_manager, init_launch_manager, run, APP_HANDLE};
 
 fn main() {
     #[cfg(target_os = "windows")]

@@ -54,13 +54,14 @@ import IslandLayout from './AppLayouts/IslandLayout';
 import AppHeader from './AppLayouts/AppHeader';
 import AppSidebar from './AppLayouts/AppSidebar';
 import AppMain from './AppLayouts/AppMain';
-import useLayoutStore from './stores/layoutStore';
 import { DURATION } from './utils/animations';
-import useFontStore from './stores/fontStore';
 import LoginGate from './pages/Login/LoginGate';
-import { useAccountStore } from './stores/accountStore';
+import { useAuthStore } from './stores/authStore';
 import { useAdminStore } from './stores/adminStore';
+import { useFontStore, useLayoutStore } from './stores';
 import { invokeRustFunction } from './api/client';
+import { Window } from '@tauri-apps/api/window';
+import { Loading } from './pages';
 
 const LAYOUT_MODES = {
   [UIMode.CLASSIC]: ClassicLayout,
@@ -189,20 +190,20 @@ const MainLayout = () => {
     (uiMode === UIMode.CLASSIC && !isFullscreen) ||
     (uiMode === UIMode.ISLAND && hasOwnSidebar)
   ) && (
-    <button
-      onClick={toggleSidebar}
-      className="fixed left-3 top-1/2 -translate-y-1/2 z-20 p-2 
+      <button
+        onClick={toggleSidebar}
+        className="fixed left-3 top-1/2 -translate-y-1/2 z-20 p-2 
         rounded-md bg-[var(--color-surface)] 
         border border-[var(--color-border)] 
         text-[var(--color-text-secondary)] 
         hover:text-[var(--color-text-primary)] 
         hover:bg-[var(--color-surface-hover)] 
         transition-colors shadow-md cursor-pointer"
-      title="展开侧边栏"
-    >
-      <PanelLeftOpen className="w-4 h-4" />
-    </button>
-  );
+        title="展开侧边栏"
+      >
+        <PanelLeftOpen className="w-4 h-4" />
+      </button>
+    );
 
   const CurrentLayout = LAYOUT_MODES[uiMode];
 
@@ -251,8 +252,7 @@ function App() {
   const initInstances = useInstanceStore((s) => s.init);
   const initFont = useFontStore((s) => s.init);
   const setupDownloadListeners = useDownloadStore((s) => s.setupEventListeners);
-  const initializeAccountStore = useAccountStore((s) => s.initialize);
-
+  const initializeAccountStore = useAuthStore((s) => s.initialize);
   useWindowPosition();
 
   useEffect(() => {
@@ -271,10 +271,14 @@ function App() {
       try {
         const { getCurrentWebviewWindow } = await import('@tauri-apps/api/webviewWindow');
         const appWindow = getCurrentWebviewWindow();
-        setIsLoginWindow(appWindow.label === 'login');
-      } catch {
-        // 非 Tauri 环境（浏览器开发），默认显示登录
-        setIsLoginWindow(true);
+
+        switch (appWindow.label) {
+          case 'login':
+            setIsLoginWindow(appWindow.label === 'login');
+            break;
+        }
+      } catch(e) {
+        console.error("检测窗口类型失败：", e);
       }
     };
     checkWindow();
@@ -304,13 +308,13 @@ function App() {
   }
 
   // 还在检测中：显示加载
-  if (isLoginWindow === null) {
-    return (
-      <div className="h-screen w-screen flex items-center justify-center bg-[var(--color-surface)]">
-        <div className="w-8 h-8 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  // if (isLoginWindow === null) {
+  //   return (
+  //     <div className="h-screen w-screen flex items-center justify-center bg-[var(--color-surface)]">
+  //       <div className="w-8 h-8 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
+  //     </div>
+  //   );
+  // }
 
   return (
     <Router>

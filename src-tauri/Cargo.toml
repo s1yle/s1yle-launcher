@@ -5,6 +5,16 @@
 # - hex（十六进制)
 # - md5/sha1（哈希）
 
+[profile.dev]
+incremental = true # Compile your binary in smaller steps.
+
+[profile.release]
+codegen-units = 1 # Allows LLVM to perform better optimization.
+lto = true # Enables link-time-optimizations.
+opt-level = "z" # Prioritizes small binary size. Use `3` if you prefer speed.
+panic = "abort" # Higher performance by disabling panic handlers.
+strip = true # Ensures debug symbols are removed.
+
 [package]
 name = "WeCraft-Launcher"
 version = "0.1.0-alpha.2"
@@ -34,6 +44,9 @@ tauri = { version = "2", features = ["protocol-asset"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
 
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
 [dependencies.hex]
 version = "0.4"
 
@@ -60,9 +73,6 @@ features = ["v3", "v4", "v8"]
 
 [dependencies.zip]
 version = "2"
-
-[build-dependencies]
-tauri-build = { version = "2", features = [] }
 
 [target.'cfg(windows)'.dependencies.windows]
 version = ">=0.59, <=0.62"

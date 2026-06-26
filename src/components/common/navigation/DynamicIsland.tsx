@@ -4,13 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Crown, User, Home, ChevronDown, HomeIcon, FileQuestionMark, AlertTriangle, LogOut } from 'lucide-react';
 import { useUserRoleStore, UserRole } from '@/stores/userRoleStore';
 import { useAdminStore } from '@/stores/adminStore';
-import { useAccountStore } from '@/stores/accountStore';
-import { useLoginStore } from '@/stores/loginStore';
+import { useAuthStore } from '@/stores/authStore';
 import { useNavStore } from '@/stores/navStore';
-import { logoutAndShowLogin } from '@/api/window';
 import { useNotification, ConfirmPopup } from '@/components/common';
 import { getNavItemsByRole, type NavItem } from '@/config/navigationConfig';
 import { autoJumpToFirstChild, findRouteByPath, routes } from '@/router/config';
+import { useAuth } from '@/hooks/useAuth';
 
 /** 灵动岛导航组件 Props */
 export interface DynamicIslandProps {
@@ -71,6 +70,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
   const navDragActiveRef = useRef(false);
   const navDragProgressRef = useRef(0);
   const navDragDirectionRef = useRef<'left' | 'right'>('right');
+  const { logout } = useAuth();
   const { error: notifyError } = useNotification();
 
   const navItems = useMemo(() => getNavItemsByRole(currentRole), [currentRole]);
@@ -165,7 +165,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
     }
 
     if (role === UserRole.PLAYER) {
-      const { accounts } = useAccountStore.getState();
+      const { accounts } = useAuthStore.getState();
       if (accounts.length === 0) {
         setShowRoleGuide(true);
         setShowRoleMenu(false);
@@ -202,10 +202,8 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
   };
 
   const handleLogout = async () => {
-    useAdminStore.getState().logout();
-    useLoginStore.getState().setLoggedOut();
     try {
-      await logoutAndShowLogin();
+      await logout();
     } catch (e) {
       const msg = e instanceof Error ? e.message : '退出登录失败';
       notifyError('退出登录失败', msg);

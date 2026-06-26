@@ -24,7 +24,7 @@ export interface JavaStoreState extends JavaStoreProrps {
  * 管理 Java 运行时的发现和选择。
  * 用户偏好持久化存储到 localStorage。
  */
-const useJavaStore = create<JavaStoreState>()(
+export const useJavaStore = create<JavaStoreState>()(
   persist(
     (set) => ({
       curJava: null,

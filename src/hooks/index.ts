@@ -1,3 +1,4 @@
+export { useAuth } from './useAuth';
 export { useAnimation } from './useAnimation';
 export { useClickOutside } from './useClickOutside';
 export { useFloating } from './useFloating';

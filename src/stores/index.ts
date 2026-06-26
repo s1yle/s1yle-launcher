@@ -1,5 +1,5 @@
-/** 账户管理 Store — 提供 useAccountStore hook */
-export { useAccountStore } from './accountStore';
+/** 认证 Store（账户 + 登录会话）— 提供 useAuthStore hook */
+export { useAuthStore } from './authStore';
 /** 管理员认证 Store — 提供 useAdminStore hook */
 export { useAdminStore } from './adminStore';
 /** 全局应用状态 Store — 提供 useAppStore hook */
@@ -32,8 +32,6 @@ export { useLayoutStore, LAYOUT_DEBOUNCE_DURATION, SIDEBAR_TRANSITION_DURATION }
 export { useLoadingStore } from './loadingStore';
 /** 加载状态相关的类型定义 */
 export type { LoadingVariant, SpinnerStyle, SkeletonStyle, LoadingStatus, LoadingEntry } from './loadingStore';
-/** 登录状态 Store — 提供 useLoginStore hook */
-export { useLoginStore } from './loginStore';
 /** 导航状态 Store — 提供 useNavStore hook */
 export { useNavStore } from './navStore';
 /** 导航相关的类型定义 */

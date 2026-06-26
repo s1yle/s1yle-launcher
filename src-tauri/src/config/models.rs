@@ -1,7 +1,12 @@
 use std::{collections::HashMap, path::PathBuf, sync::Mutex};
 
+use chrono::Local;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
+use serde_json::to_string_pretty;
+use tauri::Manager;
+
+use crate::{APP_HANDLE, account::AccountType, config::{get_config, get_config_path, get_config_value}};
 
 /// 配置文件版本
 pub const CONFIG_VERSION: u32 = 1;
@@ -241,6 +246,9 @@ pub struct AppConfig {
     /// 实例配置映射（实例 ID -> 配置）
     #[serde(default)]
     pub instance_configs: HashMap<String, InstanceConfig>,
+
+    #[serde(default)]
+    pub login_state: StoreLoginState,
 }
 
 fn default_version() -> u32 {
@@ -258,6 +266,37 @@ impl Default for AppConfig {
             path_config: PathConfig::default(),
             known_folders: Vec::new(),
             instance_configs: HashMap::new(),
+            login_state: StoreLoginState::default(),
+        }
+    }
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
+pub struct StoreLoginState {
+    pub is_logged_in: bool,
+    pub logged_in_type: AccountType,
+    pub current_acc_uuid: Option<String>,
+    pub login_time: String,
+}
+
+impl Default for StoreLoginState {
+    fn default() -> Self {
+        Self {
+            is_logged_in: false,
+            logged_in_type: AccountType::None,
+            current_acc_uuid: None,
+            login_time: Local::now().to_rfc3339()
+        }
+    }
+}
+
+impl StoreLoginState {
+    pub fn new_logged_in(role: AccountType, uuid:Option<String>) -> Self {
+        Self {
+            is_logged_in: true,
+            logged_in_type: role,
+            current_acc_uuid: uuid,
+            login_time: Local::now().to_rfc3339(),
         }
     }
 }
@@ -288,9 +327,6 @@ impl Default for WindowPosition {
         }
     }
 }
-
-/// 最后保存的窗口位置（运行时缓存）
-pub static SAVED_POSITION: Lazy<Mutex<Option<WindowPosition>>> = Lazy::new(|| Mutex::new(None));
 
 /// 用户偏好配置
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useAccountStore } from "@/stores/accountStore";
+import { useAuthStore } from "@/stores/authStore";
 import { useLoginFlow } from "./hooks/useLoginFlow";
 import { RoleSelector } from "./components/RoleSelector";
 import { ViewContainer } from "./components/ViewContainer";
@@ -28,7 +28,7 @@ const LoginGateInner = () => {
   } = useLoginFlow();
 
   useEffect(() => {
-    useAccountStore.getState().initialize();
+    useAuthStore.getState().initialize();
   }, []);
 
   useEffect(() => {

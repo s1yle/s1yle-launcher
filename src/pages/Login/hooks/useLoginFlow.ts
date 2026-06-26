@@ -1,8 +1,8 @@
 import { useState, useCallback } from "react";
-import { useLoginStore } from "@/stores/loginStore";
-import { useAccountStore } from "@/stores/accountStore";
+import { useAuthStore } from "@/stores/authStore";
 import { useAdminStore } from "@/stores/adminStore";
 import { useUserRoleStore, UserRole } from "@/stores/userRoleStore";
+import { useAuth } from "@/hooks";
 
 /**
  * 登录流程视图类型
@@ -28,47 +28,20 @@ export function useLoginFlow() {
   const [view, setView] = useState<LoginView>("player-login");
   const [role, setRole] = useState<"player" | "admin">("player");
 
-  const setLoggedIn = useLoginStore((s) => s.setLoggedIn);
-  const switchRole = useUserRoleStore((s) => s.switchRole);
-  const accounts = useAccountStore((s) => s.accounts);
-  const loadAccounts = useAccountStore((s) => s.loadAccounts);
-  const setCurrentAccount = useAccountStore((s) => s.setCurrentAccount);
-  const addAccount = useAccountStore((s) => s.addAccount);
-  const deleteAccount = useAccountStore((s) => s.deleteAccount);
-  const adminLogin = useAdminStore((s) => s.login);
-  const adminRegister = useAdminStore((s) => s.register);
+  const { loginAsPlayer, loginAsAdmin } = useAuth();
+  const accounts = useAuthStore((s) => s.accounts);
+  const loadAccounts = useAuthStore((s) => s.loadAccounts);
+  const addAccount = useAuthStore((s) => s.addAccount);
+  const deleteAccount = useAuthStore((s) => s.deleteAccount);
 
   const handlePlayerLogin = useCallback(async (uuid?: string) => {
     if (!uuid) return;
-    try {
-      await setCurrentAccount(uuid);
-      setLoggedIn();
-      switchRole(UserRole.PLAYER, false);
-      const { createMainWindow, closeLoginWindow } = await import("@/api/window");
-      createMainWindow().catch(() => {});
-      setTimeout(() => closeLoginWindow().catch(() => {}), 300);
-    } catch (e) {
-      throw e;
-    }
-  }, [setCurrentAccount, setLoggedIn, switchRole]);
+    await loginAsPlayer(uuid);
+  }, [loginAsPlayer]);
 
   const handleAdminAuth = useCallback(async (email: string, password: string, isRegister: boolean) => {
-    try {
-      const ok = isRegister
-        ? await adminRegister(email, password)
-        : await adminLogin(email, password);
-      if (ok) {
-        setLoggedIn();
-        switchRole(UserRole.ADMIN, false);
-        const { createMainWindow, closeLoginWindow } = await import("@/api/window");
-        createMainWindow().catch(() => {});
-        setTimeout(() => closeLoginWindow().catch(() => {}), 300);
-      }
-      return ok;
-    } catch (e) {
-      throw e;
-    }
-  }, [adminLogin, adminRegister, setLoggedIn, switchRole]);
+    return await loginAsAdmin(email, password, isRegister);
+  }, [loginAsAdmin]);
 
   const navigateTo = useCallback((target: LoginView) => {
     setView(target);
@@ -89,11 +62,7 @@ export function useLoginFlow() {
   }, [accounts.length]);
 
   const handleDeleteAccount = useCallback(async (uuid: string) => {
-    try {
-      await deleteAccount(uuid);
-    } catch (e) {
-      throw e;
-    }
+    await deleteAccount(uuid);
   }, [deleteAccount]);
 
   return {

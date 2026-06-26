@@ -14,13 +14,22 @@ mod modloader;
 mod render;
 mod window;
 
+use crate::account::AccountType;
 use crate::config::{
     AppConfig, ConfigManager, WindowPosition, export_config, get_config_value, get_instance_config,
     import_config, remove_instance_config, reset_config, set_config_value, update_instance_config,
+    save_login_state, clear_login_state
 };
 
 use crate::download::DownloadManager;
+use crate::window::create_main_window;
+use chrono::Utc;
+use tauri::utils::config::WindowEffectsConfig;
+use tauri::window::Effect::Acrylic;
+use tauri::window::EffectState;
+use core::time;
 use std::sync::OnceLock;
+use std::thread::sleep;
 use tauri::Manager;
 
 pub use crate::account::{
@@ -68,7 +77,7 @@ pub use logging::{init_logging, log_frontend};
 pub use font::{get_font, get_system_fonts};
 
 /// 全局 Tauri AppHandle，用于在非命令上下文中访问 Tauri 状态
-static APP_HANDLE: OnceLock<tauri::AppHandle> = OnceLock::new();
+pub static APP_HANDLE: OnceLock<tauri::AppHandle> = OnceLock::new();
 
 /// 测试用的问候命令
 #[tauri::command]
@@ -132,6 +141,16 @@ fn open_folder(path: String) -> Result<String, String> {
     Ok(path)
 }
 
+/// 检查登录时间是否已超过 7 天
+fn is_login_expired(login_time: &str) -> bool {
+    let login_time = match chrono::DateTime::parse_from_rfc3339(login_time) {
+        Ok(t) => t,
+        Err(_) => return true,
+    };
+    let elapsed = Utc::now().signed_duration_since(login_time);
+    elapsed.num_hours() > 7 * 24
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let download_path = &*config::DOWNLOAD_BASE_PATH;
@@ -144,6 +163,13 @@ pub fn run() {
     let window_config = WindowPosition::default();
     let config_manager: ConfigManager = ConfigManager::new(app_config, window_config);
 
+     let effect = WindowEffectsConfig {
+        effects: vec![Acrylic],             // 或 Tabbed, Mica, Popover
+        state: Some(EffectState::Active),   // Following / Active / Default
+        color: None,                        // 可选背景色
+        radius: Some(50.0)
+     };
+
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
@@ -152,11 +178,86 @@ pub fn run() {
         .manage(instance_manager)
         .manage(config_manager)
         .setup(|app| {
+            // 创建加载窗口（立即显示，优先于任何窗口决策）
+            tauri::WebviewWindowBuilder::new(
+                app.handle(),
+                "loading",
+                tauri::WebviewUrl::App("/public/loading.html".into()),
+            )
+            .title("WeCraft! Launcher - loading...")
+            .effects(effect)
+            .transparent(true)
+            .inner_size(400.0, 320.0)
+            .min_inner_size(400.0, 320.0)
+            .fullscreen(false)
+            .maximizable(false)
+            .resizable(false)
+            .decorations(false)
+            .center()
+            .build()
+            .map_err(|e| format!("创建加载窗口失败: {}", e))?;
+
             APP_HANDLE.set(app.handle().clone()).ok();
             init_logging(app)?;
+
             let cm: tauri::State<'_, ConfigManager> = app.state();
             let _ = cm.load_config_from_disk();
             log_info!("✅ 配置管理器初始化完成");
+
+            // 异步执行：判断登录态 → 创建目标窗口 → 关闭加载窗口
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                let cm = match APP_HANDLE.get() {
+                    Some(h) => h.state::<ConfigManager>(),
+                    None => return,
+                };
+
+                let lg_state = match cm.get_config() {
+                    Ok(c) => c.login_state,
+                    Err(_) => return,
+                };
+
+                let need_login = !lg_state.is_logged_in
+                    || lg_state.logged_in_type == AccountType::None
+                    || is_login_expired(&lg_state.login_time);
+
+                if need_login {
+                    if let Ok(builder) = tauri::WebviewWindowBuilder::from_config(
+                        &handle,
+                        &handle.config().app.windows[0],
+                    ) {
+                        let webview = builder
+                            // .accept_first_mouse(false)
+                            .build()
+                            .expect("webview 窗口创建失败");
+
+                        let _ = webview.show()
+                            .map_err(|e| format!("窗口显示失败: {}",e));
+
+                        // let webview_clone = webview.clone();
+                        // tauri::async_runtime::spawn(async move {
+                        //     loop {
+                        //         if webview_clone.is_visible().unwrap() {
+                        //             log_info!("窗口已经显示！");
+                        //         }
+                        //         log_info!("窗口的focus状态：{:?}",webview_clone.is_focused());
+                        //         sleep(time::Duration::from_millis(100));
+                        //     }
+                        // });
+
+                        let _ = webview.set_ignore_cursor_events(false)
+                            .map_err(|e| format!("set_ignore_cursor_events failed: {}",e));
+                    }
+                } else {
+                    let _ = create_main_window(handle.clone()).await;
+                }
+
+                if let Some(win) = handle.get_webview_window("loading") {
+                    sleep(time::Duration::from_secs(3));
+                    let _ = win.close();
+                }
+            });
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -192,6 +293,8 @@ pub fn run() {
             log_frontend,
             save_accounts_to_disk,
             load_accounts_from_disk,
+            save_login_state,
+            clear_login_state,
             initialize_account_system,
             get_version_manifest,
             get_version_detail,

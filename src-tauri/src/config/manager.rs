@@ -95,7 +95,7 @@ impl ConfigManager {
         Ok(value.map(|v| v.to_string()))
     }
 
-    /// 根据点号分隔的路径写入配置值
+    /// 根据点号分隔的路径写入配置值, 该函数实际使用可能跟 update_config 没什么区别，因为都是全量写入文件系统
     pub fn write_config(&self, key: &str, val: serde_json::Value) -> Result<(), String> {
         let mut config = self.get_config()?;
         let mut json_val =

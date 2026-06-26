@@ -32,7 +32,7 @@ interface LayoutStoreState extends LayoutStoreProps {
  * 管理侧边栏宽度和折叠状态。
  * 用户偏好持久化存储到 localStorage。
  */
-const useLayoutStore = create<LayoutStoreState>()(
+export const useLayoutStore = create<LayoutStoreState>()(
     persist(
         (set, get) => ({
             sidebarWidth: 220,

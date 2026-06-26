@@ -2,22 +2,31 @@ use chrono::Local;
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fs, sync::Mutex};
-use tauri::command;
+use tauri::{Manager, command};
 use uuid::Uuid;
 
-use crate::log_info;
+use crate::{APP_HANDLE, config::{ConfigManager, StoreLoginState}, log_info};
 
 // ======================== 类型定义 ========================
 
 /// 账户类型枚举
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum AccountType {
+    /// 占位符
+    #[serde(rename = "none")]
+    None,
     /// 微软正版账户
     #[serde(rename = "microsoft")]
     Microsoft,
     /// 离线账户
     #[serde(rename = "offline")]
     Offline,
+    /// 第三方账户 
+    #[serde(rename = "third-party")]
+    ThirdParty,
+    /// 服主账户
+    #[serde(rename = "admin")]
+    Admin,
 }
 
 /// 账户基本信息（公开暴露给前端）
@@ -63,6 +72,7 @@ impl Default for AccountManager {
 
 // 全局状态
 static ACCOUNT_MANAGER: OnceCell<Mutex<AccountManager>> = OnceCell::new();
+
 
 // ======================== 核心逻辑：文件存储 ========================
 
@@ -126,13 +136,25 @@ impl Account {
         access_token: Option<String>,
         refresh_token: Option<String>,
     ) -> Self {
+        // Microsoft -> uuid根据正版账号获取
+        // Offline/ThirdParty -> uuid随机生成(第三方账户不确定是否需要根据相应api来获取)
+        // Admin -> admin账户不属于mc账户，无uuid
         let uuid = match &account_type {
+            AccountType::None => Uuid::nil().to_string(),
             AccountType::Microsoft => Uuid::new_v4().to_string(),
             AccountType::Offline => {
                 const MC_OFFLINE_NAMESPACE: Uuid =
                     Uuid::from_u128(0x00000000000000000000000000000000);
                 let input = format!("OfflinePlayer:{}", name);
                 Uuid::new_v3(&MC_OFFLINE_NAMESPACE, input.as_bytes()).to_string()
+            },
+            AccountType::ThirdParty => {
+                // 第三方账号的uuid自动生成
+                Uuid::new_v4().to_string()
+            },
+            AccountType::Admin => {
+                // 服主账户无uuid
+                Uuid::nil().to_string()
             }
         };
 
@@ -191,27 +213,27 @@ pub fn add_account_to_manager(account: Account) -> Result<(), String> {
 
 /// 设置当前活动账户（内部使用）
 #[allow(dead_code)]
-pub fn set_current_account_internal(uuid: &str) -> Result<(), String> {
+pub fn set_current_account_internal(uuid: String) -> Result<String, String> {
     let mut manager = ACCOUNT_MANAGER
         .get()
         .ok_or("账户管理器未初始化")?
         .lock()
         .map_err(|e| format!("获取账户锁失败: {}", e))?;
 
-    if !manager.accounts.contains_key(uuid) {
+    if !manager.accounts.contains_key(&uuid) {
         return Err(format!("账户 {} 不存在", uuid));
     }
 
-    manager.current_uuid = Some(uuid.to_string());
+    manager.current_uuid = Some(uuid.clone());
 
-    if let Some(account) = manager.accounts.get_mut(uuid) {
+    if let Some(account) = manager.accounts.get_mut(&uuid) {
         account.update_last_login();
     }
 
     drop(manager);
     save_accounts_to_disk_internal()?; // 修改后自动保存
 
-    Ok(())
+    Ok(format!("账户 {} 已设为当前账户", uuid))
 }
 
 // ======================== Tauri 前端命令 ========================
@@ -319,26 +341,7 @@ pub fn delete_account(uuid: String) -> Result<String, String> {
 /// 设置指定 UUID 的账户为当前活动账户
 #[command]
 pub fn set_current_account(uuid: String) -> Result<String, String> {
-    let mut manager = ACCOUNT_MANAGER
-        .get()
-        .ok_or("账户管理器未初始化")?
-        .lock()
-        .map_err(|e| format!("获取账户锁失败: {}", e))?;
-
-    if !manager.accounts.contains_key(&uuid) {
-        return Err(format!("账户 {} 不存在", uuid));
-    }
-
-    manager.current_uuid = Some(uuid.clone());
-
-    if let Some(account) = manager.accounts.get_mut(&uuid) {
-        account.update_last_login();
-    }
-
-    drop(manager);
-    save_accounts_to_disk_internal()?; // 修改后自动保存
-
-    Ok(format!("账户 {} 已设为当前账户", uuid))
+    set_current_account_internal(uuid)
 }
 
 /// 手动保存账户数据到磁盘

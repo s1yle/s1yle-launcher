@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, UserPlus, Trash2, LogIn, Star, Server, Loader2, UserMinus } from "lucide-react";
-import { useAccountStore } from "@/stores/accountStore";
+import { useAuthStore } from "@/stores/authStore";
 import { useAdminStore } from "@/stores/adminStore";
 import { useLoadingAction } from "@/hooks/useLoadingAction";
 import { LoadingSurface, Reveal } from "@/components/common";
@@ -17,7 +17,7 @@ const AccountList = () => {
     loadAccounts,
     setCurrentAccount,
     deleteAccount,
-  } = useAccountStore();
+  } = useAuthStore();
   const {
     session: adminSession,
     isLoggedIn: adminLoggedIn,
@@ -49,7 +49,7 @@ const AccountList = () => {
     setAdding(true);
     setAddError("");
     try {
-      await useAccountStore.getState().addAccount(addName.trim(), addType);
+      await useAuthStore.getState().addAccount(addName.trim(), addType);
       setShowAddPopup(false);
       setAddName("");
       setAddError("");

@@ -154,6 +154,11 @@ export const resetConfig = __.invokeResetConfig;
 export const exportConfig = __.invokeExportConfig;
 /** 从文件导入配置 */
 export const importConfig = __.invokeImportConfig;
+/** 保存登录状态 */
+export const saveLoginState = __.invokeSaveLoginState;
+/** 清除登录状态 */
+export const clearLoginState = __.invokeClearLoginState;
+
 /** 获取路径配置 */
 export const getPathConfig = __.invokeGetPathConfig;
 /** 更新路径配置 */

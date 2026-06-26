@@ -117,3 +117,15 @@ export interface GraphicsConfig {
   /** 是否全屏 */
   fullscreen: boolean;
 }
+
+/** 登录状态（持久化，用于启动时判断是否展示登录门禁） */
+export interface StoreLoginState {
+  /** 是否已登录 */
+  is_logged_in: boolean;
+  /** 登录类型：none / offline / microsoft / admin */
+  logged_in_type: string;
+  /** 当前账户 UUID（player 用） */
+  current_acc_uuid: string | null;
+  /** 登录时间 */
+  login_time: string;
+}

@@ -4,6 +4,14 @@ import { LayoutMode, RouteConfig, SidebarGroup, SidebarType } from "./models";
 /** 完整路由配置列表 */
 export const routes: RouteConfig[] = [
   {
+    path: '/loading',
+    componentName: 'Loading',
+    header: { type: SidebarType.MAIN, title: 'Loading', titleI18nKey: '' },
+    sidebarGroup: SidebarGroup.NONE,
+    needsScrollbar: false,
+    layoutMode: LayoutMode.FULLSCREEN,
+  },
+  {
     path: '/',
     componentName: 'Home',
     header: { type: SidebarType.MAIN, title: 'WeCraft! Launcher', titleI18nKey: 'header.title' },

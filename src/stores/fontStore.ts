@@ -78,7 +78,7 @@ export interface FontStoreState extends FontStoreProps {
  * - 支持无障碍访问（最大 200% 缩放）
  * - 记忆用户偏好设置
  */
-const useFontStore = create<FontStoreState>()(
+export const useFontStore = create<FontStoreState>()(
   persist(
     (set, get) => ({
       init: () => {
