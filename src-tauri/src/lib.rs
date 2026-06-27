@@ -182,7 +182,7 @@ pub fn run() {
             tauri::WebviewWindowBuilder::new(
                 app.handle(),
                 "loading",
-                tauri::WebviewUrl::App("/public/loading.html".into()),
+                tauri::WebviewUrl::App("/loading.html".into()),
             )
             .title("WeCraft! Launcher - loading...")
             .effects(effect)
@@ -221,7 +221,7 @@ pub fn run() {
                     || lg_state.logged_in_type == AccountType::None
                     || is_login_expired(&lg_state.login_time);
 
-                if need_login {
+                if false {
                     if let Ok(builder) = tauri::WebviewWindowBuilder::from_config(
                         &handle,
                         &handle.config().app.windows[0],
@@ -249,11 +249,11 @@ pub fn run() {
                             .map_err(|e| format!("set_ignore_cursor_events failed: {}",e));
                     }
                 } else {
-                    let _ = create_main_window(handle.clone()).await;
+                    // let _ = create_main_window(handle.clone()).await;
                 }
 
                 if let Some(win) = handle.get_webview_window("loading") {
-                    sleep(time::Duration::from_secs(3));
+                    sleep(time::Duration::from_secs(60));
                     let _ = win.close();
                 }
             });

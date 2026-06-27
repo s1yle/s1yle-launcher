@@ -60,8 +60,6 @@ import { useAuthStore } from './stores/authStore';
 import { useAdminStore } from './stores/adminStore';
 import { useFontStore, useLayoutStore } from './stores';
 import { invokeRustFunction } from './api/client';
-import { Window } from '@tauri-apps/api/window';
-import { Loading } from './pages';
 
 const LAYOUT_MODES = {
   [UIMode.CLASSIC]: ClassicLayout,
@@ -308,7 +306,7 @@ function App() {
   }
 
   // 还在检测中：显示加载
-  // if (isLoginWindow === null) {
+  // if (isLoadingFinish === null) {
   //   return (
   //     <div className="h-screen w-screen flex items-center justify-center bg-[var(--color-surface)]">
   //       <div className="w-8 h-8 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
