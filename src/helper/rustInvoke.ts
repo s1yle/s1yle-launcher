@@ -110,8 +110,12 @@ export const deployVersionToInstance = __.invokeDeployVersionToInstance;
 /** 检查版本是否已部署 */
 export const isVersionDeployed = __.invokeIsVersionDeployed;
 
+/** 创建窗口 */
+export const createWindow = __.invokeCreateWindow;
 /** 关闭窗口 */
 export const closeWindow = __.invokeCloseWindow;
+/** 切换窗口（关闭 A → 打开 B） */
+export const switchWindow = __.invokeSwitchWindow;
 /** 保存窗口位置和大小 */
 export const saveWindowPosition = __.invokeSaveWindowPosition;
 /** 加载已保存的窗口位置 */

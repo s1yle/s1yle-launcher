@@ -16,6 +16,8 @@ export const useWindowPosition = () => {
 
   const restoreWindowPosition = useCallback(async () => {
     if (isRestoredRef.current) return;
+    const win = getCurrentWindow();
+    if (win.label === 'login') return;
     
     try {
       const position = await loadWindowPosition();
@@ -38,6 +40,7 @@ export const useWindowPosition = () => {
   const saveCurrentPosition = useCallback(async () => {
     try {
       const window = getCurrentWindow();
+      if (window.label === 'login') return;
       
       const isMinimized = await window.isMinimized();
       if (isMinimized) {

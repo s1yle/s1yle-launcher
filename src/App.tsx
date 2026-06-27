@@ -32,7 +32,7 @@
 // 服主切换到玩家身份时，验证是否存在玩家账户
 // 根据以上实现适合的账户界面初步 ui 设计
 
-import { useEffect, useCallback, useState, useRef, useMemo } from 'react';
+import { useEffect, useCallback, useRef, useMemo } from 'react';
 import { BrowserRouter as Router, useLocation, useNavigate } from 'react-router-dom';
 import { routes, findRouteByPath, LayoutMode, pagesWithOwnSidebar, SidebarGroup } from './router/config';
 import { useNavStore } from './stores/navStore';
@@ -55,7 +55,6 @@ import AppHeader from './AppLayouts/AppHeader';
 import AppSidebar from './AppLayouts/AppSidebar';
 import AppMain from './AppLayouts/AppMain';
 import { DURATION } from './utils/animations';
-import LoginGate from './pages/Login/LoginGate';
 import { useAuthStore } from './stores/authStore';
 import { useAdminStore } from './stores/adminStore';
 import { useFontStore, useLayoutStore } from './stores';
@@ -242,9 +241,8 @@ const MainLayout = () => {
   );
 };
 
-/** 应用根组件 - 初始化各系统、检测登录窗口、渲染主布局 */
+/** 应用根组件 - 初始化各系统、渲染主布局 */
 function App() {
-  const [isLoginWindow, setIsLoginWindow] = useState<boolean | null>(null);
   const initTheme = useThemeStore((s) => s.init);
   const initApp = useAppStore((s) => s.init);
   const initInstances = useInstanceStore((s) => s.init);
@@ -263,25 +261,6 @@ function App() {
     invokeRustFunction("initialize_admin_system").catch(() => {});
   }, [initTheme, initApp, initInstances, initFont, initializeAccountStore]);
 
-  // 检测是否为登录窗口
-  useEffect(() => {
-    const checkWindow = async () => {
-      try {
-        const { getCurrentWebviewWindow } = await import('@tauri-apps/api/webviewWindow');
-        const appWindow = getCurrentWebviewWindow();
-
-        switch (appWindow.label) {
-          case 'login':
-            setIsLoginWindow(appWindow.label === 'login');
-            break;
-        }
-      } catch(e) {
-        console.error("检测窗口类型失败：", e);
-      }
-    };
-    checkWindow();
-  }, []);
-
   useEffect(() => {
     const cleanup = setupDownloadListeners();
     return cleanup;
@@ -299,20 +278,6 @@ function App() {
       window.removeEventListener('role-switch', handleRoleSwitch as EventListener);
     };
   }, []);
-
-  // 登录窗口：渲染 LoginGate（无路由）
-  if (isLoginWindow === true) {
-    return <LoginGate />;
-  }
-
-  // 还在检测中：显示加载
-  // if (isLoadingFinish === null) {
-  //   return (
-  //     <div className="h-screen w-screen flex items-center justify-center bg-[var(--color-surface)]">
-  //       <div className="w-8 h-8 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
-  //     </div>
-  //   );
-  // }
 
   return (
     <Router>

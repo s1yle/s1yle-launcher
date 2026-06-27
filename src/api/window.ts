@@ -3,35 +3,29 @@ import { invokeRust } from "./client";
 import { logger } from "@/helper/logger";
 import type { WindowPosition } from "./types/config";
 
-/**
- * 关闭窗口
- * @param label 窗口标签名（默认 "main"）
- * @returns 操作结果字符串
- */
-export const invokeCloseWindow = async (label?: string): Promise<string> => {
+export type WindowType = "Main" | "Login" | "Loading";
+
+/** 统一创建窗口 */
+export const invokeCreateWindow = async (windowType: WindowType): Promise<void> => {
+  logger.info('创建窗口', { windowType });
+  await invokeRust("create_window", { windowType });
+};
+
+/** 关闭指定标签的窗口 */
+export const invokeCloseWindow = async (label: string): Promise<void> => {
   logger.info('关闭窗口', { label });
-  if (label) {
-    return await invokeRust("close_window", { label });
-  }
-  return await invokeRust("close_window", { label: "main" });
+  await invokeRust("close_window", { label });
 };
 
-/** 创建主窗口 */
-export const createMainWindow = async (): Promise<void> => {
-  logger.info('创建主窗口');
-  await invokeRust("create_main_window");
-};
-
-/** 关闭登录窗口 */
-export const closeLoginWindow = async (): Promise<void> => {
-  logger.info('关闭登录窗口');
-  await invokeRust("close_login_window");
-};
-
-/** 退出登录并返回登录窗口 */
-export const logoutAndShowLogin = async (): Promise<void> => {
-  logger.info('退出登录，返回登录窗口');
-  await invokeRust("logout_and_show_login");
+/**
+ * 关闭指定窗口并打开另一个窗口
+ * @param closeLabel (注意)这个参数，一定要传窗口的label，如main/login/loading
+ * @param openType (注意)这个参数，一定要传窗口的类型，如Main/Login/Loading
+ * @param options Tauri invoke 选项
+ */
+export const invokeSwitchWindow = async (closeLabel: string, openType: WindowType): Promise<void> => {
+  logger.info('切换窗口', { closeLabel, openType });
+  await invokeRust("switch_window", { closeLabel, openType });
 };
 
 /**

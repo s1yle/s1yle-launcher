@@ -1,5 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
+import LoginGate from "./pages/Login/LoginGate";
 import App from "./App";
 import NotificationProvider from "./components/common/NotificationProvider";
 import { invokeAccInit } from "./helper/rustInvoke";
@@ -12,10 +14,9 @@ import { config } from "./config";
 import './styles/themes/dark.css';
 import './styles/themes/accents.css';
 import './styles/themes/light.css';
-import './styles/themes/terminal.css'; // 极客终端风格主题
-import './styles/animations.css'; // 加载动画关键帧
+import './styles/themes/terminal.css';
+import './styles/animations.css';
 import { Window } from "@tauri-apps/api/window";
-// import { window } from "@tauri-apps/api";
 
 /** 应用初始化 - 按序初始化账户、配置、主题、实例、下载系统 */
 async function initApp() {
@@ -59,7 +60,7 @@ async function initApp() {
   }
 }
 
-initApp();
+// Global event handlers (both windows)
 
 document.addEventListener("wheel", function (e) {
   e.preventDefault();
@@ -92,8 +93,21 @@ window.addEventListener('DOMContentLoaded', () => {
   }, 1)  // 需要加延迟，否则仍可能白屏
 });
 
-ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <NotificationProvider>
-    <App />
-  </NotificationProvider>
-);
+// Detect window type and render accordingly
+
+const appWindow = getCurrentWebviewWindow();
+
+if (appWindow.label === 'login') {
+  ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+    <NotificationProvider>
+      <LoginGate />
+    </NotificationProvider>
+  );
+} else {
+  initApp();
+  ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+    <NotificationProvider>
+      <App />
+    </NotificationProvider>
+  );
+}

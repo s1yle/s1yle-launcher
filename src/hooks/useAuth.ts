@@ -3,8 +3,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { useAdminStore } from "@/stores/adminStore";
 import { useUserRoleStore, UserRole } from "@/stores/userRoleStore";
 import { AccountType } from "@/api";
-import { saveLoginState, clearLoginState } from "@/helper";
-import { createMainWindow, closeLoginWindow, logoutAndShowLogin } from "@/api/window";
+import { saveLoginState, clearLoginState, createWindow, closeWindow, switchWindow } from "@/helper";
 
 export function useAuth() {
   const loginAsPlayer = useCallback(async (uuid: string) => {
@@ -24,8 +23,7 @@ export function useAuth() {
       login_time: new Date().toISOString(),
     });
 
-    await createMainWindow();
-    setTimeout(() => closeLoginWindow().catch(() => { }), 300);
+    await switchWindow("login", "Main");
   }, []);
 
   const loginAsAdmin = useCallback(async (
@@ -50,8 +48,7 @@ export function useAuth() {
       login_time: new Date().toISOString(),
     });
 
-    await createMainWindow();
-    setTimeout(() => closeLoginWindow().catch(() => { }), 300);
+    await switchWindow("login", "Main");
     return true;
   }, []);
 
@@ -59,7 +56,7 @@ export function useAuth() {
     useAdminStore.getState().logout();
     useAuthStore.getState().setLoggedOut();
     await clearLoginState();
-    await logoutAndShowLogin();
+    await switchWindow("main", "Login");
   }, []);
 
   return { loginAsPlayer, loginAsAdmin, logout };
