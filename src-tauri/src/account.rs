@@ -2,10 +2,10 @@ use chrono::Local;
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fs, sync::Mutex};
-use tauri::{Manager, command};
+use tauri::{command};
 use uuid::Uuid;
 
-use crate::{APP_HANDLE, config::{ConfigManager, StoreLoginState}, log_info};
+use crate::{log_info};
 
 // ======================== 类型定义 ========================
 
@@ -186,7 +186,6 @@ pub fn init_account_manager() {
     ACCOUNT_MANAGER
         .set(Mutex::new(AccountManager::default()))
         .unwrap_or_else(|_| panic!("账户管理器已初始化"));
-    println!("✅ 账户管理器初始化完成");
 }
 
 /// 向管理器添加账户并自动保存到磁盘

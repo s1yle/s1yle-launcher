@@ -1,6 +1,8 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { getCurrentWindow, PhysicalPosition, PhysicalSize } from '@tauri-apps/api/window';
-import { saveWindowPosition, loadWindowPosition } from '../helper/rustInvoke';
+import { getWindowStrategy } from '@/config/windowStrategy';
+import { invokeSaveWindowPositionByLabel, invokeLoadWindowPositionByLabel } from '@/api/window';
+import { getErrorMessage, useNotification } from '@/components/common';
 
 const DEBOUNCE_MS = 500;
 
@@ -12,50 +14,26 @@ const DEBOUNCE_MS = 500;
  */
 export const useWindowPosition = () => {
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isRestoredRef = useRef(false);
-
-  const restoreWindowPosition = useCallback(async () => {
-    if (isRestoredRef.current) return;
-    const win = getCurrentWindow();
-    if (win.label === 'login') return;
-    
-    try {
-      const position = await loadWindowPosition();
-      if (position) {
-        const window = getCurrentWindow();
-        
-        if (position.maximized) {
-          await window.maximize();
-        } else {
-          await window.setPosition(new PhysicalPosition(position.x, position.y));
-          await window.setSize(new PhysicalSize(position.width, position.height));
-        }
-        isRestoredRef.current = true;
-      }
-    } catch (error) {
-      console.error('恢复窗口位置失败:', error);
-    }
-  }, []);
+  const { success: notifySuccess, error: notifyError } = useNotification();
 
   const saveCurrentPosition = useCallback(async () => {
+    const win = getCurrentWindow();
+    const strategy = getWindowStrategy(win.label);
+
+    if (!strategy.shouldSave) return;
+
+    if (strategy.validateBeforeSave) {
+      const valid = await strategy.validateBeforeSave(win);
+      if (!valid) return;
+    }
+
     try {
-      const window = getCurrentWindow();
-      if (window.label === 'login') return;
-      
-      const isMinimized = await window.isMinimized();
-      if (isMinimized) {
-        return;
-      }
-      
-      const position = await window.outerPosition();
-      const size = await window.outerSize();
-      const isMaximized = await window.isMaximized();
+      const position = await win.outerPosition();
+      const size = await win.outerSize();
+      const isMaximized = await win.isMaximized();
 
-      if (position.x < -10000 || position.y < -10000) {
-        return;
-      }
-
-      await saveWindowPosition(
+      await invokeSaveWindowPositionByLabel(
+        win.label,
         position.x,
         position.y,
         size.width,
@@ -63,36 +41,28 @@ export const useWindowPosition = () => {
         isMaximized
       );
     } catch (error) {
-      console.error('保存窗口位置失败:', error);
+      notifyError(`保存窗口位置失败 (${win.label}):`, getErrorMessage(error));
     }
   }, []);
 
   const debouncedSave = useCallback(() => {
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(saveCurrentPosition, DEBOUNCE_MS);
   }, [saveCurrentPosition]);
 
   useEffect(() => {
-    restoreWindowPosition();
+    const win = getCurrentWindow();
+    const strategy = getWindowStrategy(win.label);
 
-    const window = getCurrentWindow();
+    if (!strategy.shouldSave) return;
 
-    const unlistenMove = window.onMoved(() => {
-      debouncedSave();
-    });
-
-    const unlistenResize = window.onResized(() => {
-      debouncedSave();
-    });
+    const unlistenMove = win.onMoved(() => debouncedSave());
+    const unlistenResize = win.onResized(() => debouncedSave());
 
     return () => {
       unlistenMove.then(fn => fn());
       unlistenResize.then(fn => fn());
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
-  }, [restoreWindowPosition, debouncedSave]);
+  }, [debouncedSave]);
 };

@@ -201,7 +201,6 @@ pub struct ModLoaderManager {
 impl ModLoaderManager {
     /// 创建新的 ModLoaderManager 实例
     pub fn new(base_path: PathBuf) -> Self {
-        println!("ModLoaderManager base_path: {:?}", base_path);
         Self {
             base_path,
             fabric_cache: Mutex::new(HashMap::new()),

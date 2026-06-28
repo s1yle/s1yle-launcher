@@ -2,10 +2,13 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "login",
   "description": "Capability for the login window",
-  "windows": ["login"],
+  "windows": [
+    "login"
+  ],
   "permissions": [
     "core:default",
     "core:window:allow-show",
+    "core:window:allow-minimize",
     "core:window:allow-close",
     "core:window:allow-start-dragging",
     "core:window:allow-set-size",
@@ -47,6 +50,8 @@
     "allow-get-skin-model",
     "allow-render-isometric-avatar-cmd",
     "allow-get-uuid-by-username",
-    "allow-switch-window"
+    "allow-switch-window",
+    "allow-load-window-position-by-label",
+    "allow-save-window-position-by-label"
   ]
 }

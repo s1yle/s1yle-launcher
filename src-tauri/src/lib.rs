@@ -16,19 +16,21 @@ mod window;
 
 use crate::account::AccountType;
 use crate::config::{
-    AppConfig, ConfigManager, WindowPosition, clear_login_state, export_config, get_config_value,
-    get_instance_config, import_config, remove_instance_config, reset_config, save_login_state,
-    set_config_value, update_instance_config,
+    AppConfig, ConfigManager, WindowPosition, WindowPositions, clear_login_state, export_config,
+    get_config_value, get_instance_config, import_config, remove_instance_config, reset_config,
+    save_login_state, set_config_value, update_instance_config,
 };
 
 use crate::download::DownloadManager;
-use crate::window::{WindowType, apply_window_config};
+use crate::window::{
+    WindowType, apply_window_config, create_and_show_window, load_window_position_by_label,
+};
 use chrono::Utc;
-use core::time;
 use std::sync::OnceLock;
-use std::thread::sleep;
-use tauri::Manager;
+use std::time::Instant;
 use tauri::webview::PageLoadEvent;
+use tauri::{Manager, WebviewUrl, WindowEvent};
+use tauri_plugin_dialog::{Dialog, MessageDialogButtons};
 
 pub use crate::account::{
     add_account, delete_account, get_account_list, get_current_account, init_account_manager,
@@ -158,8 +160,7 @@ pub fn run() {
     let instance_manager = InstanceManager::new();
 
     let app_config = AppConfig::default();
-    let window_config = WindowPosition::default();
-    let config_manager: ConfigManager = ConfigManager::new(app_config, window_config);
+    let config_manager: ConfigManager = ConfigManager::new(app_config, WindowPositions::default());
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -169,21 +170,33 @@ pub fn run() {
         .manage(instance_manager)
         .manage(config_manager)
         .setup(|app| {
-            tauri::async_runtime::block_on(window::create_window(
-                app.handle().clone(),
-                window::WindowType::Loading,
-            ))
-            .map_err(|e| format!("创建加载窗口失败: {}", e))?;
+            let start = Instant::now();
 
             APP_HANDLE.set(app.handle().clone()).ok();
+
+            let duration = start.elapsed();
+            log_info!("APP_HANDLE.set 耗时: {:?}", duration);
+
+            let handle = app.handle().clone();
+            let _loading_window = create_and_show_window(
+                &handle,
+                "loading",
+                WebviewUrl::App("/loading.html".into()),
+                WindowType::Loading,
+                |window, payload| {
+                    if let PageLoadEvent::Finished = payload.event() {
+                        window.show().expect("_loading_window 显示失败");
+                        window.set_focus().expect("_loading_window 聚焦失败");
+                    }
+                },
+            )?;
+
             init_logging(app)?;
 
             let cm: tauri::State<'_, ConfigManager> = app.state();
             let _ = cm.load_config_from_disk();
-            log_info!("✅ 配置管理器初始化完成");
 
             // 异步执行：判断登录态 → 创建目标窗口 → 关闭加载窗口
-            let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 let cm = match APP_HANDLE.get() {
                     Some(h) => h.state::<ConfigManager>(),
@@ -199,57 +212,86 @@ pub fn run() {
                     || lg_state.logged_in_type == AccountType::None
                     || is_login_expired(&lg_state.login_time);
 
+                let start = Instant::now();
                 if need_login {
                     // Login 窗口
-                    if let Ok(builder) = tauri::WebviewWindowBuilder::from_config(
-                        &handle,
-                        &handle.config().app.windows[0],
-                    ) {
-                        let handle_clone = handle.clone();
-                        let webview = builder
-                            .on_page_load(move |window, payload| {
-                                if let PageLoadEvent::Finished = payload.event() {
-                                    if let Some(win) = handle_clone.get_webview_window("loading") {
-                                        sleep(time::Duration::from_secs(1));
-                                        let _ = win.close();
-                                    }
-                                    let _ = window.show();
-                                }
-                            })
-                            // .accept_first_mouse(false)
-                            .build()
-                            .expect("webview 窗口创建失败");
+                    let handle_clone = handle.clone();
 
-                        let _ = webview.show().map_err(|e| format!("窗口显示失败: {}", e));
-                    }
+                    let _login_window = create_and_show_window(
+                        &handle,
+                        "login",
+                        WebviewUrl::App("".into()),
+                        WindowType::Login,
+                        move |window, payload| {
+                            if let PageLoadEvent::Finished = payload.event() {
+                                if let Some(win) = handle_clone.get_webview_window("loading") {
+                                    let _ = win.close();
+                                }
+                                // 恢复窗口位置
+                                if let Some(app) = APP_HANDLE.get() {
+                                    if let Ok(Some(pos)) = app
+                                        .state::<ConfigManager>()
+                                        .get_window_pos_by_label("login")
+                                    {
+                                        let _ = window.set_position(tauri::Position::Physical(
+                                            tauri::PhysicalPosition { x: pos.x, y: pos.y },
+                                        ));
+                                    }
+                                }
+                                let _ = window.show();
+                                let _ = window.set_focus();
+                            }
+                        },
+                    )
+                    .expect("_login_window 创建失败");
                 } else {
                     // Main 窗口
                     let handle_clone = handle.clone();
 
-                    let builder = tauri::WebviewWindowBuilder::new(
+                    let _main_window = create_and_show_window(
                         &handle,
                         "main",
-                        tauri::WebviewUrl::App("".into()),
-                    );
-
-                    apply_window_config(builder, WindowType::Main)
-                        .expect("apply_window_config 失败, 创建窗口失败")
-                        .on_page_load(move |window, payload| {
+                        WebviewUrl::App("".into()),
+                        WindowType::Main,
+                        move |window, payload| {
                             if let PageLoadEvent::Finished = payload.event() {
                                 if let Some(win) = handle_clone.get_webview_window("loading") {
-                                    sleep(time::Duration::from_secs(1));
                                     let _ = win.close();
                                 }
+                                // 恢复窗口位置
+                                if let Some(app) = APP_HANDLE.get() {
+                                    let cm = app.state::<ConfigManager>();
+                                    if let Ok(Some(pos)) = cm.get_window_pos_by_label("main") {
+                                        if pos.maximized {
+                                            let _ = window.maximize();
+                                        } else {
+                                            let _ = window.set_position(tauri::Position::Physical(
+                                                tauri::PhysicalPosition { x: pos.x, y: pos.y },
+                                            ));
+                                            let _ = window.set_size(tauri::Size::Physical(
+                                                tauri::PhysicalSize {
+                                                    width: pos.width,
+                                                    height: pos.height,
+                                                },
+                                            ));
+                                        }
+                                    }
+                                }
                                 let _ = window.show();
+                                let _ = window.set_focus();
                             }
-                        })
-                        .build()
-                        .expect("login 窗口创建失败");
+                        },
+                    )
+                    .expect("_main_window 创建失败");
                 }
+
+                let duration = start.elapsed();
+                log_info!("窗口创建 耗时: {:?}", duration);
             });
 
             Ok(())
         })
+        .on_window_event(|_window, _event| {})
         .invoke_handler(tauri::generate_handler![
             greet,
             get_system_info,
@@ -266,6 +308,10 @@ pub fn run() {
             window::create_window,
             window::close_window,
             window::switch_window,
+            window::save_window_position,
+            window::load_window_position,
+            window::save_window_position_by_label,
+            window::load_window_position_by_label,
             add_account,
             get_account_list,
             get_current_account,
@@ -276,8 +322,6 @@ pub fn run() {
             tauri_get_launch_status,
             tauri_get_launch_config,
             tauri_update_launch_config,
-            save_window_position,
-            load_window_position,
             log_frontend,
             save_accounts_to_disk,
             load_accounts_from_disk,

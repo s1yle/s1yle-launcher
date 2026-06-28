@@ -1,4 +1,4 @@
-/** 窗口位置和尺寸信息 */
+/** 单窗口位置和尺寸信息 */
 export interface WindowPosition {
   /** 窗口左上角 X 坐标 */
   x: number;
@@ -12,14 +12,22 @@ export interface WindowPosition {
   maximized: boolean;
 }
 
+/** 多窗口位置存储（按 label 索引） */
+export interface WindowPositions {
+  /** 主窗口位置 */
+  main?: WindowPosition;
+  /** 登录窗口位置 */
+  login?: WindowPosition;
+}
+
 /** 应用全局配置 */
 export interface AppConfig {
   /** 配置文件版本号 */
   version: number;
   /** Minecraft 基础路径 */
   base_path: string;
-  /** 窗口位置 */
-  window_position: WindowPosition;
+  /** 多窗口位置 */
+  window_positions: WindowPositions;
   /** 用户偏好设置 */
   preferences: UserPreferences;
   /** 下载配置 */

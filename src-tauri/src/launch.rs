@@ -88,7 +88,6 @@ pub fn init_launch_manager() {
     LAUNCH_MANAGER
         .set(Mutex::new(LaunchManager::default()))
         .unwrap_or_else(|_| panic!("启动管理器已初始化，不可重复调用"));
-    println!("✅ 启动管理器初始化完成");
 }
 
 // ======================== 核心启动逻辑 ========================

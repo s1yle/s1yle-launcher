@@ -264,10 +264,8 @@ fn init_inner(log_dir: PathBuf, min_level: LogLevel) {
 pub fn init_logging(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let log_dir = app.path().app_data_dir()?.join("logs");
     fs::create_dir_all(&log_dir)?;
-    println!("日志存储位置: {}", log_dir.to_string_lossy());
 
     init_inner(log_dir, LogLevel::Info);
-    log_info!("日志系统初始化完成");
     Ok(())
 }
 

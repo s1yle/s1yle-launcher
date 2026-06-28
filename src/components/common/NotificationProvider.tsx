@@ -33,6 +33,19 @@ interface NotificationContextValue {
   info: (title: string, message?: string) => string;
 }
 
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  if (error && typeof error === 'object' && 'message' in error) {
+    return String((error as any).message);
+  }
+  return '未知错误';
+}
+
 const NotificationContext = createContext<NotificationContextValue | null>(null);
 
 /**

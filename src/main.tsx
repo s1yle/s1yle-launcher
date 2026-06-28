@@ -17,6 +17,7 @@ import './styles/themes/light.css';
 import './styles/themes/terminal.css';
 import './styles/animations.css';
 import { Window } from "@tauri-apps/api/window";
+import { Loading } from "./pages";
 
 /** 应用初始化 - 按序初始化账户、配置、主题、实例、下载系统 */
 async function initApp() {
@@ -96,6 +97,16 @@ window.addEventListener('DOMContentLoaded', () => {
 // Detect window type and render accordingly
 
 const appWindow = getCurrentWebviewWindow();
+
+if (appWindow.label === "loading") {
+  ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+    <>
+      <h1>Hello, Surprise!</h1>
+      <h2>理论上来讲这段话从来不应该出现</h2>
+      <h2>如有疑问，请联系管理员</h2>
+    </>
+  );
+}
 
 if (appWindow.label === 'login') {
   ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(

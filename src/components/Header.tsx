@@ -3,7 +3,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Minus, X } from 'lucide-react';
-import { IconButton } from './common';
+import { IconButton, useNotification, getErrorMessage } from './common';
 import { getParentPath } from '../router/config';
 
 interface HeaderProps {
@@ -19,6 +19,7 @@ interface HeaderProps {
  */
 const Header = ({ type, title, onBack }: HeaderProps) => {
   const { t } = useTranslation();
+  const { error: notifyError, success: notifySuccess } = useNotification();
 
   let location: ReturnType<typeof useLocation> | null = null;
   let navigate: ReturnType<typeof useNavigate> | null = null;
@@ -35,7 +36,7 @@ const Header = ({ type, title, onBack }: HeaderProps) => {
       const window = getCurrentWindow();
       await window.minimize();
     } catch (error) {
-      console.error('最小化窗口失败:', error);
+      notifyError('最小化窗口失败', getErrorMessage(error));
     }
   };
 
@@ -44,7 +45,7 @@ const Header = ({ type, title, onBack }: HeaderProps) => {
       const window = getCurrentWindow();
       await window.close();
     } catch (error) {
-      console.error('关闭窗口失败:', error);
+      notifyError('关闭窗口失败', getErrorMessage(error));
     }
   };
 

@@ -9,6 +9,7 @@ import { AdminLogin } from "./views/AdminLogin";
 import { AdminRegister } from "./views/AdminRegister";
 import Header from "@/components/Header";
 import { NotificationProvider } from "@/components/common/NotificationProvider";
+import { useWindowPosition } from "@/hooks";
 
 /** 登录门禁内部组件 - 管理登录流程的视图渲染 */
 const LoginGateInner = () => {
@@ -26,6 +27,8 @@ const LoginGateInner = () => {
     handleAdminAuth,
     handleDeleteAccount,
   } = useLoginFlow();
+
+  useWindowPosition();
 
   useEffect(() => {
     useAuthStore.getState().initialize();
@@ -46,29 +49,29 @@ const LoginGateInner = () => {
         const win = getCurrentWebviewWindow();
         await win.setSize(new PhysicalSize(480, 640));
         await win.setResizable(false);
-      } catch {}
+      } catch { }
     };
     fixSize();
   }, []);
 
   return (
-    <div 
-      className="h-screen w-screen flex flex-col relative" 
+    <div
+      className="h-screen w-screen flex flex-col relative"
       onContextMenu={(e) => e.preventDefault()}
     >
       <Header type="main" title="WeCraft! Launcher" />
 
-      <div 
+      <div
         className="flex-1 flex flex-col 
           items-center justify-center 
           relative"
       >
         <div className="flex flex-col items-center gap-4 py-4 px-6 w-full max-w-md">
 
-        <div className="absolute top-5">
+          <div className="absolute top-5">
 
-          <RoleSelector selected={role} onSelect={selectRole} className="absolute top-5"/>
-        </div>
+            <RoleSelector selected={role} onSelect={selectRole} className="absolute top-5" />
+          </div>
 
           <ViewContainer view={view}>
             {view === "player-login" && (

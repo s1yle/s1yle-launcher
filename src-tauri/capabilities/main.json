@@ -2,7 +2,9 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "main",
   "description": "Capability for the main launcher window",
-  "windows": ["main"],
+  "windows": [
+    "main"
+  ],
   "permissions": [
     "core:default",
     "opener:default",
@@ -126,6 +128,8 @@
     "allow-render-isometric-avatar-cmd",
     "allow-get-skin-model",
     "allow-get-uuid-by-username",
-    "allow-get-uuids-by-usernames"
+    "allow-get-uuids-by-usernames",
+    "allow-load-window-position-by-label",
+    "allow-save-window-position-by-label"
   ]
 }

@@ -1,5 +1,5 @@
 use crate::config::{
-    AppConfig, ConfigManager, InstanceConfig, PathConfig, WindowPosition, CONFIG_APPLICATION, CONFIG_FILE_PATH, MIN_HEIGHT,
+    AppConfig, ConfigManager, InstanceConfig, PathConfig, WindowPosition, WindowPositions, CONFIG_APPLICATION, CONFIG_FILE_PATH, MIN_HEIGHT,
     MIN_WIDTH,
 };
 use crate::{log_error, log_info};
@@ -8,7 +8,7 @@ use std::{collections::HashMap, fs, path::PathBuf, sync::Mutex};
 
 impl ConfigManager {
     /// 创建新的 ConfigManager，如果配置文件不存在则创建目录
-    pub fn new(config: AppConfig, window: WindowPosition) -> Self {
+    pub fn new(config: AppConfig, windows: WindowPositions) -> Self {
         if !config.base_path.exists() {
             log_info!("启动器配置文件不存在，即将创建！");
             if let Some(parent) = config.base_path.parent() {
@@ -19,7 +19,7 @@ impl ConfigManager {
         }
         Self {
             config: Mutex::new(config),
-            window: Mutex::new(window),
+            windows: Mutex::new(windows),
         }
     }
 
@@ -66,23 +66,36 @@ impl ConfigManager {
             serde_json::from_str(&content).map_err(|e| format!("解析配置文件失败：{}", e))?;
         *self.config.lock().map_err(|e| e.to_string())? = loaded;
         
-        let window_pos = {
+        let window_positions = {
             let config = self.config.lock().map_err(|e| e.to_string())?;
-            config.window_position.clone()
+            config.window_positions.clone()
         };
-        *self.window.lock().map_err(|e| e.to_string())? = window_pos;
+        *self.windows.lock().map_err(|e| e.to_string())? = window_positions;
         
         log_info!("✅ 配置加载成功");
         Ok(())
     }
 
-    /// 获取窗口位置配置
-    pub fn get_window_pos(&self) -> Result<Option<WindowPosition>, String> {
-        let window_guard = self
-            .window
+    /// 获取所有窗口位置配置
+    pub fn get_window_positions(&self) -> Result<Option<WindowPositions>, String> {
+        let windows_guard = self
+            .windows
             .lock()
             .map_err(|e| format!("获取窗口位置锁失败：{}", e))?;
-        Ok(Some(window_guard.clone()))
+        Ok(Some(windows_guard.clone()))
+    }
+
+    /// 按窗口类型获取位置
+    pub fn get_window_pos_by_label(&self, label: &str) -> Result<Option<WindowPosition>, String> {
+        let windows_guard = self
+            .windows
+            .lock()
+            .map_err(|e| format!("获取窗口位置锁失败：{}", e))?;
+        match label {
+            "main" => Ok(windows_guard.main.clone()),
+            "login" => Ok(windows_guard.login.clone()),
+            _ => Ok(None),
+        }
     }
 
     /// 根据点号分隔的路径获取配置值
@@ -222,10 +235,36 @@ impl ConfigManager {
         self.update_config(default)
     }
 
-    /// 更新窗口位置
-    pub fn update_window_pos(&self, pos: WindowPosition) -> Result<(), String> {
+    /// 更新所有窗口位置
+    pub fn update_window_positions(&self, positions: WindowPositions) -> Result<(), String> {
         let mut config = self.get_config()?;
-        config.window_position = pos;
+        config.window_positions = positions.clone();
+        *self.windows.lock().map_err(|e| e.to_string())? = positions;
+        self.update_config(config)
+    }
+
+    /// 按窗口类型更新位置
+    pub fn update_window_pos_by_label(
+        &self,
+        label: &str,
+        pos: WindowPosition,
+    ) -> Result<(), String> {
+        let mut config = self.get_config()?;
+        let mut windows = self.windows.lock().map_err(|e| e.to_string())?;
+        
+        match label {
+            "main" => {
+                config.window_positions.main = Some(pos.clone());
+                windows.main = Some(pos);
+            }
+            "login" => {
+                config.window_positions.login = Some(pos.clone());
+                windows.login = Some(pos);
+            }
+            _ => return Err(format!("未知窗口类型: {}", label)),
+        }
+        
+        drop(windows);
         self.update_config(config)
     }
 

@@ -53,6 +53,7 @@ export type { OverlayProps } from './Loading/Overlay';
 export {
   NotificationProvider,
   useNotification,
+  getErrorMessage
 } from './NotificationProvider';
 /** 通知相关类型 */
 export type {

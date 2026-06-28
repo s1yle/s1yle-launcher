@@ -106,6 +106,10 @@ fn main() {
                         "get_skin_model",
                         "get_uuid_by_username",
                         "get_uuids_by_usernames",
+                        "save_window_position",
+                        "load_window_position",
+                        "save_window_position_by_label",
+                        "load_window_position_by_label",
                     ]),
             ),
     )

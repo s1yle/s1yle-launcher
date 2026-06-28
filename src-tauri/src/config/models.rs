@@ -223,9 +223,9 @@ pub struct AppConfig {
     /// 应用基础路径
     pub base_path: PathBuf,
     
-    /// 窗口位置配置
+    /// 多窗口位置配置
     #[serde(default)]
-    pub window_position: WindowPosition,
+    pub window_positions: WindowPositions,
     
     /// 用户偏好配置
     #[serde(default)]
@@ -260,7 +260,7 @@ impl Default for AppConfig {
         Self {
             version: CONFIG_VERSION,
             base_path: (&*CONFIG_FILE_PATH).clone(),
-            window_position: WindowPosition::default(),
+            window_positions: WindowPositions::default(),
             preferences: UserPreferences::default(),
             download: DownloadConfig::default(),
             path_config: PathConfig::default(),
@@ -301,18 +301,13 @@ impl StoreLoginState {
     }
 }
 
-/// 窗口位置和大小配置
+/// 单个窗口的位置和大小配置
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
 pub struct WindowPosition {
-    /// 窗口 X 坐标
     pub x: i32,
-    /// 窗口 Y 坐标
     pub y: i32,
-    /// 窗口宽度
     pub width: u32,
-    /// 窗口高度
     pub height: u32,
-    /// 是否最大化
     pub maximized: bool,
 }
 
@@ -326,6 +321,17 @@ impl Default for WindowPosition {
             maximized: false,
         }
     }
+}
+
+/// 多窗口位置存储（按 label 索引）
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Default)]
+pub struct WindowPositions {
+    #[serde(default)]
+    pub main: Option<WindowPosition>,
+    #[serde(default)]
+    pub login: Option<WindowPosition>,
+    #[serde(default)]
+    pub loading: Option<WindowPosition>,
 }
 
 /// 用户偏好配置
@@ -537,15 +543,15 @@ impl Default for GraphicsConfig {
 pub struct ConfigManager {
     /// 应用配置（线程安全）
     pub config: Mutex<AppConfig>,
-    /// 窗口位置（线程安全）
-    pub window: Mutex<WindowPosition>,
+    /// 多窗口位置（线程安全）
+    pub windows: Mutex<WindowPositions>,
 }
 
 impl Default for ConfigManager {
     fn default() -> Self {
         Self {
             config: Mutex::new(AppConfig::default()),
-            window: Mutex::new(WindowPosition::default())
+            windows: Mutex::new(WindowPositions::default())
         }
     }
 }
