@@ -1,5 +1,4 @@
 // src-tauri/src/lib.rs
-
 mod account;
 mod admin_account;
 mod background;
@@ -10,6 +9,7 @@ mod instance;
 mod java;
 mod launch;
 mod logging;
+mod microsoft_login;
 mod modloader;
 mod render;
 mod window;
