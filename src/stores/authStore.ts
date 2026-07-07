@@ -1,5 +1,6 @@
 import { AccountType } from '@/api';
 import type { AccountInfo } from '@/api/types/account';
+import type { StoreLoginState } from '@/api/types/config';
 import {
   invokeGetAccountList,
   invokeGetCurrentAccount,
@@ -8,121 +9,155 @@ import {
   invokeAddAccount,
   invokeAccInit,
 } from '@/api/account';
+import { invokeGetConfig } from '@/api/config';
+import { saveLoginState, clearLoginState, switchWindow } from '@/helper';
+import { useAdminStore } from './adminStore';
+import { useUserRoleStore, UserRole } from './userRoleStore';
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 
-const LOGIN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
+const DEFAULT_LOGIN_STATE: StoreLoginState = {
+  is_logged_in: false,
+  logged_in_type: 'none',
+  current_acc_uuid: null,
+  login_time: '',
+};
 
 interface AuthState {
-  isLoggedIn: boolean;
-  loggedInType: AccountType;
-  loginTime: number | null;
   accounts: AccountInfo[];
   currentAccount: AccountInfo | null;
   loading: boolean;
   initialized: boolean;
-
-  setLoggedIn: () => void;
-  setLoggedOut: () => void;
-  setLoggedInType: (type: AccountType) => void;
-  checkLoginStatus: () => boolean;
+  loginState: StoreLoginState;
 
   initialize: () => Promise<void>;
   loadAccounts: () => Promise<void>;
   setCurrentAccount: (uuid: string) => Promise<void>;
   addAccount: (
     name: string,
-    type: "microsoft" | "offline",
+    type: AccountType,
     accessToken?: string,
     refreshToken?: string
   ) => Promise<string>;
   deleteAccount: (uuid: string) => Promise<void>;
+  refreshLoginState: () => Promise<void>;
+  loginAsPlayer: (uuid: string) => Promise<void>;
+  loginAsAdmin: (email: string, password: string, isRegister: boolean) => Promise<boolean>;
+  logout: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set, get) => ({
-      isLoggedIn: false,
-      loginTime: null,
-      loggedInType: AccountType.None,
-      accounts: [],
-      currentAccount: null,
-      loading: false,
-      initialized: false,
+export const useAuthStore = create<AuthState>()((set, get) => ({
+  accounts: [],
+  currentAccount: null,
+  loading: false,
+  initialized: false,
+  loginState: { ...DEFAULT_LOGIN_STATE },
 
-      setLoggedIn: () => {
-        set({ isLoggedIn: true, loginTime: Date.now() });
-      },
-      setLoggedOut: () => {
-        set({ isLoggedIn: false, loginTime: null, loggedInType: AccountType.None });
-      },
-      setLoggedInType: (type: AccountType) => {
-        set({ loggedInType: type });
-      },
-      checkLoginStatus: () => {
-        const { loginTime } = get();
-        if (!loginTime) return false;
-        const now = Date.now();
-        const isExpired = (now - loginTime) > LOGIN_EXPIRY_MS;
-        if (isExpired) {
-          set({ isLoggedIn: false, loginTime: null });
-          return false;
-        }
-        return true;
-      },
-
-      initialize: async () => {
-        if (get().initialized) return;
-        set({ loading: true });
-        try {
-          await invokeAccInit();
-          const [accounts, current] = await Promise.all([
-            invokeGetAccountList(),
-            invokeGetCurrentAccount(),
-          ]);
-          set({ accounts, currentAccount: current, initialized: true, loading: false });
-        } catch {
-          set({ loading: false, initialized: true });
-        }
-      },
-      loadAccounts: async () => {
-        set({ loading: true });
-        try {
-          const [accounts, current] = await Promise.all([
-            invokeGetAccountList(),
-            invokeGetCurrentAccount(),
-          ]);
-          set({ accounts, currentAccount: current, loading: false });
-        } catch {
-          set({ loading: false });
-        }
-      },
-      setCurrentAccount: async (uuid: string) => {
-        await invokeSetCurrentAccount(uuid);
-        const current = await invokeGetCurrentAccount();
-        set({ currentAccount: current });
-      },
-      addAccount: async (name, type, accessToken, refreshToken) => {
-        const result = await invokeAddAccount(name, type, accessToken, refreshToken);
-        await get().loadAccounts();
-        return result;
-      },
-      deleteAccount: async (uuid: string) => {
-        await invokeDeleteAccount(uuid);
-        const { currentAccount } = get();
-        if (currentAccount?.uuid === uuid) {
-          set({ currentAccount: null });
-        }
-        await get().loadAccounts();
-      },
-    }),
-    {
-      name: 'login-storage',
-      partialize: (state) => ({
-        isLoggedIn: state.isLoggedIn,
-        loginTime: state.loginTime,
-        loggedInType: state.loggedInType,
-      }),
+  initialize: async () => {
+    if (get().initialized) return;
+    set({ loading: true });
+    try {
+      await invokeAccInit();
+      const [accounts, current, config] = await Promise.all([
+        invokeGetAccountList(),
+        invokeGetCurrentAccount(),
+        invokeGetConfig(),
+      ]);
+      set({
+        accounts,
+        currentAccount: current,
+        loginState: config.login_state ?? { ...DEFAULT_LOGIN_STATE },
+        initialized: true,
+        loading: false,
+      });
+    } catch {
+      set({ loading: false, initialized: true });
     }
-  )
-);
+  },
+  loadAccounts: async () => {
+    set({ loading: true });
+    try {
+      const [accounts, current] = await Promise.all([
+        invokeGetAccountList(),
+        invokeGetCurrentAccount(),
+      ]);
+      set({ accounts, currentAccount: current, loading: false });
+    } catch {
+      set({ loading: false });
+    }
+  },
+  refreshLoginState: async () => {
+    try {
+      const config = await invokeGetConfig();
+      set({ loginState: config.login_state ?? { ...DEFAULT_LOGIN_STATE } });
+    } catch {
+      // 静默失败，保持上次状态
+    }
+  },
+  setCurrentAccount: async (uuid: string) => {
+    await invokeSetCurrentAccount(uuid);
+    const current = await invokeGetCurrentAccount();
+    set({ currentAccount: current });
+  },
+  addAccount: async (name, type, accessToken, refreshToken) => {
+    const result = await invokeAddAccount(name, type, accessToken, refreshToken);
+    await get().loadAccounts();
+    return result;
+  },
+  deleteAccount: async (uuid: string) => {
+    await invokeDeleteAccount(uuid);
+    const { currentAccount } = get();
+    if (currentAccount?.uuid === uuid) {
+      set({ currentAccount: null });
+    }
+    await get().loadAccounts();
+  },
+
+  loginAsPlayer: async (uuid: string) => {
+    const { setCurrentAccount } = get();
+    await setCurrentAccount(uuid);
+
+    const account = get().currentAccount;
+    if (!account) throw new Error("账户设置失败");
+
+    useUserRoleStore.getState().switchRole(UserRole.PLAYER, false);
+
+    await saveLoginState({
+      is_logged_in: true,
+      logged_in_type: account.account_type,
+      current_acc_uuid: uuid,
+      login_time: new Date().toISOString(),
+    });
+
+    await get().refreshLoginState();
+    await switchWindow("login", "Main");
+  },
+
+  loginAsAdmin: async (email: string, password: string, isRegister: boolean) => {
+    const adminStore = useAdminStore.getState();
+    const ok = isRegister
+      ? await adminStore.register(email, password)
+      : await adminStore.login(email, password);
+
+    if (!ok) return false;
+
+    useUserRoleStore.getState().switchRole(UserRole.ADMIN, false);
+
+    await saveLoginState({
+      is_logged_in: true,
+      logged_in_type: AccountType.Admin,
+      current_acc_uuid: null,
+      login_time: new Date().toISOString(),
+    });
+
+    await get().refreshLoginState();
+    await switchWindow("login", "Main");
+    return true;
+  },
+
+  logout: async () => {
+    useAdminStore.getState().logout();
+    await clearLoginState();
+    await get().refreshLoginState();
+    await switchWindow("main", "Login");
+  },
+}));

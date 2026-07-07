@@ -7,10 +7,10 @@ import { AccountCard } from "../components/AccountCard";
 
 /** PlayerLogin 组件的 Props */
 interface PlayerLoginProps {
-  accounts: ReturnType<typeof import("../hooks/useLoginFlow").useLoginFlow>["accounts"];
+  accounts: import("@/api").AccountInfo[];
   onLogin: (uuid: string) => Promise<void>;
   onDeleteAccount: (uuid: string) => Promise<void>;
-  onNavigate: (view: import("../hooks/useLoginFlow").LoginView) => void;
+  onNavigate: (view: import("../LoginGate").LoginView) => void;
 }
 
 const PINNED_KEY = "wecraft:pinned_uuids";

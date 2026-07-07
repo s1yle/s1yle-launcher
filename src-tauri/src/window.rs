@@ -9,7 +9,6 @@ use tauri::{
     webview::{PageLoadEvent, PageLoadPayload},
     window::EffectState,
 };
-use windows::Win32::UI::Accessibility::BulletStyle;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum WindowType {
@@ -86,7 +85,8 @@ pub fn apply_window_config<'a>(
         WindowType::Login => {
             builder = builder
                 .inner_size(480.0, 640.0)
-                .min_inner_size(480.0, 640.0);
+                .min_inner_size(480.0, 640.0)
+                .max_inner_size(480.0, 640.0);
 
             if let Ok(main_pos) = load_window_position_by_label("login".to_string(), cm) {
                 if let Some(pos) = main_pos {

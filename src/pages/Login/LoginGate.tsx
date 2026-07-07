@@ -1,6 +1,5 @@
-import { useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuthStore } from "@/stores/authStore";
-import { useLoginFlow } from "./hooks/useLoginFlow";
 import { RoleSelector } from "./components/RoleSelector";
 import { ViewContainer } from "./components/ViewContainer";
 import { PlayerLogin } from "./views/PlayerLogin";
@@ -11,22 +10,23 @@ import Header from "@/components/Header";
 import { NotificationProvider } from "@/components/common/NotificationProvider";
 import { useWindowPosition } from "@/hooks";
 
-/** 登录门禁内部组件 - 管理登录流程的视图渲染 */
+export type LoginView = "player-login" | "player-add" | "admin-login" | "admin-register";
+
+const VIEW_STACK: Record<LoginView, LoginView | null> = {
+  "player-login": null,
+  "player-add": "player-login",
+  "admin-login": "player-login",
+  "admin-register": "admin-login",
+};
+
 const LoginGateInner = () => {
-  // useLoginFlow hook
-  const {
-    view,
-    role,
-    accounts,
-    loadAccounts,
-    addAccount,
-    selectRole,
-    navigateTo,
-    goBack,
-    handlePlayerLogin,
-    handleAdminAuth,
-    handleDeleteAccount,
-  } = useLoginFlow();
+  const [view, setView] = useState<LoginView>("player-login");
+  const [role, setRole] = useState<"player" | "admin">("player");
+  const accounts = useAuthStore((s) => s.accounts);
+  const addAccount = useAuthStore((s) => s.addAccount);
+  const deleteAccount = useAuthStore((s) => s.deleteAccount);
+  const loginAsPlayer = useAuthStore((s) => s.loginAsPlayer);
+  const loginAsAdmin = useAuthStore((s) => s.loginAsAdmin);
 
   useWindowPosition();
 
@@ -53,6 +53,37 @@ const LoginGateInner = () => {
     };
     fixSize();
   }, []);
+
+  const handlePlayerLogin = useCallback(async (uuid?: string) => {
+    if (!uuid) return;
+    await loginAsPlayer(uuid);
+  }, [loginAsPlayer]);
+
+  const handleAdminAuth = useCallback(async (email: string, password: string, isRegister: boolean) => {
+    return await loginAsAdmin(email, password, isRegister);
+  }, [loginAsAdmin]);
+
+  const navigateTo = useCallback((target: LoginView) => {
+    setView(target);
+  }, []);
+
+  const goBack = useCallback(() => {
+    const prev = VIEW_STACK[view];
+    if (prev) setView(prev);
+  }, [view]);
+
+  const selectRole = useCallback((r: "player" | "admin") => {
+    setRole(r);
+    if (r === "player") {
+      setView(accounts.length > 0 ? "player-login" : "player-add");
+    } else {
+      setView("admin-login");
+    }
+  }, [accounts.length]);
+
+  const handleDeleteAccount = useCallback(async (uuid: string) => {
+    await deleteAccount(uuid);
+  }, [deleteAccount]);
 
   return (
     <div
@@ -112,7 +143,6 @@ const LoginGateInner = () => {
   );
 };
 
-/** 登录门禁组件 - 玩家/管理员登录/注册的入口包装 */
 const LoginGate = () => (
   <NotificationProvider>
     <LoginGateInner />

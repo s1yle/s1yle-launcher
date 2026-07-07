@@ -20,33 +20,10 @@ export const routes: RouteConfig[] = [
   },
   {
     path: '/account',
-        componentName: 'AccountList',
+    componentName: 'AccountDetail',
     header: { type: SidebarType.SUB, title: '账户列表', titleI18nKey: 'sidebar.accountList' },
     sidebarGroup: SidebarGroup.ACCOUNT,
     parentPath: '/',
-    children: [
-      {
-        path: '/account/microsoft',
-        componentName: 'MicrosoftAccount',
-        header: { type: SidebarType.SECONDARY, title: '微软账户', titleI18nKey: 'sidebar.microsoftAccount' },
-        sidebarGroup: SidebarGroup.ACCOUNT,
-        parentPath: '/account'
-      },
-      {
-        path: '/account/offline',
-        componentName: 'OfflineAccount',
-        header: { type: SidebarType.SECONDARY, title: '离线账户', titleI18nKey: 'sidebar.offlineAccount' },
-        sidebarGroup: SidebarGroup.ACCOUNT,
-        parentPath: '/account'
-      },
-      {
-        path: '/account/thirdparty',
-        componentName: 'ThirdParty',
-        header: { type: SidebarType.SECONDARY, title: '第三方账户', titleI18nKey: 'sidebar.thirdPartyAccount' },
-        sidebarGroup: SidebarGroup.ACCOUNT,
-        parentPath: '/account'
-      },
-    ]
   },
   {
     path: '/instance-manage/:instanceId',

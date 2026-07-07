@@ -31,6 +31,10 @@ input, textarea, [contenteditable="true"] {
   user-select: text;
 }
 
+input:focus {
+  outline: none;
+}
+
 select {
   -webkit-appearance: none;
   -moz-appearance: none;

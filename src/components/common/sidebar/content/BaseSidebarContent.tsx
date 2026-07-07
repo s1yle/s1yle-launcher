@@ -320,7 +320,7 @@ const BaseSidebarContent = ({
           {/* 按钮图标 */}
           {item.icon && (
             <motion.span
-              className="w-5 h-5 flex-shrink-0 flex items-center justify-center pl-2 "
+              className="flex-shrink-0 flex items-center justify-center pl-2 "
               whileHover={microInteractions.iconHover}
               transition={EASING.SPRING_STIFF}
             >

@@ -138,3 +138,22 @@ export const invokeAccInit = async (
   logger.info('准备调用 initialize_account_system', args);
   return await invokeRust("initialize_account_system", args, options);
 };
+
+/** 微软设备码响应 */
+export interface MicrosoftDeviceCode {
+  user_code: string;
+  verification_uri: string;
+  device_code: string;
+}
+
+/**
+ * 获取微软设备码（用于 OAuth 设备码登录流程）
+ * @param options Tauri invoke 选项
+ * @returns 设备码响应
+ */
+export const invokeMicrosoftDeviceCode = async (
+  options?: InvokeOptions
+): Promise<MicrosoftDeviceCode> => {
+  logger.info('准备调用 microsoft_device_code');
+  return await invokeRust("microsoft_device_code", {}, options) as MicrosoftDeviceCode;
+};

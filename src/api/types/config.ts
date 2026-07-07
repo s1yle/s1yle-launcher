@@ -36,6 +36,8 @@ export interface AppConfig {
   path_config: PathConfig;
   /** 实例配置映射（instance_id -> InstanceConfig） */
   instance_configs: Record<string, InstanceConfig>;
+  /** 登录状态（后端持久化，单一起源） */
+  login_state: StoreLoginState;
 }
 
 /** 路径相关配置 */

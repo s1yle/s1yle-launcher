@@ -1,9 +1,30 @@
 use core::time;
 use std::fmt;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::from_str;
+use tauri::command;
 use tokio::{io::join, join, spawn, sync::mpsc, time::sleep};
+
+/// 设备码响应，返回给前端
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct DeviceCodeResponse {
+    pub user_code: String,
+    pub verification_uri: String,
+    pub device_code: String,
+}
+
+/// 获取 Microsoft 设备码
+#[command]
+pub async fn microsoft_device_code() -> Result<DeviceCodeResponse, String> {
+    let client_id = "07e2e2dd-ee1f-4a8f-a09a-1325ba9ff0cd".to_string();
+    let code = get_devicecode(&client_id).await.map_err(|e| e.to_string())?;
+    Ok(DeviceCodeResponse {
+        user_code: code.user_code,
+        verification_uri: code.verification_uri,
+        device_code: code.device_code,
+    })
+}
 
 #[derive(serde::Deserialize, std::fmt::Debug)]
 struct DeviceCode {

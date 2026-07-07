@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
+import { Crown, Mail } from 'lucide-react';
 import ActionButton from '../components/common/StartGameButton';
 import PlayerProfile from '../components/common/home/PlayerProfile';
 import { LoadingSurface, Page, PageSection } from '@/components/common';
 import { useInstanceStore } from '../stores/instanceStore';
-import { useUserRoleStore } from '../stores/userRoleStore';
+import { useAdminStore } from '../stores/adminStore';
+import { useUserRoleStore, UserRole } from '../stores/userRoleStore';
 import { UIMode, useUIModeStore } from '../stores/uiModeStore';
 import { useLocation } from 'react-router-dom';
 import { getCurrentAccount, type AccountInfo } from '../helper/rustInvoke';
@@ -15,6 +17,7 @@ import { pagesWithOwnSidebar } from '@/router/config';
 const Home = () => {
   const instance_init = useInstanceStore(s => s.init);
   const { currentRole } = useUserRoleStore();
+  const adminSession = useAdminStore((s) => s.session);
   const { mode: uiMode } = useUIModeStore();
   const location = useLocation();
 
@@ -47,15 +50,28 @@ const Home = () => {
   return (
     <Page className="flex flex-col items-center justify-center min-h-[calc(100vh-120px)] p-0">
       <PageSection className="max-w-4xl w-full space-y-8">
-        <LoadingSurface loadingKey="home:profile" skeleton="profile">
-          <PlayerProfile
-            name={accountName}
-            role={currentRole}
-          />
-        </LoadingSurface>
+        {currentRole === UserRole.ADMIN ? (
+          <div className="flex flex-col items-center gap-4 py-12">
+            <div className="w-20 h-20 rounded-full bg-purple-500/20 flex items-center justify-center">
+              <Crown className="w-10 h-10 text-purple-400" />
+            </div>
+            <h1 className="text-lg font-medium text-text-primary">服主</h1>
+            <div className="flex items-center gap-2 text-sm text-text-secondary">
+              <Mail className="w-4 h-4" />
+              <span>{adminSession?.email ?? '未绑定邮箱'}</span>
+            </div>
+          </div>
+        ) : (
+          <LoadingSurface loadingKey="home:profile" skeleton="profile">
+            <PlayerProfile
+              name={accountName}
+              role={currentRole}
+            />
+          </LoadingSurface>
+        )}
       </PageSection>
 
-      <ActionButton />
+      {currentRole !== UserRole.ADMIN && <ActionButton />}
     </Page>
   );
 };

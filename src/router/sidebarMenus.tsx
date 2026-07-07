@@ -1,5 +1,4 @@
 import {
-  UserMinus,
   User,
   Settings,
   FileText,
@@ -8,7 +7,6 @@ import {
   Download,
   Gamepad2,
   Package,
-  Monitor,
   FolderTree,
   FolderPlus,
   RefreshCw,
@@ -25,7 +23,10 @@ import {
   UserPlus,
   Upload,
   BarChart3,
-  type LucideIcon
+  type LucideIcon,
+  BoomBox,
+  BoomBoxIcon,
+  Box
 } from 'lucide-react';
 import { UserRole } from '@/stores/userRoleStore';
 import { SidebarGroup, type SidebarMenuItem, } from "./models";
@@ -59,35 +60,6 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
         icon: <User className="w-4 h-4" />,
         path: '/account',
         group: SidebarGroup.ACCOUNT,
-        children: [
-          {
-            id: 'microsoft-account',
-            type: 'action',
-            title: '微软账户',
-            titleI18nKey: 'sidebar.microsoftAccount',
-            icon: <Monitor className="w-4 h-4" />,
-            path: '/account/microsoft',
-            group: SidebarGroup.ACCOUNT
-          },
-          {
-            id: 'offline-account',
-            type: 'action',
-            title: '离线账户',
-            titleI18nKey: 'sidebar.offlineAccount',
-            icon: <UserMinus className="w-4 h-4" />,
-            path: '/account/offline',
-            group: SidebarGroup.ACCOUNT
-          },
-          {
-            id: 'thirdparty-account',
-            type: 'action',
-            title: '第三方账户',
-            titleI18nKey: 'sidebar.thirdPartyAccount',
-            icon: <UserPlus className="w-4 h-4" />,
-            path: '/account/thirdparty',
-            group: SidebarGroup.ACCOUNT
-          }
-        ]
       }
     ]
   },
@@ -363,7 +335,7 @@ export const sidebarMenuItems: SidebarMenuItem[] = [
             type: 'route',
             title: 'Java 管理',
             titleI18nKey: 'sidebar.javaSettings',
-            icon: <UserPlus className="w-4 h-4" />,
+            icon: <PackageOpen className="w-4 h-4" />,
             path: '/settings/java',
             group: SidebarGroup.COMMON,
           },

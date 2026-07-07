@@ -1,6 +1,6 @@
 import { motion, AnimatePresence, scale } from "framer-motion";
 import type { ReactNode } from "react";
-import type { LoginView } from "../hooks/useLoginFlow";
+import type { LoginView } from "../LoginGate";
 
 interface ViewContainerProps {
   view: LoginView;
