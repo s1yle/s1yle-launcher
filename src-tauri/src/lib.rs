@@ -405,6 +405,7 @@ pub fn run() {
             render::get_skin_model,
             render::get_uuid_by_username,
             render::get_uuids_by_usernames,
+            microsoft_login::microsoft_device_code,
         ])
         .run(tauri::generate_context!())
         .expect("启动失败！");

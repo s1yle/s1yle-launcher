@@ -1,19 +1,16 @@
 import { useLocation, useParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { routes, findRouteByPath } from "../router/config";
 import {
   Loading,
   Home,
-  AccountList,
+  AccountDetail,
   InstanceManage,
   InstanceList,
   DownloadGame,
   DownloadModpack,
   VersionDetailWithInstall,
-  MicrosoftAccount,
-  OfflineAccount,
-  ThirdParty,
   AppearanceSettings,
   JavaSettings,
   Multiplayer,
@@ -25,20 +22,17 @@ import {
 import { AdminServers, AdminAnalytics, AdminUpload } from '../pages/admin';
 import { useAnimation } from "../hooks/useAnimation";
 import { DURATION, pageTransition } from "../utils/animations";
-import { useNavStore } from "../stores/navStore";
+import { useNavStore, type NavDirection } from "../stores/navStore";
 
 const componentMap: Record<string, React.FC> = {
   Loading,
   Home,
-  AccountList,
+  AccountDetail,
   InstanceManage,
   InstanceList,
   DownloadGame,
   DownloadModpack,
   VersionDetailWithInstall,
-  MicrosoftAccount,
-  OfflineAccount,
-  ThirdParty,
   AppearanceSettings,
   JavaSettings,
   Multiplayer,
@@ -187,6 +181,16 @@ const RouterRenderer = ({
       </div>
     );
   }
+
+  // const dirRef = useRef<NavDirection>(null);
+  // const dir = useNavStore.getState().direction;
+  // dirRef.current = dir;
+
+  // useEffect(() => {
+  //   if (dirRef.current !== null) {
+  //     useNavStore.getState().setDirection(null);
+  //   }
+  // }, [dir]);
 
   const variant = (() => {
     if (!enabled) return { initial: {}, animate: {}, exit: {} };

@@ -2,17 +2,18 @@ import { useState } from "react";
 import { ChevronLeft, Loader2, UserPlus } from "lucide-react";
 import { IconButton } from "@/components/common";
 import { useNotification } from "@/components/common/NotificationProvider";
+import { Account, AccountType } from "@/api";
 
 /** PlayerAdd 组件的 Props */
 interface PlayerAddProps {
-  onAdd: (name: string, type: "microsoft" | "offline") => Promise<string>;
+  onAdd: (name: string, type: AccountType) => Promise<string>;
   onBack: () => void;
 }
 
 /** 添加玩家账户视图 - 创建离线或微软账户 */
 export function PlayerAdd({ onAdd, onBack }: PlayerAddProps) {
   const [name, setName] = useState("");
-  const [type, setType] = useState<"microsoft" | "offline">("offline");
+  const [type, setType] = useState<AccountType>(AccountType.Offline);
   const [adding, setAdding] = useState(false);
   const { error: notifyError } = useNotification();
 
@@ -59,7 +60,7 @@ export function PlayerAdd({ onAdd, onBack }: PlayerAddProps) {
           <label className="block text-xs text-[var(--color-text-secondary)] mb-1.5">账户类型</label>
           <div className="flex gap-2">
             <button
-              onClick={() => setType("offline")}
+              onClick={() => setType(AccountType.Offline)}
               className={`flex-1 py-2 rounded-lg text-sm border transition-all ${type === "offline"
                 ? "bg-[var(--color-primary)]/10 border-[var(--color-primary)] text-[var(--color-primary)]"
                 : "bg-[var(--color-surface-hover)] border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-primary)]/50"
@@ -68,7 +69,7 @@ export function PlayerAdd({ onAdd, onBack }: PlayerAddProps) {
               离线
             </button>
             <button
-              onClick={() => setType("microsoft")}
+              onClick={() => setType(AccountType.Microsoft)}
               className={`flex-1 py-2 rounded-lg text-sm border transition-all ${type === "microsoft"
                 ? "bg-[var(--color-primary)]/10 border-[var(--color-primary)] text-[var(--color-primary)]"
                 : "bg-[var(--color-surface-hover)] border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-primary)]/50"

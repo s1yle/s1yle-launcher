@@ -9,7 +9,6 @@ import { useNavStore } from '@/stores/navStore';
 import { useNotification, ConfirmPopup } from '@/components/common';
 import { getNavItemsByRole, type NavItem } from '@/config/navigationConfig';
 import { autoJumpToFirstChild, findRouteByPath, routes } from '@/router/config';
-import { useAuth } from '@/hooks/useAuth';
 
 /** 灵动岛导航组件 Props */
 export interface DynamicIslandProps {
@@ -70,7 +69,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
   const navDragActiveRef = useRef(false);
   const navDragProgressRef = useRef(0);
   const navDragDirectionRef = useRef<'left' | 'right'>('right');
-  const { logout } = useAuth();
+  const logout = useAuthStore((s) => s.logout);
   const { error: notifyError } = useNotification();
 
   const navItems = useMemo(() => getNavItemsByRole(currentRole), [currentRole]);

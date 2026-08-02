@@ -110,6 +110,7 @@ fn main() {
                         "load_window_position",
                         "save_window_position_by_label",
                         "load_window_position_by_label",
+                        "microsoft_device_code",
                     ]),
             ),
     )

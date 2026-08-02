@@ -31,7 +31,7 @@ const BaseSidebarLayout = ({
       </div>
 
       {footer && (
-        <div className="border-t border-[var(--color-border)] p-2">
+        <div className="p-2">
           {footer}
         </div>
       )}

@@ -240,6 +240,11 @@ export { default as RoleSelectCard } from './RoleSelectCard';
 /** 角色选择卡片 Props */
 export type { RoleSelectCardProps } from './RoleSelectCard';
 
+/** 选择器滑动动画组件 */
+export { Selector } from './Selector';
+/** 选择器选项类型 */
+export type { SelectorOption } from './Selector';
+
 /** 滚动显现动画组件 */
 export { Reveal } from './Reveal';
 /** 滚动显现动画 Props */

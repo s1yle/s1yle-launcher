@@ -67,13 +67,11 @@ export const useUserRoleStore = create<UserRoleState>()(
           });
 
           // 切换角色（导航在组件中处理）
-          setTimeout(() => {
-            set({
-              currentRole: role,
-              isTransitioning: false,
-              previousRole: null
-            });
-          }, 200);
+          set({
+            currentRole: role,
+            isTransitioning: false,
+            previousRole: null
+          });
         } else {
           // 普通切换
           set({
@@ -81,9 +79,7 @@ export const useUserRoleStore = create<UserRoleState>()(
             previousRole: currentRole
           });
 
-          setTimeout(() => {
-            set({ currentRole: role, isTransitioning: false });
-          }, 350);
+          set({ currentRole: role, isTransitioning: false });
         }
       },
 

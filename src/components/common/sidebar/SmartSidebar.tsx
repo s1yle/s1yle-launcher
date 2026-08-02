@@ -8,7 +8,10 @@ import { logger } from '../../../helper/logger';
 import { openUrl, openFolder } from '../../../helper/rustInvoke';
 import { useInstanceStore } from '@/stores/instanceStore';
 import { Folder } from 'lucide-react';
-import { BaseSidebarContent, ConfirmPopup, useNotification } from '@/components/common';
+import { BaseSidebarContent, ConfirmPopup, useNotification, SkinAvatar } from '@/components/common';
+import { useAuthStore } from '@/stores/authStore';
+import { useAccountSelectionStore } from '@/stores/accountSelectionStore';
+import { UserPlus } from 'lucide-react';
 import { DURATION } from '@/utils/animations';
 import { useContextMenuAction } from '../../../router/contextMenuConfigs';
 
@@ -123,6 +126,34 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: Sm
   } else {
     // 普通页面：显示所有顶级菜单
     sidebarItems = Object.values(groups).flat();
+  }
+
+  // 账户页面：使用动态账户列表作为侧边栏
+  const isAccountPage = location.pathname === '/account';
+  const storeAccounts = useAuthStore(s => s.accounts);
+  const selectedUuid = useAccountSelectionStore(s => s.selectedUuid);
+  if (isAccountPage) {
+    const accountItems: SidebarMenuItem[] = storeAccounts.map(acc => ({
+      id: `account-${acc.uuid}`,
+      type: 'action' as const,
+      title: acc.name,
+      titleI18nKey: '',
+      icon: <SkinAvatar uuid={acc.uuid} size={20} />,
+      action: () => useAccountSelectionStore.getState().selectAccount(acc.uuid),
+      group: SidebarGroup.ACCOUNT,
+    }));
+
+    accountItems.push({
+      id: 'add-account-btn',
+      type: 'action' as const,
+      title: '添加账户',
+      titleI18nKey: '',
+      icon: <UserPlus className="w-4 h-4" />,
+      action: () => useAccountSelectionStore.getState().openAddPopup(),
+      group: SidebarGroup.ACCOUNT,
+    });
+
+    sidebarItems = accountItems;
   }
 
   // 生成动态文件夹菜单项
@@ -257,7 +288,10 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: Sm
                 isParentActive={isParentOfActive}
                 hasChildrenItems={hasChildrenItems}
 
-                isItemActive={(id) => id === `folder-${selectedFolderId}`}
+                isItemActive={(id) => {
+                  if (isAccountPage) return id === `account-${useAccountSelectionStore.getState().selectedUuid}`;
+                  return id === `folder-${selectedFolderId}`;
+                }}
                 groupTitle={currentMenuItem?.title || parentMenuItem?.title || ''}
                 groupTitleI18nKey={currentMenuItem?.titleI18nKey || parentMenuItem?.titleI18nKey}
                 onItemDelete={handleDeleteFolder}

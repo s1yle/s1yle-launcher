@@ -3,15 +3,12 @@
  */
 export { default as Loading } from './Loading';
 export { default as Home } from './Home';
-export { default as AccountList } from './AccountList/AccountList';
 export { default as InstanceManage } from './Instance/InstanceManage';
 export { default as InstanceList } from './Instance/InstanceList';
 export { default as DownloadGame } from './Download/DownloadGame';
 export { default as DownloadModpack } from './Download/DownloadModpack';
 export { default as VersionDetailWithInstall } from './Download/VersionDetailWithInstall';
-export { default as MicrosoftAccount } from './AccountList/MicrosoftAccount';
-export { default as OfflineAccount } from './AccountList/OfflineAccount';
-export { default as ThirdParty } from './AccountList/ThirdParty';
+export { default as AccountDetail } from './AccountList/AccountDetail';
 export { default as AppearanceSettings } from './Settings/AppearanceSettings';
 export { default as JavaSettings } from './Settings/JavaSettings.tsx';
 export { default as Multiplayer } from './Multiplayer';

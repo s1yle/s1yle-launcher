@@ -186,7 +186,7 @@ const Popup = ({
                           transition-colors rounded-md cursor-pointer
                         "
                         style={{ color: 'var(--color-text-secondary)' }}
-                        aria-label="关闭弹窗"
+                          aria-label="关闭弹窗"
                         onMouseEnter={(e) => {
                           e.currentTarget.style.backgroundColor = 'var(--color-primary-10)';
                         }}
