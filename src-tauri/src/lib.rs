@@ -70,7 +70,7 @@ pub use crate::modloader::{
     get_fabric_version_detail, get_fabric_versions, get_forge_versions, get_installed_mod_loaders,
 };
 
-pub use crate::java::{JavaInstallation, scan_java_installations};
+pub use crate::java::{JavaInstallation, get_java_version, scan_java_installations};
 
 pub use logging::{init_logging, log_frontend};
 
@@ -394,6 +394,7 @@ pub fn run() {
             config::get_assets_path,
             config::get_natives_path,
             scan_java_installations,
+            get_java_version,
             // 字体
             get_system_fonts,
             get_font,

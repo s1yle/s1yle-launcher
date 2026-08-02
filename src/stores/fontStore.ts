@@ -149,6 +149,10 @@ export const useFontStore = create<FontStoreState>()(
         // 重新 hydrate 时更新 HTML 属性
         if (state && typeof document !== 'undefined') {
           document.documentElement.setAttribute('data-font-scale', state.fontScale.toString());
+          if (state.font) {
+            document.documentElement.style.fontFamily =
+              `"${state.font.name}", ui-sans-serif, system-ui, sans-serif`;
+          }
         }
       },
       partialize: (state) => ({

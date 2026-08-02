@@ -43,134 +43,412 @@ pub struct JavaInstallation {
     pub is_jdk: bool,
 }
 
-/// 在 Linux 系统上扫描 Java 安装
+/// 从 java -version 输出中解析版本信息
+fn parse_java_version_output(stderr: &str) -> (String, String) {
+    use regex::Regex;
+
+    let version_reg = Regex::new(r#"version "(\d+(?:\.\d+)+(?:_\d+)?)""#).ok();
+    let version = version_reg
+        .and_then(|re| re.captures(stderr).and_then(|cap| cap.get(1)))
+        .map(|m| m.as_str().to_string())
+        .unwrap_or_else(|| "Unknown".to_string());
+
+    let vendor_reg = Regex::new(r"Runtime Environment \(([^)]+)\)").ok();
+    let vendor = vendor_reg
+        .and_then(|re| re.captures(stderr).and_then(|cap| cap.get(1)))
+        .map(|m| m.as_str().to_string())
+        .unwrap_or_else(|| "Unknown".to_string());
+
+    (version, vendor)
+}
+
+/// 检测指定路径是否为 JDK
+#[cfg(target_os = "windows")]
+fn is_jdk_at_path(java_home: &PathBuf) -> bool {
+    java_home.join("bin").join("javac.exe").exists()
+}
+
+#[cfg(not(target_os = "windows"))]
+fn is_jdk_at_path(java_home: &PathBuf) -> bool {
+    java_home.join("bin").join("javac").exists()
+}
+
+/// 获取 java 可执行文件名
+#[cfg(target_os = "windows")]
+const JAVA_EXECUTABLE: &str = "java.exe";
+
+#[cfg(not(target_os = "windows"))]
+const JAVA_EXECUTABLE: &str = "java";
+
+// =============================================================================
+// Linux 平台实现
+// =============================================================================
+
+#[cfg(target_os = "linux")]
 fn scan_java_on_linux() -> Result<Vec<JavaInstallation>, String> {
     use std::fs;
     use std::fs::symlink_metadata;
     use std::process::Command;
 
-    println!("------------------- scan_java_on_linux ------------------------");
-
     const USR_LIB_JVM: &str = "/usr/lib/jvm/";
     const USR_LIB_JAVA: &str = "/usr/lib/java/";
     const USR_JAVA: &str = "/usr/java";
-    let mut javas: Vec<JavaInstallation> = Vec::default();
 
-    // 第一步：扫描 java 一般存放的位置
-    let linux_java_paths = Vec::from([USR_LIB_JVM, USR_LIB_JAVA, USR_JAVA]);
+    let mut javas: Vec<JavaInstallation> = Vec::new();
+    let linux_java_paths = [USR_LIB_JVM, USR_LIB_JAVA, USR_JAVA];
+
     for path in linux_java_paths {
-        if let Ok(entrys) = fs::read_dir(path) {
-            for entry in entrys {
-                let metadata = symlink_metadata(entry.as_ref().unwrap().path());
-                let mut is_jdk = false;
+        if let Ok(entries) = fs::read_dir(path) {
+            for entry in entries.filter_map(|e| e.ok()) {
+                let entry_path = entry.path();
+                let metadata = match symlink_metadata(&entry_path) {
+                    Ok(m) => m,
+                    Err(_) => continue,
+                };
 
-                if !metadata.as_ref().unwrap().is_symlink() {
-                    println!("path: {} \n", path);
-                    println!("current entry: {:?}", entry);
-                    println!("METADATA {:?}", metadata);
-
-                    // 初步解析出的 java 版本号
-                    let java_home = entry.as_ref().unwrap().file_name();
-                    println!("JAVA_HOME: {:?}", java_home);
-
-                    // 进入 bin 目录
-                    let inner_path = entry.unwrap().path().join("bin");
-
-                    // 检查是 jdk 还是 jre
-                    let javac_path = inner_path.join("javac");
-                    is_jdk = javac_path.is_file();
-
-                    println!("\n inner_path: {:?}", inner_path);
-                    if let Ok(entrys_) = fs::read_dir(inner_path) {
-                        for entry in entrys_.filter_map(|rs| rs.ok()) {
-                            // 获取到 java 可执行文件
-                            if entry.file_name() == "java" {
-                                use regex::Regex;
-
-                                println!("---------------------------------------");
-                                println!("inner_entry: {:?}", entry);
-                                println!("inner_entry.path: {:?}", entry.path());
-                                println!("inner_entry.filetype: {:?}", entry.file_type());
-                                println!("inner_entry.filename: {:?}", entry.file_name());
-                                println!("---------------------------------------\n");
-
-                                let output = Command::new(entry.path())
-                                    .arg("-version")
-                                    .output()
-                                    .expect("command exec failed!");
-                                println!("raw: {:?}", output);
-                                println!("status: {:?}", output.status);
-                                println!("stdout: {:?}", output.stdout);
-                                println!("stderr: {:?}", output.stderr);
-
-                                let stderr_bytes = output.stderr;
-                                let stderr_txt = String::from_utf8(stderr_bytes)
-                                    .map_err(|e| format!("非utf-8输出: {}", e))?;
-
-                                let version_reg =
-                                    Regex::new(r#"version "(\d+\.+\d+\.+\d+)"#).unwrap();
-
-                                // 通过正则表达式获取 version 字符串
-                                let version = version_reg
-                                    .captures(&stderr_txt[..])
-                                    .and_then(|cap| cap.get(1))
-                                    .map(|m| m.as_str().to_string())
-                                    .unwrap_or_else(|| "Unknown".to_string());
-
-                                println!("version: {:?}", version);
-
-                                // 获取发行版/厂商
-                                let vendor_reg =
-                                    Regex::new(r"Runtime Environment \(([A-Za-z_]+)-").unwrap();
-                                let vendor = vendor_reg
-                                    .captures(&stderr_txt[..])
-                                    .and_then(|cap| cap.get(1))
-                                    .map(|m| m.as_str().to_string())
-                                    .unwrap_or_else(|| "Unknown".to_string());
-
-                                println!("vendor: {:?}", vendor);
-
-                                javas.push(JavaInstallation {
-                                    path: entry.path(),
-                                    is_jdk,
-                                    version,
-                                    vendor,
-                                });
-                            }
-                        }
-                    }
+                // 跳过符号链接
+                if metadata.is_symlink() {
+                    continue;
                 }
+
+                let bin_path = entry_path.join("bin");
+                let is_jdk = bin_path.join("javac").is_file();
+                let java_exe = bin_path.join("java");
+
+                if !java_exe.is_file() {
+                    continue;
+                }
+
+                let output = match Command::new(&java_exe).arg("-version").output() {
+                    Ok(out) => out,
+                    Err(_) => continue,
+                };
+
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                let (version, vendor) = parse_java_version_output(&stderr);
+
+                javas.push(JavaInstallation {
+                    path: java_exe,
+                    version,
+                    vendor,
+                    is_jdk,
+                });
             }
         }
     }
 
-    println!("------------------- scan_java_on_linux ------------------------");
-
     if javas.is_empty() {
-        Err(format!("linux下未扫描出 java！"))
+        Err("Linux 下未扫描到 Java 安装".to_string())
     } else {
         Ok(javas)
     }
 }
+
+// =============================================================================
+// Windows 平台实现
+// =============================================================================
+
+#[cfg(target_os = "windows")]
+fn scan_java_on_windows() -> Result<Vec<JavaInstallation>, String> {
+    use std::collections::HashSet;
+    use std::fs;
+    use std::process::Command;
+    use windows::{
+        Win32::Foundation::ERROR_SUCCESS,
+        Win32::System::Registry::{
+            HKEY_LOCAL_MACHINE, KEY_READ, RegCloseKey, RegEnumKeyExW, RegOpenKeyExW,
+            RegQueryValueExW,
+        },
+        core::PCWSTR,
+    };
+
+    let mut javas: Vec<JavaInstallation> = Vec::new();
+    let mut seen_paths: HashSet<PathBuf> = HashSet::new();
+
+    // 辅助闭包：获取 Java 信息并添加到列表
+    let mut add_java = |java_path: PathBuf| {
+        if !java_path.exists() || seen_paths.contains(&java_path) {
+            return;
+        }
+
+        let output = match Command::new(&java_path).arg("-version").output() {
+            Ok(out) => out,
+            Err(_) => return,
+        };
+
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let (version, vendor) = parse_java_version_output(&stderr);
+
+        let java_home = java_path
+            .parent()
+            .and_then(|p| p.parent())
+            .unwrap_or(&java_path)
+            .to_path_buf();
+        let is_jdk = is_jdk_at_path(&java_home);
+
+        seen_paths.insert(java_path.clone());
+        javas.push(JavaInstallation {
+            path: java_path,
+            version,
+            vendor,
+            is_jdk,
+        });
+    };
+
+    // 1. 从注册表 HKLM\SOFTWARE\JavaSoft 读取
+    let registry_path: Vec<u16> = "SOFTWARE\\JavaSoft"
+        .encode_utf16()
+        .chain(std::iter::once(0))
+        .collect();
+
+    let mut hkey = std::mem::MaybeUninit::uninit();
+    let result = unsafe {
+        RegOpenKeyExW(
+            HKEY_LOCAL_MACHINE,
+            PCWSTR::from_raw(registry_path.as_ptr()),
+            Some(0u32),
+            KEY_READ,
+            hkey.as_mut_ptr(),
+        )
+    };
+
+    if result == ERROR_SUCCESS {
+        let hkey = unsafe { hkey.assume_init() };
+        let mut index: u32 = 0;
+
+        loop {
+            let mut key_name = [0u16; 256];
+            let mut cb_name: u32 = key_name.len() as u32;
+
+            let result = unsafe {
+                RegEnumKeyExW(
+                    hkey,
+                    index,
+                    Some(windows::core::PWSTR::from_raw(key_name.as_mut_ptr())),
+                    &mut cb_name,
+                    None,
+                    None,
+                    None,
+                    None,
+                )
+            };
+
+            if result != ERROR_SUCCESS {
+                break;
+            }
+
+            let subkey_name = String::from_utf16_lossy(&key_name[..cb_name as usize]);
+
+            // 尝试读取子键的 JavaHome 值
+            let java_home_path: Vec<u16> =
+                format!("SOFTWARE\\JavaSoft\\{}\\CurrentVersion", subkey_name)
+                    .encode_utf16()
+                    .chain(std::iter::once(0))
+                    .collect();
+
+            let mut sub_hkey = std::mem::MaybeUninit::uninit();
+            let sub_result = unsafe {
+                RegOpenKeyExW(
+                    HKEY_LOCAL_MACHINE,
+                    PCWSTR::from_raw(java_home_path.as_ptr()),
+                    Some(0u32),
+                    KEY_READ,
+                    sub_hkey.as_mut_ptr(),
+                )
+            };
+
+            if sub_result == ERROR_SUCCESS {
+                let sub_hkey = unsafe { sub_hkey.assume_init() };
+                let mut data = [0u8; 512];
+                let mut cb_data: u32 = data.len() as u32;
+                let value_name: Vec<u16> = "JavaHome"
+                    .encode_utf16()
+                    .chain(std::iter::once(0))
+                    .collect();
+
+                let query_result = unsafe {
+                    RegQueryValueExW(
+                        sub_hkey,
+                        PCWSTR::from_raw(value_name.as_ptr()),
+                        None,
+                        None,
+                        Some(data.as_mut_ptr()),
+                        Some(&mut cb_data),
+                    )
+                };
+
+                if query_result == ERROR_SUCCESS {
+                    // 解析 UTF-16 字符串
+                    let java_home = String::from_utf16_lossy(
+                        &data[..cb_data as usize]
+                            .chunks(2)
+                            .map(|chunk| {
+                                if chunk.len() == 2 {
+                                    u16::from_le_bytes([chunk[0], chunk[1]])
+                                } else {
+                                    0
+                                }
+                            })
+                            .take_while(|&c| c != 0)
+                            .collect::<Vec<_>>(),
+                    );
+
+                    let java_exe = PathBuf::from(&java_home).join("bin").join("java.exe");
+                    add_java(java_exe);
+                }
+
+                let _ = unsafe { RegCloseKey(sub_hkey) };
+            }
+
+            index += 1;
+        }
+
+        let _ = unsafe { RegCloseKey(hkey) };
+    }
+
+    // 2. 扫描 Program Files\Java 目录
+    let program_files =
+        std::env::var("ProgramFiles").unwrap_or_else(|_| "C:\\Program Files".to_string());
+    let program_files_x86 = std::env::var("ProgramFiles(x86)")
+        .unwrap_or_else(|_| "C:\\Program Files (x86)".to_string());
+
+    for pf in [program_files, program_files_x86] {
+        let java_dir = PathBuf::from(pf).join("Java");
+        if let Ok(entries) = fs::read_dir(&java_dir) {
+            for entry in entries.filter_map(|e| e.ok()) {
+                let java_exe = entry.path().join("bin").join("java.exe");
+                add_java(java_exe);
+            }
+        }
+    }
+
+    // 3. 检查 JAVA_HOME 环境变量
+    if let Ok(java_home) = std::env::var("JAVA_HOME") {
+        let java_exe = PathBuf::from(&java_home).join("bin").join("java.exe");
+        add_java(java_exe);
+    }
+
+    // 4. 检查 PATH 中的 java.exe
+    if let Ok(path_var) = std::env::var("PATH") {
+        for path in std::env::split_paths(&path_var) {
+            let java_exe = path.join("java.exe");
+            add_java(java_exe);
+        }
+    }
+
+    if javas.is_empty() {
+        Err("Windows 下未扫描到 Java 安装".to_string())
+    } else {
+        Ok(javas)
+    }
+}
+
+// =============================================================================
+// Tauri 命令
+// =============================================================================
 
 /// 扫描系统上所有可用的 Java 安装
 #[tauri::command]
 pub fn scan_java_installations() -> Result<Vec<JavaInstallation>, String> {
     #[cfg(target_os = "linux")]
     {
-        scan_java_on_linux()
+        return scan_java_on_linux();
     }
-    // TODO: 实现windows平台java环境检测
-    // TODO: 实现macos平台java环境检测
+
     #[cfg(target_os = "windows")]
     {
-        Err("未实现".to_string())
+        return scan_java_on_windows();
+    }
+
+    #[cfg(not(any(target_os = "linux", target_os = "windows")))]
+    {
+        Err("不支持的操作系统".to_string())
     }
 }
 
-#[test]
-fn test_scan_java() {
-    if let Ok(rs) = scan_java_on_linux() {
-        println!("rs: {:?}", rs);
+/// 获取指定 Java 路径的版本信息
+#[tauri::command]
+pub async fn get_java_version(path: String) -> Result<JavaInstallation, String> {
+    use std::process::Command;
+
+    let java_path = PathBuf::from(&path);
+    if !java_path.exists() {
+        return Err(format!("路径不存在: {}", path));
+    }
+
+    let output = Command::new(&java_path)
+        .arg("-version")
+        .output()
+        .map_err(|e| format!("执行 java -version 失败: {}", e))?;
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let (version, vendor) = parse_java_version_output(&stderr);
+
+    let java_home = java_path
+        .parent()
+        .and_then(|p| p.parent())
+        .unwrap_or(&java_path)
+        .to_path_buf();
+    let is_jdk = is_jdk_at_path(&java_home);
+
+    Ok(JavaInstallation {
+        path: java_path,
+        version,
+        vendor,
+        is_jdk,
+    })
+}
+
+// =============================================================================
+// 测试
+// =============================================================================
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_java_version_output() {
+        let sample = r#"openjdk version "17.0.1" 2021-10-19
+                OpenJDK Runtime Environment (Build 17.0.1+12)
+                OpenJDK 64-Bit Server VM (Build 17.0.1+12, mixed mode)"#;
+
+        let (version, vendor) = parse_java_version_output(sample);
+        assert_eq!(version, "17.0.1");
+        assert_eq!(vendor, "Build 17.0.1+12");
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn test_scan_java_linux() {
+        match scan_java_on_linux() {
+            Ok(javas) => {
+                println!("Linux Java 安装数量: {}", javas.len());
+                for java in javas {
+                    println!(
+                        "  - path: {:?}, version: {}, vendor: {}, is_jdk: {}",
+                        java.path, java.version, java.vendor, java.is_jdk
+                    );
+                }
+            }
+            Err(e) => println!("未找到 Java: {}", e),
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn test_scan_java_windows() {
+        match scan_java_on_windows() {
+            Ok(javas) => {
+                println!("Windows Java 安装数量: {}", javas.len());
+                for java in javas {
+                    println!(
+                        "  - path: {:?}, version: {}, vendor: {}, is_jdk: {}",
+                        java.path, java.version, java.vendor, java.is_jdk
+                    );
+                }
+            }
+            Err(e) => println!("未找到 Java: {}", e),
+        }
     }
 }
