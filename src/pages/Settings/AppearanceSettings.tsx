@@ -394,7 +394,7 @@ const ApearanceSettings = () => {
                 </div>
                 {/* OPTIMIZE: 提取为通用缩略图组件 */}
                 {config.imagePath && (
-                  <div className="w-6/12 h-80 rounded-md overflow-hidden border border-[var(--color-border)] bg-[var(--color-bg-secondary)]">
+                  <div className="w-full h-80 rounded-md overflow-hidden border border-[var(--color-border)] bg-[var(--color-bg-secondary)]">
                     <img
                       src={config.imagePath}
                       alt="背景预览"

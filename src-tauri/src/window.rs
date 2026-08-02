@@ -9,7 +9,6 @@ use tauri::{
     webview::{PageLoadEvent, PageLoadPayload},
     window::EffectState,
 };
-use windows::Win32::UI::Accessibility::BulletStyle;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum WindowType {
