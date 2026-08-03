@@ -85,7 +85,7 @@ const JAVA_EXECUTABLE: &str = "java";
 // =============================================================================
 
 #[cfg(target_os = "linux")]
-fn scan_java_on_linux() -> Result<Vec<JavaInstallation>, String> {
+fn scan_java_impl() -> Result<Vec<JavaInstallation>, String> {
     use std::fs;
     use std::fs::symlink_metadata;
     use std::process::Command;
@@ -149,7 +149,7 @@ fn scan_java_on_linux() -> Result<Vec<JavaInstallation>, String> {
 // =============================================================================
 
 #[cfg(target_os = "windows")]
-fn scan_java_on_windows() -> Result<Vec<JavaInstallation>, String> {
+fn scan_java_impl() -> Result<Vec<JavaInstallation>, String> {
     use std::collections::HashSet;
     use std::fs;
     use std::process::Command;
@@ -350,20 +350,7 @@ fn scan_java_on_windows() -> Result<Vec<JavaInstallation>, String> {
 /// 扫描系统上所有可用的 Java 安装
 #[tauri::command]
 pub fn scan_java_installations() -> Result<Vec<JavaInstallation>, String> {
-    #[cfg(target_os = "linux")]
-    {
-        return scan_java_on_linux();
-    }
-
-    #[cfg(target_os = "windows")]
-    {
-        return scan_java_on_windows();
-    }
-
-    #[cfg(not(any(target_os = "linux", target_os = "windows")))]
-    {
-        Err("不支持的操作系统".to_string())
-    }
+    scan_java_impl()
 }
 
 /// 获取指定 Java 路径的版本信息
@@ -418,29 +405,11 @@ mod tests {
         assert_eq!(vendor, "Build 17.0.1+12");
     }
 
-    #[cfg(target_os = "linux")]
     #[test]
-    fn test_scan_java_linux() {
-        match scan_java_on_linux() {
+    fn test_scan_java() {
+        match scan_java_impl() {
             Ok(javas) => {
-                println!("Linux Java 安装数量: {}", javas.len());
-                for java in javas {
-                    println!(
-                        "  - path: {:?}, version: {}, vendor: {}, is_jdk: {}",
-                        java.path, java.version, java.vendor, java.is_jdk
-                    );
-                }
-            }
-            Err(e) => println!("未找到 Java: {}", e),
-        }
-    }
-
-    #[cfg(target_os = "windows")]
-    #[test]
-    fn test_scan_java_windows() {
-        match scan_java_on_windows() {
-            Ok(javas) => {
-                println!("Windows Java 安装数量: {}", javas.len());
+                println!("Java 安装数量: {}", javas.len());
                 for java in javas {
                     println!(
                         "  - path: {:?}, version: {}, vendor: {}, is_jdk: {}",
