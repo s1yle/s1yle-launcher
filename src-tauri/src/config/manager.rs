@@ -1,6 +1,6 @@
 use crate::config::{
-    AppConfig, ConfigManager, InstanceConfig, PathConfig, WindowPosition, WindowPositions, CONFIG_APPLICATION, CONFIG_FILE_PATH, MIN_HEIGHT,
-    MIN_WIDTH,
+    AppConfig, CONFIG_APPLICATION, CONFIG_FILE_PATH, ConfigManager, InstanceConfig, MIN_HEIGHT,
+    MIN_WIDTH, PathConfig, WindowPosition, WindowPositions,
 };
 use crate::{log_error, log_info};
 use serde_json::Value;
@@ -65,13 +65,13 @@ impl ConfigManager {
         let loaded: AppConfig =
             serde_json::from_str(&content).map_err(|e| format!("解析配置文件失败：{}", e))?;
         *self.config.lock().map_err(|e| e.to_string())? = loaded;
-        
+
         let window_positions = {
             let config = self.config.lock().map_err(|e| e.to_string())?;
             config.window_positions.clone()
         };
         *self.windows.lock().map_err(|e| e.to_string())? = window_positions;
-        
+
         log_info!("✅ 配置加载成功");
         Ok(())
     }
@@ -136,7 +136,9 @@ impl ConfigManager {
         new_config: InstanceConfig,
     ) -> Result<(), String> {
         let mut config = self.get_config()?;
-        config.instance_configs.insert(instance_id.to_string(), new_config);
+        config
+            .instance_configs
+            .insert(instance_id.to_string(), new_config);
         self.update_config(config)
     }
 
@@ -162,18 +164,16 @@ impl ConfigManager {
         config: &InstanceConfig,
     ) -> Result<(), String> {
         use crate::config::INSTANCE_CONFIGS_DIR;
-        
+
         let config_dir = &*INSTANCE_CONFIGS_DIR;
-        fs::create_dir_all(config_dir)
-            .map_err(|e| format!("创建实例配置目录失败：{}", e))?;
-        
+        fs::create_dir_all(config_dir).map_err(|e| format!("创建实例配置目录失败：{}", e))?;
+
         let config_path = config_dir.join(format!("{}.json", instance_id));
         let json = serde_json::to_string_pretty(config)
             .map_err(|e| format!("序列化实例配置失败：{}", e))?;
-        
-        fs::write(&config_path, json)
-            .map_err(|e| format!("写入实例配置文件失败：{}", e))?;
-        
+
+        fs::write(&config_path, json).map_err(|e| format!("写入实例配置文件失败：{}", e))?;
+
         log_info!("实例配置已保存到：{}", config_path.to_string_lossy());
         Ok(())
     }
@@ -184,33 +184,32 @@ impl ConfigManager {
         instance_id: &str,
     ) -> Result<Option<InstanceConfig>, String> {
         use crate::config::INSTANCE_CONFIGS_DIR;
-        
+
         let config_path = INSTANCE_CONFIGS_DIR.join(format!("{}.json", instance_id));
-        
+
         if !config_path.exists() {
             return Ok(None);
         }
-        
-        let content = fs::read_to_string(&config_path)
-            .map_err(|e| format!("读取实例配置文件失败：{}", e))?;
-        
-        let config: InstanceConfig = serde_json::from_str(&content)
-            .map_err(|e| format!("解析实例配置文件失败：{}", e))?;
-        
+
+        let content =
+            fs::read_to_string(&config_path).map_err(|e| format!("读取实例配置文件失败：{}", e))?;
+
+        let config: InstanceConfig =
+            serde_json::from_str(&content).map_err(|e| format!("解析实例配置文件失败：{}", e))?;
+
         Ok(Some(config))
     }
 
     /// 删除实例配置文件
     pub fn delete_instance_config_file(&self, instance_id: &str) -> Result<(), String> {
         use crate::config::INSTANCE_CONFIGS_DIR;
-        
+
         let config_path = INSTANCE_CONFIGS_DIR.join(format!("{}.json", instance_id));
-        
+
         if config_path.exists() {
-            fs::remove_file(&config_path)
-                .map_err(|e| format!("删除实例配置文件失败：{}", e))?;
+            fs::remove_file(&config_path).map_err(|e| format!("删除实例配置文件失败：{}", e))?;
         }
-        
+
         Ok(())
     }
 
@@ -222,10 +221,10 @@ impl ConfigManager {
     ) -> Result<(), String> {
         // 更新全局配置
         self.update_instance_config(instance_id, config.clone())?;
-        
+
         // 保存到独立文件
         self.save_instance_config_to_file(instance_id, config)?;
-        
+
         Ok(())
     }
 
@@ -251,7 +250,7 @@ impl ConfigManager {
     ) -> Result<(), String> {
         let mut config = self.get_config()?;
         let mut windows = self.windows.lock().map_err(|e| e.to_string())?;
-        
+
         match label {
             "main" => {
                 config.window_positions.main = Some(pos.clone());
@@ -263,7 +262,7 @@ impl ConfigManager {
             }
             _ => return Err(format!("未知窗口类型: {}", label)),
         }
-        
+
         drop(windows);
         self.update_config(config)
     }
@@ -271,51 +270,50 @@ impl ConfigManager {
     /// 使用动态路径更新配置值
     pub fn update_value(&self, key_path: &str, value: Value) -> Result<(), String> {
         let config = self.get_config()?;
-        let mut config_value = serde_json::to_value(&config)
-            .map_err(|e| format!("序列化配置失败：{}", e))?;
-        
+        let mut config_value =
+            serde_json::to_value(&config).map_err(|e| format!("序列化配置失败：{}", e))?;
+
         let path_segments: Vec<&str> = key_path.split('.').collect();
         set_nested_value(&mut config_value, &path_segments, value)?;
-        
-        let new_config: AppConfig = serde_json::from_value(config_value)
-            .map_err(|e| format!("反序列化配置失败：{}", e))?;
-        
+
+        let new_config: AppConfig =
+            serde_json::from_value(config_value).map_err(|e| format!("反序列化配置失败：{}", e))?;
+
         self.update_config(new_config)
     }
 
     /// 使用动态路径删除配置值
     pub fn remove_value(&self, key_path: &str) -> Result<(), String> {
         let config = self.get_config()?;
-        let mut config_value = serde_json::to_value(&config)
-            .map_err(|e| format!("序列化配置失败：{}", e))?;
-        
+        let mut config_value =
+            serde_json::to_value(&config).map_err(|e| format!("序列化配置失败：{}", e))?;
+
         let path_segments: Vec<&str> = key_path.split('.').collect();
         remove_nested_value(&mut config_value, &path_segments)?;
-        
-        let new_config: AppConfig = serde_json::from_value(config_value)
-            .map_err(|e| format!("反序列化配置失败：{}", e))?;
-        
+
+        let new_config: AppConfig =
+            serde_json::from_value(config_value).map_err(|e| format!("反序列化配置失败：{}", e))?;
+
         self.update_config(new_config)
     }
 
     /// 导出配置到文件
     pub fn export_config(&self, target_path: PathBuf) -> Result<(), String> {
         let config = self.get_config()?;
-        let json = serde_json::to_string_pretty(&config)
-            .map_err(|e| format!("序列化配置失败：{}", e))?;
-        fs::write(&target_path, json)
-            .map_err(|e| format!("写入配置失败：{}", e))?;
+        let json =
+            serde_json::to_string_pretty(&config).map_err(|e| format!("序列化配置失败：{}", e))?;
+        fs::write(&target_path, json).map_err(|e| format!("写入配置失败：{}", e))?;
         log_info!("配置已导出到：{}", target_path.to_string_lossy());
         Ok(())
     }
 
     /// 从文件导入配置（支持版本迁移）
     pub fn import_config(&self, source_path: PathBuf) -> Result<(), String> {
-        let content = fs::read_to_string(&source_path)
-            .map_err(|e| format!("读取配置失败：{}", e))?;
-        let imported: AppConfig = serde_json::from_str(&content)
-            .map_err(|e| format!("解析配置失败：{}", e))?;
-        
+        let content =
+            fs::read_to_string(&source_path).map_err(|e| format!("读取配置失败：{}", e))?;
+        let imported: AppConfig =
+            serde_json::from_str(&content).map_err(|e| format!("解析配置失败：{}", e))?;
+
         // 版本迁移
         let migrated = self.migrate_config(imported)?;
         self.update_config(migrated)
@@ -324,10 +322,14 @@ impl ConfigManager {
     /// 配置版本迁移（支持未来版本升级）
     fn migrate_config(&self, mut config: AppConfig) -> Result<AppConfig, String> {
         let current_version = crate::config::CONFIG_VERSION;
-        
+
         if config.version < current_version {
-            log_info!("检测到旧版本配置 (v{} -> v{})", config.version, current_version);
-            
+            log_info!(
+                "检测到旧版本配置 (v{} -> v{})",
+                config.version,
+                current_version
+            );
+
             // 版本迁移逻辑
             match config.version {
                 0 => {
@@ -336,13 +338,13 @@ impl ConfigManager {
                 }
                 _ => {}
             }
-            
+
             // 递归迁移
             if config.version < current_version {
                 return self.migrate_config(config);
             }
         }
-        
+
         Ok(config)
     }
 }
@@ -367,22 +369,22 @@ fn get_nested_value(value: &mut Value, path: &[&str]) -> Result<Option<Value>, S
 fn set_nested_value(value: &mut Value, path: &[&str], new_val: Value) -> Result<(), String> {
     let mut current = value;
     let (last, segments) = path.split_last().ok_or("空的配置路径")?;
-    
+
     // 遍历路径，如果中间节点不存在则创建
     for segment in segments {
         if !current.get(segment).is_some() {
             // 如果节点不存在，创建一个空对象
             current[*segment] = Value::Object(serde_json::Map::new());
         }
-        
+
         // 确保当前节点是对象类型
         if !current[segment].is_object() {
             return Err(format!("配置路径不是对象类型：{}", segment));
         }
-        
+
         current = current.get_mut(segment).unwrap();
     }
-    
+
     // 设置最终值
     current[last] = new_val;
     Ok(())
@@ -393,20 +395,20 @@ fn remove_nested_value(value: &mut Value, path: &[&str]) -> Result<(), String> {
     if path.is_empty() {
         return Err("空的配置路径".to_string());
     }
-    
+
     let mut current = value;
-    
+
     // 遍历到倒数第二个节点
     for segment in &path[..path.len() - 1] {
         current = current
             .get_mut(*segment)
             .ok_or_else(|| format!("配置路径不存在：{}", segment))?;
-        
+
         if !current.is_object() {
             return Err(format!("配置路径不是对象类型：{}", segment));
         }
     }
-    
+
     // 删除最后一个节点
     let last = path.last().ok_or("空的配置路径")?;
     if let Some(obj) = current.as_object_mut() {
@@ -414,7 +416,7 @@ fn remove_nested_value(value: &mut Value, path: &[&str]) -> Result<(), String> {
     } else {
         return Err(format!("无法删除配置项：{}", last));
     }
-    
+
     Ok(())
 }
 

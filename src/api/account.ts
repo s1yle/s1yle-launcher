@@ -1,8 +1,7 @@
 import { InvokeArgs, InvokeOptions } from "@tauri-apps/api/core";
 import { invokeRust } from "./client";
 import { logger } from "@/helper/logger";
-import { AccountType } from "./types/account";
-import type { AccountInfo } from "./types/account";
+import type { AccountInfo, MicrosoftDeviceCode, TokenResponse } from "./types/account";
 
 /**
  * 添加账户
@@ -139,12 +138,6 @@ export const invokeAccInit = async (
   return await invokeRust("initialize_account_system", args, options);
 };
 
-/** 微软设备码响应 */
-export interface MicrosoftDeviceCode {
-  user_code: string;
-  verification_uri: string;
-  device_code: string;
-}
 
 /**
  * 获取微软设备码（用于 OAuth 设备码登录流程）
@@ -156,4 +149,17 @@ export const invokeMicrosoftDeviceCode = async (
 ): Promise<MicrosoftDeviceCode> => {
   logger.info('准备调用 microsoft_device_code');
   return await invokeRust("microsoft_device_code", {}, options) as MicrosoftDeviceCode;
+};
+
+/**
+ * 获取用户授权状态（用于 OAuth 设备码登录流程）
+ * @param options Tauri invoke 选项
+ * @returns Token 响应
+ */
+export const invokeMicrosoftUserAuthStatus = async (
+  code: MicrosoftDeviceCode,
+  options?: InvokeOptions
+): Promise<TokenResponse> => {
+  logger.info('准备调用 microsoft_user_auth_status');
+  return await invokeRust("microsoft_user_auth_status", {code}, options) as TokenResponse;
 };

@@ -84,7 +84,8 @@ fn load_admin_from_disk() -> Result<(), String> {
     if !path.exists() {
         return Ok(());
     }
-    let content = fs::read_to_string(&path).map_err(|e| format!("读取管理员配置文件失败: {}", e))?;
+    let content =
+        fs::read_to_string(&path).map_err(|e| format!("读取管理员配置文件失败: {}", e))?;
     let manager: AdminManager =
         serde_json::from_str(&content).map_err(|e| format!("解析管理员配置失败: {}", e))?;
     let mut guard = ADMIN_MANAGER
@@ -105,8 +106,7 @@ fn save_admin_to_disk() -> Result<(), String> {
         .ok_or("管理员管理器未初始化")?
         .lock()
         .map_err(|e| format!("获取锁失败: {}", e))?;
-    let json =
-        serde_json::to_string_pretty(&*guard).map_err(|e| format!("序列化失败: {}", e))?;
+    let json = serde_json::to_string_pretty(&*guard).map_err(|e| format!("序列化失败: {}", e))?;
     fs::write(&path, json).map_err(|e| format!("写入管理员配置失败: {}", e))?;
     log_info!("管理员账号保存成功");
     Ok(())
@@ -246,7 +246,9 @@ pub fn unbind_player_from_admin(email: String, player_uuid: String) -> Result<()
         .get_mut(&email)
         .ok_or("管理员账号不存在".to_string())?;
 
-    account.bound_player_uuids.retain(|uuid| uuid != &player_uuid);
+    account
+        .bound_player_uuids
+        .retain(|uuid| uuid != &player_uuid);
 
     drop(guard);
     save_admin_to_disk()?;

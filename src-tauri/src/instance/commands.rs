@@ -1,9 +1,9 @@
-use tauri::State;
 use std::path::PathBuf;
+use tauri::State;
 
 use super::manager::{InstanceManager, MigrationResult};
 use super::models::{GameInstance, KnownPath};
-use super::validator::{FolderValidator, FolderValidationResult};
+use super::validator::{FolderValidationResult, FolderValidator};
 use crate::log_info;
 use crate::modloader::ModLoaderType;
 
@@ -166,9 +166,15 @@ pub async fn add_validated_folder(
     }
 
     let display_name = custom_name.unwrap_or_else(|| validation.suggested_name);
-    
-    log_info!("<add_validated_folder> path={}, name={}", path, display_name);
-    instance_manager.add_known_path_with_name(&path, &display_name).await
+
+    log_info!(
+        "<add_validated_folder> path={}, name={}",
+        path,
+        display_name
+    );
+    instance_manager
+        .add_known_path_with_name(&path, &display_name)
+        .await
 }
 
 /// 迁移目录结构（旧版实例目录 → 新版结构）

@@ -178,7 +178,9 @@ pub async fn fetch_uuid_by_username(username: &str) -> Result<MinecraftUserProfi
 }
 
 /// 批量通过玩家名称获取 UUID（最多 10 个）
-pub async fn fetch_uuids_by_usernames(usernames: Vec<String>) -> Result<Vec<MinecraftUserProfile>, String> {
+pub async fn fetch_uuids_by_usernames(
+    usernames: Vec<String>,
+) -> Result<Vec<MinecraftUserProfile>, String> {
     if usernames.is_empty() || usernames.len() > 10 {
         return Err("请求数量必须在 1 到 10 之间".to_string());
     }
@@ -217,7 +219,9 @@ pub async fn get_uuid_by_username(username: String) -> Result<MinecraftUserProfi
 
 /// 批量通过用户名获取 UUID（Tauri 命令）
 #[tauri::command]
-pub async fn get_uuids_by_usernames(usernames: Vec<String>) -> Result<Vec<MinecraftUserProfile>, String> {
+pub async fn get_uuids_by_usernames(
+    usernames: Vec<String>,
+) -> Result<Vec<MinecraftUserProfile>, String> {
     fetch_uuids_by_usernames(usernames).await
 }
 
@@ -325,7 +329,11 @@ fn read_cached_model(cache_dir: &std::path::Path, uuid: &str) -> Option<(String,
     let bytes = std::fs::read(meta_path).ok()?;
     let meta: serde_json::Value = serde_json::from_slice(&bytes).ok()?;
     let model = meta["model"].as_str().and_then(|s| {
-        if s.is_empty() { None } else { Some(s.to_string()) }
+        if s.is_empty() {
+            None
+        } else {
+            Some(s.to_string())
+        }
     })?;
     // 旧缓存无 from_api 字段 → 需要重新向 API 查询
     let from_api = match meta.get("from_api") {
@@ -336,7 +344,12 @@ fn read_cached_model(cache_dir: &std::path::Path, uuid: &str) -> Option<(String,
 }
 
 /// 写入皮肤模型信息到缓存
-fn write_cached_model(cache_dir: &std::path::Path, uuid: &str, model: Option<&str>, from_api: bool) {
+fn write_cached_model(
+    cache_dir: &std::path::Path,
+    uuid: &str,
+    model: Option<&str>,
+    from_api: bool,
+) {
     let meta_path = cache_dir.join(format!("{}.json", uuid));
     let value = serde_json::json!({ "model": model.unwrap_or(""), "from_api": from_api });
     let _ = std::fs::write(&meta_path, serde_json::to_string(&value).unwrap());
@@ -357,38 +370,64 @@ async fn download_and_cache_skin(
 
     let (skin_bytes, model, from_api): (Vec<u8>, Option<String>, bool) =
         match fetch_skin_by_uuid(uuid).await {
-            Ok(profile) => {
-                match get_texture_url(&profile) {
-                    Ok((skin_url, model)) => {
-                        match reqwest::get(&skin_url).await {
-                            Ok(resp) => {
-                                match resp.bytes().await {
-                                    Ok(bytes) => (bytes.to_vec(), model, true),
-                                    Err(_) => {
-                                        let is_slim = is_slim_by_uuid(uuid);
-                                        let fallback = generate_default_skin(is_slim);
-                                        (encode_png(&fallback).unwrap_or_default(), Some(if is_slim { "slim".to_string() } else { "default".to_string() }), false)
-                                    }
-                                }
-                            }
-                            Err(_) => {
-                                let is_slim = is_slim_by_uuid(uuid);
-                                let fallback = generate_default_skin(is_slim);
-                                (encode_png(&fallback).unwrap_or_default(), Some(if is_slim { "slim".to_string() } else { "default".to_string() }), false)
-                            }
+            Ok(profile) => match get_texture_url(&profile) {
+                Ok((skin_url, model)) => match reqwest::get(&skin_url).await {
+                    Ok(resp) => match resp.bytes().await {
+                        Ok(bytes) => (bytes.to_vec(), model, true),
+                        Err(_) => {
+                            let is_slim = is_slim_by_uuid(uuid);
+                            let fallback = generate_default_skin(is_slim);
+                            (
+                                encode_png(&fallback).unwrap_or_default(),
+                                Some(if is_slim {
+                                    "slim".to_string()
+                                } else {
+                                    "default".to_string()
+                                }),
+                                false,
+                            )
                         }
-                    }
+                    },
                     Err(_) => {
                         let is_slim = is_slim_by_uuid(uuid);
                         let fallback = generate_default_skin(is_slim);
-                        (encode_png(&fallback).unwrap_or_default(), Some(if is_slim { "slim".to_string() } else { "default".to_string() }), false)
+                        (
+                            encode_png(&fallback).unwrap_or_default(),
+                            Some(if is_slim {
+                                "slim".to_string()
+                            } else {
+                                "default".to_string()
+                            }),
+                            false,
+                        )
                     }
+                },
+                Err(_) => {
+                    let is_slim = is_slim_by_uuid(uuid);
+                    let fallback = generate_default_skin(is_slim);
+                    (
+                        encode_png(&fallback).unwrap_or_default(),
+                        Some(if is_slim {
+                            "slim".to_string()
+                        } else {
+                            "default".to_string()
+                        }),
+                        false,
+                    )
                 }
-            }
+            },
             Err(_) => {
                 let is_slim = is_slim_by_uuid(uuid);
                 let fallback = generate_default_skin(is_slim);
-                (encode_png(&fallback).unwrap_or_default(), Some(if is_slim { "slim".to_string() } else { "default".to_string() }), false)
+                (
+                    encode_png(&fallback).unwrap_or_default(),
+                    Some(if is_slim {
+                        "slim".to_string()
+                    } else {
+                        "default".to_string()
+                    }),
+                    false,
+                )
             }
         };
 
@@ -554,9 +593,19 @@ pub fn render_flat_avatar(skin: &RgbaImage, size: u32, show_hat: bool) -> RgbaIm
 /// `scale`: 像素缩放倍数（1 = 1:1 原始像素）
 pub fn render_full_body(skin: &RgbaImage, is_slim: bool, scale: u32) -> RgbaImage {
     let arm_uv = if is_slim {
-        (RIGHT_ARM_FRONT_SLIM, RIGHT_ARM_OUTER_FRONT_SLIM, LEFT_ARM_FRONT_SLIM, LEFT_ARM_OUTER_FRONT_SLIM)
+        (
+            RIGHT_ARM_FRONT_SLIM,
+            RIGHT_ARM_OUTER_FRONT_SLIM,
+            LEFT_ARM_FRONT_SLIM,
+            LEFT_ARM_OUTER_FRONT_SLIM,
+        )
     } else {
-        (RIGHT_ARM_FRONT, RIGHT_ARM_OUTER_FRONT, LEFT_ARM_FRONT, LEFT_ARM_OUTER_FRONT)
+        (
+            RIGHT_ARM_FRONT,
+            RIGHT_ARM_OUTER_FRONT,
+            LEFT_ARM_FRONT,
+            LEFT_ARM_OUTER_FRONT,
+        )
     };
 
     let arm_w = if is_slim { 3u32 } else { 4u32 };
@@ -574,31 +623,75 @@ pub fn render_full_body(skin: &RgbaImage, is_slim: bool, scale: u32) -> RgbaImag
     // 内层 + 外层顺序组合
     let layers: &[(RgbaImage, u32, u32)] = &[
         // 头部
-        (skin.view(HEAD_FRONT.0, HEAD_FRONT.1, 8, 8).to_image(), arm_w * scale, 0),
+        (
+            skin.view(HEAD_FRONT.0, HEAD_FRONT.1, 8, 8).to_image(),
+            arm_w * scale,
+            0,
+        ),
         // 身体
-        (skin.view(BODY_FRONT.0, BODY_FRONT.1, 8, 12).to_image(), arm_w * scale, 8 * scale),
+        (
+            skin.view(BODY_FRONT.0, BODY_FRONT.1, 8, 12).to_image(),
+            arm_w * scale,
+            8 * scale,
+        ),
         // 右臂
-        (skin.view(arm_uv.0 .0, arm_uv.0 .1, arm_w, 12).to_image(), 0, 8 * scale),
+        (
+            skin.view(arm_uv.0.0, arm_uv.0.1, arm_w, 12).to_image(),
+            0,
+            8 * scale,
+        ),
         // 左臂（水平翻转）
         (flip_h(arm_uv.2), (arm_w + 8) * scale, 8 * scale),
         // 右腿
-        (skin.view(RIGHT_LEG_FRONT.0, RIGHT_LEG_FRONT.1, 4, 12).to_image(), arm_w * scale, (8 + 12) * scale),
+        (
+            skin.view(RIGHT_LEG_FRONT.0, RIGHT_LEG_FRONT.1, 4, 12)
+                .to_image(),
+            arm_w * scale,
+            (8 + 12) * scale,
+        ),
         // 左腿（水平翻转）
-        (flip_h(LEFT_LEG_FRONT), (arm_w + 4) * scale, (8 + 12) * scale),
+        (
+            flip_h(LEFT_LEG_FRONT),
+            (arm_w + 4) * scale,
+            (8 + 12) * scale,
+        ),
         // 外层：夹克
-        (skin.view(BODY_OUTER_FRONT.0, BODY_OUTER_FRONT.1, 8, 12).to_image(), arm_w * scale, 8 * scale),
+        (
+            skin.view(BODY_OUTER_FRONT.0, BODY_OUTER_FRONT.1, 8, 12)
+                .to_image(),
+            arm_w * scale,
+            8 * scale,
+        ),
         // 外层：右袖
-        (skin.view(arm_uv.1 .0, arm_uv.1 .1, arm_w, 12).to_image(), 0, 8 * scale),
+        (
+            skin.view(arm_uv.1.0, arm_uv.1.1, arm_w, 12).to_image(),
+            0,
+            8 * scale,
+        ),
         // 外层：左袖（水平翻转）
         (flip_h(arm_uv.3), (arm_w + 8) * scale, 8 * scale),
         // 外层：右裤腿
-        (skin.view(RIGHT_LEG_OUTER_FRONT.0, RIGHT_LEG_OUTER_FRONT.1, 4, 12).to_image(), arm_w * scale, (8 + 12) * scale),
+        (
+            skin.view(RIGHT_LEG_OUTER_FRONT.0, RIGHT_LEG_OUTER_FRONT.1, 4, 12)
+                .to_image(),
+            arm_w * scale,
+            (8 + 12) * scale,
+        ),
         // 外层：左裤腿（水平翻转）
-        (flip_h(LEFT_LEG_OUTER_FRONT), (arm_w + 4) * scale, (8 + 12) * scale),
+        (
+            flip_h(LEFT_LEG_OUTER_FRONT),
+            (arm_w + 4) * scale,
+            (8 + 12) * scale,
+        ),
     ];
 
     for (part, dx, dy) in layers {
-        let scaled = imageops::resize(part, part.width() * scale, part.height() * scale, imageops::FilterType::Nearest);
+        let scaled = imageops::resize(
+            part,
+            part.width() * scale,
+            part.height() * scale,
+            imageops::FilterType::Nearest,
+        );
         for y in 0..scaled.height() {
             for x in 0..scaled.width() {
                 let px = scaled.get_pixel(x, y);
@@ -1016,16 +1109,26 @@ pub async fn get_skin_model(app: AppHandle, uuid: String) -> Result<SkinModelRes
             if let Ok((_, model)) = get_texture_url(&profile) {
                 let m = model.unwrap_or_else(|| "default".to_string());
                 write_cached_model(&cache_dir, &uuid, Some(&m), true);
-                return Ok(SkinModelResponse { model: m, from_api: true });
+                return Ok(SkinModelResponse {
+                    model: m,
+                    from_api: true,
+                });
             }
         }
         Err(_) => {}
     }
 
     let is_slim = is_slim_by_uuid(&uuid);
-    let model = if is_slim { "slim".to_string() } else { "default".to_string() };
+    let model = if is_slim {
+        "slim".to_string()
+    } else {
+        "default".to_string()
+    };
     write_cached_model(&cache_dir, &uuid, Some(&model), false);
-    Ok(SkinModelResponse { model, from_api: false })
+    Ok(SkinModelResponse {
+        model,
+        from_api: false,
+    })
 }
 
 #[cfg(test)]
@@ -1204,7 +1307,8 @@ mod tests {
 
         // Flat 头像（有帽子）
         let flat_hat = render_flat_avatar(&skin, 128, true);
-        flat_hat.save(out_dir.join("preview_flat_hat.png"))
+        flat_hat
+            .save(out_dir.join("preview_flat_hat.png"))
             .expect("保存 flat_hat 失败");
 
         // Isometric 头像（无帽子）
@@ -1214,7 +1318,8 @@ mod tests {
 
         // Isometric 头像（有帽子）
         let iso_hat = render_isometric_avatar(&skin, 256, true);
-        iso_hat.save(out_dir.join("preview_iso_hat.png"))
+        iso_hat
+            .save(out_dir.join("preview_iso_hat.png"))
             .expect("保存 iso_hat 失败");
 
         // 全身渲染（Steve 模型，缩放 4x）
@@ -1224,7 +1329,8 @@ mod tests {
 
         // 全身渲染（Slim 模型，缩放 4x）
         let body_slim = render_full_body(&skin, true, 4);
-        body_slim.save(out_dir.join("preview_full_body_slim.png"))
+        body_slim
+            .save(out_dir.join("preview_full_body_slim.png"))
             .expect("保存 full_body_slim 失败");
 
         println!("预览图片已生成到: {:?}", out_dir);

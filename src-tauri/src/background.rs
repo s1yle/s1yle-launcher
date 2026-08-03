@@ -24,10 +24,7 @@ pub async fn select_background_image(app: AppHandle) -> Result<Option<String>, S
     };
 
     let source = Path::new(&source_path);
-    let ext = source
-        .extension()
-        .and_then(|e| e.to_str())
-        .unwrap_or("png");
+    let ext = source.extension().and_then(|e| e.to_str()).unwrap_or("png");
 
     let dest_dir = app
         .path()
@@ -35,12 +32,10 @@ pub async fn select_background_image(app: AppHandle) -> Result<Option<String>, S
         .map_err(|e| format!("获取应用数据目录失败: {}", e))?
         .join("backgrounds");
 
-    fs::create_dir_all(&dest_dir)
-        .map_err(|e| format!("创建背景目录失败: {}", e))?;
+    fs::create_dir_all(&dest_dir).map_err(|e| format!("创建背景目录失败: {}", e))?;
 
     let dest = dest_dir.join(format!("bg.{}", ext));
-    fs::copy(&source_path, &dest)
-        .map_err(|e| format!("复制图片失败: {}", e))?;
+    fs::copy(&source_path, &dest).map_err(|e| format!("复制图片失败: {}", e))?;
 
     Ok(Some(dest.to_string_lossy().to_string()))
 }

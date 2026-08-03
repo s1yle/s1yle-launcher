@@ -4,30 +4,49 @@ use std::fmt;
 use serde::{Deserialize, Serialize};
 use serde_json::from_str;
 use tauri::command;
-use tokio::{io::join, join, spawn, sync::mpsc, time::sleep};
-
-/// 设备码响应，返回给前端
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct DeviceCodeResponse {
-    pub user_code: String,
-    pub verification_uri: String,
-    pub device_code: String,
-}
+use tokio::{
+    io::join,
+    join, spawn,
+    sync::{mpsc, oneshot},
+    time::sleep,
+};
 
 /// 获取 Microsoft 设备码
 #[command]
-pub async fn microsoft_device_code() -> Result<DeviceCodeResponse, String> {
+pub async fn microsoft_device_code() -> Result<DeviceCode, String> {
     let client_id = "07e2e2dd-ee1f-4a8f-a09a-1325ba9ff0cd".to_string();
-    let code = get_devicecode(&client_id).await.map_err(|e| e.to_string())?;
-    Ok(DeviceCodeResponse {
-        user_code: code.user_code,
-        verification_uri: code.verification_uri,
-        device_code: code.device_code,
+    let code = get_devicecode(&client_id)
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(code)
+}
+
+/// 获取用户授权状态
+#[command]
+pub async fn microsoft_user_auth_status(code: DeviceCode) -> Result<TokenResponse, String> {
+    println!("获取用户授权状态中...");
+    let client_id = "07e2e2dd-ee1f-4a8f-a09a-1325ba9ff0cd".to_string();
+    let (handle, token) = get_user_authorize(client_id, code)
+        .await
+        .map_err(|e| e.to_string())?;
+    println!("获取用户授权状态成功: {:?}", token);
+    handle
+        .await
+        .expect("Task panicked")
+        .expect("Task returned error");
+
+    Ok(TokenResponse {
+        token_type: token.token_type,
+        scope: token.scope,
+        expires_in: token.expires_in,
+        access_token: token.access_token,
+        refresh_token: token.refresh_token,
+        id_token: token.id_token,
     })
 }
 
-#[derive(serde::Deserialize, std::fmt::Debug)]
-struct DeviceCode {
+#[derive(serde::Serialize, serde::Deserialize, std::fmt::Debug)]
+pub struct DeviceCode {
     //应用程序需要暂存此代码用于轮询用户授权状态
     device_code: String,
     //应用程序需要将此代码展示给用户
@@ -72,8 +91,8 @@ impl fmt::Display for DeviceCodeError {
     }
 }
 
-#[derive(serde::Deserialize, std::fmt::Debug)]
-struct TokenResponse {
+#[derive(serde::Serialize, serde::Deserialize, std::fmt::Debug)]
+pub struct TokenResponse {
     // 令牌类型
     token_type: String,
     //申请的权限
@@ -227,17 +246,11 @@ async fn get_devicecode(client_id: &String) -> Result<DeviceCode, Box<dyn std::e
 async fn get_user_authorize(
     client_id: String,
     code: DeviceCode,
-) -> Result<
-    (
-        tokio::task::JoinHandle<Result<(), String>>,
-        mpsc::Receiver<TokenResponse>,
-    ),
-    String,
-> {
+) -> Result<(tokio::task::JoinHandle<Result<(), String>>, TokenResponse), String> {
     let url = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token";
     let client = reqwest::Client::new();
 
-    let (tx, rx) = mpsc::channel::<TokenResponse>(1);
+    let (tx, rx) = oneshot::channel::<TokenResponse>();
 
     let mut interval_sec = code.interval;
     let handle = spawn(async move {
@@ -250,6 +263,7 @@ async fn get_user_authorize(
                     ("device_code", &code.device_code),
                 ])
                 .send()
+                // 将该任务暂挂(不会阻塞操作系统线程), 直到响应完成, 再去执行下面的代码
                 .await
             {
                 Ok(r) => r,
@@ -266,7 +280,7 @@ async fn get_user_authorize(
                 match resp.json::<TokenResponse>().await {
                     Ok(token_data) => {
                         println!("授权成功！token: {:?}", token_data);
-                        let _ = tx.send(token_data).await;
+                        let _ = tx.send(token_data);
                         return Ok(());
                     }
                     Err(e) => {
@@ -299,7 +313,16 @@ async fn get_user_authorize(
         }
     });
 
-    Ok((handle, rx))
+    match rx.await {
+        Ok(token_data) => {
+            println!("授权成功！token: {:?}", token_data);
+            Ok((handle, token_data))
+        }
+        Err(e) => {
+            eprintln!("接收token失败: {}", e);
+            Err(e.to_string())
+        }
+    }
 }
 
 async fn get_xbox_live_validation(
@@ -406,16 +429,16 @@ async fn get_minecraft_access_token(
         .await?;
 
     println!("Minecraft Login Status: {}", resp.status());
-    
+
     // 先获取响应体用于调试
     let response_text = resp.text().await?;
     println!("Minecraft Login Response: {}", response_text);
-    
+
     // 检查状态码
     if !response_text.contains("access_token") {
         return Err(format!("Minecraft login failed: {}", response_text).into());
     }
-    
+
     // 重新解析 JSON
     let login_response: MinecraftLoginResponse = serde_json::from_str(&response_text)?;
     println!("Minecraft Access Token: {:?}", login_response.access_token);
@@ -438,7 +461,7 @@ async fn login_microsoft() {
     let (handle, mut rx) = get_user_authorize(client_id, device_code)
         .await
         .expect("get_user_authorize failed");
-    let ms_token = rx.recv().await.expect("Failed to receive token");
+    let ms_token = rx;
     println!("Microsoft Access Token: {:?}", ms_token.access_token);
     handle
         .await

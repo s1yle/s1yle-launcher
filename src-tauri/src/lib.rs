@@ -13,6 +13,7 @@ mod microsoft_login;
 mod modloader;
 mod render;
 mod window;
+mod credential;
 
 use crate::account::AccountType;
 use crate::config::{
@@ -163,6 +164,7 @@ pub fn run() {
     let config_manager: ConfigManager = ConfigManager::new(app_config, WindowPositions::default());
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .manage(download_manager)
@@ -407,6 +409,7 @@ pub fn run() {
             render::get_uuid_by_username,
             render::get_uuids_by_usernames,
             microsoft_login::microsoft_device_code,
+            microsoft_login::microsoft_user_auth_status,
         ])
         .run(tauri::generate_context!())
         .expect("启动失败！");

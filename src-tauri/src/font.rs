@@ -212,7 +212,7 @@ fn list_system_font() -> Option<Vec<SystemFont>> {
 
 #[cfg(target_os = "windows")]
 fn get_cur_font() -> Option<HashMap<FontType, SystemFont>> {
-    use windows::Win32::Foundation::{ERROR_SUCCESS};
+    use windows::Win32::Foundation::ERROR_SUCCESS;
     use windows::Win32::System::Registry::{
         KEY_READ, RegCloseKey, RegOpenKeyExW, RegQueryValueExW,
     };

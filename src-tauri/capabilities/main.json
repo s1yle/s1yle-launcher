@@ -131,6 +131,7 @@
     "allow-get-uuids-by-usernames",
     "allow-load-window-position-by-label",
     "allow-save-window-position-by-label",
-    "allow-microsoft-device-code"
+    "allow-microsoft-device-code",
+    "allow-microsoft-user-auth-status"
   ]
 }

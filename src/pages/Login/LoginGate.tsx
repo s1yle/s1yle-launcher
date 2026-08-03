@@ -9,6 +9,7 @@ import { AdminRegister } from "./views/AdminRegister";
 import Header from "@/components/Header";
 import { NotificationProvider } from "@/components/common/NotificationProvider";
 import { useWindowPosition } from "@/hooks";
+import { useThemeStore } from "@/stores";
 
 export type LoginView = "player-login" | "player-add" | "admin-login" | "admin-register";
 
@@ -27,12 +28,14 @@ const LoginGateInner = () => {
   const deleteAccount = useAuthStore((s) => s.deleteAccount);
   const loginAsPlayer = useAuthStore((s) => s.loginAsPlayer);
   const loginAsAdmin = useAuthStore((s) => s.loginAsAdmin);
+  const initTheme = useThemeStore((s) => s.init);
 
   useWindowPosition();
 
   useEffect(() => {
     useAuthStore.getState().initialize();
-  }, []);
+    initTheme();
+  }, [initTheme]);
 
   useEffect(() => {
     document.documentElement.classList.add('scrollbar-hide');

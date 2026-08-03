@@ -6,19 +6,22 @@ use serde::{Deserialize, Serialize};
 use serde_json::to_string_pretty;
 use tauri::Manager;
 
-use crate::{APP_HANDLE, account::AccountType, config::{get_config, get_config_path, get_config_value}};
+use crate::{
+    APP_HANDLE,
+    account::AccountType,
+    config::{get_config, get_config_path, get_config_value},
+};
 
 /// 配置文件版本
 pub const CONFIG_VERSION: u32 = 1;
 
 /// BASE_PATH (使用 exe 所在目录而非当前工作目录)
-pub static BASE_PATH: Lazy<PathBuf> =
-    Lazy::new(|| {
-        std::env::current_exe()
-            .ok()
-            .and_then(|p| p.parent().map(|d| d.to_path_buf()))
-            .unwrap_or_else(|| PathBuf::from(""))
-    });
+pub static BASE_PATH: Lazy<PathBuf> = Lazy::new(|| {
+    std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(|d| d.to_path_buf()))
+        .unwrap_or_else(|| PathBuf::from(""))
+});
 
 /// minecraft 根目录（旧版，保持兼容）
 pub static DEAMON_BASE_PATH: Lazy<PathBuf> = Lazy::new(|| BASE_PATH.join("minecraft"));
@@ -40,11 +43,11 @@ pub static LIBRARIES_DIR: Lazy<PathBuf> = Lazy::new(|| MINECRAFT_DIR.join("libra
 pub static ASSETS_DIR: Lazy<PathBuf> = Lazy::new(|| MINECRAFT_DIR.join("assets"));
 
 /// 实例配置目录
-pub static INSTANCE_CONFIGS_DIR: Lazy<PathBuf> = 
+pub static INSTANCE_CONFIGS_DIR: Lazy<PathBuf> =
     Lazy::new(|| CONFIG_APPLICATION.join("instance_configs"));
 
 /// 下载路径（/.smcl/download/）
-pub static DOWNLOAD_BASE_PATH: Lazy<PathBuf> = 
+pub static DOWNLOAD_BASE_PATH: Lazy<PathBuf> =
     Lazy::new(|| CONFIG_APPLICATION.join("download").join("versions"));
 
 /// 实例元数据文件名（旧版，保持兼容）
@@ -95,16 +98,16 @@ pub static CONFIG_FILE_PATH: Lazy<PathBuf> = Lazy::new(|| {
 #[cfg(target_os = "windows")]
 pub fn _set_hidden_attribute(path: &std::path::Path) -> Result<(), String> {
     use std::os::windows::ffi::OsStrExt;
-    use windows::Win32::Storage::FileSystem::{SetFileAttributesW, FILE_ATTRIBUTE_HIDDEN};
+    use windows::Win32::Storage::FileSystem::{FILE_ATTRIBUTE_HIDDEN, SetFileAttributesW};
     use windows::core::PCWSTR;
-    
+
     if path.exists() {
         // 使用 Windows API 设置隐藏属性
         let wide_path: Vec<u16> = std::ffi::OsStr::new(path)
             .encode_wide()
             .chain(Some(0))
             .collect();
-        
+
         unsafe {
             let result = SetFileAttributesW(PCWSTR(wide_path.as_ptr()), FILE_ATTRIBUTE_HIDDEN);
             if result.is_err() {
@@ -128,7 +131,7 @@ pub struct PathConfig {
     /// 实例根目录（默认：{base}/minecraft）
     #[serde(default = "default_daemon_base_path")]
     pub daemon_base_path: PathBuf,
-    
+
     /// 下载根目录（默认：{config_app}/download）
     #[serde(default = "default_download_base_path")]
     pub download_base_path: PathBuf,
@@ -156,49 +159,49 @@ impl PathConfig {
     pub fn get_instance_meta_path(&self) -> PathBuf {
         self.daemon_base_path.join(INSTANCE_META_FILE_NAME)
     }
-    
+
     /// 获取指定实例的目录路径
     pub fn get_instance_dir(&self, instance_name: &str) -> PathBuf {
         self.daemon_base_path.join(instance_name)
     }
-    
+
     /// 获取指定实例的 versions 目录
     pub fn get_versions_dir(&self, instance_name: &str) -> PathBuf {
         self.get_instance_dir(instance_name).join("versions")
     }
-    
+
     /// 获取指定实例的 libraries 目录
     pub fn get_libraries_dir(&self, instance_name: &str) -> PathBuf {
         self.get_instance_dir(instance_name).join("libraries")
     }
-    
+
     /// 获取指定实例的 assets 目录
     pub fn get_assets_dir(&self, instance_name: &str) -> PathBuf {
         self.get_instance_dir(instance_name).join("assets")
     }
-    
+
     /// 获取指定实例的 natives 目录
     pub fn get_natives_dir(&self, instance_name: &str) -> PathBuf {
         self.get_instance_dir(instance_name).join("natives")
     }
-    
+
     // ==================== 版本目录路径方法 ====================
-    
+
     /// 获取版本目录
     pub fn get_version_dir(&self, version_id: &str) -> PathBuf {
         (*VERSIONS_DIR).join(version_id)
     }
-    
+
     /// 获取全局库目录
     pub fn get_global_libraries_dir(&self) -> PathBuf {
         (*LIBRARIES_DIR).clone()
     }
-    
+
     /// 获取全局资源目录
     pub fn get_global_assets_dir(&self) -> PathBuf {
         (*ASSETS_DIR).clone()
     }
-    
+
     /// 获取实例配置文件路径
     pub fn get_instance_config_path(&self, instance_id: &str) -> PathBuf {
         (*INSTANCE_CONFIGS_DIR).join(format!("{}.json", instance_id))
@@ -219,30 +222,30 @@ pub struct AppConfig {
     /// 配置文件版本
     #[serde(default = "default_version")]
     pub version: u32,
-    
+
     /// 应用基础路径
     pub base_path: PathBuf,
-    
+
     /// 多窗口位置配置
     #[serde(default)]
     pub window_positions: WindowPositions,
-    
+
     /// 用户偏好配置
     #[serde(default)]
     pub preferences: UserPreferences,
-    
+
     /// 下载配置
     #[serde(default)]
     pub download: DownloadConfig,
-    
+
     /// 路径配置
     #[serde(default)]
     pub path_config: PathConfig,
-    
+
     /// 已知文件夹列表
     #[serde(default)]
     pub known_folders: Vec<serde_json::Value>,
-    
+
     /// 实例配置映射（实例 ID -> 配置）
     #[serde(default)]
     pub instance_configs: HashMap<String, InstanceConfig>,
@@ -285,13 +288,13 @@ impl Default for StoreLoginState {
             is_logged_in: false,
             logged_in_type: AccountType::None,
             current_acc_uuid: None,
-            login_time: Local::now().to_rfc3339()
+            login_time: Local::now().to_rfc3339(),
         }
     }
 }
 
 impl StoreLoginState {
-    pub fn new_logged_in(role: AccountType, uuid:Option<String>) -> Self {
+    pub fn new_logged_in(role: AccountType, uuid: Option<String>) -> Self {
         Self {
             is_logged_in: true,
             logged_in_type: role,
@@ -340,24 +343,32 @@ pub struct UserPreferences {
     /// 主题模式 (dark/light/system)
     #[serde(default = "default_theme")]
     pub theme: String,
-    
+
     /// 强调色
     #[serde(default = "default_accent")]
     pub accent_color: String,
-    
+
     /// 语言
     #[serde(default = "default_language")]
     pub language: String,
-    
+
     /// 是否启用动画
     #[serde(default = "default_true")]
     pub enable_animation: bool,
 }
 
-fn default_theme() -> String { "dark".to_string() }
-fn default_accent() -> String { "indigo".to_string() }
-fn default_language() -> String { "zh-CN".to_string() }
-fn default_true() -> bool { true }
+fn default_theme() -> String {
+    "dark".to_string()
+}
+fn default_accent() -> String {
+    "indigo".to_string()
+}
+fn default_language() -> String {
+    "zh-CN".to_string()
+}
+fn default_true() -> bool {
+    true
+}
 
 impl UserPreferences {
     /// 创建默认用户偏好
@@ -371,17 +382,19 @@ impl UserPreferences {
 pub struct DownloadConfig {
     /// 下载目录路径
     pub download_path: PathBuf,
-    
+
     /// 并发下载数量
     #[serde(default = "default_concurrent")]
     pub concurrent_limit: u32,
-    
+
     /// 是否自动校验文件
     #[serde(default = "default_true")]
     pub auto_verify: bool,
 }
 
-fn default_concurrent() -> u32 { 16 }
+fn default_concurrent() -> u32 {
+    16
+}
 
 impl Default for DownloadConfig {
     fn default() -> Self {
@@ -398,44 +411,44 @@ impl Default for DownloadConfig {
 pub struct InstanceConfig {
     /// 实例 ID（与 GameInstance.id 一致）
     pub id: String,
-    
+
     /// 实例名称
     pub name: String,
-    
+
     /// 游戏版本
     pub version: String,
-    
+
     /// 模组加载器类型
     pub loader_type: crate::modloader::ModLoaderType,
-    
+
     /// 模组加载器版本
     pub loader_version: Option<String>,
-    
+
     /// Java 配置
     #[serde(default)]
     pub java: JavaConfig,
-    
+
     /// 内存配置
     #[serde(default)]
     pub memory: MemoryConfig,
-    
+
     /// 图形配置
     #[serde(default)]
     pub graphics: GraphicsConfig,
-    
+
     /// 自定义参数
     #[serde(default)]
     pub custom_args: Vec<String>,
-    
+
     /// 图标路径
     pub icon_path: Option<String>,
-    
+
     /// 最后游玩时间
     pub last_played: Option<i64>,
-    
+
     /// 创建时间
     pub created_at: i64,
-    
+
     /// 是否启用
     #[serde(default = "default_true")]
     pub enabled: bool,
@@ -466,11 +479,11 @@ impl Default for InstanceConfig {
 pub struct JavaConfig {
     /// Java 可执行文件路径
     pub java_path: Option<String>,
-    
+
     /// Java 参数
     #[serde(default)]
     pub java_args: Vec<String>,
-    
+
     /// 是否使用 bundled Java
     #[serde(default = "default_true")]
     pub use_bundled: bool,
@@ -492,14 +505,18 @@ pub struct MemoryConfig {
     /// 最小内存 (MB)
     #[serde(default = "default_min_memory")]
     pub min_memory: u32,
-    
+
     /// 最大内存 (MB)
     #[serde(default = "default_max_memory")]
     pub max_memory: u32,
 }
 
-fn default_min_memory() -> u32 { 512 }
-fn default_max_memory() -> u32 { 2048 }
+fn default_min_memory() -> u32 {
+    512
+}
+fn default_max_memory() -> u32 {
+    2048
+}
 
 impl Default for MemoryConfig {
     fn default() -> Self {
@@ -516,18 +533,22 @@ pub struct GraphicsConfig {
     /// 窗口宽度
     #[serde(default = "default_width")]
     pub width: u32,
-    
+
     /// 窗口高度
     #[serde(default = "default_height")]
     pub height: u32,
-    
+
     /// 是否全屏
     #[serde(default)]
     pub fullscreen: bool,
 }
 
-fn default_width() -> u32 { 1920 }
-fn default_height() -> u32 { 1080 }
+fn default_width() -> u32 {
+    1920
+}
+fn default_height() -> u32 {
+    1080
+}
 
 impl Default for GraphicsConfig {
     fn default() -> Self {
@@ -551,7 +572,7 @@ impl Default for ConfigManager {
     fn default() -> Self {
         Self {
             config: Mutex::new(AppConfig::default()),
-            windows: Mutex::new(WindowPositions::default())
+            windows: Mutex::new(WindowPositions::default()),
         }
     }
 }

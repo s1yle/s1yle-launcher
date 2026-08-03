@@ -1,6 +1,6 @@
 use crate::download::manager::DownloadManager;
 use crate::download::models::{DownloadProgress, DownloadTask};
-use crate::download::utils::{verify_file_sha1, CHUNK_SIZE, MAX_CHUNKS, MAX_RETRIES};
+use crate::download::utils::{CHUNK_SIZE, MAX_CHUNKS, MAX_RETRIES, verify_file_sha1};
 use crate::log_info;
 use md5;
 use reqwest;
@@ -82,8 +82,7 @@ async fn download_file_chunked(
         num_chunks
     );
 
-    let mut file = fs::File::create(save_path)
-        .map_err(|e| format!("创建文件失败：{}", e))?;
+    let mut file = fs::File::create(save_path).map_err(|e| format!("创建文件失败：{}", e))?;
 
     file.set_len(total_size)
         .map_err(|e| format!("预分配文件空间失败：{}", e))?;

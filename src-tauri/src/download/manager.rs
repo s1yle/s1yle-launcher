@@ -1,5 +1,5 @@
-use crate::download::models::DownloadTask;
 use crate::download::VersionDownloadManifest;
+use crate::download::models::DownloadTask;
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;

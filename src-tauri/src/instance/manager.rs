@@ -7,7 +7,7 @@ use uuid::Uuid;
 use super::models::{GameInstance, InstanceMeta, KnownPath};
 use super::utils::copy_dir_all;
 use crate::modloader::ModLoaderType;
-use crate::{config, APP_HANDLE, log_error, log_info};
+use crate::{APP_HANDLE, config, log_error, log_info};
 
 /// 迁移结果
 #[derive(Debug, Clone, serde::Serialize)]
@@ -35,7 +35,7 @@ impl InstanceManager {
         fs::create_dir_all(&*config::LIBRARIES_DIR).ok();
         fs::create_dir_all(&*config::ASSETS_DIR).ok();
         fs::create_dir_all(&*config::INSTANCE_CONFIGS_DIR).ok();
-        
+
         Self
     }
 
@@ -105,7 +105,7 @@ impl InstanceManager {
     /// 加载单个版本作为实例
     fn load_version(&self, version_id: &str) -> Option<GameInstance> {
         let version_dir = self.get_version_dir(version_id);
-        
+
         if !version_dir.exists() {
             return None;
         }
@@ -121,50 +121,62 @@ impl InstanceManager {
 
         // 尝试加载实例配置
         let instance_config = self.load_instance_config(version_id);
-        
-        let (id, name, loader_type, loader_version, icon_path, created_at, last_played, game_settings) =
-            if let Some(config) = instance_config {
-                (
-                    config.id,
-                    config.name,
-                    config.loader_type,
-                    config.loader_version,
-                    config.icon_path,
-                    config.created_at,
-                    config.last_played,
-                    Some(crate::instance::models::GameSettings {
-                        use_instance_settings: true,
-                        java_path: config.java.java_path,
-                        java_version: None,
-                        min_memory: Some(config.memory.min_memory as u64),
-                        max_memory: Some(config.memory.max_memory as u64),
-                        jvm_args: if config.java.java_args.is_empty() { None } else { Some(config.java.java_args) },
-                        isolation_mode: Some(crate::instance::models::IsolationMode::Version),
-                        width: Some(config.graphics.width),
-                        height: Some(config.graphics.height),
-                        fullscreen: Some(config.graphics.fullscreen),
-                        maximized: None,
-                        vsync: None,
-                        launcher_visible: None,
-                        player_name: None,
-                        server_address: None,
-                        server_port: None,
-                    }),
-                )
-            } else {
-                // 使用默认配置（不保存到磁盘，避免覆盖用户设置）
-                let now = chrono::Utc::now().timestamp();
-                (
-                    version_id.to_string(),  // 使用 version_id 作为 ID
-                    version_id.to_string(),
-                    ModLoaderType::Vanilla,
-                    None,
-                    None,
-                    now,
-                    None,
-                    None,
-                )
-            };
+
+        let (
+            id,
+            name,
+            loader_type,
+            loader_version,
+            icon_path,
+            created_at,
+            last_played,
+            game_settings,
+        ) = if let Some(config) = instance_config {
+            (
+                config.id,
+                config.name,
+                config.loader_type,
+                config.loader_version,
+                config.icon_path,
+                config.created_at,
+                config.last_played,
+                Some(crate::instance::models::GameSettings {
+                    use_instance_settings: true,
+                    java_path: config.java.java_path,
+                    java_version: None,
+                    min_memory: Some(config.memory.min_memory as u64),
+                    max_memory: Some(config.memory.max_memory as u64),
+                    jvm_args: if config.java.java_args.is_empty() {
+                        None
+                    } else {
+                        Some(config.java.java_args)
+                    },
+                    isolation_mode: Some(crate::instance::models::IsolationMode::Version),
+                    width: Some(config.graphics.width),
+                    height: Some(config.graphics.height),
+                    fullscreen: Some(config.graphics.fullscreen),
+                    maximized: None,
+                    vsync: None,
+                    launcher_visible: None,
+                    player_name: None,
+                    server_address: None,
+                    server_port: None,
+                }),
+            )
+        } else {
+            // 使用默认配置（不保存到磁盘，避免覆盖用户设置）
+            let now = chrono::Utc::now().timestamp();
+            (
+                version_id.to_string(), // 使用 version_id 作为 ID
+                version_id.to_string(),
+                ModLoaderType::Vanilla,
+                None,
+                None,
+                now,
+                None,
+                None,
+            )
+        };
 
         Some(GameInstance {
             id,
@@ -185,10 +197,11 @@ impl InstanceManager {
     pub fn load_instance_config(&self, version_id: &str) -> Option<crate::config::InstanceConfig> {
         // 首先尝试从独立文件加载
         let config_path = self.get_instance_config_path(version_id);
-        
+
         if config_path.exists() {
             if let Ok(content) = fs::read_to_string(&config_path) {
-                if let Ok(config) = serde_json::from_str::<crate::config::InstanceConfig>(&content) {
+                if let Ok(config) = serde_json::from_str::<crate::config::InstanceConfig>(&content)
+                {
                     return Some(config);
                 }
             }
@@ -207,20 +220,21 @@ impl InstanceManager {
     }
 
     /// 保存实例配置到独立文件
-    pub fn save_instance_config(&self, config: &crate::config::InstanceConfig) -> Result<(), String> {
+    pub fn save_instance_config(
+        &self,
+        config: &crate::config::InstanceConfig,
+    ) -> Result<(), String> {
         // 保存到独立文件
         let config_path = self.get_instance_config_path(&config.id);
-        
+
         if let Some(parent) = config_path.parent() {
-            fs::create_dir_all(parent)
-                .map_err(|e| format!("创建实例配置目录失败：{}", e))?;
+            fs::create_dir_all(parent).map_err(|e| format!("创建实例配置目录失败：{}", e))?;
         }
 
         let content = serde_json::to_string_pretty(config)
             .map_err(|e| format!("序列化实例配置失败：{}", e))?;
 
-        fs::write(&config_path, content)
-            .map_err(|e| format!("写入实例配置失败：{}", e))?;
+        fs::write(&config_path, content).map_err(|e| format!("写入实例配置失败：{}", e))?;
 
         log_info!("实例配置已保存：{}", config_path.to_string_lossy());
         Ok(())
@@ -247,16 +261,19 @@ impl InstanceManager {
     }
 
     /// 写入单个实例元数据（分布式）
-    fn write_instance_meta(&self, instance_name: &str, version: &str, meta: &InstanceMeta) -> Result<(), String> {
+    fn write_instance_meta(
+        &self,
+        instance_name: &str,
+        version: &str,
+        meta: &InstanceMeta,
+    ) -> Result<(), String> {
         let meta_path = self.get_instance_meta_path(instance_name, version);
         if let Some(parent) = meta_path.parent() {
-            fs::create_dir_all(parent)
-                .map_err(|e| format!("创建元数据目录失败：{}", e))?;
+            fs::create_dir_all(parent).map_err(|e| format!("创建元数据目录失败：{}", e))?;
         }
-        let content = serde_json::to_string_pretty(meta)
-            .map_err(|e| format!("序列化元数据失败：{}", e))?;
-        fs::write(&meta_path, content)
-            .map_err(|e| format!("写入元数据失败：{}", e))?;
+        let content =
+            serde_json::to_string_pretty(meta).map_err(|e| format!("序列化元数据失败：{}", e))?;
+        fs::write(&meta_path, content).map_err(|e| format!("写入元数据失败：{}", e))?;
         Ok(())
     }
 
@@ -305,10 +322,11 @@ impl InstanceManager {
                 // 需要先获取 version，所以先尝试从集中式读取基本信息
                 if let Some(central_meta) = self.read_central_meta(name) {
                     // 尝试读取分布式版本
-                    if let Some(dist_meta) = self.read_instance_meta(name, &central_meta.version_id) {
+                    if let Some(dist_meta) = self.read_instance_meta(name, &central_meta.version_id)
+                    {
                         return Some(dist_meta);
                     }
-                    
+
                     // 分布式不存在，尝试扫描实例目录获取 version
                     let versions = self.discover_versions(name);
                     if let Some(version) = versions.first() {
@@ -316,11 +334,11 @@ impl InstanceManager {
                             return Some(dist_meta);
                         }
                     }
-                    
+
                     // 分布式不存在，返回集中式（兼容旧数据）
                     return Some(central_meta);
                 }
-                
+
                 // 集中式也没有，尝试从实例目录推断
                 let versions = self.discover_versions(name);
                 if let Some(version) = versions.first() {
@@ -328,7 +346,7 @@ impl InstanceManager {
                         return Some(dist_meta);
                     }
                 }
-                
+
                 None
             }
             config::MetaMode::Centralized => {
@@ -344,7 +362,7 @@ impl InstanceManager {
             config::MetaMode::Distributed => {
                 // 分布式模式：写入独立文件
                 self.write_instance_meta(name, &meta.version_id, meta)?;
-                
+
                 // 同时更新集中式文件（保持同步，用于兼容和快速扫描）
                 self.save_to_central_meta(name, meta)?;
             }
@@ -457,7 +475,7 @@ impl InstanceManager {
         let minecraft_dir = self.get_legacy_minecraft_dir();
         let instance_dir = minecraft_dir.join(name);
         log_info!("扫描实例目录：{:?}", instance_dir);
-        
+
         if !instance_dir.exists() || !instance_dir.is_dir() {
             return;
         }
@@ -480,8 +498,12 @@ impl InstanceManager {
         }
 
         if let Some((version_name, jar_path)) = version_jar {
-            log_info!("检查版本：{} - jar 存在：{}", version_name, jar_path.exists());
-            
+            log_info!(
+                "检查版本：{} - jar 存在：{}",
+                version_name,
+                jar_path.exists()
+            );
+
             let now = jar_path
                 .metadata()
                 .ok()
@@ -494,37 +516,15 @@ impl InstanceManager {
                 .unwrap_or(0);
 
             let meta_path = instance_dir.join(config::INSTANCE_META_FILE_NAME);
-            let (id, loader_type, loader_version, icon_path, last_played) =
-                if meta_path.exists() {
-                    if let Some(meta) = self.load_meta_from_path(&meta_path) {
-                        (
-                            meta.id,
-                            meta.loader_type,
-                            meta.loader_version,
-                            meta.icon_path,
-                            meta.last_played,
-                        )
-                    } else {
-                        let new_meta = InstanceMeta {
-                            id: Uuid::new_v4().to_string(),
-                            name: name.to_string(),
-                            version_id: version_name.clone(),
-                            loader_type: ModLoaderType::Vanilla,
-                            loader_version: None,
-                            icon_path: None,
-                            created_at: now,
-                            last_played: None,
-                            game_settings: None,
-                        };
-                        let _ = self.save_meta_to_path(&new_meta, &meta_path);
-                        (
-                            new_meta.id,
-                            new_meta.loader_type,
-                            new_meta.loader_version,
-                            new_meta.icon_path,
-                            new_meta.last_played,
-                        )
-                    }
+            let (id, loader_type, loader_version, icon_path, last_played) = if meta_path.exists() {
+                if let Some(meta) = self.load_meta_from_path(&meta_path) {
+                    (
+                        meta.id,
+                        meta.loader_type,
+                        meta.loader_version,
+                        meta.icon_path,
+                        meta.last_played,
+                    )
                 } else {
                     let new_meta = InstanceMeta {
                         id: Uuid::new_v4().to_string(),
@@ -537,9 +537,6 @@ impl InstanceManager {
                         last_played: None,
                         game_settings: None,
                     };
-                    if let Some(parent) = meta_path.parent() {
-                        let _ = fs::create_dir_all(parent);
-                    }
                     let _ = self.save_meta_to_path(&new_meta, &meta_path);
                     (
                         new_meta.id,
@@ -548,7 +545,31 @@ impl InstanceManager {
                         new_meta.icon_path,
                         new_meta.last_played,
                     )
+                }
+            } else {
+                let new_meta = InstanceMeta {
+                    id: Uuid::new_v4().to_string(),
+                    name: name.to_string(),
+                    version_id: version_name.clone(),
+                    loader_type: ModLoaderType::Vanilla,
+                    loader_version: None,
+                    icon_path: None,
+                    created_at: now,
+                    last_played: None,
+                    game_settings: None,
                 };
+                if let Some(parent) = meta_path.parent() {
+                    let _ = fs::create_dir_all(parent);
+                }
+                let _ = self.save_meta_to_path(&new_meta, &meta_path);
+                (
+                    new_meta.id,
+                    new_meta.loader_type,
+                    new_meta.loader_version,
+                    new_meta.icon_path,
+                    new_meta.last_played,
+                )
+            };
 
             instances.push(GameInstance {
                 id,
@@ -726,7 +747,9 @@ impl InstanceManager {
 
     /// 获取实例目录路径
     pub fn get_instances_path(&self) -> String {
-        self.get_legacy_minecraft_dir().to_string_lossy().to_string()
+        self.get_legacy_minecraft_dir()
+            .to_string_lossy()
+            .to_string()
     }
 
     /// 扫描指定文件夹中的实例
@@ -747,7 +770,10 @@ impl InstanceManager {
                             let has_jar = fs::read_dir(&path)
                                 .map(|entries| {
                                     entries.filter_map(|e| e.ok()).any(|e| {
-                                        e.path().extension().map(|ext| ext == "jar").unwrap_or(false)
+                                        e.path()
+                                            .extension()
+                                            .map(|ext| ext == "jar")
+                                            .unwrap_or(false)
                                     })
                                 })
                                 .unwrap_or(false);
@@ -756,9 +782,7 @@ impl InstanceManager {
                         };
 
                         if has_game_files {
-                            if let Some(mut instance) =
-                                self.load_instance_from_path(name, &path)
-                            {
+                            if let Some(mut instance) = self.load_instance_from_path(name, &path) {
                                 instance.path = path.to_string_lossy().to_string();
                                 instances.push(instance);
                             }
@@ -907,9 +931,9 @@ impl InstanceManager {
                 return Vec::new();
             }
         };
-        
+
         let config_manager = app_handle.state::<crate::config::ConfigManager>();
-        
+
         match config_manager.get_config() {
             Ok(config) => {
                 let mut result = Vec::new();
@@ -929,16 +953,17 @@ impl InstanceManager {
 
     /// 保存已知路径列表到 ConfigManager
     fn save_known_paths(&self, paths: &[KnownPath]) -> Result<(), String> {
-        let app_handle = APP_HANDLE.get()
+        let app_handle = APP_HANDLE
+            .get()
             .ok_or_else(|| "APP_HANDLE 未初始化".to_string())?;
-        
+
         let config_manager = app_handle.state::<crate::config::ConfigManager>();
-        
-        let paths_value = serde_json::to_value(paths)
-            .map_err(|e| format!("序列化 known_paths 失败：{}", e))?;
-        
+
+        let paths_value =
+            serde_json::to_value(paths).map_err(|e| format!("序列化 known_paths 失败：{}", e))?;
+
         config_manager.update_value("known_folders", paths_value)?;
-        
+
         log_info!("已知路径已保存：{} 个文件夹", paths.len());
         Ok(())
     }
@@ -1003,8 +1028,11 @@ impl InstanceManager {
 
         let normalized_path = p.to_string_lossy().to_lowercase();
         let mut existing = self.load_known_paths();
-        
-        if existing.iter().any(|kp| kp.path.to_lowercase() == normalized_path) {
+
+        if existing
+            .iter()
+            .any(|kp| kp.path.to_lowercase() == normalized_path)
+        {
             return Err("该路径已存在".to_string());
         }
 
@@ -1035,7 +1063,11 @@ impl InstanceManager {
     }
 
     /// 添加已知路径（指定显示名称）
-    pub async fn add_known_path_with_name(&self, path: &str, display_name: &str) -> Result<KnownPath, String> {
+    pub async fn add_known_path_with_name(
+        &self,
+        path: &str,
+        display_name: &str,
+    ) -> Result<KnownPath, String> {
         let p = PathBuf::from(path);
         if !p.exists() {
             return Err(format!("路径不存在: {}", path));
@@ -1046,8 +1078,11 @@ impl InstanceManager {
 
         let normalized_path = p.to_string_lossy().to_lowercase();
         let mut existing = self.load_known_paths();
-        
-        if existing.iter().any(|kp| kp.path.to_lowercase() == normalized_path) {
+
+        if existing
+            .iter()
+            .any(|kp| kp.path.to_lowercase() == normalized_path)
+        {
             return Err("该路径已存在".to_string());
         }
 
@@ -1068,7 +1103,11 @@ impl InstanceManager {
         existing.push(new_path.clone());
         self.save_known_paths(&existing)?;
 
-        log_info!("已知路径已添加（自定义名称）: {} -> {:?}", display_name, path);
+        log_info!(
+            "已知路径已添加（自定义名称）: {} -> {:?}",
+            display_name,
+            path
+        );
         Ok(new_path)
     }
 
@@ -1076,7 +1115,7 @@ impl InstanceManager {
     pub fn set_default_folder(&self, id: &str) -> Result<(), String> {
         let mut existing = self.load_known_paths();
         let mut found = false;
-        
+
         for folder in &mut existing {
             if folder.id == id {
                 folder.is_default = true;
@@ -1098,7 +1137,7 @@ impl InstanceManager {
     pub fn remove_known_path(&self, id: &str) -> Result<(), String> {
         let mut existing = self.load_known_paths();
         let original_len = existing.len();
-        
+
         existing.retain(|p| p.id != id);
 
         if existing.len() == original_len {
@@ -1113,8 +1152,10 @@ impl InstanceManager {
 
     /// 迁移旧版实例到新目录结构
     pub fn migrate_directory_structure(&self) -> Result<MigrationResult, String> {
-        use crate::config::{MINECRAFT_DIR, VERSIONS_DIR, LIBRARIES_DIR, ASSETS_DIR, INSTANCE_CONFIGS_DIR};
-        
+        use crate::config::{
+            ASSETS_DIR, INSTANCE_CONFIGS_DIR, LIBRARIES_DIR, MINECRAFT_DIR, VERSIONS_DIR,
+        };
+
         log_info!("==================== 开始迁移到新目录结构 ====================");
 
         let mut result = MigrationResult {
@@ -1127,12 +1168,10 @@ impl InstanceManager {
         // 1. 创建目标目录
         fs::create_dir_all(&*MINECRAFT_DIR)
             .map_err(|e| format!("创建 Minecraft 目录失败：{}", e))?;
-        fs::create_dir_all(&*VERSIONS_DIR)
-            .map_err(|e| format!("创建 versions 目录失败：{}", e))?;
+        fs::create_dir_all(&*VERSIONS_DIR).map_err(|e| format!("创建 versions 目录失败：{}", e))?;
         fs::create_dir_all(&*LIBRARIES_DIR)
             .map_err(|e| format!("创建 libraries 目录失败：{}", e))?;
-        fs::create_dir_all(&*ASSETS_DIR)
-            .map_err(|e| format!("创建 assets 目录失败：{}", e))?;
+        fs::create_dir_all(&*ASSETS_DIR).map_err(|e| format!("创建 assets 目录失败：{}", e))?;
         fs::create_dir_all(&*INSTANCE_CONFIGS_DIR)
             .map_err(|e| format!("创建实例配置目录失败：{}", e))?;
 
@@ -1142,7 +1181,7 @@ impl InstanceManager {
 
         for instance in old_instances {
             let instance_dir = PathBuf::from(&instance.path);
-            
+
             // 跳过已经在新目录中的实例
             if instance_dir.starts_with(&*MINECRAFT_DIR) {
                 log_info!("实例 {} 已在新目录中，跳过", instance.name);
@@ -1154,8 +1193,12 @@ impl InstanceManager {
             // 3. 迁移版本文件
             let version_dir = VERSIONS_DIR.join(&instance.version_id);
             if !version_dir.exists() {
-                if let Err(e) = self.migrate_version_files(&instance_dir, &version_dir, &instance.version_id) {
-                    result.errors.push(format!("迁移版本 {} 失败：{}", instance.version_id, e));
+                if let Err(e) =
+                    self.migrate_version_files(&instance_dir, &version_dir, &instance.version_id)
+                {
+                    result
+                        .errors
+                        .push(format!("迁移版本 {} 失败：{}", instance.version_id, e));
                     continue;
                 }
                 result.migrated_versions.push(instance.version_id.clone());
@@ -1212,16 +1255,19 @@ impl InstanceManager {
     }
 
     /// 迁移版本文件（jar、json、natives）
-    fn migrate_version_files(&self, source_dir: &PathBuf, target_dir: &PathBuf, version_id: &str) -> Result<(), String> {
-        fs::create_dir_all(target_dir)
-            .map_err(|e| format!("创建版本目录失败：{}", e))?;
+    fn migrate_version_files(
+        &self,
+        source_dir: &PathBuf,
+        target_dir: &PathBuf,
+        version_id: &str,
+    ) -> Result<(), String> {
+        fs::create_dir_all(target_dir).map_err(|e| format!("创建版本目录失败：{}", e))?;
 
         // 复制版本 JAR
         let jar_source = source_dir.join(format!("{}.jar", version_id));
         let jar_target = target_dir.join(format!("{}.jar", version_id));
         if jar_source.exists() && !jar_target.exists() {
-            fs::copy(&jar_source, &jar_target)
-                .map_err(|e| format!("复制版本 JAR 失败：{}", e))?;
+            fs::copy(&jar_source, &jar_target).map_err(|e| format!("复制版本 JAR 失败：{}", e))?;
             log_info!("  复制版本 JAR：{}", version_id);
         }
 
@@ -1249,15 +1295,14 @@ impl InstanceManager {
     /// 迁移库文件到全局目录
     fn migrate_libraries(&self, instance_dir: &PathBuf) -> Result<(), String> {
         use crate::config::LIBRARIES_DIR;
-        
+
         let libraries_source = instance_dir.join("libraries");
         if !libraries_source.exists() {
             return Ok(());
         }
 
         let libraries_target = &*LIBRARIES_DIR;
-        fs::create_dir_all(libraries_target)
-            .map_err(|e| format!("创建库目录失败：{}", e))?;
+        fs::create_dir_all(libraries_target).map_err(|e| format!("创建库目录失败：{}", e))?;
 
         // 复制库文件（跳过已存在的）
         self.copy_dir_skip_existing(&libraries_source, libraries_target)?;
@@ -1269,15 +1314,14 @@ impl InstanceManager {
     /// 迁移资源文件到全局目录
     fn migrate_assets(&self, instance_dir: &PathBuf) -> Result<(), String> {
         use crate::config::ASSETS_DIR;
-        
+
         let assets_source = instance_dir.join("assets");
         if !assets_source.exists() {
             return Ok(());
         }
 
         let assets_target = &*ASSETS_DIR;
-        fs::create_dir_all(assets_target)
-            .map_err(|e| format!("创建资源目录失败：{}", e))?;
+        fs::create_dir_all(assets_target).map_err(|e| format!("创建资源目录失败：{}", e))?;
 
         // 复制资源文件（跳过已存在的）
         self.copy_dir_skip_existing(&assets_source, assets_target)?;
@@ -1292,8 +1336,7 @@ impl InstanceManager {
             return Ok(());
         }
 
-        fs::create_dir_all(target)
-            .map_err(|e| format!("创建目录失败：{}", e))?;
+        fs::create_dir_all(target).map_err(|e| format!("创建目录失败：{}", e))?;
 
         if let Ok(entries) = fs::read_dir(source) {
             for entry in entries.flatten() {

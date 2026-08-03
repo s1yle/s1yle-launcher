@@ -35,3 +35,22 @@ export interface Account {
   /** 刷新令牌，微软账户有效 */
   refresh_token: string | null;
 }
+
+/** 微软设备码响应 */
+export interface MicrosoftDeviceCode {
+  device_code: string;
+  user_code: string;
+  verification_uri: string;
+  expires_in: number;
+  interval: number;
+  message: string;
+}
+
+export interface TokenResponse {
+  token_type: string;
+  scope: string;
+  expires_in: number;
+  access_token: string;
+  refresh_token: string;
+  id_token?: string;
+}

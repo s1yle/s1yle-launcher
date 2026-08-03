@@ -7,8 +7,8 @@ import { useLoadingAction } from "@/hooks/useLoadingAction";
 import { LoadingSurface, Reveal, SkinAvatar, ConfirmPopup, useNotification, Animated } from "@/components/common";
 import Popup from "@/components/Popup";
 import { logger } from "@/helper/logger";
-import { AccountType } from "@/api";
-import { invokeMicrosoftDeviceCode } from "@/api/account";
+import { AccountType, MicrosoftDeviceCode, TokenResponse } from "@/api";
+import { invokeMicrosoftDeviceCode, invokeMicrosoftUserAuthStatus } from "@/api/account";
 import { openUrl } from "@/helper/rustInvoke";
 import { Selector } from "@/components/common/Selector";
 
@@ -336,10 +336,26 @@ const AddAccountPopup = ({
   isOpen, onClose, addName, setAddName, addType, setAddType, adding, onConfirm,
 }: AddAccountPopupProps) => {
   const [codePhase, setCodePhase] = useState(false);
+  const [code, setCode] = useState<MicrosoftDeviceCode>();
 
   useEffect(() => {
     setCodePhase(false);
   }, [isOpen, addType]);
+
+  const handleCodeSuccess = (code: MicrosoftDeviceCode) => {
+    setCode(code);
+  };
+
+  useEffect(() => {
+    logger.info('添加账户弹窗打开');
+    console.warn(code);
+    if (!code) return;
+
+    console.warn('获取用户授权状态中...');
+    invokeMicrosoftUserAuthStatus(code).then((res) => {
+      logger.info('获取用户授权状态成功', res);
+    });
+  }), [code];
 
   return (
     <Popup isOpen={isOpen} onClose={onClose} contentClassName="flex items-center justify-center" title="添加账户">
@@ -365,7 +381,7 @@ const AddAccountPopup = ({
           )}
           {addType === AccountType.Microsoft && (
             <Animated.Item>
-              <AddMicrosoft onClose={onClose} onCodePhase={setCodePhase} />
+              <AddMicrosoft onClose={onClose} onCodePhase={setCodePhase} onCodeSuccess={handleCodeSuccess} />
             </Animated.Item>
           )}
           {addType === AccountType.ThirdParty && (
@@ -420,9 +436,10 @@ const AddOffline = ({ addName, setAddName, adding, onConfirm }: AddOfflineProps)
 interface AddMicrosoftProps {
   onClose: () => void;
   onCodePhase: (v: boolean) => void;
+  onCodeSuccess: (v: MicrosoftDeviceCode) => void;
 }
 
-const AddMicrosoft = ({ onClose, onCodePhase }: AddMicrosoftProps) => {
+const AddMicrosoft = ({ onClose, onCodePhase, onCodeSuccess }: AddMicrosoftProps) => {
   const [phase, setPhase] = useState<"info" | "code">("info");
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -437,6 +454,10 @@ const AddMicrosoft = ({ onClose, onCodePhase }: AddMicrosoftProps) => {
       openUrl(result.verification_uri);
       setPhase("code");
       onCodePhase(true);
+
+      if (onCodeSuccess) {
+        onCodeSuccess(result);
+      }
     } catch (e) {
       notifyError("获取设备码失败", e instanceof Error ? e.message : "未知错误");
     } finally {
@@ -497,7 +518,7 @@ const AddMicrosoft = ({ onClose, onCodePhase }: AddMicrosoftProps) => {
   return (
     <div className="space-y-4">
       <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
-        点击登录按钮后将自动开启登录网页，进入登录流程。
+        点击登录按钮后将自动开启登录网页，进入登录流程
       </p>
       <button
         onClick={() => openUrl("https://www.minecraft.net/zh-hans/store/minecraft-deluxe-collection")}

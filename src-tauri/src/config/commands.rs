@@ -165,16 +165,13 @@ pub fn save_login_state(
     cm: State<'_, ConfigManager>,
     login_state: StoreLoginState,
 ) -> Result<(), String> {
-    let json_val = serde_json::to_value(login_state)
-        .map_err(|e| "转换为json_val失败")?;
+    let json_val = serde_json::to_value(login_state).map_err(|e| "转换为json_val失败")?;
     cm.write_config("login_state", json_val)
 }
 
 #[tauri::command]
-pub fn clear_login_state(
-    cm: State<'_, ConfigManager>,
-) -> Result<(), String> {
-    let json_val = serde_json::to_value(StoreLoginState::default())
-        .map_err(|e| "转换为json_val失败")?;
+pub fn clear_login_state(cm: State<'_, ConfigManager>) -> Result<(), String> {
+    let json_val =
+        serde_json::to_value(StoreLoginState::default()).map_err(|e| "转换为json_val失败")?;
     cm.write_config("login_state", json_val)
 }

@@ -91,7 +91,9 @@ impl FolderValidator {
             result.format = InstanceFormat::StandardMinecraft;
             result.compatibility_score = 85;
             found_instances.extend(instances);
-            result.warnings.push("检测到标准 Minecraft 目录结构".to_string());
+            result
+                .warnings
+                .push("检测到标准 Minecraft 目录结构".to_string());
         }
 
         result.instances = found_instances;
@@ -135,7 +137,11 @@ impl FolderValidator {
             }
         }
 
-        if instances.is_empty() { None } else { Some(instances) }
+        if instances.is_empty() {
+            None
+        } else {
+            Some(instances)
+        }
     }
 
     fn detect_standard_minecraft(base: &PathBuf) -> Option<Vec<DetectedInstance>> {
@@ -171,6 +177,10 @@ impl FolderValidator {
             }
         }
 
-        if instances.is_empty() { None } else { Some(instances) }
+        if instances.is_empty() {
+            None
+        } else {
+            Some(instances)
+        }
     }
 }

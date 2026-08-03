@@ -2,10 +2,10 @@ use chrono::Local;
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fs, sync::Mutex};
-use tauri::{command};
+use tauri::command;
 use uuid::Uuid;
 
-use crate::{log_info};
+use crate::log_info;
 
 // ======================== 类型定义 ========================
 
@@ -21,7 +21,7 @@ pub enum AccountType {
     /// 离线账户
     #[serde(rename = "offline")]
     Offline,
-    /// 第三方账户 
+    /// 第三方账户
     #[serde(rename = "third-party")]
     ThirdParty,
     /// 服主账户
@@ -73,7 +73,6 @@ impl Default for AccountManager {
 // 全局状态
 static ACCOUNT_MANAGER: OnceCell<Mutex<AccountManager>> = OnceCell::new();
 
-
 // ======================== 核心逻辑：文件存储 ========================
 
 /// 获取账户数据文件路径
@@ -115,8 +114,8 @@ fn save_accounts_to_disk_internal() -> Result<(), String> {
         .lock()
         .map_err(|e| format!("锁获取失败: {}", e))?;
 
-    let json_str =
-        serde_json::to_string_pretty(&*manager).map_err(|e| format!("序列化账户数据失败: {}", e))?;
+    let json_str = serde_json::to_string_pretty(&*manager)
+        .map_err(|e| format!("序列化账户数据失败: {}", e))?;
 
     fs::write(&path, json_str).map_err(|e| format!("写入账户文件失败: {}", e))?;
 
@@ -147,11 +146,11 @@ impl Account {
                     Uuid::from_u128(0x00000000000000000000000000000000);
                 let input = format!("OfflinePlayer:{}", name);
                 Uuid::new_v3(&MC_OFFLINE_NAMESPACE, input.as_bytes()).to_string()
-            },
+            }
             AccountType::ThirdParty => {
                 // 第三方账号的uuid自动生成
                 Uuid::new_v4().to_string()
-            },
+            }
             AccountType::Admin => {
                 // 服主账户无uuid
                 Uuid::nil().to_string()
