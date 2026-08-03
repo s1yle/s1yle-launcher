@@ -164,7 +164,6 @@ pub fn run() {
     let config_manager: ConfigManager = ConfigManager::new(app_config, WindowPositions::default());
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .manage(download_manager)
