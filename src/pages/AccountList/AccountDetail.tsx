@@ -7,8 +7,7 @@ import { useLoadingAction } from "@/hooks/useLoadingAction";
 import { LoadingSurface, Reveal, SkinAvatar, ConfirmPopup, useNotification, Animated } from "@/components/common";
 import Popup from "@/components/Popup";
 import { logger } from "@/helper/logger";
-import { AccountType, MicrosoftDeviceCode, TokenResponse } from "@/api";
-import { invokeMicrosoftDeviceCode, invokeMicrosoftUserAuthStatus } from "@/api/account";
+import { AccountType, MicrosoftDeviceCode, pollOauthToken, startDeviceCode, TokenResponse } from "@/api";
 import { openUrl } from "@/helper/rustInvoke";
 import { Selector } from "@/components/common/Selector";
 
@@ -352,8 +351,15 @@ const AddAccountPopup = ({
     if (!code) return;
 
     console.warn('获取用户授权状态中...');
-    invokeMicrosoftUserAuthStatus(code).then((res) => {
+    pollOauthToken().then((res) => {
+      if (!res || res.trim() == "") {
+        logger.error('获取用户授权状态失败', res);
+        return;
+      }
+
       logger.info('获取用户授权状态成功', res);
+      onClose();
+      return;
     });
   }), [code];
 
@@ -448,9 +454,9 @@ const AddMicrosoft = ({ onClose, onCodePhase, onCodeSuccess }: AddMicrosoftProps
   const handleLogin = async () => {
     setLoading(true);
     try {
-      const result = await invokeMicrosoftDeviceCode();
-      setCode(result.user_code);
-      await navigator.clipboard.writeText(result.user_code);
+      const result = await startDeviceCode();
+      setCode(result);
+      await navigator.clipboard.writeText(result);
       openUrl(result.verification_uri);
       setPhase("code");
       onCodePhase(true);

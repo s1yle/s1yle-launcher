@@ -36,6 +36,11 @@ export interface Account {
   refresh_token: string | null;
 }
 
+export interface DeviceCodeResponse {
+  userCode: string;
+  url: string;
+}
+
 /** 微软设备码响应 */
 export interface MicrosoftDeviceCode {
   device_code: string;

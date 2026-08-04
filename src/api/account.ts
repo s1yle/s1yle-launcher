@@ -1,7 +1,7 @@
 import { InvokeArgs, InvokeOptions } from "@tauri-apps/api/core";
 import { invokeRust } from "./client";
 import { logger } from "@/helper/logger";
-import type { AccountInfo, MicrosoftDeviceCode, TokenResponse } from "./types/account";
+import type { AccountInfo, DeviceCodeResponse } from "./types/account";
 
 /**
  * 添加账户
@@ -140,26 +140,69 @@ export const invokeAccInit = async (
 
 
 /**
- * 获取微软设备码（用于 OAuth 设备码登录流程）
+ * 启动设备码流程，获取 user_code 并存入 SESSION
  * @param options Tauri invoke 选项
- * @returns 设备码响应
+ * @returns 用户码（user_code），需展示给用户
  */
-export const invokeMicrosoftDeviceCode = async (
+export const startDeviceCode = async (
   options?: InvokeOptions
-): Promise<MicrosoftDeviceCode> => {
-  logger.info('准备调用 microsoft_device_code');
-  return await invokeRust("microsoft_device_code", {}, options) as MicrosoftDeviceCode;
+): Promise<DeviceCodeResponse> => {
+  logger.info('准备调用 start_device_code');
+  return await invokeRust("start_device_code", {}, options) as DeviceCodeResponse;
 };
 
 /**
- * 获取用户授权状态（用于 OAuth 设备码登录流程）
+ * 轮询 OAuth Token，用户授权后调用
  * @param options Tauri invoke 选项
- * @returns Token 响应
+ * @returns 成功消息
  */
-export const invokeMicrosoftUserAuthStatus = async (
-  code: MicrosoftDeviceCode,
+export const pollOauthToken = async (
   options?: InvokeOptions
-): Promise<TokenResponse> => {
-  logger.info('准备调用 microsoft_user_auth_status');
-  return await invokeRust("microsoft_user_auth_status", {code}, options) as TokenResponse;
+): Promise<string> => {
+  logger.info('准备调用 poll_oauth_token');
+  return await invokeRust("poll_oauth_token", {}, options);
+};
+
+/**
+ * Xbox Live 认证，从 SESSION 读取 ms_token
+ * @param options Tauri invoke 选项
+ */
+export const doXboxAuth = async (
+  options?: InvokeOptions
+): Promise<void> => {
+  logger.info('准备调用 do_xbox_auth');
+  await invokeRust("do_xbox_auth", {}, options);
+};
+
+/**
+ * XSTS 认证，从 SESSION 读取 xbl_response
+ * @param options Tauri invoke 选项
+ */
+export const doXstsAuth = async (
+  options?: InvokeOptions
+): Promise<void> => {
+  logger.info('准备调用 do_xsts_auth');
+  await invokeRust("do_xsts_auth", {}, options);
+};
+
+/**
+ * Minecraft 登录，从 SESSION 读取 xbl/xsts token
+ * @param options Tauri invoke 选项
+ */
+export const doMinecraftLogin = async (
+  options?: InvokeOptions
+): Promise<void> => {
+  logger.info('准备调用 do_minecraft_login');
+  await invokeRust("do_minecraft_login", {}, options);
+};
+
+/**
+ * 最终存储，从 SESSION 读取 mc_login，获取 UUID 后存储到可信存储
+ * @param options Tauri invoke 选项
+ */
+export const finalizeAndStore = async (
+  options?: InvokeOptions
+): Promise<void> => {
+  logger.info('准备调用 finalize_and_store');
+  await invokeRust("finalize_and_store", {}, options);
 };

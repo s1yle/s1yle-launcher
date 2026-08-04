@@ -3,6 +3,7 @@ mod account;
 mod admin_account;
 mod background;
 mod config;
+mod credential;
 mod download;
 mod font;
 mod instance;
@@ -13,13 +14,17 @@ mod microsoft_login;
 mod modloader;
 mod render;
 mod window;
-mod credential;
 
 use crate::account::AccountType;
 use crate::config::{
     AppConfig, ConfigManager, WindowPosition, WindowPositions, clear_login_state, export_config,
     get_config_value, get_instance_config, import_config, remove_instance_config, reset_config,
     save_login_state, set_config_value, update_instance_config,
+};
+
+use crate::microsoft_login::{
+    do_minecraft_login, do_xbox_auth, do_xsts_auth, finalize_and_store, poll_oauth_token,
+    start_device_code,
 };
 
 use crate::download::DownloadManager;
@@ -407,8 +412,13 @@ pub fn run() {
             render::get_skin_model,
             render::get_uuid_by_username,
             render::get_uuids_by_usernames,
-            microsoft_login::microsoft_device_code,
-            microsoft_login::microsoft_user_auth_status,
+            // 正版登录
+            do_minecraft_login,
+            do_xbox_auth,
+            do_xsts_auth,
+            finalize_and_store,
+            poll_oauth_token,
+            start_device_code,
         ])
         .run(tauri::generate_context!())
         .expect("启动失败！");
