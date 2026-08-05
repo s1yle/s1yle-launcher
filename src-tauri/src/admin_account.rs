@@ -130,53 +130,6 @@ pub fn initialize_admin_system() -> Result<(), String> {
     load_admin_from_disk()
 }
 
-/// 注册管理员账户（邮箱+密码），返回会话信息
-#[command]
-pub fn register_admin(email: String, password: String) -> Result<AdminSession, String> {
-    if email.is_empty() || !email.contains('@') {
-        return Err("请输入有效的邮箱地址".to_string());
-    }
-    if password.len() < 6 {
-        return Err("密码长度至少为6位".to_string());
-    }
-
-    let mut guard = ADMIN_MANAGER
-        .get()
-        .ok_or("管理员管理器未初始化")?
-        .lock()
-        .map_err(|e| format!("获取锁失败: {}", e))?;
-
-    if guard.accounts.contains_key(&email) {
-        return Err("该邮箱已被注册".to_string());
-    }
-
-    let salt = generate_salt();
-    let password_hash = hash_password(&password, &salt);
-    let now = chrono::Local::now().to_rfc3339();
-
-    let account = AdminAccount {
-        email: email.clone(),
-        password_hash,
-        salt,
-        admin_id: Uuid::new_v4().to_string(),
-        created_at: now.clone(),
-        bound_player_uuids: Vec::new(),
-    };
-
-    guard.accounts.insert(email.clone(), account);
-    guard.current_email = Some(email.clone());
-
-    drop(guard);
-    save_admin_to_disk()?;
-
-    Ok(AdminSession {
-        email,
-        admin_id: Uuid::new_v4().to_string(),
-        bound_player_uuids: Vec::new(),
-        login_time: now,
-    })
-}
-
 /// 管理员登录，验证邮箱密码并返回会话信息
 #[command]
 pub fn login_admin(email: String, password: String) -> Result<AdminSession, String> {

@@ -39,13 +39,13 @@ use tauri::{Manager, WebviewUrl, WindowEvent};
 use tauri_plugin_dialog::{Dialog, MessageDialogButtons};
 
 pub use crate::account::{
-    add_account, delete_account, get_account_list, get_current_account, init_account_manager,
-    initialize_account_system, load_accounts_from_disk, save_accounts_to_disk, set_current_account,
+    add_admin_account, add_player_account, delete_account, get_account_list, get_current_account,
+    init_account_manager, initialize_account_system, load_accounts_from_disk,
+    save_accounts_to_disk, set_current_account,
 };
 pub use crate::admin_account::{
     bind_player_to_admin, get_admin_info, get_bound_players, init_admin_manager,
-    initialize_admin_system, is_admin_registered, login_admin, register_admin,
-    unbind_player_from_admin,
+    initialize_admin_system, is_admin_registered, login_admin, unbind_player_from_admin,
 };
 pub use crate::launch::{
     LaunchConfig, LaunchStatus, init_launch_manager, tauri_get_launch_config,
@@ -302,7 +302,6 @@ pub fn run() {
             greet,
             get_system_info,
             // 管理员账号
-            register_admin,
             login_admin,
             bind_player_to_admin,
             unbind_player_from_admin,
@@ -318,7 +317,8 @@ pub fn run() {
             window::load_window_position,
             window::save_window_position_by_label,
             window::load_window_position_by_label,
-            add_account,
+            add_player_account,
+            add_admin_account,
             get_account_list,
             get_current_account,
             delete_account,

@@ -4,7 +4,7 @@ import { logger } from "@/helper/logger";
 import type { AccountInfo, DeviceCodeResponse } from "./types/account";
 
 /**
- * 添加账户
+ * 添加玩家账户（microsoft / offline）
  * @param accountName 账户名称（1-16 字符）
  * @param accountType 账户类型（microsoft / offline）
  * @param accessToken 微软账户的访问令牌（可选）
@@ -12,7 +12,7 @@ import type { AccountInfo, DeviceCodeResponse } from "./types/account";
  * @param options Tauri invoke 选项
  * @returns 操作结果字符串
  */
-export const invokeAddAccount = async (
+export const invokeAddPlayerAccount = async (
   accountName: string,
   accountType: string,
   accessToken?: string,
@@ -37,9 +37,38 @@ export const invokeAddAccount = async (
     args.refresh_token = refreshToken;
   }
 
-  logger.info('准备调用 add_account', args);
+  logger.info('准备调用 add_player_account', args);
 
-  return await invokeRust("add_account", args, options);
+  return await invokeRust("add_player_account", args, options);
+};
+
+/**
+ * 添加管理员账户
+ * @param email 管理员邮箱
+ * @param password 密码
+ * @param options Tauri invoke 选项
+ * @returns 操作结果字符串
+ */
+export const invokeAddAdminAccount = async (
+  email: string,
+  admin_id: string,
+  bound_player_uuids: string[],
+  login_time: string,
+  options?: InvokeOptions
+): Promise<string> => {
+  const trimmedEmail = email.trim();
+  if (!trimmedEmail || !trimmedEmail.includes('@')) {
+    throw new Error("请输入有效的邮箱地址");
+  }
+
+  logger.info('准备调用 add_admin_account', { email: trimmedEmail });
+
+  return await invokeRust("add_admin_account", {
+    email: trimmedEmail,
+    adminId: admin_id,
+    boundPlayerUuids: bound_player_uuids,
+    loginTime: login_time,
+  }, options);
 };
 
 /**

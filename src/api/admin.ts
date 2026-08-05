@@ -11,7 +11,7 @@ export interface AdminSession {
   /** 已绑定的玩家 UUID 列表 */
   bound_player_uuids: string[];
   /** 创建时间 */
-  createdAt: string;
+  loginTime: string;
 }
 
 function mapAdminInfo(info: ModelsAdminInfo): AdminSession {
@@ -19,7 +19,7 @@ function mapAdminInfo(info: ModelsAdminInfo): AdminSession {
     email: info.email ?? '',
     adminId: info.id ?? '',
     bound_player_uuids: info.bound_players ?? [],
-    createdAt: info.created_at ?? '',
+    loginTime: info.created_at ?? '',
   };
 }
 
@@ -53,7 +53,7 @@ export const apiLoginAdmin = async (email: string, password: string): Promise<Ad
 export const apiLogoutAdmin = async (): Promise<void> => {
   const rt = getRefreshToken();
   if (rt) {
-    await postAuthLogout({ body: { refresh_token: rt } }).catch(() => {});
+    await postAuthLogout({ body: { refresh_token: rt } }).catch(() => { });
   }
   clearTokens();
 };

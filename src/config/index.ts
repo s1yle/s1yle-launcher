@@ -214,7 +214,9 @@ class UnifiedConfigManager implements UnifiedConfigManagerType {
     try {
       logger.info(`[Config] 更新实例配置：${instanceId}`);
       
-      await rustUpdateInstanceConfig(instanceId, config);
+      const current = this.getInstanceConfig(instanceId);
+      const merged = { ...(current ?? {}), ...config } as InstanceConfig;
+      await rustUpdateInstanceConfig(instanceId, merged);
       
       // 刷新本地状态
       const newConfig = await rustGetConfig();
@@ -329,7 +331,6 @@ export type {
   ConfigEventListener,
   ConfigKey,
   ConfigValue,
-  ThemeMode,
   AccentColor,
   Language,
 } from './types';

@@ -1,5 +1,6 @@
 use serde::Serialize;
 use std::collections::HashMap;
+#[cfg(target_os = "windows")]
 use windows::{
     Win32::{
         Foundation::WIN32_ERROR,

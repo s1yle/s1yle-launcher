@@ -7,7 +7,7 @@ import { useLoadingAction } from "@/hooks/useLoadingAction";
 import { LoadingSurface, Reveal, SkinAvatar, ConfirmPopup, useNotification, Animated } from "@/components/common";
 import Popup from "@/components/Popup";
 import { logger } from "@/helper/logger";
-import { AccountType, MicrosoftDeviceCode, pollOauthToken, startDeviceCode, TokenResponse } from "@/api";
+import { AccountType, DeviceCodeResponse, pollOauthToken, startDeviceCode, TokenResponse } from "@/api";
 import { openUrl } from "@/helper/rustInvoke";
 import { Selector } from "@/components/common/Selector";
 
@@ -335,13 +335,13 @@ const AddAccountPopup = ({
   isOpen, onClose, addName, setAddName, addType, setAddType, adding, onConfirm,
 }: AddAccountPopupProps) => {
   const [codePhase, setCodePhase] = useState(false);
-  const [code, setCode] = useState<MicrosoftDeviceCode>();
+  const [code, setCode] = useState<DeviceCodeResponse>();
 
   useEffect(() => {
     setCodePhase(false);
   }, [isOpen, addType]);
 
-  const handleCodeSuccess = (code: MicrosoftDeviceCode) => {
+  const handleCodeSuccess = (code: DeviceCodeResponse) => {
     setCode(code);
   };
 
@@ -442,7 +442,7 @@ const AddOffline = ({ addName, setAddName, adding, onConfirm }: AddOfflineProps)
 interface AddMicrosoftProps {
   onClose: () => void;
   onCodePhase: (v: boolean) => void;
-  onCodeSuccess: (v: MicrosoftDeviceCode) => void;
+  onCodeSuccess: (v: DeviceCodeResponse) => void;
 }
 
 const AddMicrosoft = ({ onClose, onCodePhase, onCodeSuccess }: AddMicrosoftProps) => {
@@ -455,9 +455,9 @@ const AddMicrosoft = ({ onClose, onCodePhase, onCodeSuccess }: AddMicrosoftProps
     setLoading(true);
     try {
       const result = await startDeviceCode();
-      setCode(result);
-      await navigator.clipboard.writeText(result);
-      openUrl(result.verification_uri);
+      setCode(result.userCode);
+      await navigator.clipboard.writeText(result.userCode);
+      openUrl(result.url);
       setPhase("code");
       onCodePhase(true);
 

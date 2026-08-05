@@ -27,7 +27,7 @@ export interface CollisionBoundary {
   right?: number;
 }
 
-interface UseFloatingOptions {
+export interface UseFloatingOptions {
   /** 浮动元素的 ref（必须） */
   floatingRef: React.RefObject<HTMLElement | null>;
   /** anchor 模式：钉在哪个元素上 */
@@ -52,7 +52,7 @@ interface UseFloatingOptions {
   animateFromOrigin?: boolean;
 }
 
-interface UseFloatingReturn {
+export interface UseFloatingReturn {
   /** 计算出的 X 坐标（fixed 坐标系） */
   x: number;
   /** 计算出的 Y 坐标（fixed 坐标系） */

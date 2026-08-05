@@ -30,6 +30,7 @@
     "allow-get-system-fonts",
     "allow-get-font",
     "allow-add-account",
+    "allow-add-player-account",
     "allow-get-account-list",
     "allow-get-current-account",
     "allow-delete-account",

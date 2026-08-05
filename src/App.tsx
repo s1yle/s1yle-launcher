@@ -40,7 +40,7 @@ import { logger } from './helper/logger';
 import { useWindowPosition } from './hooks/useWindowPosition';
 import FloatingDownloadButton from './components/FloatingDownloadButton';
 import { BackgroundLayer } from './components/common/BackgroundLayer';
-import { GlobalLoadingBar } from './components/common';
+import { Animated, GlobalLoadingBar } from './components/common';
 import './helper/i18n';
 import { PanelLeft, PanelLeftOpen } from 'lucide-react';
 import ClassicLayout from './AppLayouts/ClassicLayout';
@@ -169,7 +169,10 @@ const MainLayout = () => {
   const sidebarFooter = (
     <button
       onClick={toggleSidebar}
-      className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] transition-colors"
+      className="w-full flex items-center gap-2 
+          px-3 py-2 rounded-md text-sm 
+          text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] 
+          hover:bg-[var(--color-surface-hover)] transition-colors"
       title={effectiveSidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}
     >
       <PanelLeft className="w-4 h-4" />
@@ -252,7 +255,7 @@ function App() {
     initFont();
     initializeAccountStore();
     useAdminStore.getState();
-    invokeRustFunction("initialize_admin_system").catch(() => {});
+    invokeRustFunction("initialize_admin_system").catch(() => { });
   }, [initTheme, initApp, initInstances, initFont, initializeAccountStore]);
 
   useEffect(() => {

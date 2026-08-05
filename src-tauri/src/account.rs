@@ -1,3 +1,4 @@
+use crate::admin_account::AdminSession;
 use chrono::Local;
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
@@ -58,6 +59,7 @@ pub struct Account {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct AccountManager {
     accounts: HashMap<String, Account>,
+    admin_accounts: HashMap<String, AdminSession>,
     current_uuid: Option<String>,
 }
 
@@ -65,6 +67,7 @@ impl Default for AccountManager {
     fn default() -> Self {
         Self {
             accounts: HashMap::new(),
+            admin_accounts: HashMap::new(),
             current_uuid: None,
         }
     }
@@ -188,19 +191,31 @@ pub fn init_account_manager() {
 }
 
 /// 向管理器添加账户并自动保存到磁盘
-pub fn add_account_to_manager(account: Account) -> Result<(), String> {
+pub fn add_account_to_manager(
+    account: Option<Account>,
+    admin_account: Option<AdminSession>,
+) -> Result<(), String> {
     let mut manager = ACCOUNT_MANAGER
         .get()
         .ok_or("账户管理器未初始化")?
         .lock()
         .map_err(|e| format!("获取账户锁失败: {}", e))?;
 
-    let uuid = account.info.uuid.clone();
-    if manager.accounts.contains_key(&uuid) {
-        return Err(format!("账户 {} 已存在", uuid));
+    if let Some(acc) = account {
+        let uuid = acc.info.uuid.clone();
+        if manager.accounts.contains_key(&uuid) {
+            return Err(format!("账户 {} 已存在", uuid));
+        }
+
+        manager.accounts.insert(uuid, acc);
     }
 
-    manager.accounts.insert(uuid, account);
+    if manager.admin_accounts.is_empty() == false {
+        if let Some(admin) = admin_account {
+            let admin_id = admin.clone().admin_id;
+            manager.admin_accounts.insert(admin_id, admin);
+        }
+    }
 
     // 释放锁后再保存（避免死锁，虽然这里作用域结束自动释放，但这是个好习惯）
     drop(manager);
@@ -250,9 +265,29 @@ pub fn initialize_account_system() -> Result<(), String> {
     Ok(())
 }
 
+/// 添加管理员账户到统一账户列表
+#[command]
+pub fn add_admin_account(
+    email: String,
+    admin_id: String,
+    bound_player_uuids: Vec<String>,
+    login_time: String,
+) -> Result<String, String> {
+    let admin_session = AdminSession {
+        email,
+        admin_id: admin_id.clone(),
+        bound_player_uuids,
+        login_time,
+    };
+
+    add_account_to_manager(None, Some(admin_session))?;
+
+    Ok(format!("管理员账户添加成功，ID: {}", admin_id))
+}
+
 /// 添加新账户（支持 microsoft/offline 两种类型）
 #[command]
-pub fn add_account(
+pub fn add_player_account(
     name: String,
     account_type: String,
     access_token: Option<String>,
@@ -279,8 +314,7 @@ pub fn add_account(
 
     let account = Account::new(name, account_type, access_token, refresh_token);
     let uuid = account.info.uuid.clone();
-    add_account_to_manager(account)?;
-    save_accounts_to_disk_internal()?;
+    add_account_to_manager(Some(account), None)?;
 
     Ok(format!("账户创建成功，UUID: {}", uuid))
 }
