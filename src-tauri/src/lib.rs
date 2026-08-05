@@ -3,7 +3,6 @@ mod account;
 mod admin_account;
 mod background;
 mod config;
-mod credential;
 mod download;
 mod font;
 mod instance;
@@ -37,6 +36,7 @@ use std::time::Instant;
 use tauri::webview::PageLoadEvent;
 use tauri::{Manager, WebviewUrl, WindowEvent};
 use tauri_plugin_dialog::{Dialog, MessageDialogButtons};
+use tauri_plugin_keyring::KeyringExt;
 
 pub use crate::account::{
     add_admin_account, add_player_account, delete_account, get_account_list, get_current_account,
@@ -171,12 +171,16 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_keyring::init())
         .manage(download_manager)
         .manage(mod_loader_manager)
         .manage(instance_manager)
         .manage(config_manager)
         .setup(|app| {
             let start = Instant::now();
+
+            app.keyring()
+                .initialize_service("com.wecraft.launcher".to_string())?;
 
             APP_HANDLE.set(app.handle().clone()).ok();
 

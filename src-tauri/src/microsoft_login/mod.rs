@@ -8,7 +8,6 @@ mod types;
 mod uuid;
 mod xbox;
 
-#[cfg(target_os = "windows")]
 use crate::microsoft_login::token_store::set_mc_token;
 pub use oauth::{get_devicecode, get_user_authorize};
 use serde::{Deserialize, Serialize};
@@ -228,9 +227,9 @@ pub async fn do_minecraft_login() -> Result<(), String> {
     Ok(())
 }
 
-/// 从 SESSION 读取 mc_login，提取 username 和 token，存储到可信存储，然后清空会话（将所有字段设为 None）
+/// 从 SESSION 读取 mc_login，提取 username 和 token，存储到系统密钥环，然后清空会话（将所有字段设为 None）
 #[command]
-pub async fn finalize_and_store() -> Result<(), String> {
+pub async fn finalize_and_store(app: tauri::AppHandle) -> Result<(), String> {
     println!("[finalize_and_store] 开始最终存储流程");
     let mut session = SESSION
         .lock()
@@ -256,15 +255,12 @@ pub async fn finalize_and_store() -> Result<(), String> {
         })?;
     println!("[finalize_and_store] uuid 已获取，id={}, name={}", uuid.id, uuid.name);
 
-    #[cfg(target_os = "windows")]
-    {
-        println!("[finalize_and_store] 调用 set_mc_token, username={}", uuid.name);
-        set_mc_token(uuid.name, &mc_token.clone()).map_err(|e| {
-            println!("[finalize_and_store] set_mc_token 失败: {}", e);
-            e.to_string()
-        })?;
-        println!("[finalize_and_store] 凭据已存储到可信存储");
-    }
+    println!("[finalize_and_store] 调用 set_mc_token, username={}", uuid.name);
+    set_mc_token(&app, &mc_token).map_err(|e| {
+        println!("[finalize_and_store] set_mc_token 失败: {}", e);
+        e.to_string()
+    })?;
+    println!("[finalize_and_store] 凭据已存储到系统密钥环");
 
     drop(session);
     println!("[finalize_and_store] SESSION 已释放，准备清空");
