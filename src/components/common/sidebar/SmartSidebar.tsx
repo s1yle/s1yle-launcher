@@ -24,7 +24,7 @@ export interface SmartSidebarProps {
 }
 
 /** 智能侧边栏组件，根据当前路由自动切换菜单项，支持动态文件夹和右键菜单 */
-const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: SmartSidebarProps) => {
+const SmartSidebar = ({ onMenuClick = () => {}, footer, header }: SmartSidebarProps) => {
   const location = useLocation();
   const { t } = useTranslation();
   const groups = getSidebarGroups();
@@ -79,7 +79,7 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: Sm
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deletingName, setDeletingName] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
-  const [currentMenuItem_, setCurrentMenuItem] = useState();
+  const [ _setCurrentMenuItem] = useState();
 
   // 渲染子侧边栏
   // if (pagesWithOwnSidebar.some(path => location.pathname.startsWith(path)) || isInstanceManagePage) {
@@ -131,7 +131,6 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: Sm
   // 账户页面：使用动态账户列表作为侧边栏
   const isAccountPage = location.pathname === '/account';
   const storeAccounts = useAuthStore(s => s.accounts);
-  const selectedUuid = useAccountSelectionStore(s => s.selectedUuid);
   if (isAccountPage) {
     const accountItems: SidebarMenuItem[] = storeAccounts.map(acc => ({
       id: `account-${acc.uuid}`,
@@ -139,7 +138,13 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: Sm
       title: acc.name,
       titleI18nKey: '',
       icon: <SkinAvatar uuid={acc.uuid} size={20} />,
-      action: () => useAccountSelectionStore.getState().selectAccount(acc.uuid),
+      action: () => {
+        useAccountSelectionStore.getState().selectAccount(acc.uuid);
+        useAuthStore.getState().setCurrentAccount(acc.uuid).catch((e) => {
+          const msg = e instanceof Error ? e.message : '设置当前账户失败';
+          notifyError(t('notification.error'), msg);
+        });
+      },
       group: SidebarGroup.ACCOUNT,
     }));
 
@@ -169,12 +174,6 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: Sm
     })) : [];
 
 
-  // 合并动态 + 静态
-  const allSidebarItems = [
-    ...folderItems,
-    // 暂时这样写，用于过滤该占位符(详情见 sidebarMenu.tsx)
-    ...sidebarItems.filter(item => item.id !== 'game-folders'),
-  ];
 
   // ------------------------- 辅助函数部分 -------------------------
 
@@ -236,11 +235,11 @@ const SmartSidebar = ({ onMenuClick, showAllGroups = false, footer, header }: Sm
     useContextMenuAction(parentId, actionId, t, {
       success,
       error: notifyError,
-      warning: (title: string, message?: string) => {
+      warning: (_title: string, _message?: string) => {
         // TODO: implement warning
         return '';
       },
-      info: (title: string, message?: string) => {
+      info: (_title: string, _message?: string) => {
         // TODO: implement info
         return '';
       },

@@ -10,10 +10,11 @@ const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(
 export interface ToggleProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
-  label: string;
+  label?: string;
   disabled?: boolean;
   id?: string;
   hoverable?: boolean;
+  bgHidden?: boolean
 }
 
 /**
@@ -32,13 +33,14 @@ export interface ToggleProps {
  * />
  * ```
  */
-const Toggle= ({
+const Toggle = ({
   checked,
   onChange,
   label,
   disabled = false,
   id,
   hoverable = true,
+  bgHidden = false,
 }: ToggleProps) => {
 
   // Settings Panel上下文
@@ -50,19 +52,22 @@ const Toggle= ({
       {/* isInsideItem 时，为了适配样式，将 border-radius 设置为 radius-full */}
       <motion.div
         className={cn(
-          `${!isInsideItem && 'bg-(--color-surface) '}`,
+          `${!isInsideItem && !bgHidden && 'bg-(--color-surface) '}`,
           `${isInsideItem && 'rounded-(--radius-full)'}`,
-          'inline-flex items-center justify-between',
+          'inline-flex items-center justify-between gap-2',
           `w-full px-3 py-2 ${hoverable && 'hover:bg-(--color-surface-hover)'} `,
           disabled && 'opacity-50 cursor-not-allowed',
         )}
       >
 
-        <motion.span
-          className='font-light text-sm'
-        >
-          {label || '未知标签'}
-        </motion.span>
+        {/* L3 控件标签：min-w-0 允许窄窗口换行而不溢出，避免挤压开关按钮 */}
+        {label && (
+          <motion.span
+            className='font-light text-sm min-w-0'
+          >
+            {label}
+          </motion.span>
+        )}
 
         {/* 按钮 */}
         <motion.div

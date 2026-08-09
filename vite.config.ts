@@ -8,6 +8,11 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig(async () => ({
   plugins: [react()],
 
+  // Vitest 只收 src 下的测试（scripts/ 下有 node 风格测试，走 process.exit）
+  test: {
+    include: ["src/**/*.test.{ts,tsx}"],
+  },
+
   // 添加 resolve 配置
   resolve: {
     alias: {

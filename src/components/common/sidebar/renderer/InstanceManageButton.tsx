@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Gamepad2, Hammer, Zap, Package, Image } from 'lucide-react';
+import { ChevronDown, Gamepad2, Hammer, Zap, Package, Image, Sun } from 'lucide-react';
 import { useInstanceStore } from '../../../../stores/instanceStore';
 import { ModLoaderType, type GameInstance } from '../../../../helper/rustInvoke';
 import { SidebarMenuItem } from '@/router/models';
@@ -23,14 +23,13 @@ const LOADER_ICONS: Record<ModLoaderType, React.ComponentType<{ className?: stri
   [ModLoaderType.NeoForge]: Image,
   [ModLoaderType.Fabric]: Zap,
   [ModLoaderType.Quilt]: Package,
+  [ModLoaderType.OptiFine]: Sun,
 };
 
 /** 实例管理按钮组件（侧边栏自定义渲染） */
 const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
   item,
   isActive,
-  isExpanded = false,
-  onToggle,
   onNavigate
 }) => {
   const { t } = useTranslation();

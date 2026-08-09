@@ -89,7 +89,7 @@ const defaultConfig: LoadingConfig = {
  * 加载条目通过唯一 key 注册/更新/完成/销毁。
  */
 export const useLoadingStore = create<LoadingState>()(
-  (set, get) => ({
+  (set, _get) => ({
     entries: {},
     config: { ...defaultConfig },
 

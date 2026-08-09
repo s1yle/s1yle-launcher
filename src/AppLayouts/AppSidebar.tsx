@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef } from 'react';
 import { UIMode } from '../stores/uiModeStore'
 import { SmartSidebar } from '../components/common'
 import useLayoutStore from '@/stores/layoutStore';
-import { DURATION } from '@/utils/animations';
 
 /** AppSidebar 组件的 Props */
 export interface AppSidebarProps {
@@ -17,8 +16,6 @@ const SIDEBAR_MAX_WIDTH = 400;
 
 /** 应用侧边栏 - 包含 SmartSidebar 和拖动调整宽度功能 */
 const AppSidebar = ({
-  mode = UIMode.ISLAND,
-  transitionDuration = DURATION.SIDEBAR_TRANSITION,
   handleMenuClick,
   footer,
 }: AppSidebarProps) => {

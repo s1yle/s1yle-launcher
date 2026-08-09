@@ -41,12 +41,12 @@ impl InstanceManager {
 
     /// 获取旧版实例目录（兼容）
     fn get_legacy_minecraft_dir(&self) -> PathBuf {
-        (*config::DEAMON_BASE_PATH).clone()
+        super::layout::instances_root()
     }
 
     /// 获取指定实例的 versions 目录
     fn get_versions_dir(&self, name: &str) -> PathBuf {
-        self.get_legacy_minecraft_dir().join(name).join("versions")
+        super::layout::instance_versions_dir(name)
     }
 
     /// 获取集中式元数据文件路径
@@ -472,8 +472,7 @@ impl InstanceManager {
 
     /// 扫描旧版实例目录中的版本
     fn scan_legacy_versions(&self, name: &str, instances: &mut Vec<GameInstance>) {
-        let minecraft_dir = self.get_legacy_minecraft_dir();
-        let instance_dir = minecraft_dir.join(name);
+        let instance_dir = super::layout::instance_dir(name);
         log_info!("扫描实例目录：{:?}", instance_dir);
 
         if !instance_dir.exists() || !instance_dir.is_dir() {
@@ -491,6 +490,26 @@ impl InstanceManager {
                                 version_jar = Some((stem.to_string(), path));
                                 break;
                             }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 兼容标准 .minecraft 布局：{instance}/versions/{v}/{v}.jar
+        if version_jar.is_none() {
+            let versions_dir = instance_dir.join("versions");
+            if let Ok(v_entries) = fs::read_dir(&versions_dir) {
+                'outer: for v_entry in v_entries.flatten() {
+                    let v_path = v_entry.path();
+                    if !v_path.is_dir() {
+                        continue;
+                    }
+                    let dir_name = v_entry.file_name().to_string_lossy().to_string();
+                    for jar in [v_path.join(format!("{}.jar", dir_name)), v_path.join("client.jar")] {
+                        if jar.exists() {
+                            version_jar = Some((dir_name.clone(), jar));
+                            break 'outer;
                         }
                     }
                 }
@@ -636,25 +655,19 @@ impl InstanceManager {
         self.scan_instances().into_iter().find(|i| i.id == id)
     }
 
-    /// 创建新实例（创建目录结构）
-    pub fn create_instance(&self, name: &str, version: &str) -> Result<GameInstance, String> {
+    /// 创建新实例（创建标准 .minecraft 目录结构）
+    pub fn create_instance(&self, name: &str, _version: &str) -> Result<GameInstance, String> {
         let instance_dir = self.get_legacy_minecraft_dir().join(name);
         let versions_dir = self.get_versions_dir(name);
-        let game_version_dir = versions_dir.join(version);
 
         if instance_dir.exists() {
             return Err(format!("实例 {} 已存在", name));
         }
-        if game_version_dir.exists() {
-            return Err(format!("版本 {} 已存在", version));
-        }
 
         fs::create_dir_all(&instance_dir).map_err(|e| format!("创建实例目录失败：{}", e))?;
-        fs::create_dir_all(&game_version_dir).map_err(|e| format!("创建版本文件失败：{}", e))?;
-
-        fs::create_dir_all(game_version_dir.join("libraries")).ok();
-        fs::create_dir_all(game_version_dir.join("assets")).ok();
-        fs::create_dir_all(game_version_dir.join("natives")).ok();
+        fs::create_dir_all(&versions_dir).map_err(|e| format!("创建 versions 目录失败：{}", e))?;
+        fs::create_dir_all(instance_dir.join("libraries")).ok();
+        fs::create_dir_all(instance_dir.join("assets")).ok();
 
         let instance = self
             .load_instance(name)
@@ -1263,30 +1276,54 @@ impl InstanceManager {
     ) -> Result<(), String> {
         fs::create_dir_all(target_dir).map_err(|e| format!("创建版本目录失败：{}", e))?;
 
+        // 兼容旧结构：版本文件可能位于 {instance}/versions/{version}/ 下
+        let old_version_dir = source_dir.join("versions").join(version_id);
+        let mut candidates: Vec<PathBuf> = Vec::new();
+        candidates.push(source_dir.clone());
+        if old_version_dir.is_dir() {
+            candidates.push(old_version_dir);
+        }
+
         // 复制版本 JAR
-        let jar_source = source_dir.join(format!("{}.jar", version_id));
         let jar_target = target_dir.join(format!("{}.jar", version_id));
-        if jar_source.exists() && !jar_target.exists() {
-            fs::copy(&jar_source, &jar_target).map_err(|e| format!("复制版本 JAR 失败：{}", e))?;
-            log_info!("  复制版本 JAR：{}", version_id);
+        if !jar_target.exists() {
+            for dir in &candidates {
+                let jar_source = dir.join(format!("{}.jar", version_id));
+                if jar_source.exists() {
+                    fs::copy(&jar_source, &jar_target)
+                        .map_err(|e| format!("复制版本 JAR 失败：{}", e))?;
+                    log_info!("  复制版本 JAR：{}", version_id);
+                    break;
+                }
+            }
         }
 
         // 复制版本 JSON
-        let json_source = source_dir.join(format!("{}.json", version_id));
         let json_target = target_dir.join(format!("{}.json", version_id));
-        if json_source.exists() && !json_target.exists() {
-            fs::copy(&json_source, &json_target)
-                .map_err(|e| format!("复制版本 JSON 失败：{}", e))?;
-            log_info!("  复制版本 JSON：{}", version_id);
+        if !json_target.exists() {
+            for dir in &candidates {
+                let json_source = dir.join(format!("{}.json", version_id));
+                if json_source.exists() {
+                    fs::copy(&json_source, &json_target)
+                        .map_err(|e| format!("复制版本 JSON 失败：{}", e))?;
+                    log_info!("  复制版本 JSON：{}", version_id);
+                    break;
+                }
+            }
         }
 
         // 复制 natives 目录
-        let natives_source = source_dir.join("natives");
         let natives_target = target_dir.join("natives");
-        if natives_source.exists() && !natives_target.exists() {
-            copy_dir_all(&natives_source, &natives_target)
-                .map_err(|e| format!("复制 natives 目录失败：{}", e))?;
-            log_info!("  复制 natives 目录");
+        if !natives_target.exists() {
+            for dir in &candidates {
+                let natives_source = dir.join("natives");
+                if natives_source.exists() {
+                    copy_dir_all(&natives_source, &natives_target)
+                        .map_err(|e| format!("复制 natives 目录失败：{}", e))?;
+                    log_info!("  复制 natives 目录");
+                    break;
+                }
+            }
         }
 
         Ok(())
@@ -1296,16 +1333,32 @@ impl InstanceManager {
     fn migrate_libraries(&self, instance_dir: &PathBuf) -> Result<(), String> {
         use crate::config::LIBRARIES_DIR;
 
-        let libraries_source = instance_dir.join("libraries");
-        if !libraries_source.exists() {
-            return Ok(());
-        }
-
         let libraries_target = &*LIBRARIES_DIR;
         fs::create_dir_all(libraries_target).map_err(|e| format!("创建库目录失败：{}", e))?;
 
-        // 复制库文件（跳过已存在的）
-        self.copy_dir_skip_existing(&libraries_source, libraries_target)?;
+        let mut sources = Vec::new();
+
+        let libraries_source = instance_dir.join("libraries");
+        if libraries_source.exists() {
+            sources.push(libraries_source);
+        }
+
+        // 兼容旧结构：{instance}/versions/*/libraries
+        let versions_dir = instance_dir.join("versions");
+        if versions_dir.is_dir() {
+            if let Ok(entries) = fs::read_dir(&versions_dir) {
+                for entry in entries.flatten() {
+                    let old = entry.path().join("libraries");
+                    if old.is_dir() {
+                        sources.push(old);
+                    }
+                }
+            }
+        }
+
+        for source in sources {
+            self.copy_dir_skip_existing(&source, libraries_target)?;
+        }
         log_info!("  迁移库文件完成");
 
         Ok(())
@@ -1315,16 +1368,32 @@ impl InstanceManager {
     fn migrate_assets(&self, instance_dir: &PathBuf) -> Result<(), String> {
         use crate::config::ASSETS_DIR;
 
-        let assets_source = instance_dir.join("assets");
-        if !assets_source.exists() {
-            return Ok(());
-        }
-
         let assets_target = &*ASSETS_DIR;
         fs::create_dir_all(assets_target).map_err(|e| format!("创建资源目录失败：{}", e))?;
 
-        // 复制资源文件（跳过已存在的）
-        self.copy_dir_skip_existing(&assets_source, assets_target)?;
+        let mut sources = Vec::new();
+
+        let assets_source = instance_dir.join("assets");
+        if assets_source.exists() {
+            sources.push(assets_source);
+        }
+
+        // 兼容旧结构：{instance}/versions/*/assets
+        let versions_dir = instance_dir.join("versions");
+        if versions_dir.is_dir() {
+            if let Ok(entries) = fs::read_dir(&versions_dir) {
+                for entry in entries.flatten() {
+                    let old = entry.path().join("assets");
+                    if old.is_dir() {
+                        sources.push(old);
+                    }
+                }
+            }
+        }
+
+        for source in sources {
+            self.copy_dir_skip_existing(&source, assets_target)?;
+        }
         log_info!("  迁移资源文件完成");
 
         Ok(())

@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Crown, User, Home, ChevronDown, HomeIcon, FileQuestionMark, AlertTriangle, LogOut } from 'lucide-react';
+import { Crown, User, Home, ChevronDown,  FileQuestionMark, AlertTriangle, LogOut } from 'lucide-react';
 import { useUserRoleStore, UserRole } from '@/stores/userRoleStore';
 import { useAdminStore } from '@/stores/adminStore';
 import { useAuthStore } from '@/stores/authStore';

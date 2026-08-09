@@ -13,7 +13,7 @@
 
 import {
   getConfig as rustGetConfig,
-  updateConfig as rustUpdateConfig,
+  updateConfig as _rustUpdateConfig,
   setConfigValue as rustSetConfigValue,
   updateInstanceConfig as rustUpdateInstanceConfig,
   removeInstanceConfig as rustRemoveInstanceConfig,
@@ -38,7 +38,6 @@ import { logger } from '@/helper/logger';
  */
 class UnifiedConfigManager implements UnifiedConfigManagerType {
   private ready: boolean = false;
-  private loading: boolean = false;
   private error: Error | null = null;
   private readyPromise: Promise<void> | null = null;
   private eventListeners: Map<ConfigEvent, Set<Function>> = new Map();
@@ -59,7 +58,6 @@ class UnifiedConfigManager implements UnifiedConfigManagerType {
       return this.readyPromise || Promise.resolve();
     }
 
-    this.loading = true;
     this.error = null;
 
     this.readyPromise = (async () => {
@@ -74,7 +72,6 @@ class UnifiedConfigManager implements UnifiedConfigManagerType {
         
         // 3. 标记就绪
         this.ready = true;
-        this.loading = false;
         this.initialized = true;
         
         logger.info('[Config] 配置加载完成');
@@ -83,7 +80,6 @@ class UnifiedConfigManager implements UnifiedConfigManagerType {
         this.emit('ready');
       } catch (e) {
         this.error = e instanceof Error ? e : new Error('配置加载失败');
-        this.loading = false;
         logger.error('[Config] 配置加载失败', this.error);
         useConfigStore.setState({ error: this.error.message, loading: false, initialized: true });
         this.emit('error', this.error);
@@ -316,7 +312,6 @@ class UnifiedConfigManager implements UnifiedConfigManagerType {
     this.eventListeners.clear();
     this.initialized = false;
     this.ready = false;
-    this.loading = false;
     this.error = null;
     this.readyPromise = null;
   }

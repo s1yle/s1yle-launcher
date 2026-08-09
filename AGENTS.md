@@ -72,8 +72,8 @@ src-tauri/src/
 ├── admin_account.rs, background.rs, logging.rs
 ├── font.rs, java.rs, render.rs
 ├── config/           # 配置模块
-├── download/         # 下载模块
-└── instance/         # 实例模块
+├── download/         # 下载模块（镜像/分块重试/并发见 utils.rs + downloader.rs）
+└── instance/         # 实例模块（layout.rs = 路径唯一事实源）
 ```
 
 ---
@@ -240,8 +240,9 @@ import { getConfig, updateConfig, launchInstance } from '@/helper/rustInvoke';
 ## 12. 命令
 
 ```bash
-pnpm dev              # 开发服务器
-pnpm build            # 构建
+pnpm dev              # 开发服务器（predev 自动生成命令契约）
+pnpm build            # 构建（prebuild 自动生成命令契约）
+pnpm check:contracts  # 前端 invoke 调用 ↔ lib.rs generate_handler 注册清单对账（漂移即报错）
 pnpm tauri dev        # Tauri 开发
 pnpm tauri build      # 构建生产
 pnpm docs:gen         # 生成全部自动文档（新 clone 后必须跑一次）
@@ -249,6 +250,12 @@ pnpm docs:gen:api     # TypeDoc: src/api + components + stores + ... → docs/ap
 pnpm docs:gen:rust    # cargo doc: src-tauri/ → docs/rust/
 pnpm docs:gen:routes  # 脚本: src/router/routes.tsx → docs/generated/routes.md
 ```
+
+**架构契约（改前后端前必读）**:
+- 路由: `src/router/routes.tsx` 组件直接挂载（`component: React.lazy(...)`），禁止新增第二份组件注册表；父路由省略 component 自动跳首个子路由
+- 路由参数: 页面取参统一用 `useRouteParams()`（来自 `src/router/routeParams.ts`），禁止使用 React Router 原生 `useParams`
+- 命令契约: `src/api/generated-commands.json` 由 `scripts/generate-commands-contract.ts` 自动生成，前端 invoke 任何未注册命令会在 `client.ts` 中间件直接抛错
+- 路径单一事实源: 实例/版本目录一律经 `src-tauri/src/instance/layout.rs`（`version_dir_in` / `scan_all_installed_versions` / `is_version_installed` 等），禁止自行拼接 `versions/{v}/{v}.jar` 类路径
 
 ---
 

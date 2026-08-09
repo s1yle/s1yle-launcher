@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { useRouteParams } from '@/router/routeParams';
 import { useInstanceStore } from '../../../stores/instanceStore';
 
 /** 实例自动安装页面 - 模组加载器自动安装（待实现） */
 const InstanceAutoInstall: React.FC = () => {
-  const { instanceId } = useParams<{ instanceId: string }>();
+  const { instanceId } = useRouteParams();
   const navigate = useNavigate();
   const getInstance = useInstanceStore(s => s.getInstance);
   const setSelectedInstance = useInstanceStore(s => s.setSelectedInstance);

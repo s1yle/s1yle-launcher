@@ -1,4 +1,5 @@
 use crate::admin_account::AdminSession;
+use crate::microsoft_login::token_store::{delete_mc_token, get_mc_token};
 use chrono::Local;
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
@@ -220,6 +221,7 @@ pub fn add_account_to_manager(
     // 释放锁后再保存（避免死锁，虽然这里作用域结束自动释放，但这是个好习惯）
     drop(manager);
     save_accounts_to_disk_internal()?; // 修改后自动保存
+    auto_select_default_account()?;
 
     Ok(())
 }
@@ -249,6 +251,47 @@ pub fn set_current_account_internal(uuid: String) -> Result<String, String> {
     Ok(format!("账户 {} 已设为当前账户", uuid))
 }
 
+/// 当前无选中账户且列表非空时，自动选择一个默认账户
+/// 正版/第三方要求持有登录凭证，离线账户可直接选择
+fn auto_select_default_account() -> Result<Option<String>, String> {
+    let mut manager = ACCOUNT_MANAGER
+        .get()
+        .ok_or("账户管理器未初始化")?
+        .lock()
+        .map_err(|e| format!("获取账户锁失败: {}", e))?;
+
+    if manager.current_uuid.is_some() || manager.accounts.is_empty() {
+        return Ok(None);
+    }
+
+    let picked = manager
+        .accounts
+        .values()
+        .filter(|a| match a.info.account_type {
+            AccountType::Microsoft | AccountType::ThirdParty => {
+                a.access_token.is_some() && a.refresh_token.is_some()
+            }
+            _ => true,
+        })
+        .max_by_key(|a| a.info.create_time.clone())
+        .map(|a| a.info.uuid.clone());
+
+    let Some(uuid) = picked else {
+        return Ok(None);
+    };
+
+    manager.current_uuid = Some(uuid.clone());
+    if let Some(account) = manager.accounts.get_mut(&uuid) {
+        account.update_last_login();
+    }
+
+    drop(manager);
+    save_accounts_to_disk_internal()?;
+
+    log_info!("自动选择默认账户: {}", uuid);
+    Ok(Some(uuid))
+}
+
 // ======================== Tauri 前端命令 ========================
 
 /// 初始化账户系统（加载磁盘中的账户数据），推荐在应用启动时调用一次
@@ -262,6 +305,7 @@ pub fn initialize_account_system() -> Result<(), String> {
         println!("✅ 账户管理器初始化完成");
     }
     load_accounts_from_disk_internal()?;
+    auto_select_default_account()?;
     Ok(())
 }
 
@@ -347,25 +391,62 @@ pub fn get_current_account() -> Result<Option<AccountInfo>, String> {
         .map(|a| a.info.clone()))
 }
 
-/// 删除指定 UUID 的账户
+/// 获取当前账户的访问令牌（微软账户有效，离线账户返回 None）
 #[command]
-pub fn delete_account(uuid: String) -> Result<String, String> {
-    let mut manager = ACCOUNT_MANAGER
+pub fn get_current_account_token() -> Result<Option<String>, String> {
+    let manager = ACCOUNT_MANAGER
         .get()
         .ok_or("账户管理器未初始化")?
         .lock()
         .map_err(|e| format!("获取账户锁失败: {}", e))?;
 
-    if manager.accounts.remove(&uuid).is_none() {
-        return Err(format!("账户 {} 不存在", uuid));
+    Ok(manager
+        .current_uuid
+        .as_ref()
+        .and_then(|uuid| manager.accounts.get(uuid))
+        .and_then(|a| a.access_token.clone()))
+}
+
+/// 删除指定 UUID 的账户
+/// 正版账户删除时同步清除系统密钥环中对应的登录凭证，避免泄漏
+#[command]
+pub fn delete_account(app: tauri::AppHandle, uuid: String) -> Result<String, String> {
+    let (deleted_type, deleted_name) = {
+        let mut manager = ACCOUNT_MANAGER
+            .get()
+            .ok_or("账户管理器未初始化")?
+            .lock()
+            .map_err(|e| format!("获取账户锁失败: {}", e))?;
+
+        let removed = manager
+            .accounts
+            .remove(&uuid)
+            .ok_or_else(|| format!("账户 {} 不存在", uuid))?;
+
+        if manager.current_uuid.as_deref() == Some(&uuid) {
+            manager.current_uuid = None;
+        }
+
+        (removed.info.account_type, removed.info.name)
+    };
+
+    if let AccountType::Microsoft = deleted_type {
+        if let Ok(token) = get_mc_token(&app) {
+            if token.username == deleted_name {
+                match delete_mc_token(&app) {
+                    Ok(()) => {
+                        println!("[delete_account] 已清除账户 {} 的密钥环登录凭证", deleted_name);
+                    }
+                    Err(e) => {
+                        println!("[delete_account] 清除密钥环凭据失败: {}", e);
+                    }
+                }
+            }
+        }
     }
 
-    if manager.current_uuid.as_deref() == Some(&uuid) {
-        manager.current_uuid = None;
-    }
-
-    drop(manager);
     save_accounts_to_disk_internal()?; // 修改后自动保存
+    auto_select_default_account()?;
 
     Ok(format!("账户 {} 删除成功", uuid))
 }

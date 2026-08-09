@@ -1,4 +1,4 @@
-import type { AppConfig, InstanceConfig, UserPreferences, DownloadConfig } from '@/helper/rustInvoke';
+import type { AppConfig, InstanceConfig } from '@/helper/rustInvoke';
 import { ThemePreset } from '@/stores/themeStore';
 
 /**

@@ -66,7 +66,7 @@ export const microInteractions = {
   cardTap: { scale: 0.99 },
   deleteIconHover: { scale: 1.1 },
   deleteIconTap: { scale: 0.9 },
-  listItemHover: { scale: 1.01 },
+  listItemHover: { scale: 1.0 },
   listItemTap: { scale: 0.99 },
   itemHover: { scale: 1.01 },
   itemTap: { scale: 0.97 },

@@ -1,79 +1,25 @@
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { routes, findRouteByPath } from "../router/config";
-import {
-  Loading,
-  Home,
-  AccountDetail,
-  InstanceManage,
-  InstanceList,
-  DownloadGame,
-  DownloadModpack,
-  VersionDetailWithInstall,
-  AppearanceSettings,
-  JavaSettings,
-  Multiplayer,
-  Feedback,
-  Hint,
-  VersionInstall,
-  InstanceGameSettings,
-} from '../pages';
-import { AdminServers, AdminAnalytics, AdminUpload } from '../pages/admin';
+import { parseRouteParams, RouteParamsContext } from "../router/routeParams";
 import { useAnimation } from "../hooks/useAnimation";
 import { DURATION, pageTransition } from "../utils/animations";
-import { useNavStore, type NavDirection } from "../stores/navStore";
+import { useNavStore } from "../stores/navStore";
 
-const componentMap: Record<string, React.FC> = {
-  Loading,
-  Home,
-  AccountDetail,
-  InstanceManage,
-  InstanceList,
-  DownloadGame,
-  DownloadModpack,
-  VersionDetailWithInstall,
-  AppearanceSettings,
-  JavaSettings,
-  Multiplayer,
-  Feedback,
-  Hint,
-  VersionInstall,
-  InstanceGameSettings,
-  AdminServers,
-  AdminAnalytics,
-  AdminUpload
-};
+const PageFallback = () => (
+  <div className="h-full w-full flex items-center justify-center opacity-50 text-sm">
+    Loading…
+  </div>
+);
 
-const parseRouteParams = (routePath: string, actualPath: string): Record<string, string> => {
-  const params: Record<string, string> = {};
-  const routeSegments = routePath.split('/');
-  const actualSegments = actualPath.split('/');
-
-  for (let i = 0; i < routeSegments.length; i++) {
-    if (routeSegments[i].startsWith(':')) {
-      params[routeSegments[i].slice(1)] = actualSegments[i];
-    }
-  }
-
-  return params;
-};
-
-const RouteParamsContext = createContext<Record<string, string> | null>(null);
-
-/**
- * 获取路由参数 Hook。
- * 同时支持 React Router 原生 useParams 和自定义上下文中的参数。
- */
-export const useRouteParams = (): Record<string, string> => {
-  const reactRouterParams = useParams();
-  const contextParams = useContext(RouteParamsContext);
-  const params = contextParams || reactRouterParams || {};
-
-  return Object.fromEntries(
-    Object.entries(params).filter(([_, value]) => value !== undefined)
-  ) as Record<string, string>;
-};
+const MissingComponentPanel = ({ path }: { path: string }) => (
+  <div className="h-full flex items-center justify-center bg-red-950/40 text-red-300 text-sm p-6 text-center">
+    路由未匹配：{path}
+    <br />
+    请检查 src/router/routes.tsx 中是否存在该路径对应的路由定义。
+  </div>
+);
 
 interface RouterRendererProps {
   sidebar?: React.ReactNode;
@@ -94,19 +40,21 @@ const RouterRenderer = ({
   sidebarTransitionDuration = 0.3,
 }: RouterRendererProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const currentPathname = location.pathname;
   const { enabled, transition } = useAnimation();
   const route = findRouteByPath(currentPathname, routes);
-  if (!route) return null;
 
-  const Component = componentMap[route.componentName];
-  if (!Component) return null;
-
-  const params = parseRouteParams(route.path, currentPathname);
-
-  // ── Drag preview ──
+  const Component = route?.component;
   const dragPreview = useNavStore((s) => s.dragPreview);
   const [dragProgress, setDragProgress] = useState(0);
+
+  useEffect(() => {
+    if (!route) return;
+    if (!Component && route.children?.length) {
+      navigate(route.children[0].path, { replace: true });
+    }
+  }, [route, Component, navigate, currentPathname]);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -123,6 +71,11 @@ const RouterRenderer = ({
     }
   }, [dragPreview?.isDragging]);
 
+  if (!route) {
+    console.error(`[RouterRenderer] 路由 "${currentPathname}" 未匹配任何定义`);
+    return <MissingComponentPanel path={currentPathname} />;
+  }
+
   const sidebarTransitionCss = `width ${sidebarTransitionDuration}s ease-in-out, opacity ${sidebarTransitionDuration}s ease-in-out`;
 
   const sidebarStyle: React.CSSProperties = {
@@ -136,8 +89,8 @@ const RouterRenderer = ({
   if (dragPreview?.isDragging) {
     const fromRoute = findRouteByPath(dragPreview.fromPath, routes);
     const toRoute = findRouteByPath(dragPreview.toPath, routes);
-    const FromComponent = fromRoute ? componentMap[fromRoute.componentName] : null;
-    const ToComponent = toRoute ? componentMap[toRoute.componentName] : null;
+    const FromComponent = fromRoute?.component;
+    const ToComponent = toRoute?.component;
     const fromParams = fromRoute ? parseRouteParams(fromRoute.path, dragPreview.fromPath) : {};
     const toParams = toRoute ? parseRouteParams(toRoute.path, dragPreview.toPath) : {};
     const p = dragProgress;
@@ -160,7 +113,9 @@ const RouterRenderer = ({
             {sidebar && <div style={sidebarStyle}>{sidebar}</div>}
             <div className="flex-1 overflow-y-auto">
               <RouteParamsContext.Provider value={fromParams}>
-                <FromComponent />
+                <Suspense fallback={<PageFallback />}>
+                  <FromComponent />
+                </Suspense>
               </RouteParamsContext.Provider>
             </div>
           </div>
@@ -173,7 +128,9 @@ const RouterRenderer = ({
             {sidebar && <div style={sidebarStyle}>{sidebar}</div>}
             <div className="flex-1 overflow-y-auto">
               <RouteParamsContext.Provider value={toParams}>
-                <ToComponent />
+                <Suspense fallback={<PageFallback />}>
+                  <ToComponent />
+                </Suspense>
               </RouteParamsContext.Provider>
             </div>
           </div>
@@ -181,16 +138,6 @@ const RouterRenderer = ({
       </div>
     );
   }
-
-  // const dirRef = useRef<NavDirection>(null);
-  // const dir = useNavStore.getState().direction;
-  // dirRef.current = dir;
-
-  // useEffect(() => {
-  //   if (dirRef.current !== null) {
-  //     useNavStore.getState().setDirection(null);
-  //   }
-  // }, [dir]);
 
   const variant = (() => {
     if (!enabled) return { initial: {}, animate: {}, exit: {} };
@@ -215,6 +162,13 @@ const RouterRenderer = ({
     return pageTransition;
   })();
 
+  if (!Component) {
+    console.error(`[RouterRenderer] 路由 "${currentPathname}" 未挂载 component，且无子路由可跳转`);
+    return <MissingComponentPanel path={currentPathname} />;
+  }
+
+  const params = parseRouteParams(route.path, currentPathname);
+
   return (
     <div className="h-full relative overflow-hidden">
       <AnimatePresence mode="popLayout">
@@ -233,7 +187,9 @@ const RouterRenderer = ({
           <div style={sidebarStyle}>{sidebar}</div>
           <div className="flex-1 overflow-y-auto overflow-x-hidden relative">
             <RouteParamsContext.Provider value={params}>
-              <Component />
+              <Suspense fallback={<PageFallback />}>
+                <Component />
+              </Suspense>
             </RouteParamsContext.Provider>
           </div>
         </motion.div>

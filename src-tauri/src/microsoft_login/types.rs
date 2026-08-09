@@ -3,40 +3,32 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use tokio::sync::{Mutex};
+use tokio_util::sync::CancellationToken;
 use once_cell::sync::Lazy; // 需要添加 once_cell 依赖
 
-pub trait Clear {
-    fn clear(&mut self) -> Result<(),String>;
+/// 登录流程状态机，取消后进入终态，非法转换由命令入口守卫拒绝
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum LoginStatus {
+    #[default]
+    Idle,
+    Polling,
+    Completing,
+    Done,
+    Cancelled,
 }
 
-impl LoginSession {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-
-/// 登录会话状态，存储整个流程的中间数据
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+/// 登录会话状态，存储流程控制信息
+/// Token 等敏感数据不落全局状态，全程保存在流程任务的局部变量中，
+/// 任务结束或取消即被销毁
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct LoginSession {
+    pub status: LoginStatus,
+    #[serde(skip)]
+    pub cancel: CancellationToken,
+    #[serde(skip)]
+    pub poll_handle: Option<tokio::task::AbortHandle>,
     pub device_code: Option<DeviceCode>,
-    pub ms_token: Option<TokenResponse>,
-    pub xbl_response: Option<XboxLiveAuthResponse>,
-    pub xsts_response: Option<XboxLiveAuthResponse>,
-    pub mc_login: Option<MinecraftLoginResponse>,
-    pub uuid: Option<UuidResponse>,
-}
-
-impl Clear for LoginSession {
-    fn clear(&mut self) -> Result<(),String> {
-        self.device_code = None;
-        self.ms_token = None;
-        self.xbl_response = None;
-        self.xsts_response = None;
-        self.mc_login = None;
-        self.uuid = None;
-
-        Ok(())
-    }
 }
 
 pub static SESSION: Lazy<Mutex<LoginSession>> = Lazy::new(|| Mutex::from(LoginSession::default()));

@@ -15,7 +15,7 @@ type LayoutMode = "NORMAL" | "FULLSCREEN";
 
 interface RouteConfig {
   path: string;
-  componentName?: string;
+  component?: unknown;
   layoutMode?: LayoutMode;
   children?: RouteConfig[];
   parentPath?: string;
@@ -25,8 +25,8 @@ function flattenRoutes(routes: RouteConfig[], parent = ""): { path: string; comp
   const result: { path: string; component: string; layout: string }[] = [];
   for (const r of routes) {
     const fullPath = r.path.startsWith("/") ? r.path : `${parent}/${r.path}`;
-    if (r.componentName) {
-      result.push({ path: fullPath, component: r.componentName, layout: r.layoutMode ?? "NORMAL" });
+    if (r.component) {
+      result.push({ path: fullPath, component: (r.component as { name?: string }).name ?? "<lazy>", layout: r.layoutMode ?? "NORMAL" });
     }
     if (r.children) {
       result.push(...flattenRoutes(r.children, fullPath));

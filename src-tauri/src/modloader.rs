@@ -17,6 +17,8 @@ pub enum ModLoaderType {
     Forge,
     /// NeoForge 加载器
     NeoForge,
+    /// OptiFine 优化模组
+    OptiFine,
 }
 
 impl ModLoaderType {
@@ -27,6 +29,7 @@ impl ModLoaderType {
             ModLoaderType::Fabric => "fabric",
             ModLoaderType::Forge => "forge",
             ModLoaderType::NeoForge => "neoforge",
+            ModLoaderType::OptiFine => "optifine",
         }
     }
 
@@ -37,6 +40,7 @@ impl ModLoaderType {
             "fabric" => Some(ModLoaderType::Fabric),
             "forge" => Some(ModLoaderType::Forge),
             "neoforge" => Some(ModLoaderType::NeoForge),
+            "optifine" => Some(ModLoaderType::OptiFine),
             _ => None,
         }
     }
@@ -536,4 +540,110 @@ pub fn get_installed_mod_loaders(
     mod_loader_manager: State<'_, ModLoaderManager>,
 ) -> Vec<ModLoaderType> {
     mod_loader_manager.get_installed_mod_loaders(&version_id)
+}
+
+/// 获取指定 Minecraft 版本的 NeoForge 加载器版本列表（官方 Maven API）
+#[tauri::command]
+pub async fn get_neoforge_versions(mc_version: String) -> Result<ModLoaderVersionList, String> {
+    log_info!("获取 NeoForge 版本列表 for MC {}", mc_version);
+
+    let url = "https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge";
+    let response = reqwest::get(url)
+        .await
+        .map_err(|e| format!("获取 NeoForge 版本失败: {}", e))?;
+
+    #[derive(Deserialize)]
+    struct NeoForgeMavenMeta {
+        versions: Vec<String>,
+    }
+
+    let meta: NeoForgeMavenMeta = response
+        .json()
+        .await
+        .map_err(|e| format!("解析 NeoForge 元数据失败: {}", e))?;
+
+    let mc_prefix = format!("{}-", mc_version);
+    let versions: Vec<ModLoaderVersionItem> = meta
+        .versions
+        .into_iter()
+        .filter(|v| v.starts_with(&mc_prefix))
+        .map(|v| {
+            ModLoaderVersionItem {
+                version: v[mc_prefix.len()..].to_string(),
+                stable: true,
+                url: Some(format!(
+                    "https://maven.neoforged.net/releases/net/neoforged/neoforge/{}/{}/neoforge-{}-universal.jar",
+                    v, v, v
+                )),
+                sha1: None,
+            }
+        })
+        .collect();
+
+    log_info!("获取到 {} 个 NeoForge 版本", versions.len());
+
+    Ok(ModLoaderVersionList {
+        mod_loader_type: ModLoaderType::NeoForge,
+        minecraft_version: mc_version,
+        versions,
+    })
+}
+
+/// 获取指定 Minecraft 版本的 OptiFine 版本列表（BMCLAPI）
+#[tauri::command]
+pub async fn get_optifine_versions(mc_version: String) -> Result<ModLoaderVersionList, String> {
+    log_info!("获取 OptiFine 版本列表 for MC {}", mc_version);
+
+    let url = format!("https://bmclapi2.bangbang93.com/optifine/{}", mc_version);
+    let response = reqwest::get(&url)
+        .await
+        .map_err(|e| format!("获取 OptiFine 版本失败: {}", e))?;
+
+    #[derive(Deserialize)]
+    struct OptiFineEntry {
+        #[serde(rename = "mcversion", default)]
+        mc_version: String,
+        #[serde(rename = "patch", default)]
+        patch: String,
+        #[serde(rename = "type", default)]
+        vtype: String,
+        #[serde(rename = "date", default)]
+        date: String,
+        #[serde(rename = "downloadUrl", default)]
+        download_url: String,
+    }
+
+    let entries: Vec<OptiFineEntry> = response
+        .json()
+        .await
+        .map_err(|e| format!("解析 OptiFine 元数据失败: {}", e))?;
+
+    let versions: Vec<ModLoaderVersionItem> = entries
+        .into_iter()
+        .map(|e| {
+            let version = if e.vtype.is_empty() {
+                e.patch.clone()
+            } else {
+                format!("{} ({})", e.patch, e.vtype)
+            };
+            ModLoaderVersionItem {
+                version,
+                stable: e.vtype == "official" || e.vtype.is_empty(),
+                url: if e.download_url.is_empty() {
+                    None
+                } else {
+                    Some(e.download_url)
+                },
+                sha1: None,
+            }
+        })
+        .collect();
+
+    log_info!("获取到 {} 个 OptiFine 版本", versions.len());
+
+    Ok(ModLoaderVersionList {
+        mod_loader_type: ModLoaderType::OptiFine,
+        minecraft_version: mc_version,
+        versions,
+    })
 }

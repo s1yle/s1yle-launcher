@@ -26,6 +26,8 @@
   --color-surface-solid: #161b22;
   --color-surface-hover: rgba(255, 255, 255, 0.06);
   --color-surface-active: rgba(255, 255, 255, 0.09);
+  /* 输入框背景 */
+  --color-input: rgba(255, 255, 255, 0.06);
 
   /* 边框 - 极其微弱的存在感 */
   --color-border: rgba(240, 246, 252, 0.1);

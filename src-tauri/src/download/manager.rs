@@ -3,16 +3,17 @@ use crate::download::models::DownloadTask;
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 /// 下载管理器，管理下载任务、文件路径和清单缓存
+#[derive(Clone)]
 pub struct DownloadManager {
     /// 下载任务映射
-    pub tasks: Mutex<HashMap<String, DownloadTask>>,
+    pub tasks: Arc<Mutex<HashMap<String, DownloadTask>>>,
     /// 基础下载路径
-    pub base_path: Mutex<PathBuf>,
+    pub base_path: Arc<Mutex<PathBuf>>,
     /// 版本下载清单缓存
-    pub manifest_cache: Mutex<HashMap<String, VersionDownloadManifest>>,
+    pub manifest_cache: Arc<Mutex<HashMap<String, VersionDownloadManifest>>>,
     /// HTTP 客户端
     pub client: reqwest::Client,
 }
@@ -28,9 +29,9 @@ impl DownloadManager {
             .expect("Failed to create HTTP client");
 
         Self {
-            tasks: Mutex::new(HashMap::new()),
-            base_path: Mutex::new(base_path),
-            manifest_cache: Mutex::new(HashMap::new()),
+            tasks: Arc::new(Mutex::new(HashMap::new())),
+            base_path: Arc::new(Mutex::new(base_path)),
+            manifest_cache: Arc::new(Mutex::new(HashMap::new())),
             client,
         }
     }

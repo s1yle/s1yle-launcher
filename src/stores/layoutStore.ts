@@ -40,7 +40,7 @@ export const useLayoutStore = create<LayoutStoreState>()(
                 set({ sidebarWidth:w });
             },
             isSidebarCollapsed: false,
-            setIsSidebarCollapsed: async (collapsed: boolean) => {
+            setIsSidebarCollapsed: async (_collapsed: boolean) => {
                 const { isSidebarCollapsed } = get();
                 set({ isSidebarCollapsed: !isSidebarCollapsed })
             }

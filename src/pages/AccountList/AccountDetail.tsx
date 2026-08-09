@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { UserPlus, Trash2, LogIn, Star, Server, Loader2, User, Crown, Unlink, Link2, Mail, LogOut, ExternalLink, Copy, X } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useAdminStore } from "@/stores/adminStore";
@@ -7,7 +7,9 @@ import { useLoadingAction } from "@/hooks/useLoadingAction";
 import { LoadingSurface, Reveal, SkinAvatar, ConfirmPopup, useNotification, Animated } from "@/components/common";
 import Popup from "@/components/Popup";
 import { logger } from "@/helper/logger";
-import { AccountType, DeviceCodeResponse, pollOauthToken, startDeviceCode, TokenResponse } from "@/api";
+import { AccountType, cancelDeviceCode, DeviceCodeResponse, pollAndCompleteLogin, startDeviceCode } from "@/api";
+import type { LoginProgressEvent } from "@/api/types/account";
+import { listen } from "@tauri-apps/api/event";
 import { openUrl } from "@/helper/rustInvoke";
 import { Selector } from "@/components/common/Selector";
 
@@ -17,7 +19,6 @@ const AccountDetail = () => {
     accounts,
     currentAccount,
     loadAccounts,
-    setCurrentAccount,
     deleteAccount,
     addAccount,
   } = useAuthStore();
@@ -85,16 +86,6 @@ const AccountDetail = () => {
     }
   };
 
-  const handleSetCurrent = async () => {
-    if (!account) return;
-    try {
-      await setCurrentAccount(account.uuid);
-      await loadAccounts();
-    } catch (e) {
-      logger.error("设置当前账户失败", e);
-    }
-  };
-
   const handleBind = async () => {
     if (!adminSession || !account) return;
     try {
@@ -132,6 +123,10 @@ const AccountDetail = () => {
     }
   };
 
+  useEffect(() => {
+    console.warn(account);
+  }, []);
+
   if (!account) {
     return (
       <div className="p-8 flex flex-col items-center justify-center min-h-[400px] text-center">
@@ -150,7 +145,7 @@ const AccountDetail = () => {
 
         <AddAccountPopup
           isOpen={showAddPopup}
-          onClose={() => closeAddPopup()}
+          onClose={closeAddPopup}
           addName={addName}
           setAddName={setAddName}
           addType={addType}
@@ -270,18 +265,9 @@ const AccountDetail = () => {
         {/* 操作区 */}
         <Reveal direction="up" distance={16} duration={0.4} delay={0.3}>
           <div className="flex items-center gap-3">
-            {!isCurrent && (
-              <button
-                onClick={handleSetCurrent}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-[var(--color-primary)]/10 text-[var(--color-primary)] text-sm font-medium hover:bg-[var(--color-primary)]/20 transition-colors"
-              >
-                <Star className="w-4 h-4" />
-                设为当前
-              </button>
-            )}
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className={`${isCurrent ? "flex-1" : ""} flex items-center justify-center gap-2 px-1.5 py-2.5 rounded-lg bg-red-500/10 text-red-400 text-sm font-medium hover:bg-red-500/20 transition-colors`}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-red-500/10 text-red-400 text-sm font-medium hover:bg-red-500/20 transition-colors"
             >
               <Trash2 className="w-4 h-4" />
               删除
@@ -293,7 +279,7 @@ const AccountDetail = () => {
       {/* 添加弹窗 */}
       <AddAccountPopup
         isOpen={showAddPopup}
-        onClose={() => closeAddPopup()}
+        onClose={closeAddPopup}
         addName={addName}
         setAddName={setAddName}
         addType={addType}
@@ -334,68 +320,141 @@ interface AddAccountPopupProps {
 const AddAccountPopup = ({
   isOpen, onClose, addName, setAddName, addType, setAddType, adding, onConfirm,
 }: AddAccountPopupProps) => {
+  const { error: notifyError, success: notifySuccess } = useNotification();
   const [codePhase, setCodePhase] = useState(false);
   const [code, setCode] = useState<DeviceCodeResponse>();
+  const [loginPhase, setLoginPhase] = useState<"polling" | "completing">("polling");
+  const [progressMsg, setProgressMsg] = useState("正在等待用户授权...");
+  const pollingRef = useRef(false);
+  const onCloseRef = useRef(onClose);
+  const notifyErrorRef = useRef(notifyError);
+  const notifySuccessRef = useRef(notifySuccess);
+  onCloseRef.current = onClose;
+  notifyErrorRef.current = notifyError;
+  notifySuccessRef.current = notifySuccess;
+
+  const cancelPolling = useCallback(() => {
+    if (pollingRef.current) {
+      pollingRef.current = false;
+      cancelDeviceCode().catch((e) => logger.error("取消登录流程失败", e));
+    }
+  }, []);
 
   useEffect(() => {
+    cancelPolling();
     setCodePhase(false);
-  }, [isOpen, addType]);
-
-  const handleCodeSuccess = (code: DeviceCodeResponse) => {
-    setCode(code);
-  };
+    setCode(undefined);
+    setLoginPhase("polling");
+  }, [isOpen, addType, cancelPolling]);
 
   useEffect(() => {
-    logger.info('添加账户弹窗打开');
-    console.warn(code);
-    if (!code) return;
+    return () => {
+      cancelPolling();
+    };
+  }, [cancelPolling]);
 
-    console.warn('获取用户授权状态中...');
-    pollOauthToken().then((res) => {
-      if (!res || res.trim() == "") {
-        logger.error('获取用户授权状态失败', res);
-        return;
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    let active = true;
+    listen<LoginProgressEvent>("login-progress", (e) => {
+      if (!active) return;
+      const { step, message } = e.payload;
+      if (step === "authorized") {
+        setLoginPhase("completing");
       }
-
-      logger.info('获取用户授权状态成功', res);
-      onClose();
-      return;
+      setProgressMsg(message);
+    }).then((fn) => {
+      if (active) unlisten = fn;
+      else fn();
     });
-  }), [code];
+    return () => {
+      active = false;
+      unlisten?.();
+    };
+  }, []);
+
+  const handleClose = useCallback(() => {
+    cancelPolling();
+    onClose();
+  }, [cancelPolling, onClose]);
+
+  const handleCodeSuccess = useCallback((deviceCode: DeviceCodeResponse) => {
+    setCode(deviceCode);
+  }, []);
+
+  useEffect(() => {
+    if (!code) return;
+    if (pollingRef.current) return;
+    let active = true;
+    pollingRef.current = true;
+    setLoginPhase("polling");
+    setProgressMsg("正在等待用户授权...");
+
+    pollAndCompleteLogin()
+      .then((info) => {
+        if (!active) return;
+        logger.info("Microsoft 账户添加成功", info);
+        notifySuccessRef.current("登录成功", `Microsoft 账户 ${info.name} 已添加`);
+        useAuthStore.getState().loadAccounts();
+        onCloseRef.current();
+      })
+      .catch((e) => {
+        if (!active) return;
+        logger.error("登录流程失败", e);
+        pollingRef.current = false;
+        setLoginPhase("polling");
+        setCodePhase(false);
+        setCode(undefined);
+        notifyErrorRef.current("登录失败", e instanceof Error ? e.message : "未知错误");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [code]);
 
   return (
-    <Popup isOpen={isOpen} onClose={onClose} contentClassName="flex items-center justify-center" title="添加账户">
+    <Popup isOpen={isOpen} onClose={handleClose} contentClassName="flex items-center justify-center" title="添加账户">
       <div className="p-1 space-y-4 w-80 text-center">
-        {!codePhase && (
-          <Selector
-            options={[
-              { value: AccountType.Offline, label: "离线" },
-              { value: AccountType.Microsoft, label: "微软" },
-              { value: AccountType.ThirdParty, label: "第三方" },
-            ]}
-            value={addType}
-            onChange={setAddType}
-            className="w-full"
-          />
-        )}
+        {loginPhase === "completing" ? (
+          <div className="flex flex-col items-center gap-3 py-6">
+            <Loader2 className="w-6 h-6 animate-spin text-[var(--color-primary)]" />
+            <p className="text-sm text-[var(--color-text-secondary)]">{progressMsg}</p>
+          </div>
+        ) : (
+          <>
+            {!codePhase && (
+              <Selector
+                options={[
+                  { value: AccountType.Offline, label: "离线" },
+                  { value: AccountType.Microsoft, label: "微软" },
+                  { value: AccountType.ThirdParty, label: "第三方" },
+                ]}
+                value={addType}
+                onChange={setAddType}
+                className="w-full"
+              />
+            )}
 
-        <Animated stagger={0.08}>
-          {addType === AccountType.Offline && (
-            <Animated.Item>
-              <AddOffline addName={addName} setAddName={setAddName} adding={adding} onConfirm={onConfirm} />
-            </Animated.Item>
-          )}
-          {addType === AccountType.Microsoft && (
-            <Animated.Item>
-              <AddMicrosoft onClose={onClose} onCodePhase={setCodePhase} onCodeSuccess={handleCodeSuccess} />
-            </Animated.Item>
-          )}
-          {addType === AccountType.ThirdParty && (
-            <Animated.Item>
-              <AddThirdparty addName={addName} setAddName={setAddName} adding={adding} onConfirm={onConfirm} />
-            </Animated.Item>
-          )}
-        </Animated>
+            <Animated stagger={0.08}>
+              {addType === AccountType.Offline && (
+                <Animated.Item>
+                  <AddOffline addName={addName} setAddName={setAddName} adding={adding} onConfirm={onConfirm} />
+                </Animated.Item>
+              )}
+              {addType === AccountType.Microsoft && (
+                <Animated.Item>
+                  <AddMicrosoft onClose={handleClose} onCodePhase={setCodePhase} onCodeSuccess={handleCodeSuccess} codePhase={codePhase} />
+                </Animated.Item>
+              )}
+              {addType === AccountType.ThirdParty && (
+                <Animated.Item>
+                  <AddThirdparty addName={addName} setAddName={setAddName} adding={adding} onConfirm={onConfirm} />
+                </Animated.Item>
+              )}
+            </Animated>
+          </>
+        )}
       </div>
     </Popup>
   );
@@ -443,28 +502,37 @@ interface AddMicrosoftProps {
   onClose: () => void;
   onCodePhase: (v: boolean) => void;
   onCodeSuccess: (v: DeviceCodeResponse) => void;
+  codePhase: boolean;
 }
 
-const AddMicrosoft = ({ onClose, onCodePhase, onCodeSuccess }: AddMicrosoftProps) => {
-  const [phase, setPhase] = useState<"info" | "code">("info");
+const AddMicrosoft = ({ onClose, onCodePhase, onCodeSuccess, codePhase }: AddMicrosoftProps) => {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const { error: notifyError, success: notifySuccess } = useNotification();
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const handleLogin = async () => {
     setLoading(true);
     try {
       const result = await startDeviceCode();
+      if (!mountedRef.current) return;
       setCode(result.userCode);
       await navigator.clipboard.writeText(result.userCode);
+      if (!mountedRef.current) return;
       openUrl(result.url);
-      setPhase("code");
       onCodePhase(true);
 
       if (onCodeSuccess) {
         onCodeSuccess(result);
       }
     } catch (e) {
+      if (!mountedRef.current) return;
       notifyError("获取设备码失败", e instanceof Error ? e.message : "未知错误");
     } finally {
       setLoading(false);
@@ -484,7 +552,7 @@ const AddMicrosoft = ({ onClose, onCodePhase, onCodeSuccess }: AddMicrosoftProps
     openUrl("https://microsoft.com/devicelogin");
   };
 
-  if (phase === "code") {
+  if (codePhase) {
     return (
       <div className="space-y-4">
         <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
@@ -556,7 +624,7 @@ interface AddThirdpartyProps {
   onConfirm: () => void;
 }
 
-const AddThirdparty = ({ addName, setAddName, adding, onConfirm }: AddThirdpartyProps) => (
+const AddThirdparty = ({}: AddThirdpartyProps) => (
   <>
     <h1>暂无... 开发中...</h1>
   </>

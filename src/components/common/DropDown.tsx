@@ -161,6 +161,7 @@ const DropDown = ({
             ${isButtonTransparent ? '' : 'border bg-(--color-surface-solid)'}
           `}
         >
+          {/* L3 按钮正文：text-sm font-light（14px），py-1 → 28px 与 Input 同高 */}
           <span className="text-sm font-light">
             {selectedOption?.label}
           </span>

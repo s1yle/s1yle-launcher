@@ -3,7 +3,7 @@ import { Animated, Reveal } from '@/components/common';
 import { Server, Plus, MoreVertical, Settings, Users, Activity } from 'lucide-react';
 import { DURATION, microInteractions } from '@/utils/animations';
 import { useEffect, useState } from 'react';
-import { getServers, postServers, deleteServersById, postServersByIdStart, postServersByIdStop } from '@/server/sdk.gen';
+import { getServers,   postServersByIdStart, postServersByIdStop } from '@/server/sdk.gen';
 import type { ModelsServer } from '@/server/types.gen';
 
 /** 服主后台 - 服务器列表管理页面 */

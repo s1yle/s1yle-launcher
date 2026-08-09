@@ -41,6 +41,27 @@ export interface DeviceCodeResponse {
   url: string;
 }
 
+/** Microsoft 登录流程状态 */
+export type LoginStatus =
+  /** 无进行中的登录 */
+  | "idle"
+  /** 等待用户授权（展示设备码中） */
+  | "polling"
+  /** 授权完成，正在执行认证与入库 */
+  | "completing"
+  /** 登录已完成 */
+  | "done"
+  /** 已取消（终态） */
+  | "cancelled";
+
+/** Microsoft 登录进度事件（Rust 端逐步推送） */
+export interface LoginProgressEvent {
+  /** 步骤标识：device-code | polling | authorized | xbox | xsts | minecraft | uuid | storing | adding | done */
+  step: string;
+  /** 当前步骤的人类可读描述 */
+  message: string;
+}
+
 /** 微软设备码响应 */
 export interface MicrosoftDeviceCode {
   device_code: string;

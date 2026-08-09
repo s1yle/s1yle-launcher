@@ -38,7 +38,7 @@ export function PlayerLogin({ accounts, onLogin, onDeleteAccount, onNavigate }: 
   const [selectedUuid, setSelectedUuid] = useState<string | null>(null);
   const [markedUuid, setMarkedUuid] = useState<string | null>(null);
   const [pinnedUuids, setPinnedUuids] = useState<string[]>(loadPinned);
-  const [loggingIn, setLoggingIn] = useState(false);
+  const [_loggingIn, setLoggingIn] = useState(false);
   const { error: notifyError, success: notifySuccess } = useNotification();
 
   const [contextMenu, setContextMenu] = useState<{

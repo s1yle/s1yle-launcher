@@ -1,12 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { listen } from '@tauri-apps/api/event';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X } from 'lucide-react';
 import { useInstanceStore } from '../../stores/instanceStore';
 import { openFolder } from '../../helper/rustInvoke';
-import { InstanceListItem, EmptyState, useNotification, IconButton, Skeleton, Page, PageSection } from '../../components/common';
+import { InstanceListItem, EmptyState, useNotification,  Skeleton, Page, PageSection } from '../../components/common';
 import Instance from './Instance';
 import BottomBar from '@/components/common/BottomBar/BottomBar';
 import { logger } from '@/helper/logger';
@@ -47,28 +45,8 @@ const InstanceList: React.FC = () => {
 
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
 
-  useEffect(() => {
-    const unlisten = listen('deploy-complete', async (event) => {
-      if ((event.payload as any).status === 'success') {
-        logger.info('下载完成，刷新实例列表');
-        await refresh();
-      }
-    });
 
-    return () => {
-      unlisten.then(fn => fn());
-    };
-  }, [refresh]);
-
-  const handleDuplicate = (id: string) => {
-    const instance = instances.find((i) => i.id === id);
-    if (instance) {
-      setDuplicateTargetId(id);
-      setDuplicateName(`${instance.name} - ${t('instances.copy', '副本')}`);
-      setShowDuplicateModal(true);
-    }
-  };
-
+  // 处理复制成功
   const handleConfirmDuplicate = async () => {
     if (!duplicateTargetId || !duplicateName.trim()) return;
     try {

@@ -28,12 +28,17 @@ export const SkinAvatar = ({
   const [url, setUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSlim, setIsSlim] = useState<boolean | null>(isSlimProp ?? null);
+  const [_isSlim, setIsSlim] = useState<boolean | null>(isSlimProp ?? null);
   const [renderUuid, setRenderUuid] = useState<string>(uuid);
 
   // 降级为默认皮肤渲染时，使用 Steve/Alex 规范 UUID 统一缓存
   useEffect(() => {
     let cancelled = false;
+    // uuid 变化时重置渲染目标与结果，避免残留上一个账户的头像
+    setRenderUuid(uuid);
+    setUrl(null);
+    setError(null);
+
     const resolveUuid = async (slim: boolean) => {
       const canonical = getCanonicalSkinUuid(slim);
       if (canonical) {

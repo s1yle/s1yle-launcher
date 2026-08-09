@@ -1,11 +1,15 @@
 {
   "name": "wecraft-launcher",
   "private": true,
-  "version": "0.1.0-alpha.2",
+  "version": "0.1.0-alpha.5",
   "type": "module",
   "scripts": {
+    "predev": "npx tsx scripts/generate-commands-contract.ts",
     "dev": "vite",
+    "prebuild": "npx tsx scripts/generate-commands-contract.ts",
     "build": "vite build",
+    "check:contracts": "npx tsx scripts/generate-commands-contract.ts --check",
+    "test": "vitest run",
     "preview": "vite preview",
     "tauri": "tauri",
     "version:patch": "node scripts/bump-version.js patch",
@@ -52,6 +56,7 @@
     "typedoc": "^0.28.19",
     "typedoc-plugin-markdown": "^4.12.0",
     "typescript": "~5.8.3",
-    "vite": "^7.0.4"
+    "vite": "^7.0.4",
+    "vitest": "^4.1.10"
   }
 }

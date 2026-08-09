@@ -2,7 +2,6 @@ import { useLoadingStore, getActiveEntries, getGlobalProgress } from '@/stores/l
 
 /** 全局顶部进度条组件，根据 loadingStore 中所有活跃条目的合并进度显示 */
 const GlobalLoadingBar = () => {
-  const config = useLoadingStore((s) => s.config);
   const globalProgress = useLoadingStore((s) => {
     if (!s.config.globalTopbar) return null;
     const entries = getActiveEntries(s.entries);

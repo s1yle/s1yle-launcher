@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { useUserRoleStore } from '@/stores/userRoleStore';
 import { getSidebarGroups, SidebarMenuItem } from '@/router/config';
-import { logger } from '@/helper/logger';
 
 import { UserRole } from '@/stores/userRoleStore';
 

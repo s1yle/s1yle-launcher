@@ -38,9 +38,10 @@ import { useDownloadStore } from './stores/downloadStore';
 import { UIMode, useUIModeStore } from './stores/uiModeStore';
 import { logger } from './helper/logger';
 import { useWindowPosition } from './hooks/useWindowPosition';
-import FloatingDownloadButton from './components/FloatingDownloadButton';
+import GlobalDownloadBar from './components/GlobalDownloadBar';
 import { BackgroundLayer } from './components/common/BackgroundLayer';
-import { Animated, GlobalLoadingBar } from './components/common';
+import ErrorBoundary from './components/common/ErrorBoundary';
+import {  GlobalLoadingBar } from './components/common';
 import './helper/i18n';
 import { PanelLeft, PanelLeftOpen } from 'lucide-react';
 import ClassicLayout from './AppLayouts/ClassicLayout';
@@ -104,6 +105,28 @@ const MainLayout = () => {
       } else {
         logger.warn('No instance selected for instance-specific route');
         return;
+      }
+    }
+
+    // 兜底：菜单项裸父路径（如 /instance-manage）未匹配路由时，跳转其首个子路由
+    if (!findRouteByPath(finalPath, routes)) {
+      const parentRoute = routes.find(r =>
+        r.autoNavigateToFirstChild &&
+        r.children?.length &&
+        r.path !== finalPath &&
+        r.path.startsWith(finalPath)
+      );
+      if (parentRoute?.path && parentRoute.children?.[0]?.path) {
+        let childPath = parentRoute.children[0].path;
+        if (childPath.includes(':instanceId')) {
+          const instance = useInstanceStore.getState().getSelectedInstance();
+          if (!instance) {
+            logger.warn('No instance selected for instance-specific route');
+            return;
+          }
+          childPath = childPath.replace(':instanceId', instance.id);
+        }
+        finalPath = childPath;
       }
     }
 
@@ -216,11 +239,21 @@ const MainLayout = () => {
   ) : undefined;
 
   const layoutProps = {
-    header: <AppHeader mode={uiMode} currentRoute={currentRoute} handleMenuClick={handleMenuClick} />,
+    header: <AppHeader mode={uiMode} currentRoute={currentRoute} handleMenuClick={handleMenuClick} isFullscreen={isFullscreen} />,
     collapsedToggleButton: collapsedToggleButton,
   }
 
   function renderPage() {
+    // 灵动岛全屏模式：不套布局（无 80px 顶部留白），由页面自绘顶部拖曳栏
+    if (isFullscreen && uiMode === UIMode.ISLAND) {
+      return (
+        <>
+          <AppHeader mode={uiMode} currentRoute={currentRoute} handleMenuClick={handleMenuClick} isFullscreen />
+          <AppMain showSidebar={false} />
+        </>
+      );
+    }
+
     return (
       <CurrentLayout {...layoutProps as any}>
         <AppMain
@@ -265,7 +298,7 @@ function App() {
 
   // 监听角色切换事件（目前主要用于日志记录）
   useEffect(() => {
-    const handleRoleSwitch = (event: CustomEvent) => {
+    const handleRoleSwitch = (_event: CustomEvent) => {
       // 导航已在 DynamicIsland 组件中通过 useNavigate 处理
       // 这里只需要记录日志即可
     };
@@ -280,8 +313,10 @@ function App() {
     <Router>
       <BackgroundLayer />
       <GlobalLoadingBar />
-      <MainLayout />
-      <FloatingDownloadButton />
+      <ErrorBoundary>
+        <MainLayout />
+        <GlobalDownloadBar />
+      </ErrorBoundary>
     </Router>
   );
 }

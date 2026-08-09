@@ -1,4 +1,4 @@
-use crate::download::Library;
+use crate::download::{Library, Rule};
 use crate::log_info;
 use sha1::{Digest, Sha1};
 use std::fs;
@@ -7,9 +7,30 @@ use std::io::Read;
 /// 分块下载的块大小（4MB）
 pub const CHUNK_SIZE: u64 = 4 * 1024 * 1024;
 /// 最大并发分块数
-pub const MAX_CHUNKS: usize = 8;
+pub const MAX_CHUNKS: usize = 16;
 /// 最大重试次数
 pub const MAX_RETRIES: u32 = 3;
+
+/// BMCLAPI 镜像映射（加速国内下载，失败时调用方自动回退官方源）
+pub fn mirror_url(url: &str) -> Option<String> {
+    const MIRROR: &str = "https://bmclapi2.bangbang93.com";
+    const RULES: &[(&str, &str)] = &[
+        ("https://libraries.minecraft.net/", "/libraries/"),
+        ("https://resources.download.minecraft.net/", "/assets/"),
+        ("https://piston-data.mojang.com/v1/objects/", "/objects/"),
+        ("https://launcher.mojang.com/", "/mc/launcher/"),
+        ("https://maven.fabricmc.net/", "/maven/"),
+        ("https://files.minecraftforge.net/maven/", "/maven/"),
+        ("https://meta.fabricmc.net/", "/fabric-meta/"),
+    ];
+
+    for (prefix, suffix) in RULES {
+        if let Some(rest) = url.strip_prefix(prefix) {
+            return Some(format!("{MIRROR}{suffix}{rest}"));
+        }
+    }
+    None
+}
 
 /// 计算文件的 SHA1 哈希值
 fn calculate_file_sha1(path: &std::path::Path) -> Result<String, String> {
@@ -70,12 +91,17 @@ pub fn get_current_arch() -> &'static str {
 
 /// 判断库文件是否应在当前平台使用（根据规则列表）
 pub fn should_use_library(library: &Library) -> bool {
-    if library.rules.is_empty() {
+    rules_allow(&library.rules)
+}
+
+/// 评估平台规则列表（用于库文件与启动参数）
+pub fn rules_allow(rules: &[Rule]) -> bool {
+    if rules.is_empty() {
         return true;
     }
 
     let mut allowed = true;
-    for rule in &library.rules {
+    for rule in rules {
         match rule.action.as_str() {
             "allow" => {
                 if let Some(ref os) = rule.os {

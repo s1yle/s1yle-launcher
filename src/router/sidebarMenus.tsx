@@ -23,10 +23,6 @@ import {
   UserPlus,
   Upload,
   BarChart3,
-  type LucideIcon,
-  BoomBox,
-  BoomBoxIcon,
-  Box
 } from 'lucide-react';
 import { UserRole } from '@/stores/userRoleStore';
 import { SidebarGroup, type SidebarMenuItem, } from "./models";

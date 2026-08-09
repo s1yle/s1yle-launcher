@@ -54,6 +54,28 @@ export const invokeGetSystemMemory = async (
 };
 
 /**
+ * 获取系统内存使用情况
+ * @param options Tauri invoke 选项
+ * @returns [已使用内存（MB）, 总内存（MB）]
+ */
+export const invokeGetMemoryUsage = async (
+  options?: InvokeOptions
+): Promise<[number, number]> => {
+  return invokeRust('get_memory_usage', {}, options);
+};
+
+/**
+ * 获取显示器支持的分辨率列表
+ * @param options Tauri invoke 选项
+ * @returns "WxH" 字符串数组（真实模式，按出现顺序去重）
+ */
+export const invokeGetDisplayResolutions = async (
+  options?: InvokeOptions
+): Promise<string[]> => {
+  return invokeRust('get_display_resolutions', {}, options);
+};
+
+/**
  * 打开文件选择器让用户选择 Java 路径
  * @param options Tauri invoke 选项
  * @returns 选择的 Java 路径，取消返回 null

@@ -1,7 +1,6 @@
 import { GameInstance, KnownPath } from "@/helper/rustInvoke";
 import { t } from "i18next";
-import { Search, X } from "lucide-react";
-import { JSX, useRef } from "react";
+import { JSX } from "react";
 
 /** 实例列表组件的 Props */
 export interface InstanceProps {
@@ -25,12 +24,6 @@ export interface InstanceProps {
 
 /** 实例列表布局组件 - 封装搜索、筛选和复制弹窗 */
 const Instance: React.FC<InstanceProps> = ({
-    knownFolders,
-    selectedFolderId,
-    searchQuery,
-    setSearchQuery,
-    filteredInstances,
-    instances,
     renderContent,
     showDuplicateModal,
     duplicateName,
@@ -39,7 +32,6 @@ const Instance: React.FC<InstanceProps> = ({
     setShowDuplicateModal,
     setDuplicateTargetId,
 }) => {
-    const searchInputRef = useRef<HTMLInputElement>(null);
 
 
     return (

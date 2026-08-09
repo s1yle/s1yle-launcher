@@ -1,5 +1,6 @@
 import { invoke, InvokeArgs, InvokeOptions } from "@tauri-apps/api/core";
 import { logger } from "@/helper/logger";
+import commands from './generated-commands.json';
 
 type Next = (fn: string, args: InvokeArgs) => Promise<any>;
 type Middleware = (next: Next) => Next;
@@ -7,6 +8,17 @@ type Middleware = (next: Next) => Next;
 const core: Next = async (fn, args) => {
   if (!fn?.trim()) throw new Error("Rust 函数名不能为空");
   return invoke(fn, args);
+};
+
+const commandSet = new Set<string>(commands);
+
+const withContractCheck: Middleware = (next) => async (fn, args) => {
+  if (!commandSet.has(fn)) {
+    const err = new Error(`Rust 命令 "${fn}" 未注册（检查 src-tauri/src/lib.rs 的 generate_handler! 或前端拼写）`);
+    console.error(`[IPC] 契约校验失败:`, err);
+    throw err;
+  }
+  return next(fn, args);
 };
 
 const withLogging: Middleware = (next) => async (fn, args) => {
@@ -42,7 +54,7 @@ export const invokeRust = async (
   args: InvokeArgs = {},
   options?: InvokeOptions
 ): Promise<any> => {
-  return compose([withLogging, withErrorTransform])(
+  return compose([withContractCheck, withLogging, withErrorTransform])(
     fn,
     options ? { ...args } : args
   );

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ChevronLeft, Loader2, UserPlus } from "lucide-react";
 import { IconButton } from "@/components/common";
 import { useNotification } from "@/components/common/NotificationProvider";
-import { Account, AccountType } from "@/api";
+import {  AccountType } from "@/api";
 
 /** PlayerAdd 组件的 Props */
 interface PlayerAddProps {

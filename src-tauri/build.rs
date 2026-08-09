@@ -14,6 +14,7 @@ fn main() {
             "add_admin_account",
             "get_account_list",
             "get_current_account",
+            "get_current_account_token",
             "delete_account",
             "set_current_account",
             "create_window",
@@ -66,6 +67,9 @@ fn main() {
             "get_forge_versions",
             "build_forge_launch_config",
             "get_installed_mod_loaders",
+            "get_neoforge_versions",
+            "get_optifine_versions",
+            "get_disk_free_space",
             "scan_instances",
             "get_instance",
             "create_instance",
@@ -84,6 +88,8 @@ fn main() {
             "get_instance_settings",
             "update_instance_settings",
             "get_system_memory",
+            "get_memory_usage",
+            "get_display_resolutions",
             "select_java_path",
             "get_instance_config",
             "update_instance_config",
@@ -112,6 +118,9 @@ fn main() {
             "finalize_and_store",
             "poll_oauth_token",
             "start_device_code",
+            "complete_microsoft_login",
+            "cancel_device_code",
+            "poll_and_complete_login"
         ]),
     ))
     .unwrap();

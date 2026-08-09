@@ -22,8 +22,7 @@ use crate::config::{
 };
 
 use crate::microsoft_login::{
-    do_minecraft_login, do_xbox_auth, do_xsts_auth, finalize_and_store, poll_oauth_token,
-    start_device_code,
+    cancel_device_code, get_login_status, poll_and_complete_login, start_device_code,
 };
 
 use crate::download::DownloadManager;
@@ -40,8 +39,8 @@ use tauri_plugin_keyring::KeyringExt;
 
 pub use crate::account::{
     add_admin_account, add_player_account, delete_account, get_account_list, get_current_account,
-    init_account_manager, initialize_account_system, load_accounts_from_disk,
-    save_accounts_to_disk, set_current_account,
+    get_current_account_token, init_account_manager, initialize_account_system,
+    load_accounts_from_disk, save_accounts_to_disk, set_current_account,
 };
 pub use crate::admin_account::{
     bind_player_to_admin, get_admin_info, get_bound_players, init_admin_manager,
@@ -65,7 +64,7 @@ pub use download::{
 pub use crate::instance::{
     GameInstance, InstanceManager, add_known_path, add_validated_folder, copy_instance,
     create_instance, delete_instance, get_instance, get_instance_settings, get_instances_path,
-    get_system_memory, migrate_directory_structure, remove_known_path, rename_instance,
+    get_system_memory, get_memory_usage, get_display_resolutions, migrate_directory_structure, remove_known_path, rename_instance,
     scan_instances, scan_known_mc_paths, select_java_path, set_default_folder, update_instance,
     update_instance_settings, validate_folder,
 };
@@ -73,7 +72,8 @@ pub use crate::instance::{
 pub use crate::modloader::{
     LibraryInfo, ModLoaderInfo, ModLoaderManager, ModLoaderType, ModLoaderVersionItem,
     ModLoaderVersionList, build_fabric_launch_config, build_forge_launch_config,
-    get_fabric_version_detail, get_fabric_versions, get_forge_versions, get_installed_mod_loaders,
+    get_fabric_version_detail, get_fabric_versions, get_forge_versions,
+    get_installed_mod_loaders, get_neoforge_versions, get_optifine_versions,
 };
 
 pub use crate::java::{JavaInstallation, get_java_version, scan_java_installations};
@@ -127,6 +127,50 @@ fn get_system_info() -> Result<SystemInfo, String> {
         os: os.to_string(),
         arch: arch.to_string(),
     })
+}
+
+/// 获取指定路径所在磁盘的剩余可用空间（字节）
+#[tauri::command]
+fn get_disk_free_space(path: String) -> Result<u64, String> {
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::ffi::OsStrExt;
+        use windows::Win32::Storage::FileSystem::GetDiskFreeSpaceExW;
+
+        let path_u16: Vec<u16> = std::path::Path::new(&path)
+            .as_os_str()
+            .encode_wide()
+            .collect();
+        let mut free_bytes: u64 = 0;
+        let result = unsafe {
+            GetDiskFreeSpaceExW(
+                windows::core::PCWSTR(path_u16.as_ptr()),
+                Some(&mut free_bytes),
+                None,
+                None,
+            )
+        };
+        if result.is_ok() {
+            Ok(free_bytes)
+        } else {
+            Err("获取磁盘剩余空间失败".to_string())
+        }
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        use std::ffi::CString;
+
+        let c_path = CString::new(path).map_err(|e| format!("路径无效: {}", e))?;
+        let mut stat: libc::statvfs = unsafe { std::mem::zeroed() };
+        let ret = unsafe { libc::statvfs(c_path.as_ptr(), &mut stat) };
+        if ret == 0 {
+            let free = (stat.f_frsize as u64).saturating_mul(stat.f_bavail as u64);
+            Ok(free)
+        } else {
+            Err(format!("获取磁盘剩余空间失败 (errno {})", ret))
+        }
+    }
 }
 
 /// 使用系统默认浏览器打开指定 URL
@@ -325,6 +369,7 @@ pub fn run() {
             add_admin_account,
             get_account_list,
             get_current_account,
+            get_current_account_token,
             delete_account,
             set_current_account,
             tauri_launch_instance,
@@ -360,6 +405,9 @@ pub fn run() {
             get_forge_versions,
             build_forge_launch_config,
             get_installed_mod_loaders,
+            get_neoforge_versions,
+            get_optifine_versions,
+            get_disk_free_space,
             scan_instances,
             get_instance,
             create_instance,
@@ -379,6 +427,8 @@ pub fn run() {
             get_instance_settings,
             update_instance_settings,
             get_system_memory,
+            get_memory_usage,
+            get_display_resolutions,
             select_java_path,
             open_url,
             open_folder,
@@ -417,12 +467,10 @@ pub fn run() {
             render::get_uuid_by_username,
             render::get_uuids_by_usernames,
             // 正版登录
-            do_minecraft_login,
-            do_xbox_auth,
-            do_xsts_auth,
-            finalize_and_store,
-            poll_oauth_token,
             start_device_code,
+            cancel_device_code,
+            poll_and_complete_login,
+            get_login_status,
         ])
         .run(tauri::generate_context!())
         .expect("启动失败！");

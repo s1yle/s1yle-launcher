@@ -10,6 +10,8 @@ export enum ModLoaderType {
   NeoForge = "NeoForge",
   /** Quilt */
   Quilt = "Quilt",
+  /** OptiFine 优化模组 */
+  OptiFine = "OptiFine",
 }
 
 /** 库文件信息 */

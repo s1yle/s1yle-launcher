@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Loader2, Gamepad2 } from 'lucide-react';
-import { launchInstance, stopInstance, getLaunchStatus, LaunchStatus, getCurrentAccount } from '../../helper/rustInvoke';
+import { launchInstance, stopInstance, getLaunchStatus, LaunchStatus, getCurrentAccount, getCurrentAccountToken } from '../../helper/rustInvoke';
 import { useInstanceStore } from '../../stores/instanceStore';
 import type { AccountInfo } from '../../helper/rustInvoke';
 
@@ -58,17 +58,28 @@ const ActionButton = ({ onClick }: StartGameButtonProps) => {
       
       const username = currentAccount?.name || 'Steve';
       const uuid = currentAccount?.uuid || '069a79f4-44e9-4726-a5be-fca90e38aaf5';
-      const accessToken = currentAccount?.account_type === 'microsoft' ? 'mock_token' : undefined;
-      
+      const accountType = currentAccount?.account_type || 'offline';
+      const accountToken = await getCurrentAccountToken();
+      const accessToken = accountType === 'microsoft' ? accountToken || undefined : undefined;
+
+      const settings = selectedInstance.game_settings;
+      const javaPath = settings?.java_path || 'java';
+      const maxMemory = settings?.max_memory || 2048;
+
       const result = await launchInstance({
-        java_path: 'java',
-        memory_mb: 2048,
+        java_path: javaPath,
+        memory_mb: maxMemory,
         version: selectedInstance.version_id,
         game_dir: selectedInstance.path,
         assets_dir: `${selectedInstance.path}/assets`,
+        natives_dir: `${selectedInstance.path}/versions/${selectedInstance.version_id}/natives`,
         username,
         uuid,
         access_token: accessToken,
+        account_type: accountType,
+        jvm_args: settings?.jvm_args || [],
+        resolution_width: settings?.width,
+        resolution_height: settings?.height,
       });
       
       setMessage(result);

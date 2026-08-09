@@ -38,7 +38,6 @@ const InstanceCard = ({
   selected = false,
   onSelect,
   onLaunch,
-  onEdit,
   onDelete,
   onOpenFolder,
   onDuplicate,

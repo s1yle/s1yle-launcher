@@ -205,3 +205,51 @@ select {
   background-color:rgba(255,255,255, 0.2);
 }
 
+/* 滑块（appearance-none 后自定义拖拽钮） */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: var(--color-primary);
+  border: 3px solid var(--color-surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+input[type="range"]::-webkit-slider-thumb:active {
+  transform: scale(1.35);
+  box-shadow: 0 0 0 6px var(--color-primary-10);
+}
+
+input[type="range"]:disabled::-webkit-slider-thumb {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: var(--color-primary);
+  border: 3px solid var(--color-surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.15);
+}
+
+input[type="range"]::-moz-range-thumb:active {
+  transform: scale(1.35);
+  box-shadow: 0 0 0 6px var(--color-primary-10);
+}
+

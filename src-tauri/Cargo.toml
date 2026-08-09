@@ -18,7 +18,7 @@ strip = true # Ensures debug symbols are removed.
 
 [package]
 name = "WeCraft-Launcher"
-version = "0.1.0-alpha.2"
+version = "0.1.0-alpha.5"
 description = "做一个有特色的mc 启动器"
 authors = ["s1yle"]
 edition = "2024"
@@ -65,9 +65,15 @@ version = "0.10"
 [dependencies.sha2]
 version = "0.10"
 
+[dependencies.libc]
+version = "0.2"
+
 [dependencies.tokio]
 version = "1"
 features = ["full"]
+
+[dependencies.tokio-util]
+version = "0.7"
 
 [dependencies.uuid]
 version = "1.21.0"
@@ -78,4 +84,4 @@ version = "2"
 
 [target.'cfg(windows)'.dependencies.windows]
 version = ">=0.59, <=0.62"
-features = ["Win32_Storage_FileSystem", "Win32_System_Registry"]
+features = ["Win32_Storage_FileSystem", "Win32_System_Registry", "Win32_Graphics_Gdi"]

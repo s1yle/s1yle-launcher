@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { getCurrentWindow, PhysicalPosition, PhysicalSize } from '@tauri-apps/api/window';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { getWindowStrategy } from '@/config/windowStrategy';
-import { invokeSaveWindowPositionByLabel, invokeLoadWindowPositionByLabel } from '@/api/window';
+import { invokeSaveWindowPositionByLabel } from '@/api/window';
 import { getErrorMessage, useNotification } from '@/components/common';
 
 const DEBOUNCE_MS = 500;
@@ -14,7 +14,7 @@ const DEBOUNCE_MS = 500;
  */
 export const useWindowPosition = () => {
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { success: notifySuccess, error: notifyError } = useNotification();
+  const { success: _notifySuccess, error: notifyError } = useNotification();
 
   const saveCurrentPosition = useCallback(async () => {
     const win = getCurrentWindow();

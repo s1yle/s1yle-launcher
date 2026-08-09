@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { BadgePosition } from "./models";
-import { Badge, Check, X } from "lucide-react";
-import { useDebugComponentStack, useGetParentComponentType } from "../ContextStack/ContextStack";
+import {  Check, X } from "lucide-react";
+import { useDebugComponentStack } from "../ContextStack/ContextStack";
 
 /** 是/否 徽标组件 Props */
 export interface YesOrNoBadgeProps {
@@ -33,7 +33,6 @@ const YesOrNoBadge = ({
 }: YesOrNoBadgeProps) => {
 
     useDebugComponentStack("TEST");
-    let parent = useGetParentComponentType();
 
     const classes =
     `

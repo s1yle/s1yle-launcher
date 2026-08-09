@@ -1,9 +1,9 @@
 import React, { useEffect, useCallback, useState } from 'react';
-import { AnimatePresence, easeIn, easeInOut, motion } from 'framer-motion';
+import { AnimatePresence,   motion } from 'framer-motion';
 import { IconButton, Overlay } from './common';
 import { Portal } from './common/Portal';
 import { Z_INDEX } from '../utils/zIndex';
-import { DURATION, EASING } from '@/utils/animations';
+import { DURATION } from '@/utils/animations';
 import { X } from 'lucide-react';
 
 /** 通用弹窗组件 Props */
@@ -113,7 +113,6 @@ const Popup = ({
   };
 
   const noAnimation = animation === 'none';
-  const durationSec = animationDuration / 1000;
 
   const containerVariants = {
     initial: noAnimation ? {} : ({ opacity: 0, scale: 0.96 } as const),

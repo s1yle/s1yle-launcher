@@ -111,6 +111,16 @@ export { default as Toggle } from './Toggle';
 /** 开关 Props */
 export type { ToggleProps } from './Toggle';
 
+/** 勾选开关按钮 */
+export { default as CheckSwitch } from './CheckSwitch';
+/** 勾选开关按钮 Props */
+export type { CheckSwitchProps } from './CheckSwitch';
+
+/** 分区条 */
+export { default as PartitionBar } from './PartitionBar';
+/** 分区条 Props */
+export type { PartitionBarPart, PartitionBarProps } from './PartitionBar';
+
 /** 终端主题预览组件 */
 export { default as TerminalThemePreview } from './TerminalThemePreview';
 /** 警告弹窗组件 */
@@ -157,11 +167,6 @@ export type { DynamicIslandProps } from '@/components/common/navigation/DynamicI
 export { default as DynamicItem } from '@/components/common/navigation/DynamicIsland';
 /** 动态导航项 Props */
 export type { DynamicItemProps } from '@/components/common/navigation/DynamicIsland';
-
-/** 内存滑块组件 */
-export { default as MemorySlider } from '@/components/common/settings/MemorySlider';
-/** 内存滑块 Props */
-export type { MemorySliderProps } from '@/components/common/settings/MemorySlider';
 
 /** 设置项组件 */
 export { default as SettingItem } from '@/components/common/settings/SettingItem';

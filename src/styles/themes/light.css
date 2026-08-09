@@ -10,6 +10,8 @@
   --color-surface-solid: #b9c9db;
   --color-surface-hover: rgba(0, 0, 0, 0.055);
   --color-surface-active: rgba(0, 0, 0, 0.075);
+  /* 输入框背景 */
+  --color-input: rgba(0, 0, 0, 0.06);
 
   /* 边框系统 - 保持高对比度不变 */
   --color-border: rgba(0, 0, 0, 0.10);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import  { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { GameInstance, ModLoaderType } from '@/helper/rustInvoke'
@@ -106,7 +106,7 @@ const InstanceListItem = ({
     switch (id) {
       case 'settings':
         onSettings?.();
-        navigate(`/instance/${instance.id}/settings`);
+        navigate(`/instance-manage/${instance.id}/game-settings`);
         break;
       case 'rename': onRename?.(); break;
       case 'delete': onDelete?.(); break;
@@ -222,7 +222,7 @@ const InstanceListItem = ({
             onClick={(e) => {
               e.stopPropagation();
               onSettings?.();
-              navigate(`/instance/${instance.id}/settings`);
+              navigate(`/instance-manage/${instance.id}/game-settings`);
             }}
             className="p-2 rounded-lg hover:bg-primary-bg text-text-tertiary hover:text-primary transition-colors"
             title="设置"

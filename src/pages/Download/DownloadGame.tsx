@@ -22,7 +22,6 @@ const DownloadGame: React.FC = () => {
   const {
     manifest,
     installedVersions,
-    downloadingVersions,
     completedVersions,
     basePath,
     loading,
@@ -31,7 +30,6 @@ const DownloadGame: React.FC = () => {
     useShallow(s => ({
       manifest: s.manifest,
       installedVersions: s.installedVersions,
-      downloadingVersions: s.downloadingVersions,
       completedVersions: s.completedVersions,
       basePath: s.basePath,
       loading: s.loading,
@@ -43,9 +41,8 @@ const DownloadGame: React.FC = () => {
   const loadManifest = useDownloadStore(s => s.loadManifest);
   const loadInstalledVersions = useDownloadStore(s => s.loadInstalledVersions);
   const loadBasePath = useDownloadStore(s => s.loadBasePath);
-  const downloadVersion = useDownloadStore(s => s.downloadVersion);
 
-  const { error: notifyError, success, info } = useNotification();
+  const { error: notifyError } = useNotification();
 
   const [filter, setFilter] = useState<VersionCategory>('release');
   const [searchQuery, setSearchQuery] = useState('');
@@ -96,15 +93,6 @@ const DownloadGame: React.FC = () => {
     new Set(installedVersions),
     [installedVersions]);
 
-  const downloadingSet = useMemo(() => {
-    const set = new Set<string>();
-    downloadingVersions.forEach((value, key) => {
-      if (value.status === 'downloading') {
-        set.add(key);
-      }
-    });
-    return set;
-  }, [downloadingVersions]);
 
   const completedSet = useMemo(() =>
     new Set(completedVersions),
@@ -118,11 +106,6 @@ const DownloadGame: React.FC = () => {
   const handleWikiClick = useCallback((versionId: string) => {
     openUrl(getWikiUrl(versionId));
   }, []);
-
-  const handleDownload = useCallback(async (version: GameVersion) => {
-    navigate(`/download/game/${encodeURIComponent(version.id)}`);
-    setCurrentPath(`/download/game/${encodeURIComponent(version.id)}`);
-  }, [navigate, setCurrentPath]);
 
   const notifyErrorRef = useRef(notifyError);
   notifyErrorRef.current = notifyError;
@@ -145,7 +128,6 @@ const DownloadGame: React.FC = () => {
   const renderVersionItem = useCallback((version: GameVersion) => (
     <VersionListItem
       version={version}
-      installed={installedSet.has(version.id) || completedSet.has(version.id)}
       onClick={() => handleVersionClick(version)}
       onWikiClick={() => handleWikiClick(version.id)}
     />

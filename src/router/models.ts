@@ -1,5 +1,5 @@
 import { NavItem } from "@/config/navigationConfig";
-import { ReactNode } from "react";
+import { ComponentType, ReactNode } from "react";
 
 
 /** 侧边栏级别（主/次/从） */
@@ -77,7 +77,8 @@ export interface ContextMenuChildItem {
 /** 路由配置 */
 export interface RouteConfig {
   path: string;
-  componentName: string;
+  /** 直接挂载的页面组件（父级路由可省略，自动跳转首个子路由） */
+  component?: ComponentType;
   header: HeaderConfig;
   position?: RoutePosition;
   layoutMode?: LayoutMode;

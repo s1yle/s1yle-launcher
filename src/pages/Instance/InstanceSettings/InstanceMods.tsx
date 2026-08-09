@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { useRouteParams } from '@/router/routeParams';
 import { useInstanceStore } from '../../../stores/instanceStore';
 
 /** 实例模组管理页面（待实现） */
 const InstanceMods: React.FC = () => {
-  const { instanceId } = useParams<{ instanceId: string }>();
+  const { instanceId } = useRouteParams();
   const navigate = useNavigate();
   const getInstance = useInstanceStore(s => s.getInstance);
   const setSelectedInstance = useInstanceStore(s => s.setSelectedInstance);

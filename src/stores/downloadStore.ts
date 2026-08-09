@@ -481,6 +481,9 @@ export const useDownloadStore = create<DownloadState>((set, get) => ({
         if (versionId) {
           get().completeDownloadProgress(versionId);
         }
+        // 部署完成：统一刷新实例与已安装版本，保证列表/徽标/进度页一致
+        void useInstanceStore.getState().refresh();
+        void get().loadInstalledVersions();
       }
     });
 

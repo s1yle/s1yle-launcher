@@ -6,27 +6,17 @@ import { LoadingSurface, Page, PageSection } from '@/components/common';
 import { useInstanceStore } from '../stores/instanceStore';
 import { useAdminStore } from '../stores/adminStore';
 import { useUserRoleStore, UserRole } from '../stores/userRoleStore';
-import { UIMode, useUIModeStore } from '../stores/uiModeStore';
-import { useLocation } from 'react-router-dom';
 import { getCurrentAccount, type AccountInfo } from '../helper/rustInvoke';
 import { useLoadingAction } from '@/hooks/useLoadingAction';
 import { useState } from 'react';
-import { pagesWithOwnSidebar } from '@/router/config';
 
 /** 主页 - 显示玩家档案和快捷启动按钮 */
 const Home = () => {
   const instance_init = useInstanceStore(s => s.init);
   const { currentRole } = useUserRoleStore();
   const adminSession = useAdminStore((s) => s.session);
-  const { mode: uiMode } = useUIModeStore();
-  const location = useLocation();
 
   const [accountName, setAccountName] = useState<string>('Steve');
-
-  const isInstanceManagePage = location.pathname.startsWith('/instance-manage/');
-  const hasOwnSidebar = uiMode === UIMode.ISLAND && (
-    pagesWithOwnSidebar.some(path => location.pathname.startsWith(path)) || isInstanceManagePage
-  );
 
   const loadProfile = useLoadingAction({
     key: 'home:profile',

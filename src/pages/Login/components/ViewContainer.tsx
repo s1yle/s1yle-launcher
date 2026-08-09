@@ -1,4 +1,4 @@
-import { motion, AnimatePresence, scale } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import type { ReactNode } from "react";
 import type { LoginView } from "../LoginGate";
 

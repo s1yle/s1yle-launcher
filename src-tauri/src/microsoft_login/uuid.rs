@@ -1,45 +1,22 @@
 //! 获取用户 UUID
 
-use crate::microsoft_login::{MinecraftLoginResponse, SESSION};
-
 use super::types::{UuidErr, UuidResponse};
 
-/// 通过可信化存储获取 Token, 以用于获取用户 UUID
-pub async fn get_user_uuid() -> Result<UuidResponse, UuidErr> {
+/// 通过 Minecraft Access Token 获取用户 UUID
+pub async fn get_user_uuid(mc_access_token: &str) -> Result<UuidResponse, UuidErr> {
     println!("[get_user_uuid] 开始获取用户 UUID");
     let url = "https://api.minecraftservices.com/minecraft/profile";
     let client = reqwest::Client::new();
 
-    let mut session = SESSION.lock().await;
-
-    let token = session
-        .mc_login
-        .as_ref()
-        .cloned()
-        .ok_or_else(|| {
-            println!("[get_user_uuid] 错误: mc_login 未设置");
-            "mc_login is not set".to_string()
-        })
-        .map_err(|e| {
-            println!("[get_user_uuid] 网络请求失败: {}", e);
-            UuidErr {
-                path: url.to_string(),
-                error_type: "network".to_string(),
-                error: "request_failed".to_string(),
-                error_message: e.to_string(),
-                developer_message: format!("HTTP请求失败: {}", e),
-            }
-        })?;
-
     println!(
         "[get_user_uuid] access_token 长度={}",
-        token.access_token.len()
+        mc_access_token.len()
     );
 
     println!("[get_user_uuid] 发送 GET 请求...");
     let resp = client
         .get(url)
-        .header("Authorization", format!("Bearer {}", token.access_token))
+        .header("Authorization", format!("Bearer {}", mc_access_token))
         .send()
         .await
         .map_err(|e| {
@@ -96,8 +73,6 @@ pub async fn get_user_uuid() -> Result<UuidResponse, UuidErr> {
         "[get_user_uuid] 成功: id={}, name={}",
         uuid_response.id, uuid_response.name
     );
-
-    session.uuid = Some(uuid_response.clone());
 
     Ok(uuid_response)
 }

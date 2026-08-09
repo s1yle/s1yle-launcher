@@ -19,7 +19,7 @@ interface HeaderProps {
  */
 const Header = ({ type, title, onBack }: HeaderProps) => {
   const { t } = useTranslation();
-  const { error: notifyError, success: notifySuccess } = useNotification();
+  const { error: notifyError, success: _notifySuccess } = useNotification();
 
   let location: ReturnType<typeof useLocation> | null = null;
   let navigate: ReturnType<typeof useNavigate> | null = null;

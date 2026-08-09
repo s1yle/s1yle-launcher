@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, ChevronUp, Check, GripVertical } from 'lucide-react';
-import { useDownloadStore } from '../stores/downloadStore';
-import { Portal } from './common/Portal';
-import { Z_INDEX } from '../utils/zIndex';
+import { useDownloadStore } from '../../stores/downloadStore';
+import { Portal } from '../common/Portal';
+import { Z_INDEX } from '../../utils/zIndex';
 
 const FLOATING_BUTTON_SIZE = 56;
 const DEFAULT_POSITION = { x: 0, y: 16 };

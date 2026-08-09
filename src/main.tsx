@@ -1,4 +1,3 @@
-import React from "react";
 import ReactDOM from "react-dom/client";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import LoginGate from "./pages/Login/LoginGate";
@@ -17,7 +16,6 @@ import './styles/themes/light.css';
 import './styles/themes/terminal.css';
 import './styles/animations.css';
 import { Window } from "@tauri-apps/api/window";
-import { Loading } from "./pages";
 
 /** 应用初始化 - 按序初始化账户、配置、主题、实例、下载系统 */
 async function initApp() {

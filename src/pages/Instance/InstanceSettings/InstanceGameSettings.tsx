@@ -1,22 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Settings, 
-  Coffee, 
-  Monitor, 
-  ChevronDown, 
-  ChevronUp,
-  Check,
-  FolderOpen,
-} from 'lucide-react';
 import { useInstanceStore } from '@/stores/instanceStore';
-import { getInstanceSettings, updateInstanceSettings, GameSettings, selectJavaPath } from '@/helper/rustInvoke';
-import { Overlay, SettingsSection, Toggle, useNotification } from '@/components/common';
+import { logger } from '@/helper/logger';
+import { getInstanceSettings, updateInstanceSettings, GameSettings, selectJavaPath, scanJavaInstallations, JavaInstallation, getMemoryUsage, getDisplayResolutions } from '@/helper/rustInvoke';
+import { SettingsPanel, Toggle, Slider, useNotification } from '@/components/common';
+import PartitionBar, { getPartitionColor } from '@/components/common/PartitionBar';
+import { DropDownOption } from '@/components/common/DropDown';
 import SettingItem from '@/components/common/settings/SettingItem'
-import MemorySlider from '@/components/common/settings/MemorySlider';
-import { useRouteParams } from '@/components/RouterRenderer';
+import { useRouteParams } from '@/router/routeParams';
 
 /** 实例游戏设置页面 - Java 配置、内存分配、窗口设置 */
 const InstanceGameSettings = () => {
@@ -31,13 +23,38 @@ const InstanceGameSettings = () => {
 
   const [settings, setSettings] = useState<GameSettings>({});
   const [settingsLoading, setSettingsLoading] = useState(false);
-  const [javaPaths, setJavaPaths] = useState<Array<{ version: string; path: string }>>([]);
-  const [javaExpanded, setJavaExpanded] = useState(false);
-  
+  const [javaPaths, setJavaPaths] = useState<JavaInstallation[]>([]);
+  const [systemMemory, setSystemMemory] = useState(0);
+  const [usedMemory, setUsedMemory] = useState(0);
+  // 自动分配内存开关（显式状态，避免写入推荐值后开关自动弹回）
+  const [autoMemory, setAutoMemory] = useState(false);
+  // 显示器真实分辨率列表（Rust get_display_resolutions）
+  const [displayResolutions, setDisplayResolutions] = useState<string[]>([]);
+
   const isInitialLoad = useRef(true);
   const lastSavedSettings = useRef<string>('');
 
   const instance = instanceId ? getInstance(instanceId) : null;
+
+  // 分辨率选项：真实显示器模式 + 常用预设兜底（去重，保持顺序）
+  // 注意：useMemo 必须与其它 hooks 一起置于提前 return 之前
+  const resolutionOptions: DropDownOption[] = useMemo(() => {
+    const presets = ['854x480', '1280x720', '1920x1080', '2560x1440', '3840x2160'];
+    const merged = [...new Set([...displayResolutions, ...presets])];
+    return merged.map((res) => ({ id: res, label: res }));
+  }, [displayResolutions]);
+
+  const currentResolution = settings.width && settings.height
+    ? `${settings.width}x${settings.height}`
+    : '1280x720';
+
+  // 当前值不在选项内（自定义分辨率）时动态并入，保证下拉显示当前值
+  const resolutionOptionsWithCurrent = useMemo(() => {
+    if (resolutionOptions.some((o) => o.id === currentResolution)) {
+      return resolutionOptions;
+    }
+    return [{ id: currentResolution, label: currentResolution }, ...resolutionOptions];
+  }, [resolutionOptions, currentResolution]);
 
   useEffect(() => {
     if (instanceId) {
@@ -62,7 +79,9 @@ const InstanceGameSettings = () => {
         setSettings(loadedSettings);
         lastSavedSettings.current = JSON.stringify(loadedSettings);
         isInitialLoad.current = true;
-        
+        // 开关状态与持久化配置同步（无 min/max 即自动分配中）
+        setAutoMemory(!loadedSettings.min_memory && !loadedSettings.max_memory);
+
         // 扫描常见的 Java 安装路径
         const commonJavaPaths = await scanCommonJavaPaths();
         setJavaPaths(commonJavaPaths);
@@ -76,6 +95,32 @@ const InstanceGameSettings = () => {
 
     loadSettings();
   }, [instance?.id]);
+
+  // 加载显示器真实分辨率（失败静默，保留预设兜底）
+  useEffect(() => {
+    getDisplayResolutions().then(setDisplayResolutions).catch(console.error);
+  }, []);
+
+  // 轮询真实内存使用（1s），数据来自 Rust get_memory_usage
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = async () => {
+      try {
+        const [used, total] = await getMemoryUsage();
+        if (cancelled || total === 0) return;
+        setUsedMemory(used);
+        setSystemMemory(total);
+      } catch (e) {
+        console.error('[GameSettings] memory refresh failed:', e);
+      }
+    };
+    refresh();
+    const timer = setInterval(refresh, 1000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, []);
 
   // 保存设置（防抖）- 仅在用户修改后保存
   useEffect(() => {
@@ -141,26 +186,66 @@ const InstanceGameSettings = () => {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
-  // 分辨率选项
-  const resolutionOptions = [
-    '854x480',
-    '1280x720',
-    '1920x1080',
-    '2560x1440',
-    '3840x2160',
+// 内存自动分配开关（显式状态 state，加载时从配置同步）
+  const handleAutoMemoryChange = (checked: boolean) => {
+    setAutoMemory(checked);
+    if (checked) {
+      // 自动分配：不写入配置，游戏分配段实时展示 HMCL 风格推荐值
+      // 推荐最大值 = 可用内存 - 2G（系统/浏览器预留），下限 1G，上限不超总内存
+    } else {
+      updateSetting('min_memory', 1024);
+      updateSetting('max_memory', 2048);
+    }
+  };
+
+  const formatMemory = (mb: number) => {
+    if (mb >= 1024) {
+      return `${(mb / 1024).toFixed(1)} GB`;
+    }
+    return `${mb} MB`;
+  };
+
+// PCL 语义：可用 = 总 - 已用；游戏分配 part 与滑块同源（min_memory 设定值），
+// 自动分配时实时展示 HMCL 风格推荐值；剩余空隙 = total - (已用 + 游戏分配)
+const availMemory = Math.max(0, systemMemory - usedMemory);
+// HMCL 风格推荐值：可用内存 - 2G（系统/浏览器预留），下限 1G，上限不超总内存
+const recommendedMemory = Math.max(1024, Math.min(availMemory - 2048, systemMemory || 16384));
+const gameMemory = autoMemory
+  ? Math.min(recommendedMemory, availMemory)
+  : Math.min(settings.min_memory || 4096, availMemory);
+const gapMemory = Math.max(0, availMemory - gameMemory);
+
+  // 扫描系统中已安装的 Java
+  const scanCommonJavaPaths = async (): Promise<JavaInstallation[]> => {
+    try {
+      return await scanJavaInstallations();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      logger.warn(`[GameSettings] 扫描 Java 失败: ${msg}`);
+      return [];
+    }
+  };
+
+  // DropDown 选项：自动选择 + 已扫描 Java + 当前自定义路径兜底
+  const javaOptions: DropDownOption[] = [
+    { id: 'auto', label: t('settings.java.auto', '自动选择合适的 Java') },
+    ...javaPaths.map(java => ({
+      id: java.path,
+      label: `${java.version} (${java.vendor}${java.is_jdk ? ', JDK' : ''})`,
+    })),
+    ...(settings.java_path && !javaPaths.some(j => j.path === settings.java_path)
+      ? [{ id: settings.java_path, label: settings.java_path }]
+      : []),
   ];
 
-  const currentResolution = settings.width && settings.height 
-    ? `${settings.width}x${settings.height}`
-    : '1280x720';
+  const selectedJavaOption = javaOptions.find(o => o.id === (settings.java_path || 'auto')) ?? javaOptions[0];
 
-  // 扫描常见 Java 路径
-  const scanCommonJavaPaths = async (): Promise<Array<{ version: string; path: string }>> => {
-    const paths: Array<{ version: string; path: string }> = [];
-    
-    // 这里可以添加扫描逻辑，暂时返回空数组
-    // 实际应该调用 Rust 后端来扫描
-    return paths;
+  const handleJavaSelect = (option: DropDownOption) => {
+    if (option.id === 'auto') {
+      updateSetting('java_path', undefined);
+    } else {
+      updateSetting('java_path', option.id);
+    }
   };
 
   const handleBrowseJava = async () => {
@@ -168,10 +253,9 @@ const InstanceGameSettings = () => {
       const path = await selectJavaPath();
       if (path) {
         updateSetting('java_path', path);
-        // 尝试从路径提取版本信息
         const versionMatch = path.match(/java[-_]?(\d+)/i);
         const version = versionMatch ? `Java ${versionMatch[1]}` : 'Unknown';
-        setJavaPaths(prev => [...prev, { version, path }]);
+        setJavaPaths(prev => [...prev, { path, version, vendor: '手动添加', is_jdk: true }]);
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -182,231 +266,163 @@ const InstanceGameSettings = () => {
   return (
     <div className="flex-1 overflow-y-auto p-6">
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* 基础设置 */}
-        <SettingsSection
-          title={t('settings.basic', '基础设置')}
-          icon={<Settings className="w-5 h-5" />}
-        >
-          <SettingItem
-            label={t('settings.useInstanceSettings', '启用实例特定游戏设置')}
-            description={t('settings.useInstanceSettingsDesc', '启用后，以下设置将仅应用于当前实例，不影响其他实例。未启用时使用全局默认配置')}
-          >
-
+        <SettingsPanel label='基础设置'>
             <Toggle
-              label='启用实例特定游戏设置'
+              label={t('settings.useInstanceSettings', '启用实例特定游戏设置')}
+              bgHidden
               checked={settings.use_instance_settings || false}
               onChange={(checked) => updateSetting('use_instance_settings', checked)}
               disabled={settingsLoading}
             />
-          </SettingItem>
-        </SettingsSection>
 
-        
-
-        {/* Java 配置 */}
-        <Overlay
-          active={!settings.use_instance_settings}
-        >
-          <SettingsSection
-            title={t('settings.java.title', 'Java 配置')}
-            icon={<Coffee className="w-5 h-5" />}
+          {/* 基础设置 */}
+          <SettingsPanel.Item
+          // {/* // label={t('settings.useInstanceSettings', '启用实例特定游戏设置')}
+          //   // description={t('settings.useInstanceSettingsDesc', '启用后，以下设置将仅应用于当前实例，不影响其他实例。未启用时使用全局默认配置')}
           >
-          <div className="space-y-4">
-            {/* Java 路径显示 */}
-            <div className="bg-[var(--color-surface)] rounded-lg border border-[var(--color-border)] overflow-hidden">
-              <button
-                onClick={() => setJavaExpanded(!javaExpanded)}
-                className="w-full px-4 py-3 flex items-center justify-between bg-[var(--color-surface-hover)] hover:bg-[var(--color-surface-active)] transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <Coffee className="w-5 h-5 text-[var(--color-text-secondary)]" />
-                  <div className="text-left">
-                    <div className="text-sm font-medium text-[var(--color-text-primary)]">
-                      {t('settings.java.path', '游戏 Java')}
-                    </div>
-                    <div className="text-xs text-[var(--color-text-tertiary)] truncate max-w-md">
-                      {settings.java_path || t('settings.java.auto', '自动选择合适的 Java')}
-                    </div>
-                  </div>
+
+            {/* Java 配置 */}
+            <SettingsPanel.Sub
+              label={t('settings.java.title', 'Java 配置')}
+              disabled={!settings.use_instance_settings}
+            >
+
+              <div className="space-y-4">
+                {/* Java 路径选择 */}
+                <div className="overflow-hidden">
+                  <SettingsPanel.DropDown
+                    label={t('settings.java.path', '游戏 Java')}
+                    options={javaOptions}
+                    value={selectedJavaOption}
+                    onSelect={handleJavaSelect}
+                    buttonWidth="w-full"
+                  />
+
+                  <SettingsPanel.Input
+                    label={t('settings.java.custom', '自定义')}
+                    value={settings.java_path || ''}
+                    onChange={(value) => updateSetting('java_path', value)}
+                    placeholder={t('settings.java.pathPlaceholder', 'Java 可执行文件路径 (java.exe)')}
+                    disabled={settingsLoading}
+                    onBrowse={handleBrowseJava}
+                  />
                 </div>
-                {javaExpanded ? (
-                  <ChevronUp className="w-5 h-5 text-[var(--color-text-tertiary)]" />
-                ) : (
-                  <ChevronDown className="w-5 h-5 text-[var(--color-text-tertiary)]" />
-                )}
-              </button>
-
-              <AnimatePresence>
-                {javaExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="px-4 py-3 space-y-3 bg-[var(--color-surface)] border-t border-[var(--color-border)]">
-                      {/* 自动选择 */}
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="java-selection"
-                          checked={!settings.java_path}
-                          onChange={() => updateSetting('java_path', undefined)}
-                          disabled={settingsLoading}
-                          className="w-4 h-4 text-[var(--color-primary)] bg-[var(--color-input)] border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-primary)]"
-                        />
-                        <span className="text-sm text-[var(--color-text-primary)]">
-                          {t('settings.java.auto', '自动选择合适的 Java')}
-                        </span>
-                      </label>
-
-                      {/* Java 列表 */}
-                      {javaPaths.map((java) => (
-                        <label key={java.path} className="flex items-center gap-3 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="java-selection"
-                            checked={settings.java_path === java.path}
-                            onChange={() => updateSetting('java_path', java.path)}
-                            disabled={settingsLoading}
-                            className="w-4 h-4 text-[var(--color-primary)] bg-[var(--color-input)] border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-primary)]"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="text-sm text-[var(--color-text-primary)]">
-                              {java.version}
-                            </div>
-                            <div className="text-xs text-[var(--color-text-tertiary)] truncate">
-                              {java.path}
-                            </div>
-                          </div>
-                          {settings.java_path === java.path && (
-                            <Check className="w-4 h-4 text-[var(--color-primary)]" />
-                          )}
-                        </label>
-                      ))}
-
-                      {/* 自定义路径 */}
-                      <div className="pt-2 border-t border-[var(--color-border)]">
-                        <label className="flex items-center gap-3 cursor-pointer mb-2">
-                          <input
-                            type="radio"
-                            name="java-selection"
-                            checked={!!settings.java_path && !javaPaths.some(j => j.path === settings.java_path)}
-                            onChange={() => {}}
-                            disabled={settingsLoading}
-                            className="w-4 h-4 text-[var(--color-primary)] bg-[var(--color-input)] border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-primary)]"
-                          />
-                          <span className="text-sm text-[var(--color-text-primary)]">
-                            {t('settings.java.custom', '自定义')}
-                          </span>
-                        </label>
-                        <div className="flex gap-2 pl-7">
-                          <input
-                            type="text"
-                            value={settings.java_path || ''}
-                            onChange={(e) => updateSetting('java_path', e.target.value)}
-                            disabled={settingsLoading}
-                            placeholder={t('settings.java.pathPlaceholder', 'Java 可执行文件路径 (java.exe)')}
-                            className="flex-1 px-3 py-2 bg-[var(--color-input)] border border-[var(--color-border)] rounded text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] disabled:opacity-50"
-                          />
-                          <button
-                            type="button"
-                            onClick={handleBrowseJava}
-                            disabled={settingsLoading}
-                            className="px-3 py-2 bg-[var(--color-primary)] text-white rounded text-sm hover:bg-[var(--color-primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                          >
-                            <FolderOpen className="w-4 h-4" />
-                            {t('common.browse', '浏览')}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* 内存分配 */}
-            <div>
-              <div className="text-sm font-medium text-[var(--color-text-primary)] mb-3">
-                {t('settings.memory.title', '游戏内存')}
               </div>
-              <MemorySlider
-                minMemory={settings.min_memory}
-                maxMemory={settings.max_memory}
-                autoMemory={!settings.min_memory && !settings.max_memory}
-                onMinChange={(value) => updateSetting('min_memory', value)}
-                onMaxChange={(value) => updateSetting('max_memory', value)}
-                onAutoChange={(checked) => {
-                  if (checked) {
-                    updateSetting('min_memory', undefined);
-                    updateSetting('max_memory', undefined);
-                  }
-                }}
-                disabled={settingsLoading}
-              />
-            </div>
-          </div>
-          </SettingsSection>
+            </SettingsPanel.Sub>
+          </SettingsPanel.Item>
 
-        {/* 窗口配置 */}
-          <SettingsSection
-            title={t('settings.window.title', '窗口配置')}
-            icon={<Monitor className="w-5 h-5" />}
-          >
-          <SettingItem
-            label={t('settings.window.resolution', '游戏窗口分辨率')}
-            description={t('settings.window.resolutionDesc', '选择合适的分辨率或自定义')}
-          >
-            <div className="flex items-center gap-3">
-              <select
-                value={currentResolution}
-                onChange={(e) => {
-                  const [width, height] = e.target.value.split('x').map(Number);
+          <SettingsPanel.Item>
+
+            <SettingsPanel.Sub
+              label='游戏内存'
+              disabled={!settings.use_instance_settings}
+            >
+              {/* 内存分配 */}
+
+              <div className='p-3'>
+
+                {/* 自动分配开关 */}
+                <SettingsPanel.CheckSwitch
+                  checked={autoMemory}
+                  onChange={handleAutoMemoryChange}
+                  label={t('settings.memoryAuto', '自动分配内存')}
+                  disabled={settingsLoading}
+                  className='mb-2'
+                />
+
+                {/* 最低内存滑块（自动分配时整行隐藏）；填充色与条上"游戏分配"段同浅色 */}
+                {!autoMemory && (
+                  <Slider
+                    value={settings.min_memory || 4096}
+                    min={512}
+                    max={systemMemory || 16384}
+                    step={256}
+                    onChange={(v) => {
+                      updateSetting('min_memory', v);
+                      updateSetting('max_memory', Math.max(v, settings.max_memory || 4096));
+                    }}
+                    label={t('settings.minMemory', '最低内存')}
+                    unit="MB"
+                    fillColor={getPartitionColor({ level: 2 })}
+                    clampMax={systemMemory || 16384}
+                    disabled={settingsLoading}
+                    className="mb-2"
+                  />
+                )}
+
+                {/* 分区条：已用内存占全内存份额，游戏分配占剩余可用份额，余量最浅色 */}
+                <PartitionBar
+                  parts={[
+                    {
+                      label: t('settings.memoryUsed', '已使用内存'),
+                      value: usedMemory,
+                      dataText: `${formatMemory(usedMemory)} / ${formatMemory(systemMemory)}`,
+                      level: 1,
+                    },
+                    {
+                      label: t('settings.memoryGameAlloc', '游戏分配'),
+                      value: gameMemory,
+                      // 分配占满可用内存时（gap 为 0）才展示"（可用 X GB）"后缀
+                      dataText: gapMemory === 0
+                        ? `${formatMemory(gameMemory)}（${t('settings.memoryAvailable', '可用')} ${formatMemory(availMemory)}）`
+                        : formatMemory(gameMemory),
+                      level: 2,
+                    },
+                    ...(gapMemory > 0
+                      ? [{ label: '', value: gapMemory, level: 3 }]
+                      : []),
+                  ]}
+                />
+              </div>
+            </SettingsPanel.Sub>
+          </SettingsPanel.Item>
+
+          <SettingsPanel.Item>
+            {/* 窗口配置 */}
+            <SettingsPanel.Sub
+              label={t('settings.window.title', '窗口配置')}
+              disabled={!settings.use_instance_settings}
+            >
+              <SettingsPanel.DropDown
+                label={t('settings.window.resolution', '游戏窗口分辨率')}
+options={resolutionOptionsWithCurrent}
+              value={resolutionOptionsWithCurrent.find((o) => o.id === currentResolution)}
+                onSelect={(option) => {
+                  const [width, height] = option.id.split('x').map(Number);
                   updateSetting('width', width);
                   updateSetting('height', height);
                 }}
                 disabled={settingsLoading || settings.fullscreen}
-                className="px-4 py-2 bg-[var(--color-surface-active)] border border-[var(--color-border)] rounded text-sm text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] disabled:opacity-50"
-              >
-                {resolutionOptions.map((res) => (
-                  <option key={res} value={res}>
-                    {res}
-                  </option>
-                ))}
-              </select>
-              
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={settings.fullscreen || false}
-                  onChange={(e) => updateSetting('fullscreen', e.target.checked)}
-                  disabled={settingsLoading}
-                  className="w-4 h-4 rounded bg-[var(--color-input)] border-[var(--color-border)] text-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]"
-                />
-                <span className="text-sm text-[var(--color-text-primary)]">
-                  {t('settings.window.fullscreen', '全屏')}
-                </span>
-              </label>
-            </div>
-          </SettingItem>
+              />
 
-          <SettingItem
-            label={t('settings.advanced.launcherVisible', '启动器可见性')}
-            description={t('settings.advanced.launcherVisibleDesc', '启动游戏后是否显示启动器窗口')}
-          >
-              <Toggle
-                label='启动器是否可见'
-                checked={settings.launcher_visible ?? true}
-                onChange={(checked) => updateSetting('launcher_visible', checked)}
+              <SettingsPanel.CheckSwitch
+                checked={settings.fullscreen || false}
+                onChange={(checked) => updateSetting('fullscreen', checked)}
+                label={t('settings.window.fullscreen', '全屏')}
                 disabled={settingsLoading}
               />
-          </SettingItem>
-          </SettingsSection>
-        </Overlay>
+
+              <SettingItem
+                label={t('settings.advanced.launcherVisible', '启动器可见性')}
+                description={t('settings.advanced.launcherVisibleDesc', '启动游戏后是否显示启动器窗口')}
+              >
+                <Toggle
+                  checked={settings.launcher_visible ?? true}
+                  onChange={(checked) => updateSetting('launcher_visible', checked)}
+                  disabled={settingsLoading}
+                  hoverable={false}
+                  bgHidden
+                />
+              </SettingItem>
+            </SettingsPanel.Sub>
+          </SettingsPanel.Item>
+
+        </SettingsPanel>
+
+
+
       </div>
-    </div>
+    </div >
   );
 };
 

@@ -1,5 +1,7 @@
 /// 实例管理命令
 pub mod commands;
+/// 实例/版本路径唯一事实源
+pub mod layout;
 /// 实例管理器
 pub mod manager;
 /// 实例数据模型

@@ -57,27 +57,12 @@ pub fn clear_completed_tasks(
     Ok(format!("已清理 {} 个已完成任务", removed))
 }
 
-/// 获取已下载的游戏版本列表
+/// 获取已安装的游戏版本列表（所有实例 + 全局版本目录，去重）
 #[tauri::command]
 pub fn get_game_versions(
-    download_manager: State<'_, DownloadManager>,
+    _instance_manager: State<'_, crate::instance::manager::InstanceManager>,
 ) -> Result<Vec<String>, String> {
-    let game_dir = download_manager.base_path.lock().unwrap().clone();
-    let versions_dir = game_dir.join("versions");
-
-    if !versions_dir.exists() {
-        return Ok(vec![]);
-    }
-
-    let mut versions: Vec<String> = fs::read_dir(versions_dir)
-        .map_err(|e| format!("读取版本目录失败: {}", e))?
-        .filter_map(|entry| entry.ok())
-        .filter(|entry| entry.path().is_dir())
-        .filter_map(|entry| entry.file_name().into_string().ok())
-        .collect();
-
-    versions.sort();
-    Ok(versions)
+    Ok(crate::instance::layout::scan_all_installed_versions())
 }
 
 /// 获取下载基础路径

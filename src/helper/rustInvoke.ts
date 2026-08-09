@@ -7,6 +7,7 @@ import * as __ from "@/api";
 export const getAccountList = __.invokeGetAccountList;
 /** 获取当前选中的账户 */
 export const getCurrentAccount = __.invokeGetCurrentAccount;
+export const getCurrentAccountToken = __.invokeGetCurrentAccountToken;
 /** 删除指定账户 */
 export const deleteAccount = __.invokeDeleteAccount;
 /** 设置当前激活的账户 */
@@ -62,20 +63,16 @@ export const getFabricVersionDetail = __.invokeGetFabricVersionDetail;
 export const buildFabricLaunchConfig = __.invokeBuildFabricLaunchConfig;
 /** 获取 Forge 版本列表 */
 export const getForgeVersions = __.invokeGetForgeVersions;
+/** 获取 NeoForge 版本列表 */
+export const getNeoForgeVersions = __.invokeGetNeoForgeVersions;
+/** 获取 OptiFine 版本列表 */
+export const getOptifineVersions = __.invokeGetOptifineVersions;
 /** 构建 Forge 启动配置 */
 export const buildForgeLaunchConfig = __.invokeBuildForgeLaunchConfig;
+/** 获取磁盘剩余空间 */
+export const getDiskFreeSpace = __.invokeGetDiskFreeSpace;
 /** 获取已安装的模组加载器列表 */
 export const getInstalledModLoaders = __.invokeGetInstalledModLoaders;
-/** 获取 Quilt 版本列表 */
-export const getQuiltVersions = __.invokeGetQuiltVersions;
-/** 获取 Fabric API 版本列表 */
-export const getFabricApiVersions = __.invokeGetFabricApiVersions;
-/** 获取 QSL 版本列表 */
-export const getQslVersions = __.invokeGetQslVersions;
-/** 获取所有加载器的兼容性信息 */
-export const getAllLoaderCompatibility = __.invokeGetAllLoaderCompatibility;
-/** 使用指定加载器安装版本 */
-export const installWithLoaders = __.invokeInstallWithLoaders;
 
 /** 扫描已安装的游戏实例 */
 export const scanInstances = __.invokeScanInstances;
@@ -85,6 +82,10 @@ export const getInstanceSettings = __.invokeGetInstanceSettings;
 export const updateInstanceSettings = __.invokeUpdateInstanceSettings;
 /** 获取系统内存信息 */
 export const getSystemMemory = __.invokeGetSystemMemory;
+/** 获取系统内存使用情况（[已用, 总] MB） */
+export const getMemoryUsage = __.invokeGetMemoryUsage;
+/** 获取显示器支持的分辨率列表 */
+export const getDisplayResolutions = __.invokeGetDisplayResolutions;
 /** 弹出 Java 路径选择对话框 */
 export const selectJavaPath = __.invokeSelectJavaPath;
 /** 获取单个实例信息 */

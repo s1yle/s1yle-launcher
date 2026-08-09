@@ -1,4 +1,3 @@
-import React from 'react';
 import { ProgressBar } from '../common';
 import { formatFileSize } from '../../utils/format';
 import { Check, X, Download, Clock } from 'lucide-react';

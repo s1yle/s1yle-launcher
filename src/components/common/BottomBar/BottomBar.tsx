@@ -1,6 +1,6 @@
 import { openFolder } from "@/helper/rustInvoke";
 import { FolderOpen } from "lucide-react";
-import React, { useCallback } from "react";
+import  { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useNotification } from "..";
 

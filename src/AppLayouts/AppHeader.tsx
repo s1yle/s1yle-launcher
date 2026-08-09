@@ -8,6 +8,8 @@ export interface AppHeaderProps {
   mode: UIMode,
   currentRoute: RouteConfig | undefined
   handleMenuClick: (targetPath: string) => void
+  /** 是否处于全屏模式（隐藏灵动岛导航） */
+  isFullscreen?: boolean
 }
 
 /** 应用顶部导航栏 - 灵动岛模式或经典模式标题 */
@@ -15,9 +17,15 @@ const AppHeader = ({
   mode = UIMode.ISLAND,
   currentRoute,
   handleMenuClick,
+  isFullscreen = false,
 }: AppHeaderProps) => {
 
   if (mode == UIMode.ISLAND) {
+    if (isFullscreen) {
+      // 全屏模式：隐藏灵动岛导航，仅保留窗口控制按钮
+      return <FloatingControls />
+    }
+
     return (
       <>
         {/* 灵动岛模式 */}
@@ -26,7 +34,6 @@ const AppHeader = ({
 
         {/* 顶部拖曳区域 - 覆盖灵动岛两侧的空间 */}
         <div
-          // 纠结：到底是要背景色区分开好，还是不许分开好？？？？
           className="fixed top-0 left-0 right-0 h-20 z-40 
             bg-(--color-bg-surface) border-b border-(--color-border)
           "

@@ -1,4 +1,4 @@
-import { InvokeArgs, InvokeOptions } from "@tauri-apps/api/core";
+import {  InvokeOptions } from "@tauri-apps/api/core";
 import { invokeRust } from "./client";
 import { logger } from "@/helper/logger";
 import type { VersionManifest, VersionDownloadManifest, DownloadProgress, DownloadTask, MigrationResult, DeployResult } from "./types/download";

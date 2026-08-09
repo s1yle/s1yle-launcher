@@ -45,7 +45,7 @@ const Overlay = ({
                             ${fixed ? 'fixed' : 'absolute'}
                             inset-0
                             px-5 py-5
-                            backdrop-blur-[1px] ${overLayClassName}`
+                            ${overLayClassName}`
                         }
                         style={{
                             backgroundColor: 'var(--color-overlay)',

@@ -1,6 +1,7 @@
 use crate::config::models::{GraphicsConfig, InstanceConfig, JavaConfig, MemoryConfig};
 use crate::download::manager::DownloadManager;
 use crate::download::models::*;
+use crate::download::utils::verify_file_sha1;
 use crate::download::version::{get_version_detail, parse_version_downloads};
 use crate::instance::manager::InstanceManager;
 use crate::modloader::ModLoaderType;
@@ -38,57 +39,72 @@ pub async fn deploy_version_global(
     version_id: String,
     download_manager: State<'_, DownloadManager>,
 ) -> Result<String, String> {
-    use crate::config::{ASSETS_DIR, LIBRARIES_DIR, MINECRAFT_DIR, VERSIONS_DIR};
+    use crate::config::MINECRAFT_DIR;
 
     log_info!("==================== 开始版本部署（全局资源） ====================");
     log_info!("版本 ID: {}", version_id);
 
     let version_json = get_version_detail(version_id.clone()).await?;
-    let version_name = version_json["id"]
-        .as_str()
-        .unwrap_or(&version_id)
-        .to_string();
-
-    log_info!("版本名称：{}", version_name);
-
     let manifest = parse_version_downloads(&version_json).await?;
 
-    log_info!(
-        "下载清单：libraries={}, assets={}, natives={}",
-        manifest.libraries.len(),
-        manifest.assets.len(),
-        manifest.natives.len()
-    );
+    let (deployed_count, total_count) =
+        deploy_files_to_target(&(*MINECRAFT_DIR).clone(), &version_json, &manifest, download_manager.inner())
+            .await?;
 
-    // 创建目录结构
-    let version_dir = VERSIONS_DIR.join(&version_name);
-    let libraries_dir = LIBRARIES_DIR.clone();
-    let assets_dir = ASSETS_DIR.clone();
-    let natives_dir = version_dir.join("natives");
+    log_info!("==================== 部署完成 ====================");
+    log_info!("部署进度：{}/{} 文件", deployed_count, total_count);
+
+    Ok(format!(
+        "版本 {} 已部署到全局 ({} / {} 文件)",
+        version_id, deployed_count, total_count
+    ))
+}
+
+/// 内部部署函数：将版本文件从下载目录复制到目标游戏目录（标准 .minecraft 布局）
+async fn deploy_files_to_target(
+    target_dir: &PathBuf,
+    version_json: &serde_json::Value,
+    manifest: &VersionDownloadManifest,
+    download_manager: &DownloadManager,
+) -> Result<(usize, usize), String> {
+    let version_name = manifest.version_id.clone();
+
+    let version_base_dir = crate::instance::layout::version_dir_in(target_dir, &version_name);
+    let versions_dir = version_base_dir
+        .parent()
+        .map(PathBuf::from)
+        .unwrap_or_else(|| target_dir.join("versions"));
+    let libraries_dir = target_dir.join("libraries");
+    let assets_dir = target_dir.join("assets");
+    let natives_dir = version_base_dir.join("natives");
+    let indexes_dir = assets_dir.join("indexes");
+    let objects_dir = assets_dir.join("objects");
 
     log_info!("目标目录：");
-    log_info!("  Minecraft 根目录：{:?}", *MINECRAFT_DIR);
-    log_info!("  版本目录：{:?}", version_dir);
-    log_info!("  全局库目录：{:?}", libraries_dir);
-    log_info!("  全局资源目录：{:?}", assets_dir);
-    log_info!("  原生库目录：{:?}", natives_dir);
+    log_info!("  游戏根目录：{:?}", target_dir);
+    log_info!("  versions: {:?}", versions_dir);
+    log_info!("  版本目录：{:?}", version_base_dir);
+    log_info!("  libraries: {:?}", libraries_dir);
+    log_info!("  assets: {:?}", assets_dir);
+    log_info!("  natives: {:?}", natives_dir);
+    log_info!("  indexes: {:?}", indexes_dir);
+    log_info!("  objects: {:?}", objects_dir);
 
-    // 创建必要的目录
-    fs::create_dir_all(&*MINECRAFT_DIR).map_err(|e| format!("创建 Minecraft 目录失败：{}", e))?;
-    fs::create_dir_all(&version_dir).map_err(|e| format!("创建版本目录失败：{}", e))?;
-    fs::create_dir_all(&libraries_dir).map_err(|e| format!("创建库目录失败：{}", e))?;
-    fs::create_dir_all(&assets_dir).map_err(|e| format!("创建资源目录失败：{}", e))?;
-    fs::create_dir_all(&natives_dir).map_err(|e| format!("创建原生库目录失败：{}", e))?;
+    fs::create_dir_all(&versions_dir).map_err(|e| format!("创建 versions 目录失败：{}", e))?;
+    fs::create_dir_all(&version_base_dir).map_err(|e| format!("创建版本目录失败：{}", e))?;
+    fs::create_dir_all(&libraries_dir).map_err(|e| format!("创建 libraries 目录失败：{}", e))?;
+    fs::create_dir_all(&assets_dir).map_err(|e| format!("创建 assets 目录失败：{}", e))?;
+    fs::create_dir_all(&natives_dir).map_err(|e| format!("创建 natives 目录失败：{}", e))?;
+    fs::create_dir_all(&indexes_dir).map_err(|e| format!("创建 indexes 目录失败：{}", e))?;
+    fs::create_dir_all(&objects_dir).map_err(|e| format!("创建 objects 目录失败：{}", e))?;
 
-    // 从下载目录复制文件
-    let dm = download_manager.inner();
-    let version_download_dir = dm.get_version_download_path(&version_name);
+    let version_download_dir = download_manager.get_version_download_path(&version_name);
     log_info!("版本下载目录：{:?}", version_download_dir);
 
     let mut deployed_count = 0;
     let mut total_count = 0;
 
-    // 复制库文件到全局目录
+    // 复制库文件
     for lib in &manifest.libraries {
         total_count += 1;
         let source = version_download_dir.join(&lib.path);
@@ -101,28 +117,13 @@ pub async fn deploy_version_global(
         if source.exists() {
             if !dest.exists() {
                 fs::copy(&source, &dest).map_err(|e| format!("复制库文件失败：{}", e))?;
-                log_info!(
-                    "[{}/{}] 复制库：{}",
-                    deployed_count + 1,
-                    manifest.libraries.len(),
-                    lib.path
-                );
+                log_info!("复制库：{}", lib.path);
             } else {
-                log_info!(
-                    "[{}/{}] 库已存在（共享）：{}",
-                    deployed_count + 1,
-                    manifest.libraries.len(),
-                    lib.path
-                );
+                log_info!("库已存在（共享）：{}", lib.path);
             }
             deployed_count += 1;
         } else if dest.exists() {
-            log_info!(
-                "[{}/{}] 库已存在（共享）：{}",
-                deployed_count + 1,
-                manifest.libraries.len(),
-                lib.path
-            );
+            log_info!("库已存在（共享）：{}", lib.path);
             deployed_count += 1;
         } else {
             log_error!("库文件不存在：{:?}", source);
@@ -142,7 +143,7 @@ pub async fn deploy_version_global(
         }
     }
 
-    // 复制资源文件到全局目录
+    // 复制资源文件
     for asset in &manifest.assets {
         total_count += 1;
         let source = version_download_dir.join(&asset.path);
@@ -170,7 +171,7 @@ pub async fn deploy_version_global(
     if let Some(ref client) = manifest.client_jar {
         total_count += 1;
         let source = version_download_dir.join(&client.path);
-        let dest = version_dir.join(format!("{}.jar", &version_name));
+        let dest = version_base_dir.join(format!("{}.jar", &version_name));
 
         if source.exists() {
             fs::copy(&source, &dest).map_err(|e| format!("复制客户端 jar 失败：{}", e))?;
@@ -182,22 +183,39 @@ pub async fn deploy_version_global(
         }
     }
 
-    // 复制版本 JSON
+    // 复制版本 JSON（启动时依赖）
     let json_source = version_download_dir.join(format!("{}.json", &version_name));
-    let json_dest = version_dir.join(format!("{}.json", &version_name));
-    if json_source.exists() {
+    let json_dest = version_base_dir.join(format!("{}.json", &version_name));
+    if json_source.exists() && !json_dest.exists() {
         fs::copy(&json_source, &json_dest).map_err(|e| format!("复制版本 JSON 失败：{}", e))?;
         log_info!("✓ 复制版本 JSON：{}", json_dest.display());
+        deployed_count += 1;
     }
 
-    log_info!("==================== 部署完成 ====================");
-    log_info!("部署进度：{}/{} 文件", deployed_count, total_count);
-    log_info!("版本目录：{:?}", version_dir);
+    // 复制资源索引
+    if let Some(ref index) = manifest.asset_index {
+        total_count += 1;
+        let source = version_download_dir.join(&index.path);
+        let index_name = index
+            .path
+            .rsplit('/')
+            .next()
+            .unwrap_or(&version_name)
+            .to_string();
+        let dest = indexes_dir.join(index_name);
 
-    Ok(format!(
-        "版本 {} 已部署 ({} / {} 文件)",
-        version_id, deployed_count, total_count
-    ))
+        if let Some(parent) = dest.parent() {
+            fs::create_dir_all(parent).map_err(|e| format!("创建索引目录失败：{}", e))?;
+        }
+
+        if source.exists() {
+            fs::copy(&source, &dest).map_err(|e| format!("复制资源索引失败：{}", e))?;
+            deployed_count += 1;
+        }
+    }
+
+    let _ = version_json;
+    Ok((deployed_count, total_count))
 }
 
 /// 解压 jar 文件中的内容到指定目录（用于原生库）
@@ -238,14 +256,9 @@ fn extract_jar(jar_path: &PathBuf, dest_dir: &PathBuf) -> Result<(), String> {
 #[tauri::command]
 pub fn is_version_deployed(
     version_id: String,
-    download_manager: State<'_, DownloadManager>,
+    _download_manager: State<'_, DownloadManager>,
 ) -> bool {
-    let base_path = download_manager.base_path.lock().unwrap();
-    let version_jar = base_path
-        .join("versions")
-        .join(&version_id)
-        .join(format!("{}.jar", version_id));
-    version_jar.exists()
+    crate::instance::layout::global_version_jar(&version_id).exists()
 }
 
 /// 将下载的版本文件部署到指定的实例路径
@@ -260,14 +273,6 @@ pub async fn deploy_version_to_instance(
     log_info!("实例路径：{}", instance_path);
 
     let version_json = get_version_detail(version_id.clone()).await?;
-
-    let version_name = version_json["id"]
-        .as_str()
-        .unwrap_or(&version_id)
-        .to_string();
-
-    log_info!("版本名称：{}", version_name);
-
     let manifest = parse_version_downloads(&version_json).await?;
 
     log_info!(
@@ -277,154 +282,17 @@ pub async fn deploy_version_to_instance(
         manifest.natives.len()
     );
 
-    let instance_dir = PathBuf::from(&instance_path);
-    let versions_dir = instance_dir.join("versions");
-    let version_base_dir = versions_dir.join(&version_name);
-    let libraries_dir = version_base_dir.join("libraries");
-    let assets_dir = version_base_dir.join("assets");
-    let natives_dir = version_base_dir.join("natives");
-    let indexes_dir = version_base_dir.join("indexes");
-    let objects_dir = version_base_dir.join("objects");
-
-    log_info!("目标目录：");
-    log_info!("  实例根目录：{:?}", instance_dir);
-    log_info!("  versions 目录：{:?}", versions_dir);
-    log_info!("  版本根目录：{:?}", version_base_dir);
-    log_info!("  libraries: {:?}", libraries_dir);
-    log_info!("  assets: {:?}", assets_dir);
-    log_info!("  natives: {:?}", natives_dir);
-    log_info!("  indexes: {:?}", indexes_dir);
-    log_info!("  objects: {:?}", objects_dir);
-
-    fs::create_dir_all(&versions_dir).map_err(|e| format!("创建 versions 目录失败：{}", e))?;
-    fs::create_dir_all(&version_base_dir).map_err(|e| format!("创建版本目录失败：{}", e))?;
-    fs::create_dir_all(&libraries_dir).map_err(|e| format!("创建 libraries 目录失败：{}", e))?;
-    fs::create_dir_all(&assets_dir).map_err(|e| format!("创建 assets 目录失败：{}", e))?;
-    fs::create_dir_all(&natives_dir).map_err(|e| format!("创建 natives 目录失败：{}", e))?;
-    fs::create_dir_all(&indexes_dir).map_err(|e| format!("创建 indexes 目录失败：{}", e))?;
-    fs::create_dir_all(&objects_dir).map_err(|e| format!("创建 objects 目录失败：{}", e))?;
-
-    // 从版本下载目录复制文件（/.smcl/download/{version_name}/）
-    let version_download_dir = download_manager.get_version_download_path(&version_name);
-    log_info!("版本下载目录：{:?}", version_download_dir);
-
-    let mut deployed_count = 0;
-    let mut total_count = 0;
-
-    // 复制库文件
-    for lib in &manifest.libraries {
-        total_count += 1;
-        let source = version_download_dir.join(&lib.path);
-        let dest = libraries_dir.join(&lib.path);
-
-        if let Some(parent) = dest.parent() {
-            fs::create_dir_all(parent).map_err(|e| format!("创建库目录失败：{}", e))?;
-        }
-
-        if source.exists() {
-            fs::copy(&source, &dest).map_err(|e| format!("复制库文件失败：{}", e))?;
-            log_info!(
-                "[{}/{}] 复制库：{}",
-                deployed_count + 1,
-                manifest.libraries.len(),
-                lib.path
-            );
-            deployed_count += 1;
-        } else if dest.exists() {
-            log_info!(
-                "[{}/{}] 库已存在：{}",
-                deployed_count + 1,
-                manifest.libraries.len(),
-                lib.path
-            );
-            deployed_count += 1;
-        } else {
-            log_error!("库文件不存在：{:?}", source);
-        }
-    }
-
-    // 复制原生库
-    if manifest.natives.first().is_some() {
-        for native in &manifest.natives {
-            total_count += 1;
-            let source = version_download_dir.join(&native.path);
-            if source.exists() {
-                extract_jar(&source, &natives_dir)?;
-                log_info!("解压原生库：{}", native.path);
-                deployed_count += 1;
-            } else {
-                log_error!("原生库不存在：{:?}", source);
-            }
-        }
-    }
-
-    // 复制资源文件
-    for asset in &manifest.assets {
-        total_count += 1;
-        let source = version_download_dir.join(&asset.path);
-        let dest = assets_dir.join(&asset.path);
-
-        if let Some(parent) = dest.parent() {
-            fs::create_dir_all(parent).map_err(|e| format!("创建资源目录失败：{}", e))?;
-        }
-
-        if source.exists() {
-            fs::copy(&source, &dest).map_err(|e| format!("复制资源文件失败：{}", e))?;
-            log_info!("复制资源：{}", asset.path);
-            deployed_count += 1;
-        } else if dest.exists() {
-            log_info!("资源已存在：{}", asset.path);
-            deployed_count += 1;
-        } else {
-            log_error!("资源文件不存在：{:?}", source);
-        }
-    }
-
-    // 复制客户端 jar
-    if let Some(ref client) = manifest.client_jar {
-        total_count += 1;
-        let source = version_download_dir.join(&client.path);
-        let dest = version_base_dir.join(format!("{}.jar", &version_name));
-
-        if let Some(parent) = dest.parent() {
-            fs::create_dir_all(parent).map_err(|e| format!("创建版本目录失败：{}", e))?;
-        }
-
-        log_info!("复制客户端 jar:");
-        log_info!("  源文件：{:?}", source);
-        log_info!("  目标：{:?}", dest);
-        log_info!("  源文件存在：{}", source.exists());
-
-        if source.exists() {
-            fs::copy(&source, &dest).map_err(|e| format!("复制客户端 jar 失败：{}", e))?;
-            log_info!("✓ 复制客户端：{}", dest.display());
-            deployed_count += 1;
-        } else {
-            log_error!("客户端 jar 不存在：{:?}", source);
-            return Err(format!("客户端 jar 不存在：{}", source.display()));
-        }
-    }
-
-    // 复制资源索引
-    if let Some(ref index) = manifest.asset_index {
-        total_count += 1;
-        let source = version_download_dir.join(&index.path);
-        let dest = indexes_dir.join(format!("{}.json", &version_name));
-
-        if let Some(parent) = dest.parent() {
-            fs::create_dir_all(parent).map_err(|e| format!("创建索引目录失败：{}", e))?;
-        }
-
-        if source.exists() {
-            fs::copy(&source, &dest).map_err(|e| format!("复制资源索引失败：{}", e))?;
-            deployed_count += 1;
-        }
-    }
+    let (deployed_count, total_count) = deploy_files_to_target(
+        &PathBuf::from(&instance_path),
+        &version_json,
+        &manifest,
+        download_manager.inner(),
+    )
+    .await?;
 
     log_info!("==================== 部署完成 ====================");
     log_info!("部署进度：{}/{} 文件", deployed_count, total_count);
     log_info!("实例路径：{}", instance_path);
-    log_info!("版本目录：{:?}", version_base_dir);
 
     Ok(format!(
         "版本 {} 已部署到实例 ({} / {} 文件)",
@@ -489,6 +357,91 @@ pub struct DeployResult {
     pub message: String,
 }
 
+/// 下载文件（已存在且 SHA1 匹配则跳过，损坏则重新下载），返回是否实际下载
+async fn download_file_if_needed(
+    client: &reqwest::Client,
+    url: &str,
+    dest_path: &std::path::Path,
+    expected_sha1: Option<&str>,
+    total_size: Option<u64>,
+    download_manager: &DownloadManager,
+) -> Result<bool, String> {
+    if dest_path.exists() {
+        if let Some(sha1) = expected_sha1 {
+            if verify_file_sha1(dest_path, sha1)? {
+                return Ok(false);
+            }
+            log_info!("文件已存在但 SHA1 校验失败，重新下载: {}", url);
+        } else {
+            return Ok(false);
+        }
+    }
+
+    let task_id = format!("{:x}", md5::compute(url.as_bytes()));
+    crate::download::downloader::download_file_with_task(
+        client,
+        url,
+        dest_path,
+        expected_sha1,
+        total_size,
+        download_manager,
+        &task_id,
+    )
+    .await?;
+
+    Ok(true)
+}
+
+/// 并发下载一组文件（限制并发数），返回 (索引, 是否实际下载) 列表
+async fn download_files_concurrent(
+    client: &reqwest::Client,
+    files: &[FileDownload],
+    base_dir: &std::path::Path,
+    download_manager: &DownloadManager,
+) -> Result<Vec<(usize, bool)>, String> {
+    const CONCURRENCY: usize = crate::download::utils::MAX_CHUNKS;
+    let client = std::sync::Arc::new(client.clone());
+    let dm = download_manager.clone();
+    let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(CONCURRENCY));
+    let mut set = tokio::task::JoinSet::new();
+
+    for (idx, file) in files.iter().enumerate() {
+        let client = client.clone();
+        let dm = dm.clone();
+        let semaphore = semaphore.clone();
+        let dest_path = base_dir.join(&file.path);
+        let url = file.url.clone();
+        let sha1 = file.sha1.clone();
+        let size = file.size;
+        let idx = idx;
+
+        set.spawn(async move {
+            let _permit = semaphore
+                .acquire()
+                .await
+                .map_err(|e| format!("获取并发许可失败: {}", e))?;
+            let downloaded = download_file_if_needed(
+                &client,
+                &url,
+                &dest_path,
+                sha1.as_deref(),
+                Some(size),
+                &dm,
+            )
+            .await?;
+            Ok::<(usize, bool), String>((idx, downloaded))
+        });
+    }
+
+    let mut results = Vec::with_capacity(files.len());
+    while let Some(res) = set.join_next().await {
+        let (idx, downloaded) = res.map_err(|e| format!("下载任务失败: {}", e))??;
+        results.push((idx, downloaded));
+    }
+    results.sort_by_key(|(idx, _)| *idx);
+    Ok(results)
+}
+
 /// 下载并部署版本到目标实例（包含下载、部署、配置写入全流程）
 #[tauri::command]
 pub async fn download_and_deploy(
@@ -531,7 +484,7 @@ pub async fn download_and_deploy(
     let version_detail = get_version_detail(options.version_id.clone()).await?;
     let manifest = parse_version_downloads(&version_detail).await?;
 
-    let dm = download_manager.inner();
+    let dm = download_manager.inner().clone();
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(300))
         .build()
@@ -565,128 +518,99 @@ pub async fn download_and_deploy(
     );
 
     // ====== Phase 1: 下载所有库文件 ======
-    for (idx, lib) in manifest.libraries.iter().enumerate() {
-        let dest_path = dm
-            .get_version_download_path(&options.version_id)
-            .join(&lib.path);
-        if let Some(parent) = dest_path.parent() {
-            std::fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {}", e))?;
+    let lib_results = download_files_concurrent(
+        &client,
+        &manifest.libraries,
+        &dm.get_version_download_path(&options.version_id),
+        &dm,
+    )
+    .await?;
+    for (idx, downloaded) in &lib_results {
+        if *downloaded {
+            log_info!("[{}] 已下载: {}", idx + 1, manifest.libraries[*idx].path);
+        } else {
+            log_info!(
+                "[{}] 已存在（校验通过）: {}",
+                idx + 1,
+                manifest.libraries[*idx].path
+            );
         }
-
-        if !dest_path.exists() {
-            let response = client
-                .get(&lib.url)
-                .send()
-                .await
-                .map_err(|e| format!("下载请求失败 [{}]: {}", lib.url, e))?
-                .error_for_status()
-                .map_err(|e| format!("HTTP 错误 [{}]: {}", lib.url, e))?;
-
-            let data = response
-                .bytes()
-                .await
-                .map_err(|e| format!("读取响应体失败: {}", e))?;
-            std::fs::write(&dest_path, &data).map_err(|e| format!("写入文件失败: {}", e))?;
-
-            log_info!("[{}/{}] 已下载: {}", idx + 1, total_libraries, lib.path);
-        }
-
-        completed += 1;
         app_handle
             .emit(
                 "deploy-progress",
                 serde_json::json!({
-                    "current": completed, "total": total_files, "file": &lib.path,
+                    "current": completed + 1, "total": total_files,
+                    "file": &manifest.libraries[*idx].path,
                     "phase": "downloading_libraries",
                     "version_id": &options.version_id
                 }),
             )
             .ok();
+        completed += 1;
     }
 
     // ====== Phase 2: 下载资源文件 ======
-    for (idx, asset) in manifest.assets.iter().enumerate() {
-        let dest_path = dm
-            .get_version_download_path(&options.version_id)
-            .join(&asset.path);
-        if let Some(parent) = dest_path.parent() {
-            std::fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {}", e))?;
+    let asset_results = download_files_concurrent(
+        &client,
+        &manifest.assets,
+        &dm.get_version_download_path(&options.version_id),
+        &dm,
+    )
+    .await?;
+    for (idx, downloaded) in &asset_results {
+        if *downloaded {
+            log_info!("[{}] 已下载资源: {}", idx + 1, manifest.assets[*idx].path);
+        } else {
+            log_info!(
+                "[{}] 资源已存在（校验通过）: {}",
+                idx + 1,
+                manifest.assets[*idx].path
+            );
         }
-
-        if !dest_path.exists() {
-            let response = client
-                .get(&asset.url)
-                .send()
-                .await
-                .map_err(|e| format!("下载资源失败 [{}]: {}", asset.url, e))?
-                .error_for_status()
-                .map_err(|e| format!("HTTP 错误 [{}]: {}", asset.url, e))?;
-
-            let data = response
-                .bytes()
-                .await
-                .map_err(|e| format!("读取响应体失败: {}", e))?;
-            std::fs::write(&dest_path, &data).map_err(|e| format!("写入文件失败: {}", e))?;
-
-            log_info!("[{}/{}] 已下载资源: {}", idx + 1, total_assets, asset.path);
-        }
-
-        completed += 1;
         app_handle
             .emit(
                 "deploy-progress",
                 serde_json::json!({
-                    "current": completed, "total": total_files, "file": &asset.path,
+                    "current": completed + 1, "total": total_files,
+                    "file": &manifest.assets[*idx].path,
                     "phase": "downloading_assets",
                     "version_id": &options.version_id
                 }),
             )
             .ok();
+        completed += 1;
     }
 
     // ====== Phase 3: 下载原生库 ======
-    for (idx, native) in manifest.natives.iter().enumerate() {
-        let dest_path = dm
-            .get_version_download_path(&options.version_id)
-            .join(&native.path);
-        if let Some(parent) = dest_path.parent() {
-            std::fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {}", e))?;
-        }
-
-        if !dest_path.exists() {
-            let response = client
-                .get(&native.url)
-                .send()
-                .await
-                .map_err(|e| format!("下载原生库失败 [{}]: {}", native.url, e))?
-                .error_for_status()
-                .map_err(|e| format!("HTTP 错误 [{}]: {}", native.url, e))?;
-
-            let data = response
-                .bytes()
-                .await
-                .map_err(|e| format!("读取响应体失败: {}", e))?;
-            std::fs::write(&dest_path, &data).map_err(|e| format!("写入文件失败: {}", e))?;
-
+    let native_results = download_files_concurrent(
+        &client,
+        &manifest.natives,
+        &dm.get_version_download_path(&options.version_id),
+        &dm,
+    )
+    .await?;
+    for (idx, downloaded) in &native_results {
+        if *downloaded {
+            log_info!("[{}] 已下载原生库: {}", idx + 1, manifest.natives[*idx].path);
+        } else {
             log_info!(
-                "[{}/{}] 已下载原生库: {}",
+                "[{}] 原生库已存在（校验通过）: {}",
                 idx + 1,
-                total_natives,
-                native.path
+                manifest.natives[*idx].path
             );
         }
-
-        completed += 1;
         app_handle
             .emit(
                 "deploy-progress",
                 serde_json::json!({
-                    "current": completed, "total": total_files, "file": &native.path,
+                    "current": completed + 1, "total": total_files,
+                    "file": &manifest.natives[*idx].path,
                     "phase": "downloading_natives",
                     "version_id": &options.version_id
                 }),
             )
             .ok();
+        completed += 1;
     }
 
     // ====== Phase 4: 下载客户端 jar ======
@@ -698,22 +622,19 @@ pub async fn download_and_deploy(
             std::fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {}", e))?;
         }
 
-        if !dest_path.exists() {
-            let response = client
-                .get(&client_jar.url)
-                .send()
-                .await
-                .map_err(|e| format!("下载客户端jar失败 [{}]: {}", client_jar.url, e))?
-                .error_for_status()
-                .map_err(|e| format!("HTTP 错误 [{}]: {}", client_jar.url, e))?;
-
-            let data = response
-                .bytes()
-                .await
-                .map_err(|e| format!("读取响应体失败: {}", e))?;
-            std::fs::write(&dest_path, &data).map_err(|e| format!("写入文件失败: {}", e))?;
-
+        let downloaded = download_file_if_needed(
+            &client,
+            &client_jar.url,
+            &dest_path,
+            client_jar.sha1.as_deref(),
+            Some(client_jar.size),
+            &dm,
+        )
+        .await?;
+        if downloaded {
             log_info!("已下载客户端 jar: {}", client_jar.path);
+        } else {
+            log_info!("客户端 jar 已存在（校验通过）: {}", client_jar.path);
         }
 
         completed += 1;
@@ -736,8 +657,10 @@ pub async fn download_and_deploy(
         )
         .ok();
 
-    let dm = download_manager.inner();
-    let deploy_msg = deploy_version_internal(&instance_path, &options.version_id, dm).await?;
+    let deploy_msg = deploy_files_to_target(&instance_path, &version_detail, &manifest, &dm)
+        .await?
+        .0;
+    let deploy_msg = format!("版本 {} 已部署到实例 ({} 文件)", options.version_id, deploy_msg);
 
     write_instance_config_to_app_config(&app_handle, &instance_id, &options).await?;
 
@@ -807,137 +730,4 @@ async fn write_instance_config_to_app_config(
 
     log_info!("已写入实例配置到 app_config.json: {}", instance_id);
     Ok(())
-}
-
-/// 内部部署函数：将版本文件从下载目录复制到实例目录
-async fn deploy_version_internal(
-    instance_path: &PathBuf,
-    version_id: &str,
-    download_manager: &DownloadManager,
-) -> Result<String, String> {
-    log_info!("==================== 开始部署版本到实例 ====================");
-    log_info!("版本 ID: {}", version_id);
-    log_info!("实例路径：{:?}", instance_path);
-
-    let version_json = get_version_detail(version_id.to_string()).await?;
-
-    let version_name = version_json["id"]
-        .as_str()
-        .unwrap_or(version_id)
-        .to_string();
-
-    log_info!("版本名称：{}", version_name);
-
-    let manifest = parse_version_downloads(&version_json).await?;
-
-    log_info!(
-        "下载清单：libraries={}, assets={}, natives={}",
-        manifest.libraries.len(),
-        manifest.assets.len(),
-        manifest.natives.len()
-    );
-
-    let libraries_dir = instance_path.join("libraries");
-    let assets_dir = instance_path.join("assets");
-    let natives_dir = instance_path.join("natives");
-    let indexes_dir = instance_path.join("indexes");
-    let objects_dir = instance_path.join("objects");
-
-    log_info!("目标目录：");
-    log_info!("  实例根目录：{:?}", instance_path);
-    log_info!("  libraries: {:?}", libraries_dir);
-    log_info!("  assets: {:?}", assets_dir);
-    log_info!("  natives: {:?}", natives_dir);
-    log_info!("  indexes: {:?}", indexes_dir);
-    log_info!("  objects: {:?}", objects_dir);
-
-    fs::create_dir_all(&libraries_dir).map_err(|e| format!("创建 libraries 目录失败：{}", e))?;
-    fs::create_dir_all(&assets_dir).map_err(|e| format!("创建 assets 目录失败：{}", e))?;
-    fs::create_dir_all(&natives_dir).map_err(|e| format!("创建 natives 目录失败：{}", e))?;
-    fs::create_dir_all(&indexes_dir).map_err(|e| format!("创建 indexes 目录失败：{}", e))?;
-    fs::create_dir_all(&objects_dir).map_err(|e| format!("创建 objects 目录失败：{}", e))?;
-
-    let version_download_dir = download_manager.get_version_download_path(&version_name);
-    log_info!("版本下载目录：{:?}", version_download_dir);
-
-    let mut deployed_count = 0;
-
-    for lib in &manifest.libraries {
-        let source = version_download_dir.join(&lib.path);
-        let dest = libraries_dir.join(&lib.path);
-
-        if let Some(parent) = dest.parent() {
-            fs::create_dir_all(parent).map_err(|e| format!("创建库目录失败：{}", e))?;
-        }
-
-        if source.exists() {
-            fs::copy(&source, &dest).map_err(|e| format!("复制库文件失败：{}", e))?;
-            deployed_count += 1;
-        } else if dest.exists() {
-            deployed_count += 1;
-        }
-    }
-
-    if manifest.natives.first().is_some() {
-        for native in &manifest.natives {
-            let source = version_download_dir.join(&native.path);
-            if source.exists() {
-                extract_jar(&source, &natives_dir)?;
-                deployed_count += 1;
-            }
-        }
-    }
-
-    for asset in &manifest.assets {
-        let source = version_download_dir.join(&asset.path);
-        let dest = assets_dir.join(&asset.path);
-
-        if let Some(parent) = dest.parent() {
-            fs::create_dir_all(parent).map_err(|e| format!("创建资源目录失败：{}", e))?;
-        }
-
-        if source.exists() {
-            fs::copy(&source, &dest).map_err(|e| format!("复制资源文件失败：{}", e))?;
-            deployed_count += 1;
-        } else if dest.exists() {
-            deployed_count += 1;
-        }
-    }
-
-    if let Some(ref client) = manifest.client_jar {
-        let source = version_download_dir.join(&client.path);
-        let dest = instance_path.join(format!("{}.jar", &version_name));
-
-        if let Some(parent) = dest.parent() {
-            fs::create_dir_all(parent).map_err(|e| format!("创建版本目录失败：{}", e))?;
-        }
-
-        if source.exists() {
-            fs::copy(&source, &dest).map_err(|e| format!("复制客户端 jar 失败：{}", e))?;
-            deployed_count += 1;
-        } else {
-            return Err(format!("客户端 jar 不存在：{}", source.display()));
-        }
-    }
-
-    if let Some(ref index) = manifest.asset_index {
-        let source = version_download_dir.join(&index.path);
-        let dest = indexes_dir.join(format!("{}.json", &version_name));
-
-        if let Some(parent) = dest.parent() {
-            fs::create_dir_all(parent).map_err(|e| format!("创建索引目录失败：{}", e))?;
-        }
-
-        if source.exists() {
-            fs::copy(&source, &dest).map_err(|e| format!("复制资源索引失败：{}", e))?;
-            deployed_count += 1;
-        }
-    }
-
-    log_info!("==================== 部署完成 ====================");
-
-    Ok(format!(
-        "版本 {} 已部署到实例 ({} 文件)",
-        version_id, deployed_count
-    ))
 }

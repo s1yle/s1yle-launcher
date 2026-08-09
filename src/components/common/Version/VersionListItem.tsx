@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { GameVersion } from '../../../helper/rustInvoke';
 import { formatDate } from '../../../utils/format';
 import StatusBadge from '../Badge/VersionBadge';
-import { ExternalLink, Package, CheckCircle } from 'lucide-react';
+import { ExternalLink, Package } from 'lucide-react';
 import { listItem, transitions } from '../../../utils/animations';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -13,7 +13,6 @@ const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(
 /** 版本列表项组件 Props */
 export interface VersionListItemProps {
   version: GameVersion;
-  installed: boolean;
   wikiUrl?: string;
   onClick: () => void;
   onWikiClick: () => void;
@@ -23,7 +22,6 @@ export interface VersionListItemProps {
 /** 版本列表项组件，显示版本号、类型徽标和 Wiki 链接 */
 const VersionListItem = ({
   version,
-  installed,
   onClick,
   onWikiClick,
   index = 0,
@@ -37,14 +35,10 @@ const VersionListItem = ({
         transition={{ ...transitions.normal, delay: index * 0.02 }}
         className={cn(
           'flex items-center gap-3 p-3 rounded-lg transition-all duration-200 cursor-pointer',
-          installed
-            ? 'shadow-sm shadow-success/10'
-            : 'hover:shadow-sm'
+          'hover:shadow-sm'
         )}
         style={{
-          backgroundColor: installed
-            ? 'var(--color-success-8)'
-            : isHovered
+          backgroundColor: isHovered
               ? 'var(--color-primary-10)'
               : 'var(--color-surface-solid)',
         }}
@@ -63,18 +57,6 @@ const VersionListItem = ({
           <div className="flex items-center gap-2">
             <h3 className="text-text-primary font-medium text-sm truncate">{version.id}</h3>
             <StatusBadge type={version.type_} />
-            {installed && (
-              <motion.span
-                className="px-1.5 py-0.5 text-[10px] 
-                rounded bg-success-bg text-success 
-                border border-success"
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={transitions.spring}
-              >
-                已安装
-              </motion.span>
-            )}
           </div>
           <p className="text-text-tertiary text-xs mt-0.5">
             {formatDate(version.release_time)}
@@ -95,16 +77,6 @@ const VersionListItem = ({
           <span className="hidden sm:inline">Wiki</span>
         </motion.button>
 
-        {installed && (
-          <motion.div
-            className="flex items-center gap-2 flex-shrink-0"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={transitions.spring}
-          >
-            <CheckCircle className="w-4 h-4 text-success" />
-          </motion.div>
-        )}
       </motion.div>
   );
 };

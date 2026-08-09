@@ -18,8 +18,9 @@ const SettingItem = ({
   className = '',
 }: SettingItemProps) => {
   return (
-    <div className={`setting-item flex items-start justify-between py-3 ${className}`}>
-      <div className="flex-1 pr-4">
+    <div className={`setting-item flex items-start justify-between gap-x-4 py-3 ${className}`}>
+      {/* 标签区：min-w-0 允许窄窗口文字换行而不溢出，pr-4 保证与子项留白 */}
+      <div className="flex-1 min-w-0 pr-4">
         {/* 标签 */}
         <div className="text-sm font-medium text-[var(--color-text-primary)]">
           {label}
