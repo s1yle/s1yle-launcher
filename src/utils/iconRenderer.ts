@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { MouseEventHandler } from 'react';
 import { type LucideIcon } from 'lucide-react';
 
 /**
@@ -33,6 +33,7 @@ export const sizeMap: Record<string, string> = {
 
 /**
  * 渲染图标的工具函数
+ * TODO: 移除该ts文件，及其调用方。如果可以，直接改为使用IconButton即可
  * 
  * @param icon - 图标组件或元素
  * @param className - 额外的 className

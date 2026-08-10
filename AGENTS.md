@@ -57,13 +57,15 @@ src/
 │   └── admin/        # 服主后台
 ├── stores/           # Zustand 状态（19 个 store）
 ├── config/           # 统一配置管理器
-├── router/           # 路由系统 → pnpm docs:gen:routes
-│   ├── routes.tsx    # 路由定义
-│   └── config.tsx    # 路由工具
+├── router/           # 路由系统（routes.tsx 为唯一事实源）→ pnpm docs:gen:routes
+│   ├── routes.tsx    # 路由定义（含 menu/nav 元数据，侧边栏与灵动岛由此派生）
+│   ├── config.tsx    # 路由工具
+│   ├── menu.ts       # 侧边栏菜单（由 routes 派生）
+│   └── nav.ts        # 灵动岛导航项（由 routes 派生）
 ├── hooks/            # 自定义 Hooks
 ├── utils/            # 工具函数
 ├── locales/          # i18n（en-US, zh-CN）
-├── AppLayouts/       # 布局组件
+├── layout/           # 布局壳体（shell 推导 + AppShell/AppHeader/AppSidebar/AppMain）
 └── server/           # 服务端 SDK（OpenAPI 生成）
 
 src-tauri/src/
@@ -209,9 +211,15 @@ import { getConfig, updateConfig, launchInstance } from '@/helper/rustInvoke';
 - 从 admin 页面切回时自动跳转到主页
 
 ### 布局模式
-- `ClassicLayout` — 侧边栏 + 主内容
-- `IslandLayout` — 灵动岛 + 主内容（默认）
-- `FULLSCREEN` — `/download/game/:versionId` 全屏模式
+布局由 `src/layout/shell.ts` 的 `resolveShell(uiMode, route)` 统一推导（`src/layout/AppShell.tsx` 编排）:
+
+| 路由 layoutMode | 灵动岛模式 | 经典模式 |
+|---|---|---|
+| `STANDARD` | 灵动岛 + 80px 留白（可选自带侧边栏） | 原生 Header + 侧边栏 |
+| `NATIVE_HEADER` | 隐藏灵动岛，原生顶部栏 + 自带侧边栏 | 原生 Header + 侧边栏 |
+| `FULLSCREEN` | 仅悬浮窗口控制，无布局框架 | 原生 Header，无侧边栏 |
+
+侧边栏/灵动岛导航由 `routes.tsx` 的 `menu`/`nav` 元数据派生，禁止另行维护路径表。
 
 ---
 
@@ -273,7 +281,7 @@ docs/
 │   ├── stores/            #   src/stores/ (3 enums, 10 interfaces, 7 types)
 │   ├── hooks/             #   src/hooks/ (11 functions, 2 interfaces)
 │   ├── utils/             #   src/utils/ (6 functions)
-│   ├── AppLayouts/        #   src/AppLayouts/ (5 functions, 5 interfaces)
+│   ├── layout/             #   src/layout/ (shell 推导 + AppShell/AppHeader/AppSidebar/AppMain)
 │   ├── pages/             #   src/pages/ (10 functions)
 │   ├── config/            #   src/config/ (7 types)
 │   └── helper/            #   src/helper/ (re-exports from api/)
@@ -294,7 +302,7 @@ docs/
 | `src/stores/*.ts` | `pnpm docs:gen:api` |
 | `src/hooks/*.ts` | `pnpm docs:gen:api` |
 | `src/utils/*.ts` | `pnpm docs:gen:api` |
-| `src/AppLayouts/*.tsx` | `pnpm docs:gen:api` |
+| `src/layout/*.tsx` | `pnpm docs:gen:api` |
 | `src/pages/*` | `pnpm docs:gen:api` |
 | `src/config/*.ts` | `pnpm docs:gen:api` |
 | `src/helper/*.ts` | `pnpm docs:gen:api` |

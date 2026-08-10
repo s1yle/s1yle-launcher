@@ -68,7 +68,7 @@ const PartitionBar = ({
   const textCls = `absolute top-0 block text-left whitespace-nowrap ${truncate ? 'truncate' : ''}`;
   // 分级：标题小字（text-xs）/ 数据文本（text-sm，更醒目）
   const labelTextCls = `${textCls} text-xs text-(--color-text-tertiary)`;
-  const dataTextCls = `${textCls} text-base text-(--color-text-secondary)`;
+  const dataTextCls = `${textCls} text-sm text-(--color-text-secondary)`;
 
   // 各分区起点累计百分比（label/条体/数据三行共用同一刻度算法）
   const starts = parts.map((_, i) =>

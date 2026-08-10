@@ -11,7 +11,7 @@ import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-type LayoutMode = "NORMAL" | "FULLSCREEN";
+type LayoutMode = "NORMAL" | "FULLSCREEN" | "NATIVE_HEADER";
 
 interface RouteConfig {
   path: string;

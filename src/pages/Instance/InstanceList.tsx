@@ -149,6 +149,7 @@ const InstanceList: React.FC = () => {
                 onRename={() => { }}
                 onDelete={() => handleDelete(instance.id, instance.name)}
                 onOpenFolder={() => handleOpenFolder(instance.path)}
+                onSettings={() => navigate(`/instance-manage/${instance.id}/game-settings`)}
                 index={index}
               />
             </motion.div>

@@ -69,7 +69,7 @@ export function Slider({
   const hasHeader = displayValue !== undefined;
 
   return (
-    <div className={`space-y-2 ${className}`}>
+    <div className={`${className}`}>
       {/* 展示形态头部：label 左侧 + 只读值右侧 */}
       {hasHeader && (
         <div className="flex items-center justify-between">
@@ -114,7 +114,7 @@ export function Slider({
               onBlur={submitEditor}
               onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
               disabled={disabled}
-              className="w-14 px-1.5 py-1.5 text-center text-xs
+              className="w-14 px-1 py-1 text-center text-xs
                 bg-(--color-input) border border-(--color-border) rounded
                 text-(--color-text-primary) placeholder:text-(--color-text-tertiary)
                 focus:outline-none focus:ring-2 focus:ring-(--color-primary)

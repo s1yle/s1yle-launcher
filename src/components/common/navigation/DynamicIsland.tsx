@@ -7,7 +7,8 @@ import { useAdminStore } from '@/stores/adminStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useNavStore } from '@/stores/navStore';
 import { useNotification, ConfirmPopup } from '@/components/common';
-import { getNavItemsByRole, type NavItem } from '@/config/navigationConfig';
+import { getNavItemsByRole } from '@/router/nav';
+import { NavItem, SidebarGroup } from '@/router/models';
 import { autoJumpToFirstChild, findRouteByPath, routes } from '@/router/config';
 
 /** 灵动岛导航组件 Props */
@@ -198,6 +199,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
     icon: Home,
     path: '/',
     roles: [UserRole.PLAYER, UserRole.ADMIN],
+    group: SidebarGroup.NONE,
   };
 
   const handleLogout = async () => {
@@ -658,7 +660,8 @@ let def_item: NavItem = {
   label: '未知',
   icon: FileQuestionMark,
   path: '未知',
-  roles: [UserRole.PLAYER]
+  roles: [UserRole.PLAYER],
+  group: SidebarGroup.NONE,
 }
 
 /** 动态导航项组件，渲染灵动岛中的单个导航按钮，带活动指示器动画 */

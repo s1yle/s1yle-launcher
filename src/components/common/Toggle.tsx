@@ -40,7 +40,7 @@ const Toggle = ({
   disabled = false,
   id,
   hoverable = true,
-  bgHidden = false,
+  bgHidden = true,
 }: ToggleProps) => {
 
   // Settings Panel上下文
@@ -55,41 +55,39 @@ const Toggle = ({
           `${!isInsideItem && !bgHidden && 'bg-(--color-surface) '}`,
           `${isInsideItem && 'rounded-(--radius-full)'}`,
           'inline-flex items-center justify-between gap-2',
-          `w-full px-3 py-2 ${hoverable && 'hover:bg-(--color-surface-hover)'} `,
+          `w-full ${isInsideItem ? 'px-2' : 'px-4'} py-2 ${hoverable && 'hover:bg-(--color-surface-hover)'} `,
           disabled && 'opacity-50 cursor-not-allowed',
         )}
       >
 
-        {/* L3 控件标签：min-w-0 允许窄窗口换行而不溢出，避免挤压开关按钮 */}
+        {/* L3 控件标签：nowrap 防止窄窗口被挤压成竖排 */}
         {label && (
           <motion.span
-            className='font-light text-sm min-w-0'
+            className='font-light text-sm min-w-0 whitespace-nowrap'
           >
             {label}
           </motion.span>
         )}
 
-        {/* 按钮 */}
-        <motion.div
-          className='rounded-(--radius-2xl) bg-(--color-surface)
-                w-13 h-6 cursor-pointer relative'
-          style={{ backgroundColor: checked ? 'var(--color-surface-active)' : 'var(--color-info-bg)' }}
+        {/* 按钮：轨道颜色用 CSS transition 平滑过渡，滑块用 spring 弹性位移 + 按压缩放 */}
+        <motion.button
+          type="button"
+          role="switch"
+          aria-checked={checked}
+          aria-disabled={disabled}
+          disabled={disabled}
+          className='w-13 h-6 rounded-(--radius-full) relative cursor-pointer shrink-0 transition-colors duration-200'
+          style={{ backgroundColor: checked ? 'var(--color-primary)' : 'var(--color-info-bg)' }}
           id={id}
           onClick={() => onChange(!checked)}
-          aria-disabled={disabled}
         >
-
-          <motion.div
-            className='w-6 h-6
-                bg-(--color-info) rounded-(--radius-full)
-                right-0'
-            animate={{ position: checked ? 'absolute' : '' }}
-            transition={{ type: 'spring' }}
-          >
-
-          </motion.div>
-
-        </motion.div>
+          <motion.span
+            className='absolute top-0 left-0 w-6 h-6 bg-(--color-surface) rounded-(--radius-full) shadow-sm'
+            animate={{ x: checked ? 28 : 0 }}
+            whileTap={{ scale: 0.85 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+          />
+        </motion.button>
       </motion.div>
     </AnimatePresence>
   );

@@ -23,11 +23,6 @@ export { default as VersionCard } from './Version/VersionCard';
 /** 版本卡片 Props */
 export type { VersionCardProps } from './Version/VersionCard';
 
-/** 实例卡片组件 */
-export { default as InstanceCard } from './Instance/InstanceCard';
-/** 实例卡片 Props */
-export type { InstanceCardProps } from './Instance/InstanceCard';
-
 /** 实例列表项组件 */
 export { default as InstanceListItem } from './Instance/InstanceListItem';
 
@@ -167,16 +162,6 @@ export type { DynamicIslandProps } from '@/components/common/navigation/DynamicI
 export { default as DynamicItem } from '@/components/common/navigation/DynamicIsland';
 /** 动态导航项 Props */
 export type { DynamicItemProps } from '@/components/common/navigation/DynamicIsland';
-
-/** 设置项组件 */
-export { default as SettingItem } from '@/components/common/settings/SettingItem';
-/** 设置项 Props */
-export type { SettingItemProps } from '@/components/common/settings/SettingItem';
-
-/** 设置区块组件 */
-export { default as SettingsSection } from '@/components/common/settings/SettingsSection';
-/** 设置区块 Props */
-export type { SettingsSectionProps } from '@/components/common/settings/SettingsSection';
 
 /** 列表项组件（复合组件，含 Left / Right / Title / Description / Tag） */
 export { default as ListItem } from '@/components/common/settings/ListItem'

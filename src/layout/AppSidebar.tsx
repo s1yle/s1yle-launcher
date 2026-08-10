@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { UIMode } from '../stores/uiModeStore'
 import { SmartSidebar } from '../components/common'
 import useLayoutStore from '@/stores/layoutStore';
 
 /** AppSidebar 组件的 Props */
 export interface AppSidebarProps {
-  mode: UIMode;
-  transitionDuration?: number;
   handleMenuClick: (targetPath: string) => void;
   footer: React.ReactNode;
+  /** 是否为页面自带侧边栏（显示当前菜单子项） */
+  ownSidebar?: boolean;
 }
 
 const SIDEBAR_MIN_WIDTH = 180;
@@ -18,6 +17,7 @@ const SIDEBAR_MAX_WIDTH = 400;
 const AppSidebar = ({
   handleMenuClick,
   footer,
+  ownSidebar = false,
 }: AppSidebarProps) => {
 
   const sidebarWidth = useLayoutStore((s) => s.sidebarWidth);
@@ -62,7 +62,7 @@ const AppSidebar = ({
 
   return (
     <div className="AppSidebar h-full flex flex-col overflow-hidden border- border-[var(--color-border)] relative">
-      <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} footer={footer} />
+      <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} footer={footer} ownSidebar={ownSidebar} />
       <div
         className="absolute right-0 top-0 bottom-0 w-1
           cursor-col-resize hover:bg-[var(--color-primary)]

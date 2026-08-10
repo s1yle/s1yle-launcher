@@ -10,7 +10,7 @@
     "src/hooks/index.ts",
     "src/utils/index.ts",
     "src/helper/index.ts",
-    "src/AppLayouts/index.ts",
+    "src/layout/index.ts",
     "src/router/models.ts"
   ],
   "out": "docs/api/auto",

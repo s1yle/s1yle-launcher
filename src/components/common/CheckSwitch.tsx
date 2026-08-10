@@ -45,7 +45,7 @@ const CheckSwitch = ({
       disabled={disabled}
       onClick={() => onChange?.(!checked)}
       className={cn(
-        'inline-flex items-center gap-2 cursor-pointer select-none transition-opacity',
+        'inline-flex items-center gap-1 cursor-pointer select-none transition-opacity',
         disabled && 'opacity-50 cursor-not-allowed',
         !disabled && 'hover:opacity-80',
         className
@@ -53,7 +53,7 @@ const CheckSwitch = ({
     >
       <span
         className={cn(
-          'w-5 h-5 rounded-(--radius-sm) flex items-center justify-center shrink-0 transition-colors',
+          'w-3 h-3 flex items-center justify-center shrink-0 transition-colors',
           checked
             ? 'bg-(--color-primary)'
             : 'bg-(--color-surface-active) border border-(--color-border)'
@@ -73,9 +73,9 @@ const CheckSwitch = ({
           )}
         </AnimatePresence>
       </span>
-      {/* L3 控件标签：text-sm font-light（与 Toggle 标签同级），min-w-0 允许窄窗口换行而不溢出 */}
+      {/* L3 控件标签：text-sm font-light（与 Toggle 标签同级），nowrap 防挤压成竖排 */}
       {label && (
-        <span className="text-sm font-light text-(--color-text-primary) min-w-0">
+        <span className="text-sm font-light text-(--color-text-primary) min-w-0 whitespace-nowrap">
           {label}
         </span>
       )}

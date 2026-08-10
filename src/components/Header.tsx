@@ -3,7 +3,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Minus, X } from 'lucide-react';
-import { IconButton, useNotification, getErrorMessage } from './common';
+import { IconButton, useNotification, getErrorMessage, Page, PageSection } from './common';
 import { getParentPath } from '../router/config';
 
 interface HeaderProps {

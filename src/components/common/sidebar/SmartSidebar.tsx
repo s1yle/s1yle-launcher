@@ -2,7 +2,7 @@ import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { AnimatePresence, motion, type Variants } from 'framer-motion';
-import { getSidebarGroups, routes, sidebarMenuItems, SidebarMenuItem, findRouteByPath, SidebarGroup, pagesWithOwnSidebar, autoJumpToFirstChild } from '../../../router/config';
+import { getSidebarGroups, routes, sidebarMenuItems, SidebarMenuItem, findRouteByPath, SidebarGroup, autoJumpToFirstChild } from '../../../router/config';
 import BaseSidebarLayout from './layouts/BaseSidebarLayout';
 import { logger } from '../../../helper/logger';
 import { openUrl, openFolder } from '../../../helper/rustInvoke';
@@ -21,10 +21,12 @@ export interface SmartSidebarProps {
   showAllGroups?: boolean;
   footer?: React.ReactNode;
   header?: React.ReactNode;
+  /** 是否为页面自带侧边栏（显示当前菜单的子项），否则显示所有顶级菜单 */
+  ownSidebar?: boolean;
 }
 
 /** 智能侧边栏组件，根据当前路由自动切换菜单项，支持动态文件夹和右键菜单 */
-const SmartSidebar = ({ onMenuClick = () => {}, footer, header }: SmartSidebarProps) => {
+const SmartSidebar = ({ onMenuClick = () => {}, footer, header, ownSidebar = false }: SmartSidebarProps) => {
   const location = useLocation();
   const { t } = useTranslation();
   const groups = getSidebarGroups();
@@ -68,9 +70,6 @@ const SmartSidebar = ({ onMenuClick = () => {}, footer, header }: SmartSidebarPr
     return !!(item.children && item.children.length > 0);
   };
 
-  // 判断当前是否在 instance-manage 页面（支持动态参数）
-  const isInstanceManagePage = location.pathname.startsWith('/instance-manage/');
-
   const knownFolders = useInstanceStore(s => s.knownFolders);
   const removeKnownFolder = useInstanceStore(s => s.removeKnownFolder);
   const { success, error: notifyError } = useNotification();
@@ -80,9 +79,6 @@ const SmartSidebar = ({ onMenuClick = () => {}, footer, header }: SmartSidebarPr
   const [deletingName, setDeletingName] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [ _setCurrentMenuItem] = useState();
-
-  // 渲染子侧边栏
-  // if (pagesWithOwnSidebar.some(path => location.pathname.startsWith(path)) || isInstanceManagePage) {
 
   // 获取到 current 及 parent 的SidebarMenuItem
   const findMenuItemsByPath = (path: string): { current: SidebarMenuItem | undefined, parent: SidebarMenuItem | undefined } => {
@@ -113,7 +109,7 @@ const SmartSidebar = ({ onMenuClick = () => {}, footer, header }: SmartSidebarPr
   let sidebarItems: SidebarMenuItem[] = [];
 
   // 1. 先判断是否有独立侧边栏
-  const hasOwnSidebar = pagesWithOwnSidebar.some(path => location.pathname.startsWith(path)) || isInstanceManagePage;
+  const hasOwnSidebar = ownSidebar;
 
   // 2. 根据是否有独立侧边栏来决定显示什么
   if (hasOwnSidebar) {

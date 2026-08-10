@@ -41,8 +41,6 @@ interface NavState {
   previousPath: string | null;
   /** 是否正在导航中（用于过渡动画） */
   isNavigating: boolean;
-  /** 侧边栏是否可见 */
-  sidebarVisible: boolean;
   /** 页面切换动画方向 */
   direction: NavDirection;
   /** 拖拽预览状态 */
@@ -54,8 +52,6 @@ interface NavState {
   setPreviousPath: (path: string | null) => void;
   /** 设置导航状态 */
   setNavigating: (navigating: boolean) => void;
-  /** 设置侧边栏可见性 */
-  setSidebarVisible: (visible: boolean) => void;
   /** 设置页面切换方向 */
   setDirection: (direction: NavDirection) => void;
   /** 设置拖拽预览状态 */
@@ -79,7 +75,6 @@ export const useNavStore = create<NavState>((set, get) => ({
   currentPath: '/',
   previousPath: null,
   isNavigating: false,
-  sidebarVisible: true,
   direction: null,
   dragPreview: null,
 
@@ -93,10 +88,6 @@ export const useNavStore = create<NavState>((set, get) => ({
 
   setNavigating: (navigating: boolean) => {
     set({ isNavigating: navigating });
-  },
-
-  setSidebarVisible: (visible: boolean) => {
-    set({ sidebarVisible: visible });
   },
 
   setDirection: (direction: NavDirection) => {

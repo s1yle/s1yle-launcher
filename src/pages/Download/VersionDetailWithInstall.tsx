@@ -4,7 +4,6 @@ import { useRouteParams } from '@/router/routeParams';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft,
   Box,
   Check,
   ChevronDown,
@@ -32,10 +31,7 @@ import {
 import { useNotification } from '@/components/common';
 import { useDownloadStore } from '../../stores/downloadStore';
 import { refreshAll } from '../../stores/refreshStore';
-import { useUIModeStore, UIMode } from '../../stores/uiModeStore';
 import { useNavStore } from '../../stores/navStore';
-import { getJavaRequirement } from '../../utils/modloaderCompat';
-
 type LoaderKey = 'vanilla' | 'forge' | 'neoforge' | 'fabric' | 'optifine';
 
 interface LoaderEntry {
@@ -94,7 +90,6 @@ const VersionDetailWithInstall: React.FC = () => {
   const startDownloadProgress = useDownloadStore(s => s.startDownloadProgress);
   const errorDownloadProgress = useDownloadStore(s => s.errorDownloadProgress);
   const basePath = useDownloadStore(s => s.basePath);
-  const uiMode = useUIModeStore(s => s.mode);
   const setCurrentPath = useNavStore(s => s.setCurrentPath);
 
   const [instanceName, setInstanceName] = useState('');
@@ -188,11 +183,6 @@ const VersionDetailWithInstall: React.FC = () => {
     setExpanded(null);
   }, []);
 
-  const handleBack = useCallback(() => {
-    navigate('/download/game');
-    setCurrentPath('/download/game');
-  }, [navigate, setCurrentPath]);
-
   const handleStart = useCallback(async () => {
     if (starting) return;
     if (!versionId) return;
@@ -227,44 +217,8 @@ const VersionDetailWithInstall: React.FC = () => {
     }
   }, [versionId, instanceName, selected, starting, startDownloadProgress, errorDownloadProgress, info, notifyError, navigate, setCurrentPath, t]);
 
-  const isIsland = uiMode === UIMode.ISLAND;
-  const javaReq = versionId ? getJavaRequirement(versionId) : null;
-
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-[var(--color-bg-primary)] relative">
-      {/* 顶部拖曳栏 */}
-      <div
-        className="h-12 flex-shrink-0 flex items-center gap-3 px-4 border-b border-[var(--color-border)] bg-[var(--color-surface-solid)]"
-        data-tauri-drag-region="true"
-      >
-        {isIsland && (
-          <motion.button
-            whileHover={{ scale: 1.08 }}
-            whileTap={{ scale: 0.92 }}
-            onClick={handleBack}
-            className="p-2 rounded-lg bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-active)] transition-colors cursor-pointer"
-            title={t('download.install.back')}
-            data-tauri-drag-region="false"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </motion.button>
-        )}
-        <span className="text-sm font-semibold text-[var(--color-text-primary)] select-none">
-          {t('download.install.title')}
-        </span>
-        {versionId && (
-          <span className="px-2 py-0.5 rounded-full text-xs font-mono font-medium bg-[var(--color-primary-bg)] text-[var(--color-primary)]">
-            {versionId}
-          </span>
-        )}
-        <div className="flex-1" data-tauri-drag-region="true" />
-        {javaReq !== null && (
-          <span className="text-xs text-[var(--color-text-tertiary)] hidden sm:block select-none" data-tauri-drag-region="true">
-            {t('download.install.compatibility.javaVersionRequired', { version: javaReq })}
-          </span>
-        )}
-      </div>
-
+    <div className="h-full flex flex-col overflow-hidden bg-[var(--color-bg-primary)] relative">
       {/* 滚动内容区 */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-3xl mx-auto px-6 py-6 space-y-5 pb-10">

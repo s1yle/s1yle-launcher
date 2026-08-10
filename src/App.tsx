@@ -26,66 +26,38 @@
 // 玩家身份需要使用正版/离线/第三方登录，每个玩家账户数据互相隔离(除了游戏实例)
 // 根据以上实现适合的账户界面初步 ui 设计
 
-import { useEffect, useCallback, useRef, useMemo } from 'react';
+import { useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, useLocation, useNavigate } from 'react-router-dom';
-import { routes, findRouteByPath, LayoutMode, pagesWithOwnSidebar, SidebarGroup } from './router/config';
+import { routes, findRouteByPath } from './router/config';
 import { useNavStore } from './stores/navStore';
 import { useLastVisitedStore } from './stores/lastVisitedStore';
 import { useThemeStore } from './stores/themeStore';
 import { useAppStore } from './stores/appStore';
 import { useInstanceStore } from './stores/instanceStore';
 import { useDownloadStore } from './stores/downloadStore';
-import { UIMode, useUIModeStore } from './stores/uiModeStore';
+import { useUIModeStore } from './stores/uiModeStore';
 import { logger } from './helper/logger';
 import { useWindowPosition } from './hooks/useWindowPosition';
 import GlobalDownloadBar from './components/GlobalDownloadBar';
 import { BackgroundLayer } from './components/common/BackgroundLayer';
 import ErrorBoundary from './components/common/ErrorBoundary';
-import {  GlobalLoadingBar } from './components/common';
+import { GlobalLoadingBar } from './components/common';
 import './helper/i18n';
-import { PanelLeft, PanelLeftOpen } from 'lucide-react';
-import ClassicLayout from './AppLayouts/ClassicLayout';
-import IslandLayout from './AppLayouts/IslandLayout';
-import AppHeader from './AppLayouts/AppHeader';
-import AppSidebar from './AppLayouts/AppSidebar';
-import AppMain from './AppLayouts/AppMain';
-import { DURATION } from './utils/animations';
+import { AppShell, resolveShell } from './layout';
 import { useAuthStore } from './stores/authStore';
 import { useAdminStore } from './stores/adminStore';
-import { useFontStore, useLayoutStore } from './stores';
+import { useFontStore } from './stores';
 import { invokeRustFunction } from './api/client';
 
-const LAYOUT_MODES = {
-  [UIMode.CLASSIC]: ClassicLayout,
-  [UIMode.ISLAND]: IslandLayout,
-}
-
 const MainLayout = () => {
-  // location 和 navigate 钩子 Hook
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Nav Store 模式
   const setCurrentPath = useNavStore((s) => s.setCurrentPath);
-
   const { mode: uiMode } = useUIModeStore();
 
-
-  // 获取 sidebar 的收起/展开 状态
-  const isSidebarCollapsed = useLayoutStore((s) => s.isSidebarCollapsed);
-  const setIsSidebarCollapsed = useLayoutStore((s) => s.setIsSidebarCollapsed);
-
-
   const currentRoute = findRouteByPath(location.pathname, routes) || routes[0];
-
-  const isFullscreen = currentRoute.layoutMode === LayoutMode.FULLSCREEN;
-  const isNoSidebarRoute = currentRoute.sidebarGroup === SidebarGroup.NONE;
-
-  const isInstanceManagePage = location.pathname.startsWith('/instance-manage/');
-  const hasOwnSidebar = uiMode === UIMode.ISLAND && !isNoSidebarRoute && (
-    pagesWithOwnSidebar.some(path => location.pathname.startsWith(path)) ||
-    isInstanceManagePage
-  );
+  const shell = resolveShell(uiMode, currentRoute);
 
   const executeNavigation = useCallback((path: string) => {
     setCurrentPath(path);
@@ -158,116 +130,14 @@ const MainLayout = () => {
     }
   }, [location.pathname, setCurrentPath]);
 
-
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
   };
 
-  const pendingRestoreRef = useRef(false);
-
-  const effectiveSidebarCollapsed = useMemo(() => {
-    if (uiMode !== UIMode.ISLAND) return isSidebarCollapsed;
-
-    if (!hasOwnSidebar) {
-      if (!isSidebarCollapsed) {
-        pendingRestoreRef.current = true;
-      }
-      return true;
-    }
-
-    if (pendingRestoreRef.current) {
-      pendingRestoreRef.current = false;
-      return false;
-    }
-
-    return isSidebarCollapsed;
-  }, [uiMode, hasOwnSidebar, isSidebarCollapsed]);
-
-  const toggleSidebar = useCallback(() => {
-    setIsSidebarCollapsed(!effectiveSidebarCollapsed);
-  }, [effectiveSidebarCollapsed, setIsSidebarCollapsed]);
-
-  const shouldShowSidebar = !isFullscreen && !effectiveSidebarCollapsed;
-
-  const sidebarFooter = (
-    <button
-      onClick={toggleSidebar}
-      className="w-full flex items-center gap-2 
-          px-3 py-2 rounded-md text-sm 
-          text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] 
-          hover:bg-[var(--color-surface-hover)] transition-colors"
-      title={effectiveSidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}
-    >
-      <PanelLeft className="w-4 h-4" />
-      <span>收起侧边栏</span>
-    </button>
-  );
-
-  const collapsedToggleButton = effectiveSidebarCollapsed && (
-    (uiMode === UIMode.CLASSIC && !isFullscreen) ||
-    (uiMode === UIMode.ISLAND && hasOwnSidebar)
-  ) && (
-      <button
-        onClick={toggleSidebar}
-        className="fixed left-3 top-1/2 -translate-y-1/2 z-20 p-2 
-        rounded-md bg-[var(--color-surface)] 
-        border border-[var(--color-border)] 
-        text-[var(--color-text-secondary)] 
-        hover:text-[var(--color-text-primary)] 
-        hover:bg-[var(--color-surface-hover)] 
-        transition-colors shadow-md cursor-pointer"
-        title="展开侧边栏"
-      >
-        <PanelLeftOpen className="w-4 h-4" />
-      </button>
-    );
-
-  const CurrentLayout = LAYOUT_MODES[uiMode];
-
-  const showSidebar = useMemo(() => {
-    if (uiMode === UIMode.CLASSIC) return shouldShowSidebar;
-    if (uiMode === UIMode.ISLAND) return hasOwnSidebar && !effectiveSidebarCollapsed;
-    return false;
-  }, [uiMode, shouldShowSidebar, hasOwnSidebar, effectiveSidebarCollapsed]);
-
-  const canHaveSidebar = uiMode === UIMode.CLASSIC
-    ? !isFullscreen
-    : hasOwnSidebar;
-
-  const sidebarElement = canHaveSidebar ? (
-    <AppSidebar mode={uiMode} transitionDuration={DURATION.SIDEBAR_TRANSITION} handleMenuClick={handleMenuClick} footer={sidebarFooter} />
-  ) : undefined;
-
-  const layoutProps = {
-    header: <AppHeader mode={uiMode} currentRoute={currentRoute} handleMenuClick={handleMenuClick} isFullscreen={isFullscreen} />,
-    collapsedToggleButton: collapsedToggleButton,
-  }
-
-  function renderPage() {
-    // 灵动岛全屏模式：不套布局（无 80px 顶部留白），由页面自绘顶部拖曳栏
-    if (isFullscreen && uiMode === UIMode.ISLAND) {
-      return (
-        <>
-          <AppHeader mode={uiMode} currentRoute={currentRoute} handleMenuClick={handleMenuClick} isFullscreen />
-          <AppMain showSidebar={false} />
-        </>
-      );
-    }
-
-    return (
-      <CurrentLayout {...layoutProps as any}>
-        <AppMain
-          showSidebar={showSidebar}
-          sidebarElement={sidebarElement}
-        />
-      </CurrentLayout>
-    )
-  }
-
   return (
     <div className="renderpage h-screen flex flex-col" onContextMenu={handleContextMenu}>
-      {renderPage()}
-    </div >
+      <AppShell shell={shell} route={currentRoute} handleMenuClick={handleMenuClick} />
+    </div>
   );
 };
 

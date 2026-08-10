@@ -17,24 +17,18 @@ export {
 // routes
 export { routes } from './routes'
 
-// sidebarMenus
-export { sidebarMenuItems } from './sidebarMenus'
+// sidebarMenus（由 routes 派生）
+export { sidebarMenuItems } from './menu'
+
+// nav（由 routes 派生）
+export { getNavItemsByRole } from './nav'
 
 // 工具函数和依赖数据的函数
 import { routes } from './routes';
-import { sidebarMenuItems } from './sidebarMenus';
+import { sidebarMenuItems } from './menu';
 import type { RouteConfig, SidebarMenuItem } from './models';
 import { SidebarGroup } from './models';
 import { useLastVisitedStore } from '../stores/lastVisitedStore';
-
-/** 拥有自己独立侧边栏的页面路径列表 */
-export const pagesWithOwnSidebar = [
-  '/account',
-  '/download',
-  '/game-settings',
-  '/instance-list',
-  '/settings'
-];
 
 /**
  * 获取指定路径的父路径

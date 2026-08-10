@@ -22,6 +22,15 @@ import CheckSwitch from "../CheckSwitch";
  *
  * 控件高度约定：方形交互件（DropDown 按钮 / Input 输入框与浏览按钮）统一 28px
  * （py-1 + text-sm 行高 20px，或 py-1.5 + text-xs 行高 16px）。
+ *
+ * ## 布局契约（改样式前必读，水平 padding 只归容器管）
+ * - 容器负责水平 padding：Item（px-4 py-2）、独立使用的 Sub（px-4 py-1.5）。
+ *   因此任意行/控件左缘恒为 16px（与面板标题同缘），控件区右缘距面板右缘恒为 16px。
+ * - 行级控件（DropDown / Input / CheckSwitch / Row）一律零水平 padding、零背景，
+ *   禁止在它们内部再写 px-*；Row 的 children 是 flex 行布局，多控件自动并排。
+ * - Sub 在 Item 内为 px-0（水平继承 Item），独立使用时自带 px-4 + 卡片背景。
+ * - Toggle 唯一特殊：独立使用 = 卡片（px-4 + hover 背景），容器内 = 内联（px-0）。
+ * - 垂直间距：默认靠各行自身 py（行间紧贴），需要松散间距时显式传 Root 的 gap（如 gap={12}）。
  */
 
 
@@ -39,7 +48,7 @@ const SettingsPanelRoot = ({
   label,
   children,
   className,
-  gap = 20,
+  gap = 0,
   overflowHidden = true,
   disabled = false,
   ...rest
@@ -57,18 +66,18 @@ const SettingsPanelRoot = ({
             ${className}`}
           {...rest}
         >
-        {/* L1 面板大标题：text-base font-medium（16px） */}
-        <div
-          className="px-4 py-2.5 border-b q
+          {/* L1 面板大标题：text-base font-medium（16px） */}
+          <div
+            className="px-4 py-2.5 border-b q
             hover:border-(--color-border-hover) border-(--color-border)"
-        >
-          <span className="text-(--color-text-primary) text-base font-medium">
-            {label}
-          </span>
-        </div>
+          >
+            <span className="text-(--color-text-primary) text-base font-medium">
+              {label}
+            </span>
+          </div>
 
-          {/* 页面内容 */}
-          <div style={{ gap: `${gap}px` }}>
+          {/* 页面内容：flex-col + gap（默认 0，按需传 gap 拉开间距） */}
+          <div className="flex flex-col" style={{ gap: `${gap}px` }}>
             {children}
           </div>
         </motion.div>
@@ -123,9 +132,8 @@ const SettingsPanelItem = ({
             <Spinner active={isLoading}>
               <div
                 className={`gap
-                  bg-(--color-surface)
                   ${hoverable && 'hover:bg-(--color-surface-hover)'}
-                  ${noPadding ? "" : "px-3 py-2"}
+                  ${noPadding ? "" : "px-4 py-2"}
                   ${isDisabled ? 'opacity-50 pointer-events-none select-none' : ''}
                   ${className || ""}
                 `}
@@ -173,12 +181,12 @@ const SubSettingsPanelItem = ({
     <SettingsPanelDisabledContext.Provider value={isDisabled}>
       <div
         className={`${isDisabled ? 'opacity-50 pointer-events-none select-none' : ''} ${isInsideItem ?
-          // 在容器中
-          !noPadding && 'px-1 py-1' :
+          // 在容器中：水平 padding 归 Item 管，仅留纵向
+          !noPadding && 'px-0' :
           //  不在容器中
-          !noPadding && 'px-3 py-1.5'} 
+          !noPadding && 'px-4 py-1.5'} 
                   ${isInsideItem ? '' : 'bg-(--color-surface)'}
-          //border-b //border-b-(--color-border)`
+          /border-b border-b-(--color-border)`
         }
       >
         {/* L2 分区小标题：text-sm + 次要色（14px） */}
@@ -192,7 +200,7 @@ const SubSettingsPanelItem = ({
         {/* 单独使用：if !noPadding padding + 背景 / 在容器中：无padding + 无背景 */}
         <SettingsPanelItemContext.Provider value={contextValue}>
           <div
-            className={`${className || ""} pt-1.5 pb-2 grid`}
+            className={`pt-1.5 ${className || ""} grid`}
             style={{ gap: `${gap}` }}
           >
             {children}
@@ -217,28 +225,21 @@ const SettingsPanelInput = ({
   browseLabel,
 }: SettingsPanelInputProps) => {
   const { t } = useTranslation();
-  const { isInsideItem } = React.useContext(SettingsPanelItemContext);
 
   return (
     <motion.div
       className={`
-        flex justify-between items-center gap-x-4
-        ${isInsideItem ?
-          // 在容器中
-          'px-1 py-1' :
-          //  不在容器中
-          'px-3 py-1.5'} 
-              ${isInsideItem ? '' : 'bg-(--color-surface)'}`
-      }
+        flex justify-between items-center gap-x-4 py-1
+      `}
     >
-      {/* L3 控件标签：text-sm font-light（与 Toggle/CheckSwitch 标签同级） */}
-      {label && (
-        <motion.span
-          className={`
-            font-light text-sm
-            block shrink-0
-          `}
-        >
+{/* L3 控件标签：text-sm font-light（与 Toggle/CheckSwitch 标签同级），nowrap 防挤压成竖排 */}
+        {label && (
+          <motion.span
+            className={`
+              font-light text-sm whitespace-nowrap
+              block shrink-0
+            `}
+          >
           {label}
         </motion.span>
       )}
@@ -285,19 +286,11 @@ const SettingsPanelCheckSwitch = ({
   disabled = false,
   className,
 }: SettingsPanelCheckSwitchProps) => {
-  const { isInsideItem } = React.useContext(SettingsPanelItemContext);
-
   return (
     <motion.div
       className={`
-        flex justify-between items-center
-        ${isInsideItem ?
-          // 在容器中
-          'px-1 py-1' :
-          //  不在容器中
-          'px-3 py-1.5'} 
-              ${isInsideItem ? '' : 'bg-(--color-surface)'}`
-      }
+        flex justify-between items-center py-1
+      `}
     >
       <CheckSwitch
         checked={checked}
@@ -326,26 +319,18 @@ const SettingsPanelDropDown = ({
   searchPlaceholder,
   disabled = false,
 }: SettingsPanelDropDownProps) => {
-  const { isInsideItem } = React.useContext(SettingsPanelItemContext);
-
   return (
     <AnimatePresence>
       <motion.div
         className={`
-          flex justify-between items-center gap-x-4
+          flex justify-between items-center gap-x-4 py-1
           ${disabled ? 'opacity-50 pointer-events-none select-none' : ''}
-          ${isInsideItem ?
-            // 在容器中
-            'px-1 py-1' :
-            //  不在容器中
-            'px-3 py-1.5'} 
-                ${isInsideItem ? '' : 'bg-(--color-surface)'}`
-        }
+        `}
       >
-        {/* L3 控件标签：text-sm font-light（与 Input 标签同级），shrink-0 防止按钮挤压文字 */}
+        {/* L3 控件标签：text-sm font-light（与 Input 标签同级），shrink-0+nowrap 防挤压换行 */}
         <motion.span
           className={`
-            font-light text-sm
+            font-light text-sm whitespace-nowrap
             block shrink-0
           `}
         >
@@ -368,6 +353,53 @@ const SettingsPanelDropDown = ({
   )
 }
 
+import { ReactNode } from 'react';
+
+/** 设置项组件 Props */
+export interface SettingRowProps {
+  label: string;
+  labelI18nKey?: string;
+  description?: string;
+  descriptionI18nKey?: string;
+  children: ReactNode;
+  className?: string;
+}
+
+/** 设置项组件，包含标签、描述和子控制区（零水平 padding，左缘由容器保证 16px） */
+const SettingRow = ({
+  label,
+  description,
+  children,
+  className = '',
+}: SettingRowProps) => {
+  return (
+    <div
+      className={`
+        setting-row flex flex-wrap items-center gap-x-4 gap-y-1.5 py-1.5
+        ${className}
+      `}
+    >
+      {/* 标签列：flex-1 占剩余空间推控件靠右；min-w-fit → 收缩下限是标签完整宽度（nowrap 永不换行），描述在其中自由换行 */}
+      <div className="flex-1 min-w-fit">
+        <div className="font-light text-sm whitespace-nowrap">
+          {label}
+        </div>
+        {/* 描述 */}
+        {description && (
+          <div className="text-xs text-[var(--color-text-tertiary)]">
+            {description}
+          </div>
+        )}
+      </div>
+
+      {/* 控件区：ml-auto 右对齐；空间不足时整块换行到下一行并保持右对齐 */}
+      <div className="ml-auto shrink-0 flex flex-wrap items-center justify-end gap-3">
+        {children}
+      </div>
+    </div>
+  );
+};
+
 // TODO: 为后续可能需要用到的组件（如Toggle）实现条目包装器
 /** 设置面板复合组件（含 Root / Item / Sub / Toggle / DropDown / Input / CheckSwitch） */
 export const SettingsPanel = Object.assign(SettingsPanelRoot, {
@@ -377,4 +409,5 @@ export const SettingsPanel = Object.assign(SettingsPanelRoot, {
   DropDown: SettingsPanelDropDown,
   Input: SettingsPanelInput,
   CheckSwitch: SettingsPanelCheckSwitch,
+  Row: SettingRow,
 });
