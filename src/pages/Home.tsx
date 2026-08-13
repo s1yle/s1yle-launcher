@@ -3,7 +3,7 @@ import { Crown, Mail } from 'lucide-react';
 import ActionButton from '../components/common/StartGameButton';
 import PlayerProfile from '../components/common/home/PlayerProfile';
 import { LoadingSurface, Page, PageSection } from '@/components/common';
-import { useInstanceStore } from '../stores/instanceStore';
+import { useGameStore } from '../stores/gameStore';
 import { useAdminStore } from '../stores/adminStore';
 import { useUserRoleStore, UserRole } from '../stores/userRoleStore';
 import { getCurrentAccount, type AccountInfo } from '../helper/rustInvoke';
@@ -12,7 +12,7 @@ import { useState } from 'react';
 
 /** 主页 - 显示玩家档案和快捷启动按钮 */
 const Home = () => {
-  const instance_init = useInstanceStore(s => s.init);
+  const instance_init = useGameStore(s => s.init);
   const { currentRole } = useUserRoleStore();
   const adminSession = useAdminStore((s) => s.session);
 

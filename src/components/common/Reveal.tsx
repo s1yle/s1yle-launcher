@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { type ReactNode } from 'react';
-import { EASING } from '@/utils/animations';
+import { EASING, pageSection, pageSectionSpring } from '@/utils/animations';
 
 /** 滚动显现动画组件 Props */
 export interface RevealProps {
@@ -17,16 +17,9 @@ export interface RevealProps {
 }
 
 /**
-  children,  
-  className,  
-  delay = 0,  
-  once = true,  
-  amount = 0.1,  
-  margin = '-40px',  
-  direction = 'up',  
-  distance = 24,  
-  duration = 0.5,  
-  scale = false,  
+ * 滚动显现动画组件。
+ * 默认动效与 PageSection 一致（pageSection 变体 + 弹簧过渡，单一事实源 @utils/animations）。
+ * 显式传入 duration 时退化为 tween 缓动。
  */
 export function Reveal({
   children,
@@ -36,8 +29,8 @@ export function Reveal({
   amount = 0.1,
   margin = '-40px',
   direction = 'up',
-  distance = 24,
-  duration = 0.5,
+  distance = 20,
+  duration,
   scale = false,
 }: RevealProps) {
   const offsetMap = {
@@ -50,22 +43,18 @@ export function Reveal({
   return (
     <motion.div
       initial={{
-        opacity: 0,
+        ...pageSection.initial,
         ...offsetMap[direction],
         ...(scale ? { scale: 0.95 } : {}),
       }}
       whileInView={{
-        opacity: 1,
-        x: 0,
-        y: 0,
+        ...pageSection.animate,
         ...(scale ? { scale: 1 } : {}),
       }}
       viewport={{ once, amount, margin }}
-      transition={{
-        duration,
-        delay,
-        ease: EASING.DEFAULT,
-      }}
+      transition={duration !== undefined
+        ? { duration, delay, ease: EASING.DEFAULT }
+        : { ...pageSectionSpring, delay }}
       className={className}
     >
       {children}

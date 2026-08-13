@@ -71,9 +71,11 @@ const SettingsPanelRoot = ({
             className="px-4 py-2.5 border-b q
             hover:border-(--color-border-hover) border-(--color-border)"
           >
-            <span className="text-(--color-text-primary) text-base font-medium">
-              {label}
-            </span>
+            <PageSection>
+              <span className="text-(--color-text-primary) text-base font-medium">
+                {label}
+              </span>
+            </PageSection>
           </div>
 
           {/* 页面内容：flex-col + gap（默认 0，按需传 gap 拉开间距） */}
@@ -232,14 +234,14 @@ const SettingsPanelInput = ({
         flex justify-between items-center gap-x-4 py-1
       `}
     >
-{/* L3 控件标签：text-sm font-light（与 Toggle/CheckSwitch 标签同级），nowrap 防挤压成竖排 */}
-        {label && (
-          <motion.span
-            className={`
+      {/* L3 控件标签：text-sm font-light（与 Toggle/CheckSwitch 标签同级），nowrap 防挤压成竖排 */}
+      {label && (
+        <motion.span
+          className={`
               font-light text-sm whitespace-nowrap
               block shrink-0
             `}
-          >
+        >
           {label}
         </motion.span>
       )}
@@ -354,6 +356,7 @@ const SettingsPanelDropDown = ({
 }
 
 import { ReactNode } from 'react';
+import { PageSection } from "../Page";
 
 /** 设置项组件 Props */
 export interface SettingRowProps {

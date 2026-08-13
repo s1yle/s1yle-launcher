@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Loader2, Gamepad2 } from 'lucide-react';
 import { launchInstance, stopInstance, getLaunchStatus, LaunchStatus, getCurrentAccount, getCurrentAccountToken } from '../../helper/rustInvoke';
-import { useInstanceStore } from '../../stores/instanceStore';
+import { useGameStore } from '../../stores/gameStore';
 import type { AccountInfo } from '../../helper/rustInvoke';
 
 /** 启动游戏按钮组件 Props */
@@ -16,7 +16,7 @@ const ActionButton = ({ onClick }: StartGameButtonProps) => {
   const [message, setMessage] = useState('');
   const [currentAccount, setCurrentAccount] = useState<AccountInfo | null>(null);
   
-  const selectedInstance = useInstanceStore(s => s.getSelectedInstance());
+  const selectedInstance = useGameStore(s => s.getSelectedGame());
   
   useEffect(() => {
     const loadAccount = async () => {

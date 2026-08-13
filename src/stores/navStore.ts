@@ -43,6 +43,8 @@ interface NavState {
   isNavigating: boolean;
   /** 页面切换动画方向 */
   direction: NavDirection;
+  /** direction 设置时间戳（用于判断滑动动画是否代次新鲜） */
+  directionAt: number;
   /** 拖拽预览状态 */
   dragPreview: DragPreviewState | null;
 
@@ -76,6 +78,7 @@ export const useNavStore = create<NavState>((set, get) => ({
   previousPath: null,
   isNavigating: false,
   direction: null,
+  directionAt: 0,
   dragPreview: null,
 
   setCurrentPath: (path: string) => {
@@ -91,7 +94,7 @@ export const useNavStore = create<NavState>((set, get) => ({
   },
 
   setDirection: (direction: NavDirection) => {
-    set({ direction });
+    set({ direction, directionAt: Date.now() });
   },
 
   setDragPreview: (state: DragPreviewState | null) => {

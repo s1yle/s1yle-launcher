@@ -160,6 +160,7 @@
     "allow-cancel-device-code",
     "allow-poll-and-complete-login",
     "allow-get-game-root",
-    "allow-set-game-root"
+    "allow-set-game-root",
+    "allow-scan-games"
   ]
 }

@@ -1,20 +1,21 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRouteParams } from '@/router/routeParams';
-import { useInstanceStore } from '../../../stores/instanceStore';
+import { useGameStore } from '../../../stores/gameStore';
+import { Page, PageSection } from '@/components/common';
 
 /** 实例模组管理页面（待实现） */
 const InstanceMods: React.FC = () => {
   const { instanceId } = useRouteParams();
   const navigate = useNavigate();
-  const getInstance = useInstanceStore(s => s.getInstance);
-  const setSelectedInstance = useInstanceStore(s => s.setSelectedInstance);
+  const getGame = useGameStore(s => s.getGame);
+  const setSelectedGame = useGameStore(s => s.setSelectedGame);
 
   useEffect(() => {
     if (instanceId) {
-      const inst = getInstance(instanceId);
+      const inst = getGame(instanceId);
       if (inst) {
-        setSelectedInstance(instanceId);
+        setSelectedGame(instanceId);
       } else {
         navigate('/instance-list');
       }
@@ -22,9 +23,11 @@ const InstanceMods: React.FC = () => {
   }, [instanceId]);
 
   return (
-    <div className="flex-1 flex items-center justify-center">
-      模组管理（实例：{instanceId}）
-    </div>
+    <Page className="flex-1 flex items-center justify-center">
+      <PageSection>
+        模组管理（实例：{instanceId}）
+      </PageSection>
+    </Page>
   );
 };
 

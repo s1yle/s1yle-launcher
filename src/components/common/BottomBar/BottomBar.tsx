@@ -39,11 +39,11 @@ const BottomBar = ({
             {/* 底部栏 */}
             <div
                 className="px-4 py-1 border-t border-(--color-border) 
-                    flex items-center justify-between flex-shrink-0
+                    flex items-center justify-between flex-shrink-0 max-w-full min-w-0
                     rounded-(--radius-sm) absolute right-0 bottom-0"
                 style={{ backgroundColor: 'var(--color-surface-solid)' }}
             >
-                <p style={{ color: 'var(--color-text-tertiary)' }} className="text-xs truncate">
+                <p style={{ color: 'var(--color-text-tertiary)' }} className="text-xs truncate flex-1 min-w-0">
                     {t(dir)}: <span className="font-mono">{path}</span>
                 </p>
                 {path && (

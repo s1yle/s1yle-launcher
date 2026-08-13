@@ -3,11 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { ArrowLeft, HelpCircle, Minus, X, Loader2 } from 'lucide-react';
-import { InstallCard, LoaderIcon, useNotification } from '../components/common';
+import { InstallCard, LoaderIcon, useNotification, Page, PageSection } from '../components/common';
 import { getVersionDetail, createGame, ModLoaderType, openUrl } from '../helper/rustInvoke';
 import { checkLoaderCompatibility, getWikiUrl } from '../utils/modloaderCompat';
 import { useNavStore } from '../stores/navStore';
-import { useInstanceStore } from '../stores/instanceStore';
+import { useGameStore } from '../stores/gameStore';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -32,7 +32,7 @@ const VersionInstall = () => {
   const { versionId } = useParams<{ versionId: string }>();
   const navigate = useNavigate();
   const { setCurrentPath } = useNavStore();
-  const { refresh } = useInstanceStore();
+  const { refresh } = useGameStore();
   const { success, error: notifyError, info } = useNotification();
 
   const [instanceName, setInstanceName] = useState(versionId || '');
@@ -135,7 +135,7 @@ const VersionInstall = () => {
   }
 
   return (
-    <div className="flex flex-col h-full relative overflow-hidden">
+    <Page className="flex flex-col h-full relative overflow-hidden">
       {/* Minecraft Background */}
       <div className="absolute inset-0 z-0">
         <div 
@@ -159,7 +159,7 @@ const VersionInstall = () => {
 
       {/* Content */}
       <div className="relative z-10 flex flex-col h-full">
-        <div className="p-6 border-b border-border/50 backdrop-blur-sm">
+        <PageSection className="p-6 border-b border-border/50 backdrop-blur-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <button
@@ -205,9 +205,9 @@ const VersionInstall = () => {
               placeholder={t('download.install.instanceNamePlaceholder')}
             />
           </div>
-        </div>
+        </PageSection>
 
-        <div className="flex-1 overflow-auto p-6">
+        <PageSection className="flex-1 overflow-auto p-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {loaders.map(loader => (
               <InstallCard
@@ -237,9 +237,9 @@ const VersionInstall = () => {
               />
             ))}
           </div>
-        </div>
+        </PageSection>
 
-        <div className="p-6 border-t border-border/50 backdrop-blur-sm flex justify-end">
+        <PageSection className="p-6 border-t border-border/50 backdrop-blur-sm flex justify-end">
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -260,9 +260,9 @@ const VersionInstall = () => {
               t('download.install.installButton')
             )}
           </motion.button>
-        </div>
+        </PageSection>
       </div>
-    </div>
+    </Page>
   );
 };
 

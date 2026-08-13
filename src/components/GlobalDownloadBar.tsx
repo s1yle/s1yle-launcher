@@ -17,9 +17,6 @@ const GlobalDownloadBar = () => {
   const location = useLocation();
   const downloadingVersions = useDownloadStore((s) => s.downloadingVersions);
 
-  const currentRoute = getRouteConfigByPath(location.pathname);
-  if (currentRoute?.hideGlobalDownloadBar) return null;
-
   const activeList = useMemo(() => {
     return Array.from(downloadingVersions.values()).filter((v) => v.status === 'downloading');
   }, [downloadingVersions]);
@@ -28,6 +25,9 @@ const GlobalDownloadBar = () => {
     if (activeList.length === 0) return 0;
     return activeList.reduce((acc, v) => acc + v.progress, 0) / activeList.length;
   }, [activeList]);
+
+  const currentRoute = getRouteConfigByPath(location.pathname);
+  if (currentRoute?.hideGlobalDownloadBar) return null;
 
   if (activeList.length === 0) return null;
 

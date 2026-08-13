@@ -183,7 +183,6 @@ interface NotificationToastProps {
 }
 
 const NotificationToast: React.FC<NotificationToastProps> = ({ notification, onRemove }) => {
-  console.log("Notifacation Toast: ", notification);
   const typeConfig = {
     success: { bg: 'bg-success text-text-primary', icon: <Check className="w-5 h-5" /> },
     error: { bg: 'bg-error text-text-primary', icon: <Bug className="w-5 h-5" /> },

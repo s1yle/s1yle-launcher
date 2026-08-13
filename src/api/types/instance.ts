@@ -47,7 +47,7 @@ export interface GameSettings {
 }
 
 /** 游戏实例信息 */
-export interface GameInstance {
+export interface Game {
   /** 实例 ID */
   id: string;
   /** 实例名称 */
@@ -68,6 +68,8 @@ export interface GameInstance {
   created_at: number;
   /** 是否启用 */
   enabled: boolean;
+  /** 版本是否损坏（扫描时计算：目录内缺失对应 jar 产物） */
+  broken: boolean;
   /** 实例级游戏设置 */
   game_settings?: GameSettings;
 }

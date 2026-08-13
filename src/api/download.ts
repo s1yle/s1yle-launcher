@@ -92,18 +92,6 @@ export const invokeClearCompletedTasks = async (
 };
 
 /**
- * 获取已安装的游戏版本列表
- * @param options Tauri invoke 选项
- * @returns 已安装版本 ID 列表
- */
-export const invokeGetGameVersions = async (
-  options?: InvokeOptions
-): Promise<string[]> => {
-  logger.info('获取已安装游戏版本');
-  return await invokeRust("get_game_versions", {}, options);
-};
-
-/**
  * 下载并部署完整实例（含加载器）
  * @param options 部署选项
  * @param invokeOptions Tauri invoke 选项

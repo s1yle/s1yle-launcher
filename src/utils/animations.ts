@@ -106,6 +106,28 @@ export const pageTransition: Variants = {
   exit: { opacity: 0, scale: 0.98, y: -3 },
 };
 
+/** 页面级容器入场 — 交错子区块（Page 使用，单一事实源） */
+export const pageContainer: Variants = {
+  initial: { opacity: 0 },
+  animate: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05,
+      delayChildren: DURATION.PAGE_TRANSITION,
+      ease: EASING.SMOOTH,
+    },
+  },
+};
+
+/** 页面区块入场（PageSection / Reveal 共用，单一事实源） */
+export const pageSection: Variants = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+};
+
+/** 页面区块弹簧过渡（PageSection / Reveal 共用，单一事实源） */
+export const pageSectionSpring: Transition = { type: 'spring', stiffness: 400, damping: 22 };
+
 /**
  * ## sidebarSlide — 侧边栏面板滑入/滑出（完整面板级别）
  *

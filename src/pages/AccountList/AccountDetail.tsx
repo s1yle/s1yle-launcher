@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { UserPlus, Trash2, LogIn, Star, Server, Loader2, User, Crown, Unlink, Link2, Mail, LogOut, ExternalLink, Copy, X } from "lucide-react";
+import { UserPlus, Trash2, LogIn, Star, Crown, Link2, LogOut, ExternalLink, Copy, X, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useAdminStore } from "@/stores/adminStore";
 import { useAccountSelectionStore } from "@/stores/accountSelectionStore";
 import { useLoadingAction } from "@/hooks/useLoadingAction";
-import { LoadingSurface, Reveal, SkinAvatar, ConfirmPopup, useNotification, Animated } from "@/components/common";
+import { LoadingSurface, SkinAvatar, ConfirmPopup, useNotification, Animated, Page, PageSection, SettingsPanel, EmptyState } from "@/components/common";
 import Popup from "@/components/Popup";
 import { logger } from "@/helper/logger";
 import { AccountType, cancelDeviceCode, DeviceCodeResponse, pollAndCompleteLogin, startDeviceCode } from "@/api";
@@ -44,8 +44,10 @@ const AccountDetail = () => {
   });
 
   useEffect(() => {
-    loadAccountsAction();
-  }, []);
+    if (accounts.length === 0) {
+      loadAccountsAction();
+    }
+  }, [accounts.length, loadAccountsAction]);
 
   // 无选中时自动选中 currentAccount 或第一个账户
   useEffect(() => {
@@ -123,25 +125,13 @@ const AccountDetail = () => {
     }
   };
 
-  useEffect(() => {
-    console.warn(account);
-  }, []);
-
   if (!account) {
     return (
-      <div className="p-8 flex flex-col items-center justify-center min-h-[400px] text-center">
-        <style>{`button{cursor:pointer}`}</style>
-        <User className="w-16 h-16 text-[var(--color-text-secondary)]/20 mb-4" />
-        <p className="text-[var(--color-text-secondary)] text-sm mb-6">
-          在侧边栏选择一个账户，或添加一个新账户
-        </p>
-        <button
-          onClick={() => openAddPopup()}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--color-primary)]/10 text-[var(--color-primary)] text-sm hover:bg-[var(--color-primary)]/20 transition-colors"
-        >
-          <UserPlus className="w-4 h-4" />
-          添加账户
-        </button>
+      <Page className="p-6">
+        <EmptyState
+          title="在侧边栏选择一个账户，或添加一个新账户"
+          action={{ label: "添加账户", onClick: () => openAddPopup() }}
+        />
 
         <AddAccountPopup
           isOpen={showAddPopup}
@@ -153,127 +143,137 @@ const AccountDetail = () => {
           adding={adding}
           onConfirm={handleAddAccount}
         />
-      </div>
+      </Page>
     );
   }
 
   return (
-    <div className="p-6 max-w-2xl mx-auto space-y-6">
-      <style>{`button{cursor:pointer}`}</style>
+    <Page className="p-6 max-w-2xl mx-auto">
       <LoadingSurface loadingKey="account:list" skeleton="card" skeletonCount={1}>
-        {/* 头像 & 名称 */}
-        <Reveal direction="up" distance={16} duration={0.4}>
-          <div className="flex flex-col items-center py-8">
-            <div className="w-28 h-28 mb-4">
-              <SkinAvatar uuid={account.uuid} avatarMode="isometric" size={112} />
-            </div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-[var(--color-text-primary)]">
-                {account.name}
-              </h1>
-              {isCurrent && (
-                <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-              )}
-            </div>
-            <span className="text-sm text-[var(--color-text-secondary)] mt-1">
-              {getTypeLabel(account.account_type)}
-            </span>
-          </div>
-        </Reveal>
-
-        {/* 信息卡片 */}
-        <Reveal direction="up" distance={16} duration={0.4} delay={0.1}>
-          <InfoCard
-            items={[
-              { label: "UUID", value: account.uuid, mono: true },
-              { label: "创建时间", value: formatTime(account.create_time) },
-              { label: "上次登录", value: formatTime(account.last_login_time) },
-            ]}
-          />
-        </Reveal>
-
-        {/* 服主关联 */}
-        <Reveal direction="up" distance={16} duration={0.4} delay={0.2}>
-          <div className="rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-border)] p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Server className="w-4 h-4 text-purple-400" />
-              <h3 className="text-xs font-medium text-[var(--color-text-secondary)] uppercase tracking-wider">
-                服主关联
-              </h3>
-            </div>
-
-            {!adminLoggedIn ? (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
-                  <Unlink className="w-4 h-4" />
-                  <span>未关联服主账号</span>
+        <PageSection>
+          {/* 账户信息 */}
+          <SettingsPanel label="账户信息">
+            <SettingsPanel.Item noPadding>
+              <div className="px-4 py-4 flex items-center gap-4">
+                <SkinAvatar uuid={account.uuid} avatarMode="isometric" size={64} />
+                <div className="flex items-center gap-2">
+                  {isCurrent && <Star className="w-4 h-4 text-amber-400 fill-amber-400" />}
+                  <h1 className="text-base font-medium text-text-primary">{account.name}</h1>
+                  <span className="text-xs text-text-secondary">{getTypeLabel(account.account_type)}</span>
                 </div>
-                <span className="text-xs text-[var(--color-text-tertiary)]">
-                  点击顶部导航切换服主身份
-                </span>
               </div>
+            </SettingsPanel.Item>
+
+            <SettingsPanel.Item>
+              <SettingsPanel.Row label="UUID">
+                <span className="text-xs font-mono text-text-primary">{account.uuid}</span>
+              </SettingsPanel.Row>
+            </SettingsPanel.Item>
+
+            <SettingsPanel.Item>
+              <SettingsPanel.Row label="创建时间">
+                <span className="text-xs text-text-primary">{formatTime(account.create_time)}</span>
+              </SettingsPanel.Row>
+            </SettingsPanel.Item>
+
+            <SettingsPanel.Item>
+              <SettingsPanel.Row label="上次登录">
+                <span className="text-xs text-text-primary">{formatTime(account.last_login_time)}</span>
+              </SettingsPanel.Row>
+            </SettingsPanel.Item>
+          </SettingsPanel>
+        </PageSection>
+
+        <PageSection>
+          {/* 服主关联 */}
+          <SettingsPanel label="服主关联">
+            {!adminLoggedIn ? (
+              <SettingsPanel.Item>
+                <SettingsPanel.Row
+                  label="服主账号"
+                  description="点击灵动岛切换服主身份"
+                >
+                  <span className="text-xs text-text-secondary">未关联服主账号</span>
+                </SettingsPanel.Row>
+              </SettingsPanel.Item>
             ) : isBound ? (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm">
-                  <Crown className="w-4 h-4 text-amber-400" />
-                  <span className="text-[var(--color-text-primary)]">
+              <SettingsPanel.Item>
+                <SettingsPanel.Row label="绑定状态">
+                  <span className="text-xs text-text-primary">
                     已绑定至 <span className="text-purple-400">{adminSession?.email}</span>
                   </span>
-                </div>
-                <button
-                  onClick={handleUnbind}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors"
-                >
-                  <Link2 className="w-3.5 h-3.5" />
-                  解绑
-                </button>
-              </div>
+                  <button
+                    onClick={handleUnbind}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors"
+                  >
+                    <Link2 className="w-3.5 h-3.5" />
+                    解绑
+                  </button>
+                </SettingsPanel.Row>
+              </SettingsPanel.Item>
             ) : (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
-                  <Link2 className="w-4 h-4" />
-                  <span>此玩家尚未绑定</span>
-                </div>
-                <button
-                  onClick={handleBind}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-500/10 text-purple-400 text-xs font-medium hover:bg-purple-500/20 transition-colors"
-                >
-                  <Crown className="w-3.5 h-3.5" />
-                  绑定到服主
-                </button>
-              </div>
+              <SettingsPanel.Item>
+                <SettingsPanel.Row label="绑定状态">
+                  <span className="text-xs text-text-secondary">此玩家尚未绑定</span>
+                  <button
+                    onClick={handleBind}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-500/10 text-purple-400 text-xs font-medium hover:bg-purple-500/20 transition-colors"
+                  >
+                    <Crown className="w-3.5 h-3.5" />
+                    绑定到服主
+                  </button>
+                </SettingsPanel.Row>
+              </SettingsPanel.Item>
             )}
 
             {adminLoggedIn && (
-              <div className="mt-3 pt-3 border-t border-[var(--color-border)] flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
-                  <Mail className="w-3.5 h-3.5" />
-                  {adminSession?.email}
-                </div>
-                <button
-                  onClick={() => adminLogout()}
-                  className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  退出
-                </button>
-              </div>
+              <SettingsPanel.Item>
+                <SettingsPanel.Row label="管理员">
+                  <span className="text-xs text-text-secondary">{adminSession?.email}</span>
+                  <button
+                    onClick={() => adminLogout()}
+                    className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    退出
+                  </button>
+                </SettingsPanel.Row>
+              </SettingsPanel.Item>
             )}
-          </div>
-        </Reveal>
+          </SettingsPanel>
+        </PageSection>
 
-        {/* 操作区 */}
-        <Reveal direction="up" distance={16} duration={0.4} delay={0.3}>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-red-500/10 text-red-400 text-sm font-medium hover:bg-red-500/20 transition-colors"
-            >
-              <Trash2 className="w-4 h-4" />
-              删除
-            </button>
-          </div>
-        </Reveal>
+        <PageSection>
+          {/* 操作 */}
+          <SettingsPanel label="操作">
+            <SettingsPanel.Item>
+              <SettingsPanel.Row label="删除账户">
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  删除
+                </button>
+              </SettingsPanel.Row>
+            </SettingsPanel.Item>
+          </SettingsPanel>
+        </PageSection>
+
+          {/* 删除确认 */}
+          <ConfirmPopup
+            isOpen={showDeleteConfirm}
+            title="确认删除"
+            message={`确定要删除 ${account?.name} 吗？此操作不可撤销。`}
+            confirmText="删除"
+            cancelText="取消"
+            confirmType="danger"
+            showIcon
+            iconType="warning"
+            onConfirm={handleDeleteAccount}
+            onCancel={() => setShowDeleteConfirm(false)}
+            onClose={() => setShowDeleteConfirm(false)}
+          />
       </LoadingSurface>
 
       {/* 添加弹窗 */}
@@ -287,22 +287,7 @@ const AccountDetail = () => {
         adding={adding}
         onConfirm={handleAddAccount}
       />
-
-      {/* 删除确认 */}
-      <ConfirmPopup
-        isOpen={showDeleteConfirm}
-        title="确认删除"
-        message={`确定要删除 ${account?.name} 吗？此操作不可撤销。`}
-        confirmText="删除"
-        cancelText="取消"
-        confirmType="danger"
-        showIcon
-        iconType="warning"
-        onConfirm={handleDeleteAccount}
-        onCancel={() => setShowDeleteConfirm(false)}
-        onClose={() => setShowDeleteConfirm(false)}
-      />
-    </div>
+    </Page>
   );
 };
 
@@ -418,8 +403,8 @@ const AddAccountPopup = ({
       <div className="p-1 space-y-4 w-80 text-center">
         {loginPhase === "completing" ? (
           <div className="flex flex-col items-center gap-3 py-6">
-            <Loader2 className="w-6 h-6 animate-spin text-[var(--color-primary)]" />
-            <p className="text-sm text-[var(--color-text-secondary)]">{progressMsg}</p>
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            <p className="text-sm text-text-secondary">{progressMsg}</p>
           </div>
         ) : (
           <>
@@ -477,17 +462,17 @@ const AddOffline = ({ addName, setAddName, adding, onConfirm }: AddOfflineProps)
       placeholder="游戏名称（1-16 字符）"
       maxLength={16}
       className="w-full px-3 py-2 rounded-lg mb-2
-        bg-[var(--color-surface-hover)] border border-[var(--color-border)]
-        text-[var(--color-text-primary)] text-sm placeholder-[var(--color-text-secondary)]/50
-        focus:outline-none focus:border-[var(--color-primary)]/50 
-        focus:ring-1 focus:ring-[var(--color-primary)]/20"
+        bg-surface-hover border border-border
+        text-text-primary text-sm placeholder-text-secondary/50
+        focus:outline-none focus:border-primary/50 
+        focus:ring-1 focus:ring-primary/20"
     />
     <button
       onClick={onConfirm}
       disabled={!addName.trim() || adding}
       className="w-full py-2 rounded-lg bg-gradient-to-r 
-        from-[var(--color-primary)] to-[var(--color-primary)]/90 text-white font-medium
-        hover:from-[var(--color-primary)]/90 hover:to-[var(--color-primary)]/80 
+        from-primary to-primary/90 text-white font-medium
+        hover:from-primary/90 hover:to-primary/80 
         disabled:opacity-50 transition-all text-sm flex items-center justify-center gap-2"
     >
       {adding ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
@@ -555,9 +540,9 @@ const AddMicrosoft = ({ onClose, onCodePhase, onCodeSuccess, codePhase }: AddMic
   if (codePhase) {
     return (
       <div className="space-y-4">
-        <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
+        <p className="text-sm text-text-secondary leading-relaxed">
           登录网页将自动开启，请在网页中输入{" "}
-          <span className="text-[var(--color-primary)] font-mono font-bold text-base tracking-widest select-all">
+          <span className="text-primary font-mono font-bold text-base tracking-widest select-all">
             {code}
           </span>
           {" "}（已自动复制）。
@@ -565,14 +550,14 @@ const AddMicrosoft = ({ onClose, onCodePhase, onCodeSuccess, codePhase }: AddMic
         <div className="flex gap-2">
           <button
             onClick={handleReopen}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] text-sm font-medium hover:bg-[var(--color-border)] transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-surface-hover text-text-primary text-sm font-medium hover:bg-border transition-colors"
           >
             <ExternalLink className="w-4 h-4" />
             重新打开网页
           </button>
           <button
             onClick={handleCopy}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-[var(--color-primary)]/10 text-[var(--color-primary)] text-sm font-medium hover:bg-[var(--color-primary)]/20 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
           >
             <Copy className="w-4 h-4" />
             复制代码
@@ -591,12 +576,12 @@ const AddMicrosoft = ({ onClose, onCodePhase, onCodeSuccess, codePhase }: AddMic
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
+      <p className="text-sm text-text-secondary leading-relaxed">
         点击登录按钮后将自动开启登录网页，进入登录流程
       </p>
       <button
         onClick={() => openUrl("https://www.minecraft.net/zh-hans/store/minecraft-deluxe-collection")}
-        className="flex items-center justify-center gap-1.5 text-xs text-[var(--color-primary)] hover:underline mx-auto"
+        className="flex items-center justify-center gap-1.5 text-xs text-primary hover:underline mx-auto"
       >
         <ExternalLink className="w-3.5 h-3.5" />
         购买 Minecraft
@@ -604,8 +589,8 @@ const AddMicrosoft = ({ onClose, onCodePhase, onCodeSuccess, codePhase }: AddMic
       <button
         onClick={handleLogin}
         disabled={loading}
-        className="w-full py-2 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 text-white font-medium
-          hover:from-purple-600 hover:to-purple-700 disabled:opacity-50 transition-all text-sm
+        className="w-full py-2 rounded-lg bg-gradient-to-r from-primary to-primary/90 text-white font-medium
+          hover:from-primary/90 hover:to-primary/80 disabled:opacity-50 transition-all text-sm
           flex items-center justify-center gap-2"
       >
         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
@@ -628,25 +613,6 @@ const AddThirdparty = ({}: AddThirdpartyProps) => (
   <>
     <h1>暂无... 开发中...</h1>
   </>
-);
-
-interface InfoCardItem {
-  label: string;
-  value: string;
-  mono?: boolean;
-}
-
-const InfoCard = ({ items }: { items: InfoCardItem[] }) => (
-  <div className="rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-border)] divide-y divide-[var(--color-border)]">
-    {items.map((item) => (
-      <div key={item.label} className="flex items-center justify-between px-4 py-3">
-        <span className="text-xs text-[var(--color-text-secondary)]">{item.label}</span>
-        <span className={`text-xs text-[var(--color-text-primary)] ${item.mono ? "font-mono" : ""}`}>
-          {item.value}
-        </span>
-      </div>
-    ))}
-  </div>
 );
 
 export default AccountDetail;

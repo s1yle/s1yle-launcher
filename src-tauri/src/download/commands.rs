@@ -72,14 +72,6 @@ pub fn clear_completed_tasks(
     Ok(format!("已清理 {} 个已完成任务", removed))
 }
 
-/// 获取已安装的游戏版本列表（所有实例 + 全局版本目录，去重）
-#[tauri::command]
-pub fn get_game_versions(
-    game_manager: State<'_, crate::game::manager::GameManager>,
-) -> Result<Vec<String>, String> {
-    Ok(game_manager.scan_all_installed_versions())
-}
-
 /// 获取 Minecraft 版本列表（从 Mojang API）
 #[tauri::command]
 pub async fn get_version_manifest() -> Result<VersionManifest, String> {

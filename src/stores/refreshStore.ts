@@ -1,4 +1,4 @@
-import { useInstanceStore } from './instanceStore';
+import { useGameStore } from './gameStore';
 import { useDownloadStore } from './downloadStore';
 
 /**
@@ -10,7 +10,7 @@ import { useDownloadStore } from './downloadStore';
  */
 export const refreshAll = async (): Promise<void> => {
   await Promise.allSettled([
-    useInstanceStore.getState().refresh(),
+    useGameStore.getState().refresh(),
     useDownloadStore.getState().loadInstalledVersions(),
     useDownloadStore.getState().loadDownloadTasks(),
   ]);

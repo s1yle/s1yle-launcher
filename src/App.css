@@ -31,6 +31,14 @@ input, textarea, [contenteditable="true"] {
   user-select: text;
 }
 
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+}
+
 input:focus {
   outline: none;
 }

@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, type Variants } from "framer-motion";
 import React, { Suspense, useEffect, useState } from "react";
 import { routes, findRouteByPath } from "../router/config";
 import { parseRouteParams, RouteParamsContext } from "../router/routeParams";
@@ -71,6 +71,13 @@ const RouterRenderer = ({
     }
   }, [dragPreview?.isDragging]);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      useNavStore.getState().setDirection(null);
+    }, DURATION.PAGE_TRANSITION * 1000 + 150);
+    return () => window.clearTimeout(timer);
+  }, [currentPathname]);
+
   if (!route) {
     console.error(`[RouterRenderer] 路由 "${currentPathname}" 未匹配任何定义`);
     return <MissingComponentPanel path={currentPathname} />;
@@ -139,27 +146,26 @@ const RouterRenderer = ({
     );
   }
 
-  const variant = (() => {
-    if (!enabled) return { initial: {}, animate: {}, exit: {} };
+  const NO_ANIMATION: Variants = { initial: {}, animate: {}, exit: {} };
 
-    const dir = useNavStore.getState().direction;
-    useNavStore.getState().setDirection(null);
+const variant: Variants = (() => {
+    if (!enabled) return NO_ANIMATION;
 
-    if (dir === 'right') {
+    const { direction: dir, directionAt } = useNavStore.getState();
+    const isFresh = dir !== null && Date.now() - directionAt < 500;
+
+    if (isFresh && (dir === 'right' || dir === 'left')) {
       return {
-        initial: { opacity: 1, x: '100%' },
+        initial: dir === 'right' ? { opacity: 1, x: '100%' } : { opacity: 1, x: '-100%' },
         animate: { opacity: 1, x: 0 },
-        exit: { opacity: 1, x: '-100%' },
+        exit: pageTransition.exit,
       };
     }
-    if (dir === 'left') {
-      return {
-        initial: { opacity: 1, x: '-100%' },
-        animate: { opacity: 1, x: 0 },
-        exit: { opacity: 1, x: '100%' },
-      };
-    }
-    return pageTransition;
+    return {
+      initial: pageTransition.initial,
+      animate: { ...pageTransition.animate, x: 0 },
+      exit: pageTransition.exit,
+    };
   })();
 
   if (!Component) {

@@ -1,7 +1,7 @@
 import { InvokeOptions } from "@tauri-apps/api/core";
 import { invokeRust } from "./client";
 import { logger } from "@/helper/logger";
-import type { GameInstance, GameSettings } from "./types/instance";
+import type { Game, GameSettings } from "./types/instance";
 
 /**
  * 获取实例的游戏设置
@@ -27,7 +27,7 @@ export const invokeUpdateGameSettings = async (
   gameName: string,
   settings: GameSettings,
   options?: InvokeOptions
-): Promise<GameInstance> => {
+): Promise<Game> => {
   return invokeRust('update_game_settings', { game_name: gameName, settings }, options);
 };
 
@@ -82,7 +82,7 @@ export const invokeSelectJavaPath = async (
  */
 export const invokeScanGames = async (
   options?: InvokeOptions
-): Promise<GameInstance[]> => {
+): Promise<Game[]> => {
   return invokeRust('scan_games', {}, options);
 };
 
@@ -95,7 +95,7 @@ export const invokeScanGames = async (
 export const invokeGetGame = async (
   gameName: string,
   options?: InvokeOptions
-): Promise<GameInstance | null> => {
+): Promise<Game| null> => {
   logger.info('获取实例详情', { gameName });
   return await invokeRust("get_game", { game_name: gameName }, options);
 };
@@ -117,7 +117,7 @@ export const invokeCreateGame = async (
   loaderVersion?: string,
   iconPath?: string,
   options?: InvokeOptions
-): Promise<GameInstance> => {
+): Promise<Game> => {
   logger.info('创建实例', { name, version, loaderType });
   return await invokeRust("create_game", {
     name,
@@ -154,7 +154,7 @@ export const invokeRenameGame = async (
   gameName: string,
   newName: string,
   options?: InvokeOptions
-): Promise<GameInstance> => {
+): Promise<Game> => {
   logger.info('重命名实例', { gameName, newName });
   return await invokeRust("rename_game", { game_name: gameName, new_name: newName }, options);
 };
@@ -172,7 +172,7 @@ export const invokeUpdateGame = async (
   name?: string,
   enabled?: boolean,
   options?: InvokeOptions
-): Promise<GameInstance> => {
+): Promise<Game> => {
   logger.info('更新实例', { gameName, name, enabled });
   return await invokeRust("update_game", { game_name: gameName, name, enabled }, options);
 };

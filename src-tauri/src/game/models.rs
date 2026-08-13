@@ -149,6 +149,9 @@ pub struct Game {
     /// 游戏设置视图（由记录字段派生）
     #[serde(skip)]
     pub game_settings: Option<GameSettings>,
+    /// 版本损坏标记（扫描时计算：目录内缺少对应 jar/json 产物）
+    #[serde(skip)]
+    pub broken: bool,
 }
 
 impl Game {
@@ -187,6 +190,7 @@ impl Game {
             server_port: None,
             path: String::new(),
             game_settings: None,
+            broken: false,
         }
     }
 

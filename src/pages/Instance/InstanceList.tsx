@@ -1,40 +1,83 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useInstanceStore } from '../../stores/instanceStore';
+import { Heart, Puzzle, Box, Archive, AlertTriangle, LucideIcon } from 'lucide-react';
+import { useGameStore } from '../../stores/gameStore';
 import { openFolder } from '../../helper/rustInvoke';
-import { InstanceListItem, EmptyState, useNotification,  Skeleton, Page, PageSection } from '../../components/common';
+import { InstanceListItem, EmptyState, useNotification, Skeleton, Page, PageSection } from '../../components/common';
 import Instance from './Instance';
 import BottomBar from '@/components/common/BottomBar/BottomBar';
 import { staggerContainer, staggerItem } from '../../utils/animations';
+import type { Game } from '../../helper/rustInvoke';
+import { ModLoaderType } from '../../helper/rustInvoke';
+
+type GroupKey = 'favorites' | 'mods' | 'regular' | 'uncommon' | 'broken';
+
+interface InstanceGroup {
+  key: GroupKey;
+  titleKey: string;
+  icon: LucideIcon;
+  items: Game[];
+}
+
+const GROUP_DEFS: Omit<InstanceGroup, 'items'>[] = [
+  { key: 'favorites', titleKey: 'instances.groupFavorites', icon: Heart },
+  { key: 'mods', titleKey: 'instances.groupMods', icon: Puzzle },
+  { key: 'regular', titleKey: 'instances.groupRegular', icon: Box },
+  { key: 'uncommon', titleKey: 'instances.groupUncommon', icon: Archive },
+  { key: 'broken', titleKey: 'instances.groupBroken', icon: AlertTriangle },
+];
+
+/** 判定实例所属分组（收藏优先，损坏次之） */
+const categorizeInstance = (instance: Game, favoriteIds: string[]): GroupKey => {
+  if (favoriteIds.includes(instance.id)) return 'favorites';
+  if (instance.broken) return 'broken';
+  if (instance.loader_type !== ModLoaderType.Vanilla) return 'mods';
+  if (/^1\.\d+(\.\d+)?$/.test(instance.version_id.toLowerCase())) return 'regular';
+  return 'uncommon';
+};
 
 /** 实例列表页面 - 展示所有已安装的游戏实例 */
 const InstanceList: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const selectedInstanceId = useInstanceStore(s => s.selectedInstanceId);
+  const selectedGameId = useGameStore(s => s.selectedGameId);
   const {
-    instances,
+    games,
     loading,
     error,
-    instancesPath,
+    gameRoot,
     searchQuery,
     init,
     refresh,
     remove,
     duplicate,
     setSearchQuery,
-    setSelectedInstance,
-    getFilteredInstances,
-  } = useInstanceStore();
+    setSelectedGame,
+    getFilteredGames,
+    favoriteIds,
+    toggleFavorite,
+    isFavorite,
+  } = useGameStore();
 
   const { success, error: notifyError } = useNotification();
 
-  const currentPath = instancesPath;
+  const currentPath = gameRoot;
 
-  const filteredInstances = getFilteredInstances();
-  console.log("[filteredInstances] 扫描并过滤后的实力列表：", filteredInstances);
+  const filteredGames = getFilteredGames();
+
+  const groupedGames = useMemo(() => {
+    const map: Record<GroupKey, Game[]> = {
+      favorites: [], mods: [], regular: [], uncommon: [], broken: [],
+    };
+    for (const game of filteredGames) {
+      map[categorizeInstance(game, favoriteIds)].push(game);
+    }
+    return GROUP_DEFS
+      .map((def) => ({ ...def, items: map[def.key] }))
+      .filter((group) => group.items.length > 0);
+  }, [filteredGames, favoriteIds]);
 
   const [duplicateTargetId, setDuplicateTargetId] = useState<string | null>(null);
   const [duplicateName, setDuplicateName] = useState('');
@@ -72,7 +115,7 @@ const InstanceList: React.FC = () => {
   }, [init]);
 
   const handleSelect = (id: string) => {
-    setSelectedInstance(id);
+    setSelectedGame(id);
     navigate('/');
   };
 
@@ -105,12 +148,7 @@ const InstanceList: React.FC = () => {
       );
     }
 
-    if (filteredInstances.length === 0) {
-      console.log('[renderContent] 没有实例', {
-        filteredInstances: filteredInstances.length,
-        instances: instances.length,
-        searchQuery,
-      });
+    if (filteredGames.length === 0) {
       return (
         <EmptyState
           icon="folder"
@@ -120,52 +158,67 @@ const InstanceList: React.FC = () => {
       );
     }
 
-    console.log('[renderContent] 渲染实例列表', { count: filteredInstances.length });
-
     return (
       <motion.div
-        className="h-full overflow-y-auto scrollbar-hide-x space-y-2"
+        className="h-full overflow-y-auto scrollbar-hide-x space-y-3 px-5"
         variants={staggerContainer}
         initial="initial"
         animate="animate"
         exit="exit"
       >
-        <AnimatePresence mode="popLayout">
-          {filteredInstances.map((instance, index) => (
-            <motion.div
-              key={instance.id}
-              variants={staggerItem}
-              layout
-            >
-              <InstanceListItem
-                instance={instance}
-                selected={instance.id === selectedInstanceId}
-                onSelect={() => handleSelect(instance.id)}
-                onRename={() => { }}
-                onDelete={() => handleDelete(instance.id, instance.name)}
-                onOpenFolder={() => handleOpenFolder(instance.path)}
-                onSettings={() => navigate(`/instance-manage/${instance.id}/game-settings`)}
-                index={index}
-              />
-            </motion.div>
-          ))}
-        </AnimatePresence>
+        {groupedGames.map((group) => (
+          <PageSection>
+            <div key={group.key} className="space-y-1 bg-(--color-surface) px-3 pb-3 rounded-(--radius-md)">
+              {/* 类型说明 */}
+              <div className="flex items-center gap-1.5 pb-2 pt-2">
+                <group.icon className="w-3.5 h-3.5 text-(--color-text-tertiary)" />
+                <span className="text-xs font-medium text-(--color-text-tertiary)">
+                  {t(group.titleKey)}
+                </span>
+                <span className="text-xs text-(--color-text-tertiary)/60">{group.items.length}</span>
+              </div>
+
+              <AnimatePresence mode="popLayout">
+                {group.items.map((instance, index) => (
+                  <motion.div
+                    key={instance.id}
+                    variants={staggerItem}
+                    layout
+                  >
+                    <InstanceListItem
+                      className='rounded-r-(--radius-sm)'
+                      instance={instance}
+                      selected={instance.id === selectedGameId}
+                      isFavorite={isFavorite(instance.id)}
+                      onSelect={() => handleSelect(instance.id)}
+                      onRename={() => { }}
+                      onDelete={() => handleDelete(instance.id, instance.name)}
+                      onOpenFolder={() => handleOpenFolder(instance.path)}
+                      onSettings={() => navigate(`/instance-manage/${instance.id}/game-settings`)}
+                      onFavorite={() => toggleFavorite(instance.id)}
+                      index={index}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </PageSection>
+        ))}
       </motion.div>
     );
   };
 
   return (
     <Page className="flex flex-col h-full">
-      <PageSection>
         <Instance
           refresh={refresh}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
-          filteredInstances={filteredInstances}
-          instances={instances}
+          filteredGames={filteredGames}
+          games={games}
           error={error}
           renderContent={renderContent}
-          instancesPath={instancesPath}
+          gameRoot={gameRoot}
           showDuplicateModal={showDuplicateModal}
           duplicateName={duplicateName}
           setDuplicateName={setDuplicateName}
@@ -173,7 +226,6 @@ const InstanceList: React.FC = () => {
           setShowDuplicateModal={setShowDuplicateModal}
           setDuplicateTargetId={setDuplicateTargetId}
         />
-      </PageSection>
 
       <BottomBar
         dir='instances.instanceDir'

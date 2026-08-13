@@ -33,7 +33,7 @@ import { useNavStore } from './stores/navStore';
 import { useLastVisitedStore } from './stores/lastVisitedStore';
 import { useThemeStore } from './stores/themeStore';
 import { useAppStore } from './stores/appStore';
-import { useInstanceStore } from './stores/instanceStore';
+import { useGameStore } from './stores/gameStore';
 import { useDownloadStore } from './stores/downloadStore';
 import { useUIModeStore } from './stores/uiModeStore';
 import { logger } from './helper/logger';
@@ -71,7 +71,7 @@ const MainLayout = () => {
 
     // 处理带有 instanceId 的 路径
     if (finalPath.includes(':instanceId')) {
-      const instance = useInstanceStore.getState().getSelectedInstance();
+      const instance = useGameStore.getState().getSelectedGame();
       if (instance) {
         finalPath = finalPath.replace(':instanceId', instance.id);
       } else {
@@ -91,7 +91,7 @@ const MainLayout = () => {
       if (parentRoute?.path && parentRoute.children?.[0]?.path) {
         let childPath = parentRoute.children[0].path;
         if (childPath.includes(':instanceId')) {
-          const instance = useInstanceStore.getState().getSelectedInstance();
+          const instance = useGameStore.getState().getSelectedGame();
           if (!instance) {
             logger.warn('No instance selected for instance-specific route');
             return;
@@ -145,9 +145,10 @@ const MainLayout = () => {
 function App() {
   const initTheme = useThemeStore((s) => s.init);
   const initApp = useAppStore((s) => s.init);
-  const initInstances = useInstanceStore((s) => s.init);
+  const initInstances = useGameStore((s) => s.init);
   const initFont = useFontStore((s) => s.init);
   const setupDownloadListeners = useDownloadStore((s) => s.setupEventListeners);
+  const initDownload = useDownloadStore((s) => s.init);
   const initializeAccountStore = useAuthStore((s) => s.initialize);
   useWindowPosition();
 
@@ -157,9 +158,10 @@ function App() {
     initInstances();
     initFont();
     initializeAccountStore();
+    initDownload();
     useAdminStore.getState();
     invokeRustFunction("initialize_admin_system").catch(() => { });
-  }, [initTheme, initApp, initInstances, initFont, initializeAccountStore]);
+  }, [initTheme, initApp, initInstances, initFont, initializeAccountStore, initDownload]);
 
   useEffect(() => {
     const cleanup = setupDownloadListeners();

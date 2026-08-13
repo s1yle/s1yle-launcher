@@ -25,40 +25,6 @@ impl GameManager {
 
     // ==================== 实例 CRUD ====================
 
-    /// 扫描所有实例
-    pub fn scan_games(&self) -> Result<Vec<Game>, String> {
-        let mut games = Vec::new();
-
-        if let Ok(entries) = fs::read_dir(self.ctx.versions_dir()) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if !path.is_dir() {
-                    continue;
-                }
-                let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
-                    continue;
-                };
-                // 无记录的目录不是合法实例，跳过（不自动补记录）
-                let Some(mut record) = self.find_record_by_name(name) else {
-                    continue;
-                };
-                // 实例必须存在已安装版本
-                let Some(version) = self.resolve_version(&record, name) else {
-                    continue;
-                };
-
-                record.name = name.to_string();
-                record.version_id = version;
-                record.path = path.to_string_lossy().to_string();
-                record.game_settings = Some((&record).into());
-                games.push(record);
-            }
-        }
-
-        games.sort_by(|a, b| b.created_at.cmp(&a.created_at));
-        Ok(games)
-    }
-
     /// 获取指定名称的实例
     pub fn get_game(&self, game_name: &str) -> Option<Game> {
         let mut record = self.load_record(game_name)?;
@@ -200,7 +166,7 @@ impl GameManager {
         fs::remove_file(rpath).map_err(|e| e.to_string())
     }
 
-    /// 列出所有实例记录文件路径（{versions_dir}/{name}/.wecraft_{name}.json）
+    /// 列出所有实例记录文件路径（{root}/versions/{name}/.wecraft_{name}.json）
     fn record_paths(&self) -> Vec<PathBuf> {
         let mut paths = Vec::new();
         if let Ok(entries) = fs::read_dir(self.ctx.versions_dir()) {
@@ -237,83 +203,88 @@ impl GameManager {
 
     // ==================== 版本扫描（原 layout 根级函数） ====================
 
-    /// 判定版本是否已安装（jar 平放于游戏目录）
-    pub fn is_version_installed(&self, game_name: &str, version_id: &str) -> bool {
-        let game_dir = self.ctx.game_dir(game_name);
-        game_dir.join(format!("{}.jar", version_id)).exists()
-            || game_dir.join("client.jar").exists()
-    }
-
-    /// 扫描单个实例的已安装版本
-    pub fn scan_game_versions(&self, game_name: &str) -> Vec<String> {
-        Self::scan_versions_in(&self.ctx.game_dir(game_name))
-    }
-
-    /// 扫描全部已安装版本（所有游戏目录去重排序）
-    pub fn scan_all_installed_versions(&self) -> Vec<String> {
-        let mut set = std::collections::BTreeSet::new();
+    /// 扫描所有游戏目录，生成游戏列表
+    ///
+    /// 容错设计：不因记录缺失/损坏/下载中断而丢弃游戏目录——
+    /// - 记录存在且合法：直接采用
+    /// - 记录不存在（目录刚创建、记录未落盘）：以目录名重建基础记录
+    /// - 记录损坏：同上（损坏记录被忽略，不阻塞扫描）
+    /// - 下载半成品（有 jar/json 无完整文件）：纳入列表，版本取目录内候选
+    /// - 空目录：纳入列表（version_id 可能为空，由前端提示未完成）
+    pub fn scan_games(&self) -> Result<Vec<Game>, String> {
+        let mut games = Vec::new();
 
         if let Ok(entries) = fs::read_dir(self.ctx.versions_dir()) {
             for entry in entries.flatten() {
                 let path = entry.path();
-                if path.is_dir() {
-                    for v in Self::scan_versions_in(&path) {
-                        set.insert(v);
+                if !path.is_dir() {
+                    continue;
+                }
+                let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
+                    continue;
+                };
+                if name.starts_with('.') {
+                    continue;
+                }
+
+                // 记录缺失/损坏时重建基础记录（目录名即唯一事实源）
+                let mut game = self.load_record(name).unwrap_or_else(|| {
+                    Game::new(name, "", ModLoaderType::Vanilla, None, None)
+                });
+                game.name = name.to_string();
+
+                // 版本推断：优先目录内实际存在的候选（jar/json 平放）
+                let candidates = Self::collect_version_ids(&path);
+                if !candidates.is_empty() {
+                    if !candidates.contains(&game.version_id) {
+                        game.version_id = candidates[0].clone();
                     }
                 }
+
+                // 损坏判定：记录版本但目录内缺失对应 jar（下载中断/文件被删），或空目录无任何产物
+                if game.version_id.is_empty() {
+                    game.broken = candidates.is_empty();
+                } else {
+                    game.broken = !path.join(format!("{}.jar", game.version_id)).is_file();
+                }
+
+                game.path = path.to_string_lossy().to_string();
+                game.game_settings = Some((&game).into());
+                games.push(game);
             }
         }
 
-        set.into_iter().collect()
+        games.sort_by(|a, b| b.created_at.cmp(&a.created_at).then_with(|| a.name.cmp(&b.name)));
+        Ok(games)
     }
 
-    /// 扫描某个游戏目录下的已安装版本列表（jar 平放扫描）
-    fn scan_versions_in(game_dir: &Path) -> Vec<String> {
-        let mut versions = Vec::new();
-        if let Ok(entries) = fs::read_dir(game_dir) {
+    /// 收集游戏目录内可识别的版本候选（jar/json 文件名，排除 client 与记录文件）
+    fn collect_version_ids(dir: &Path) -> Vec<String> {
+        let mut set = std::collections::BTreeSet::new();
+        if let Ok(entries) = fs::read_dir(dir) {
             for entry in entries.flatten() {
                 let path = entry.path();
+                if !path.is_file() {
+                    continue;
+                }
                 let Some(ext) = path.extension().and_then(|e| e.to_str()) else {
                     continue;
                 };
-                if ext != "jar" {
+                if ext != "jar" && ext != "json" {
                     continue;
                 }
-                let Some(name) = path.file_stem().and_then(|n| n.to_str()) else {
+                let Some(stem) = path.file_stem().and_then(|n| n.to_str()) else {
                     continue;
                 };
-                if name != "client" {
-                    versions.push(name.to_string());
+                if stem == "client" || stem.starts_with(".wecraft") {
+                    continue;
                 }
+                set.insert(stem.to_string());
             }
         }
-        versions.sort();
-        versions
+        set.into_iter().collect()
     }
 
-    // ==================== 私有方法 ====================
-
-    /// 按实例名称查找记录（记录按 name 命名文件，name 字段对应目录名）
-    fn find_record_by_name(&self, name: &str) -> Option<Game> {
-        self.record_paths()
-            .into_iter()
-            .find_map(|path| {
-                let record = Self::load_record_from_path(&path)?;
-                if record.name == name {
-                    Some(record)
-                } else {
-                    None
-                }
-            })
-    }
-
-    /// 解析实例当前版本：优先记录中的版本，其次取第一个已安装版本
-    fn resolve_version(&self, record: &Game, name: &str) -> Option<String> {
-        if self.is_version_installed(name, &record.version_id) {
-            return Some(record.version_id.clone());
-        }
-        self.scan_game_versions(name).into_iter().next()
-    }
 }
 
 /// 校验实例名称（非空、不含路径分隔符）
@@ -354,7 +325,7 @@ mod tests {
         let gm = manager("crud");
         gm.create_game("test-game", "1.20.4", ModLoaderType::Vanilla, None, None)
             .unwrap();
-        // 实例必须存在已安装版本（jar 平放）才会出现在扫描结果中
+        // jar 平放后 scan 返回该游戏，版本与记录一致
         fs::write(gm.ctx.game_dir("test-game").join("1.20.4.jar"), b"jar").unwrap();
         let games = gm.scan_games().unwrap();
         assert_eq!(games.len(), 1);
@@ -386,16 +357,75 @@ mod tests {
     }
 
     #[test]
-    fn installed_version_scanning() {
-        let gm = manager("scan");
-        gm.create_game("scan-game", "1.20.4", ModLoaderType::Vanilla, None, None)
+    fn scan_resilient_without_record() {
+        let gm = manager("no-record");
+        // 目录存在但无记录（创建未落盘）：由 jar 推断版本
+        fs::create_dir_all(gm.ctx.game_dir("orphan-game")).unwrap();
+        fs::write(gm.ctx.game_dir("orphan-game").join("1.20.4.jar"), b"jar").unwrap();
+        let games = gm.scan_games().unwrap();
+        assert_eq!(games.len(), 1);
+        assert_eq!(games[0].name, "orphan-game");
+        assert_eq!(games[0].version_id, "1.20.4");
+    }
+
+    #[test]
+    fn scan_resilient_half_downloaded() {
+        let gm = manager("half");
+        // 下载半成品：只有版本 json 无 jar → 标记为损坏
+        fs::create_dir_all(gm.ctx.game_dir("half-game")).unwrap();
+        fs::write(gm.ctx.game_dir("half-game").join("1.21.json"), b"{}").unwrap();
+        let games = gm.scan_games().unwrap();
+        assert_eq!(games.len(), 1);
+        assert_eq!(games[0].name, "half-game");
+        assert_eq!(games[0].version_id, "1.21");
+        assert!(games[0].broken);
+    }
+
+    #[test]
+    fn scan_resilient_corrupt_record() {
+        let gm = manager("corrupt");
+        gm.create_game("broken-game", "1.20.4", ModLoaderType::Vanilla, None, None)
             .unwrap();
-        assert!(!gm.is_version_installed("scan-game", "1.20.4"));
-        let game_dir = gm.ctx.game_dir("scan-game");
-        fs::write(game_dir.join("1.20.4.jar"), b"jar").unwrap();
-        assert!(gm.is_version_installed("scan-game", "1.20.4"));
-        assert!(gm.scan_game_versions("scan-game").contains(&"1.20.4".to_string()));
-        assert!(gm.scan_all_installed_versions().contains(&"1.20.4".to_string()));
+        fs::write(
+            gm.ctx.record_path("broken-game"),
+            b"{ this is not valid json",
+        )
+        .unwrap();
+        fs::write(gm.ctx.game_dir("broken-game").join("1.21.jar"), b"jar").unwrap();
+        let games = gm.scan_games().unwrap();
+        assert_eq!(games.len(), 1);
+        assert_eq!(games[0].name, "broken-game");
+        assert_eq!(games[0].version_id, "1.21");
+    }
+
+    #[test]
+    fn scan_resilient_empty_dir() {
+        let gm = manager("empty");
+        // 空目录（刚开始创建）：仍纳入列表，version 为空且标记损坏
+        fs::create_dir_all(gm.ctx.game_dir("fresh-game")).unwrap();
+        let games = gm.scan_games().unwrap();
+        assert_eq!(games.len(), 1);
+        assert_eq!(games[0].name, "fresh-game");
+        assert!(games[0].version_id.is_empty());
+        assert!(games[0].broken);
+    }
+
+    #[test]
+    fn scan_marks_intact_version() {
+        let gm = manager("intact");
+        gm.create_game("good-game", "1.20.4", ModLoaderType::Vanilla, None, None)
+            .unwrap();
+        fs::write(gm.ctx.game_dir("good-game").join("1.20.4.jar"), b"jar").unwrap();
+        let games = gm.scan_games().unwrap();
+        assert_eq!(games.len(), 1);
+        assert!(!games[0].broken);
+    }
+
+    #[test]
+    fn scan_skips_hidden_dirs() {
+        let gm = manager("hidden");
+        fs::create_dir_all(gm.ctx.game_dir(".tmp-dir")).unwrap();
+        assert!(gm.scan_games().unwrap().is_empty());
     }
 
     #[test]

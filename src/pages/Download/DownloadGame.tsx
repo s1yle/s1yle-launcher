@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useDownloadStore } from '../../stores/downloadStore';
-import { GameVersion, openFolder, openUrl, getGamesPath } from '../../helper/rustInvoke';
-import { VersionListItem, EmptyState, useNotification, VirtualList, Page, PageSection, Spinner } from '../../components/common';
+import { GameVersion, openFolder, openUrl, getGameRoot } from '../../helper/rustInvoke';
+import { VersionListItem, EmptyState, useNotification, VirtualList, Page, PageSection, Skeleton } from '../../components/common';
 import DropDown from '@/components/common/DropDown';
 import { useNavStore } from '../../stores/navStore';
 import { getWikiUrl } from '../../utils/modloaderCompat';
-import { VersionCategory, filterVersionsByCategory, countVersionsByCategory, debugVersionTypes } from '../../utils/versionFilter';
+import { VersionCategory, filterVersionsByCategory, countVersionsByCategory } from '../../utils/versionFilter';
 import BottomBar from '@/components/common/BottomBar/BottomBar';
 import { useShallow } from 'zustand/shallow';
 
@@ -44,7 +44,18 @@ const DownloadGame: React.FC = () => {
 
   const [filter, setFilter] = useState<VersionCategory>('release');
   const [searchQuery, setSearchQuery] = useState('');
+  const [manifestLoading, setManifestLoading] = useState(true);
   const initializedRef = useRef(false);
+
+  const fetchManifest = useCallback(async () => {
+    setManifestLoading(true);
+    try {
+      await loadManifest();
+    } catch {
+    } finally {
+      setManifestLoading(false);
+    }
+  }, [loadManifest]);
 
   const filterOptions = useMemo(() => {
     const counts = countVersionsByCategory(manifest?.versions || []);
@@ -68,23 +79,14 @@ const DownloadGame: React.FC = () => {
       console.error('[DownloadGame] 加载已安装版本失败:', e);
     });
 
-    getGamesPath().then(setGamesPath).catch(e => {
+    getGameRoot().then(setGamesPath).catch(e => {
       console.error('[DownloadGame] 加载游戏目录失败:', e);
     });
 
     if (!manifest) {
-      loadManifest().catch(e => {
-        console.error('[DownloadGame] 加载版本列表失败:', e);
-      });
+      fetchManifest();
     }
   }, []);
-
-  useMemo(() => {
-    if (manifest?.versions) {
-      console.log('=== Version Types Debug ===');
-      debugVersionTypes(manifest.versions);
-    }
-  }, [manifest?.versions]);
 
   const versionsToShow = useMemo(() => {
     if (!manifest?.versions) return [];
@@ -122,11 +124,23 @@ const DownloadGame: React.FC = () => {
   const notifyErrorRef = useRef(notifyError);
   notifyErrorRef.current = notifyError;
 
+  // 30 秒内不报错：期间持续加载动画；超时仍未获取到 manifest 才提示错误
+  const [manifestFailed, setManifestFailed] = useState(false);
+
   useEffect(() => {
-    if (error) {
+    if (manifest) {
+      setManifestFailed(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setManifestFailed(true), 30000);
+    return () => window.clearTimeout(timer);
+  }, [manifest]);
+
+  useEffect(() => {
+    if (manifestFailed && error) {
       notifyErrorRef.current(t('notification.error'), error);
     }
-  }, [error, t]);
+  }, [manifestFailed, t]);
 
   const handleOpenDownloadFolder = useCallback(async () => {
     if (!gamesPath) return;
@@ -145,7 +159,9 @@ const DownloadGame: React.FC = () => {
     />
   ), [installedSet, completedSet, handleVersionClick, handleWikiClick]);
 
-  const isLoading = loading && !manifest;
+  const handleRetry = useCallback(() => {
+    fetchManifest();
+  }, [fetchManifest]);
 
   return (
     <Page className="flex flex-col h-full min-h-0">
@@ -183,28 +199,38 @@ const DownloadGame: React.FC = () => {
             </motion.div>
           </PageSection>
 
-          {isLoading ? (
-            <PageSection>
-              <Spinner active message={t('common.loading')} />
-            </PageSection>
+          {!manifest ? (
+            manifestLoading || loading || !manifestFailed ? (
+              <div className="flex-1 min-h-0 px-4">
+                <Skeleton.List count={12} />
+              </div>
+            ) : (
+              <div className="flex-1 min-h-0 px-4 flex flex-col items-center justify-center gap-3">
+                <span className="text-sm text-text-tertiary">{t('download.loadFailed')}</span>
+                <button
+                  onClick={handleRetry}
+                  className="px-4 py-1.5 rounded-lg text-xs font-medium
+                    bg-[var(--color-primary)]/10 text-[var(--color-primary)]
+                    hover:bg-[var(--color-primary)]/20 transition-colors cursor-pointer"
+                >
+                  {t('download.retry')}
+                </button>
+              </div>
+            )
           ) : versionsToShow.length === 0 ? (
             <PageSection>
-              {loading ? (
-                <Spinner active message={t('common.loading')} />
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.1, margin: '-40px' }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 22 }}
-                >
-                  <EmptyState
-                    icon="search"
-                    title={t('download.noVersion')}
-                    description={t('download.noVersionDesc')}
-                  />
-                </motion.div>
-              )}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.1, margin: '-40px' }}
+                transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+              >
+                <EmptyState
+                  icon="search"
+                  title={t('download.noVersion')}
+                  description={t('download.noVersionDesc')}
+                />
+              </motion.div>
             </PageSection>
           ) : (
             <div className="flex-1 min-h-0 px-4">

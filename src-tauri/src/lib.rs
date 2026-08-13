@@ -52,8 +52,7 @@ pub use crate::window::{load_window_position, save_window_position};
 
 pub use download::{
     cancel_download, cancel_version_download, clear_completed_tasks, download,
-    get_download_tasks, get_game_versions, get_version_detail, get_version_download_manifest,
-    get_version_manifest,
+    get_download_tasks, get_version_detail, get_version_download_manifest, get_version_manifest,
 };
 
 pub use crate::game::{
@@ -430,7 +429,6 @@ pub fn run() {
             cancel_download,
             cancel_version_download,
             clear_completed_tasks,
-            get_game_versions,
             get_fabric_versions,
             get_fabric_version_detail,
             build_fabric_launch_config,

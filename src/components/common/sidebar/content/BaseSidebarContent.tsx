@@ -5,7 +5,7 @@ import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ChevronRight, ChevronDown, Trash2, FolderOpen } from 'lucide-react';
 import { type SidebarMenuItem } from '../../../../router/config';
-import { useInstanceStore } from '../../../../stores/instanceStore';
+import { useGameStore } from '../../../../stores/gameStore';
 import ContextMenu, { ContextMenuItemData, useContextMenu } from '../../ContextMenu';
 import clsx from 'clsx';
 import { DURATION, EASING, microInteractions, transitions, sidebarStaggerContainer, sidebarStaggerItem } from '../../../../utils/animations';
@@ -48,7 +48,7 @@ const BaseSidebarContent = ({
 }: BaseSidebarContentProps) => {
   const { t } = useTranslation();
   const location = useLocation();
-  const instance = useInstanceStore(s => s.getSelectedInstance());
+  const instance = useGameStore(s => s.getSelectedGame());
 
   // 初始化展开状态
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => {

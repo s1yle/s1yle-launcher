@@ -18,8 +18,8 @@ export { useDownloadStore } from './downloadStore';
 export { useFontStore, fontScaleConfig } from './fontStore';
 /** 字体 Store 的类型定义 */
 export type { FontStoreProps, FontStoreState, FontScale } from './fontStore';
-/** 实例管理 Store — 提供 useInstanceStore hook */
-export { useInstanceStore } from './instanceStore';
+/** 游戏管理 Store — 提供 useGameStore hook */
+export { useGameStore } from './gameStore';
 /** Java 安装管理 Store — 提供 useJavaStore hook */
 export { useJavaStore } from './javaStore';
 /** Java Store 的类型定义 */

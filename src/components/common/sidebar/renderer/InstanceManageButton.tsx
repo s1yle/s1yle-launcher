@@ -2,8 +2,8 @@ import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Gamepad2, Hammer, Zap, Package, Image, Sun } from 'lucide-react';
-import { useInstanceStore } from '../../../../stores/instanceStore';
-import { ModLoaderType, type GameInstance } from '../../../../helper/rustInvoke';
+import { useGameStore } from '../../../../stores/gameStore';
+import { ModLoaderType, type Game } from '../../../../helper/rustInvoke';
 import { SidebarMenuItem } from '@/router/models';
 import { Portal } from '@/components/common/Portal';
 import { useClickOutside } from '@/hooks/useClickOutside';
@@ -33,9 +33,9 @@ const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
   onNavigate
 }) => {
   const { t } = useTranslation();
-  const instance = useInstanceStore(s => s.getSelectedInstance());
-  const instances = useInstanceStore(s => s.instances);
-  const setSelectedInstance = useInstanceStore(s => s.setSelectedInstance);
+  const instance = useGameStore(s => s.getSelectedGame());
+  const games = useGameStore(s => s.games);
+  const setSelectedGame = useGameStore(s => s.setSelectedGame);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useClickOutside<HTMLDivElement>(
@@ -44,7 +44,7 @@ const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
     [dropdownRef],
   );
 
-  const formatVersionInfo = (inst: GameInstance): string => {
+  const formatVersionInfo = (inst: Game): string => {
     const parts: string[] = [inst.version_id];
 
     if (inst.loader_type !== ModLoaderType.Vanilla) {
@@ -58,7 +58,7 @@ const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
     return parts.join(' · ');
   };
 
-  const getLoaderIcon = (inst: GameInstance) => {
+  const getLoaderIcon = (inst: Game) => {
     const IconComponent = LOADER_ICONS[inst.loader_type] || Gamepad2;
     return <IconComponent className="w-5 h-5" />;
   };
@@ -86,7 +86,7 @@ const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
   };
 
   const handleInstanceSelect = (instanceId: string) => {
-    setSelectedInstance(instanceId);
+    setSelectedGame(instanceId);
     setShowDropdown(false);
   };
 
@@ -173,7 +173,7 @@ const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
       </motion.button>
 
       {/* 下拉菜单 */}
-      {showDropdown && instances.length > 0 && (
+      {showDropdown && games.length > 0 && (
         <Portal anchorTo={buttonRef} placement="bottom-start" zIndex={Z_INDEX.DROPDOWN}>
           <AnimatePresence>
             <motion.div
@@ -186,7 +186,7 @@ const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
               className="py-1 bg-[var(--color-surface-solid)] border border-[var(--color-border)] rounded-lg shadow-lg max-h-64 overflow-y-auto"
               style={{ boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)' }}
             >
-              {instances.map((inst) => (
+              {games.map((inst) => (
                 <button
                   key={inst.id}
                   onClick={() => handleInstanceSelect(inst.id)}

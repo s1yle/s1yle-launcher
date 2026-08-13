@@ -1,4 +1,4 @@
-import { GameInstance } from "@/helper/rustInvoke";
+import { Game } from "@/helper/rustInvoke";
 import { t } from "i18next";
 import { JSX } from "react";
 
@@ -7,11 +7,11 @@ export interface InstanceProps {
     refresh: () => Promise<void>;
     searchQuery: string;
     setSearchQuery: (query: string) => void;
-    filteredInstances: GameInstance[];
-    instances: GameInstance[];
+    filteredGames: Game[];
+    games: Game[];
     error: string | null;
     renderContent: () => JSX.Element;
-    instancesPath: string;
+    gameRoot: string;
     showDuplicateModal: boolean;
     duplicateName: string;
     setDuplicateName: (name: string) => void;

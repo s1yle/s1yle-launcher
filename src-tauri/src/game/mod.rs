@@ -6,8 +6,6 @@ pub mod manager;
 pub mod models;
 /// 实例设置命令
 pub mod settings;
-/// 实例工具函数
-pub(crate) mod utils;
 
 pub use commands::*;
 pub use manager::GameManager;

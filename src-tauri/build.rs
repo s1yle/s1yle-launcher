@@ -121,6 +121,7 @@ fn main() {
             "complete_microsoft_login",
             "cancel_device_code",
             "poll_and_complete_login",
+            "scan_games",
             "get_game_root",
             "set_game_root"
         ]),

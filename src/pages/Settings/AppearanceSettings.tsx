@@ -179,51 +179,63 @@ const ApearanceSettings = () => {
     <Page className="p-6 max-w-5xl mx-auto">
       <PageSection>
         <SettingsPanel label="布局">
-          <Toggle
-            checked={uiMode == UIMode.CLASSIC}
-            onChange={(enabled) => setUIMode(enabled ? UIMode.CLASSIC : UIMode.ISLAND)}
-            label='经典模式(classic)'
-            disabled={false}
-          />
-
-          <Toggle
-            checked={animation.enabled}
-            onChange={handleAnimationSetting}
-            label='开启页面动画'
-            disabled={false}
-          />
-
-          {/* TODO: 实现dropdown的 animateFromOrigin 开关 */}
-          <SettingsPanel.Item>
-            <SettingsPanel.DropDown
-              label='字体'
-              options={fontOptions}
-              value={fontOptions.find((f) => f.id == font?.name)}
-              onSelect={handleFontSelect}
-              showSearch
-              searchPlaceholder='请搜索'
+          <PageSection>
+            <Toggle
+              checked={uiMode == UIMode.CLASSIC}
+              onChange={(enabled) => setUIMode(enabled ? UIMode.CLASSIC : UIMode.ISLAND)}
+              label='经典模式(classic)'
+              disabled={false}
             />
-          </SettingsPanel.Item>
+          </PageSection>
 
-          <SettingsPanel.Item>
-            <SettingsPanel.DropDown
-              label='字体大小'
-              options={fontScaleConfig.options}
-              value={fontScaleConfig.options.find(
-                o => o.id === fontScaleConfig.toId(fontScale)
-              )}
-              onSelect={handleFontScaleSelect}
-            />
-          </SettingsPanel.Item>
 
-          <SettingsPanel.Item>
-            <SettingsPanel.DropDown
-              label='头像显示'
-              options={AVATAR_MODE_OPTIONS}
-              value={AVATAR_MODE_OPTIONS.find((o) => o.id === avatarMode)}
-              onSelect={handleAvatarModeSelect}
+          <PageSection>
+            <Toggle
+              checked={animation.enabled}
+              onChange={handleAnimationSetting}
+              label='开启页面动画'
+              disabled={false}
             />
-          </SettingsPanel.Item>
+          </PageSection>
+
+          <PageSection>
+
+            {/* TODO: 实现dropdown的 animateFromOrigin 开关 */}
+            <SettingsPanel.Item>
+              <SettingsPanel.DropDown
+                label='字体'
+                options={fontOptions}
+                value={fontOptions.find((f) => f.id == font?.name)}
+                onSelect={handleFontSelect}
+                showSearch
+                searchPlaceholder='请搜索'
+              />
+            </SettingsPanel.Item>
+          </PageSection>
+
+          <PageSection>
+            <SettingsPanel.Item>
+              <SettingsPanel.DropDown
+                label='字体大小'
+                options={fontScaleConfig.options}
+                value={fontScaleConfig.options.find(
+                  o => o.id === fontScaleConfig.toId(fontScale)
+                )}
+                onSelect={handleFontScaleSelect}
+              />
+            </SettingsPanel.Item>
+          </PageSection>
+
+          <PageSection>
+            <SettingsPanel.Item>
+              <SettingsPanel.DropDown
+                label='头像显示'
+                options={AVATAR_MODE_OPTIONS}
+                value={AVATAR_MODE_OPTIONS.find((o) => o.id === avatarMode)}
+                onSelect={handleAvatarModeSelect}
+              />
+            </SettingsPanel.Item>
+          </PageSection>
         </SettingsPanel>
       </PageSection>
 
@@ -307,7 +319,7 @@ const ApearanceSettings = () => {
       </PageSection>
 
       <PageSection>
-        <Reveal direction="up" distance={20} duration={0.5}>
+        <Reveal>
           <SettingsPanel label="主题">
             <SettingsPanel.Item shouldLoad={true} loadingKey='appearacne:theme'>
               <SettingsPanel.Sub label='终端主题'>
@@ -323,7 +335,7 @@ const ApearanceSettings = () => {
         </Reveal>
       </PageSection>
 
-      <Reveal direction="up" distance={20} duration={0.5} delay={0.1}>
+      <Reveal>
         <SettingsPanel label="背景">
           <SettingsPanel.Item>
             <SettingsPanel.DropDown

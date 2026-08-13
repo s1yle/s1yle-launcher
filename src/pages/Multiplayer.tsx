@@ -1,14 +1,19 @@
 /** 多人联机页面 - 服务器列表和管理 */
+import { Page, PageSection } from '@/components/common';
+
 const Multiplayer = () => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] p-8">
+    <Page className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] p-8">
       <div className="max-w-4xl w-full">
-        <h1 className="text-4xl font-bold text-text-primary mb-6 text-center">多人联机</h1>
-        <p className="text-lg text-text-secondary text-center mb-8">
-          发现和管理多人游戏服务器
-        </p>
-        
-        <div className="bg-surface backdrop-blur-sm rounded-xl p-8 border border-border-hover">
+        <PageSection>
+          <h1 className="text-4xl font-bold text-text-primary mb-6 text-center">多人联机</h1>
+          <p className="text-lg text-text-secondary text-center mb-8">
+            发现和管理多人游戏服务器
+          </p>
+        </PageSection>
+
+        <PageSection>
+          <div className="bg-surface backdrop-blur-sm rounded-xl p-8 border border-border-hover">
           {/* 服务器列表 */}
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-text-primary mb-4">收藏的服务器</h2>
@@ -99,8 +104,9 @@ const Multiplayer = () => {
             </ul>
           </div>
         </div>
+        </PageSection>
       </div>
-    </div>
+    </Page>
   );
 };
 

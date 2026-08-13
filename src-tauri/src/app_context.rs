@@ -117,20 +117,6 @@ impl AppContext {
         self.game_root().join("libraries")
     }
 
-    /// 判定版本是否已安装（jar 平放于游戏目录）
-    pub fn is_version_installed(&self, game_name: &str, version_id: &str) -> bool {
-        self.jar_exists_in(
-            &self.game_dir(game_name),
-            version_id
-        )
-    }
-
-    /// 判定某版本 jar 是否存在于游戏目录（{v}.jar 或 client.jar）
-    pub fn jar_exists_in(&self, game_dir: &PathBuf, version_id: &str) -> bool {
-        game_dir.join(format!("{}.jar", version_id)).exists()
-            || game_dir.join("client.jar").exists()
-    }
-
     // ==================== 启动器工作目录相关 ====================
 
     /// 配置文件：{work_dir}/.wecraft.json

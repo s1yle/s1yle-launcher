@@ -1,22 +1,6 @@
-import { motion, type Variants } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { type ReactNode } from 'react';
-import { DURATION } from '@/utils/animations';
-
-const pageContainer: Variants = {
-  initial: { opacity: 0 },
-  animate: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.08,
-      delayChildren: DURATION.PAGE_TRANSITION,
-    },
-  },
-};
-
-const pageSection: Variants = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-};
+import { pageContainer, pageSection, pageSectionSpring } from '@/utils/animations';
 
 /** 页面容器 Props */
 export interface PageProps {
@@ -49,7 +33,7 @@ export function PageSection({ children, className }: PageSectionProps) {
   return (
     <motion.div
       variants={pageSection}
-      transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+      transition={pageSectionSpring}
       className={className}
     >
       {children}

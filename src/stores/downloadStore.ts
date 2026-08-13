@@ -6,12 +6,12 @@ import {
   cancelDownload,
   cancelVersionDownload,
   clearCompletedTasks,
-  getGameVersions,
+  scanGames,
   getFabricVersions,
   getFabricVersionDetail,
   buildFabricLaunchConfig,
 } from '../helper/rustInvoke';
-import { useInstanceStore } from './instanceStore';
+import { useGameStore } from './gameStore';
 import type {
   VersionManifest,
   DownloadTask,
@@ -170,30 +170,37 @@ export const useDownloadStore = create<DownloadState>((set, get) => ({
     
     set({ loading: true, error: null });
     try {
-      await Promise.all([
+      await Promise.allSettled([
         get().loadManifest(),
         get().loadInstalledVersions(),
         get().loadDownloadTasks(),
       ]);
-    } catch (e) {
-      set({ error: e instanceof Error ? e.message : 'Failed to init download store' });
     } finally {
       set({ loading: false });
     }
   },
 
   loadManifest: async () => {
+    set({ loading: true, error: null });
     try {
       const manifest = await getVersionManifest();
       saveManifestToCache(manifest);
       set({ manifest });
-    } catch {
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Failed to load version manifest';
+      set({ error: message });
+      throw new Error(message);
+    } finally {
+      set({ loading: false });
     }
   },
 
   loadInstalledVersions: async () => {
     try {
-      const versions = await getGameVersions();
+      const games = await scanGames();
+      const versions = Array.from(
+        new Set(games.map(g => g.version_id).filter(Boolean))
+      );
       set({ installedVersions: versions });
     } catch {
     }
@@ -334,7 +341,7 @@ export const useDownloadStore = create<DownloadState>((set, get) => ({
           get().completeDownloadProgress(versionId);
         }
         // 部署完成：统一刷新实例与已安装版本，保证列表/徽标/进度页一致
-        void useInstanceStore.getState().refresh();
+        void useGameStore.getState().refresh();
         void get().loadInstalledVersions();
       }
     });

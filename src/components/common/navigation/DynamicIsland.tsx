@@ -62,6 +62,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [bottomText, setBottomText] = useState(BOTTOM_TEXTS[0]);
+  const [isDraggingNav, setIsDraggingNav] = useState(false);
   const idleTimerRef = useRef<number | null>(null);
   const islandRef = useRef<HTMLDivElement>(null);
   const navContainerRef = useRef<HTMLDivElement>(null);
@@ -224,6 +225,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
     const startProgress = navDragProgressRef.current;
     if (startProgress <= 0) {
       navDragActiveRef.current = false;
+      setIsDraggingNav(false);
       useNavStore.getState().setDragPreview(null);
       return;
     }
@@ -245,6 +247,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
         requestAnimationFrame(animate);
       } else {
         navDragActiveRef.current = false;
+        setIsDraggingNav(false);
         useNavStore.getState().setDragPreview(null);
       }
     };
@@ -324,6 +327,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
     if (navDragActiveRef.current) {
       const progress = navDragProgressRef.current;
       navDragActiveRef.current = false;
+      setIsDraggingNav(false);
 
       if (progress > 0.5) {
         const dragState = useNavStore.getState().dragPreview;
@@ -364,6 +368,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
       longPressTimerRef.current = null;
       navDragActiveRef.current = true;
       navDragProgressRef.current = 0;
+      setIsDraggingNav(true);
 
       document.removeEventListener('pointerup', handleNavPointerUpEarly);
       document.addEventListener('pointerup', handleNavDragPointerUp);
@@ -375,7 +380,11 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
     <motion.div
       className="fixed top-4 left-1/2 -translate-x-1/2 z-50"
       initial={{ opacity: 0, y: -16, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
+      animate={{
+        opacity: 1,
+        y: 0,
+        scale: isDraggingNav ? 0.94 : 1,
+      }}
       transition={{ type: 'spring', stiffness: 350, damping: 24 }}
     >
       <motion.div

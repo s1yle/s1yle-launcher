@@ -38,8 +38,6 @@ export const cancelDownload = __.invokeCancelDownload;
 export const cancelVersionDownload = __.invokeCancelVersionDownload;
 /** 清除已完成的下载任务 */
 export const clearCompletedTasks = __.invokeClearCompletedTasks;
-/** 获取游戏版本列表 */
-export const getGameVersions = __.invokeGetGameVersions;
 /** 下载并部署版本 */
 export const download = __.invokeDownload;
 

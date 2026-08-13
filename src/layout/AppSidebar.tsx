@@ -62,13 +62,15 @@ const AppSidebar = ({
 
   return (
     <div className="AppSidebar h-full flex flex-col overflow-hidden border- border-[var(--color-border)] relative">
-      <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} footer={footer} ownSidebar={ownSidebar} />
-      <div
-        className="absolute right-0 top-0 bottom-0 w-1
-          cursor-col-resize hover:bg-[var(--color-primary)]
-          hover:opacity-50 transition-opacity z-10"
-        onMouseDown={handleSidebarResizeMouseDown}
-      />
+      <div className="h-full flex flex-col flex-shrink-0" style={{ width: sidebarWidth }}>
+        <SmartSidebar onMenuClick={handleMenuClick} showAllGroups={true} footer={footer} ownSidebar={ownSidebar} />
+        <div
+          className="absolute right-0 top-0 bottom-0 w-1
+            cursor-col-resize hover:bg-[var(--color-primary)]
+            hover:opacity-50 transition-opacity z-10"
+          onMouseDown={handleSidebarResizeMouseDown}
+        />
+      </div>
     </div>
   )
 }

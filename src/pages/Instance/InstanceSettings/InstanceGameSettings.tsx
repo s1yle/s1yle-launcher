@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { useInstanceStore } from '@/stores/instanceStore';
+import { useGameStore } from '@/stores/gameStore';
 import { logger } from '@/helper/logger';
 import { getGameSettings, updateGameSettings, GameSettings, selectJavaPath, scanJavaInstallations, JavaInstallation, getMemoryUsage, getDisplayResolutions } from '@/helper/rustInvoke';
-import { SettingsPanel, Toggle, Slider, useNotification } from '@/components/common';
+import { SettingsPanel, Toggle, Slider, useNotification, Page, PageSection } from '@/components/common';
 import PartitionBar, { getPartitionColor } from '@/components/common/PartitionBar';
 import { DropDownOption } from '@/components/common/DropDown';
 import { useRouteParams } from '@/router/routeParams';
@@ -14,10 +14,10 @@ const InstanceGameSettings = () => {
   const { t } = useTranslation();
   const { instanceId } = useRouteParams();
   const navigate = useNavigate();
-  const setSelectedInstance = useInstanceStore(s => s.setSelectedInstance);
-  const getInstance = useInstanceStore(s => s.getInstance);
-  const storeLoading = useInstanceStore(s => s.loading);
-  const instances = useInstanceStore(s => s.instances);
+  const setSelectedGame = useGameStore(s => s.setSelectedGame);
+  const getGame = useGameStore(s => s.getGame);
+  const storeLoading = useGameStore(s => s.loading);
+  const games = useGameStore(s => s.games);
   const { success, error: notifyError } = useNotification();
 
   const [settings, setSettings] = useState<GameSettings>({});
@@ -33,7 +33,7 @@ const InstanceGameSettings = () => {
   const isInitialLoad = useRef(true);
   const lastSavedSettings = useRef<string>('');
 
-  const instance = instanceId ? getInstance(instanceId) : null;
+  const instance = instanceId ? getGame(instanceId) : null;
 
   // 分辨率选项：真实显示器模式 + 常用预设兜底（去重，保持顺序）
   // 注意：useMemo 必须与其它 hooks 一起置于提前 return 之前
@@ -57,9 +57,9 @@ const InstanceGameSettings = () => {
 
   useEffect(() => {
     if (instanceId) {
-      const inst = getInstance(instanceId);
+      const inst = getGame(instanceId);
       if (inst) {
-        setSelectedInstance(instanceId);
+        setSelectedGame(instanceId);
       } else {
         navigate('/instance-list');
       }
@@ -152,7 +152,7 @@ const InstanceGameSettings = () => {
   if (storeLoading || settingsLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="text-[var(--color-text-tertiary)]">
+        <div className="text-text-tertiary">
           {t('common.loading', '加载中...')}
         </div>
       </div>
@@ -160,9 +160,9 @@ const InstanceGameSettings = () => {
   }
 
   // 显示实例列表为空
-  if (!instances || instances.length === 0) {
+  if (!games || games.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center text-[var(--color-text-tertiary)]">
+      <div className="flex-1 flex items-center justify-center text-text-tertiary">
         {t('instances.noInstances', '暂无实例，请先添加游戏实例')}
       </div>
     );
@@ -171,7 +171,7 @@ const InstanceGameSettings = () => {
   // 显示未选择实例
   if (!instance) {
     return (
-      <div className="flex-1 flex items-center justify-center text-[var(--color-text-tertiary)]">
+      <div className="flex-1 flex items-center justify-center text-text-tertiary">
         {t('instanceInfo.selectInstance', '请在侧边栏选择游戏实例')}
       </div>
     );
@@ -263,11 +263,12 @@ const InstanceGameSettings = () => {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 pt-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <SettingsPanel
-          label='基础设置'
-        >
+    <Page className="flex-1 overflow-y-auto px-6 pt-6">
+      <PageSection>
+        <div className="max-w-4xl mx-auto space-y-6">
+          <SettingsPanel
+            label='基础设置'
+          >
           <Toggle
             label={t('settings.useInstanceSettings', '启用实例特定游戏设置')}
             bgHidden
@@ -421,8 +422,9 @@ const InstanceGameSettings = () => {
 
         </SettingsPanel>
 
-      </div>
-    </div >
+        </div>
+      </PageSection>
+    </Page>
   );
 };
 

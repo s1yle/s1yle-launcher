@@ -30,8 +30,6 @@
   "get_game",
   "get_game_root",
   "get_game_settings",
-  "get_game_versions",
-  "get_games_path",
   "get_installed_mod_loaders",
   "get_java_version",
   "get_login_status",

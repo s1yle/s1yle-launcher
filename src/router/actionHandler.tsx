@@ -1,8 +1,8 @@
 // src/router/config.tsx
-import { useInstanceStore } from "@/stores/instanceStore";
+import { useGameStore } from "@/stores/gameStore";
 
 /** 刷新实例列表 */
 export const handleRefreshInstances = async () => {
-    const refresh = useInstanceStore.getState().refresh;
+    const refresh = useGameStore.getState().refresh;
     await refresh();
 };
