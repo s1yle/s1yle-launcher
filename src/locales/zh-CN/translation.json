@@ -175,6 +175,13 @@
     "cancel": "取消",
     "overallProgress": "总体进度",
     "failed": "失败",
+    "phase": {
+      "downloading_libraries": "下载库文件",
+      "downloading_assets": "下载资源文件",
+      "downloading_natives": "下载原生库",
+      "downloading_client": "下载客户端核心",
+      "downloading_index": "下载资源索引"
+    },
     "install": {
       "title": "安装新游戏",
       "instanceName": "实例名称",

@@ -137,6 +137,8 @@ export interface RouteConfig {
   needsScrollbar?: boolean;
   /** 灵动岛模式下页面是否自带侧边栏 */
   ownSidebar?: boolean;
+  /** 隐藏全局下载进度条（如下载进度页本身） */
+  hideGlobalDownloadBar?: boolean;
   /** 灵动岛导航元数据（存在即参与灵动岛导航） */
   nav?: RouteNavMeta;
   /** 侧边栏菜单元数据（存在即参与侧边栏菜单） */

@@ -6,7 +6,7 @@ use crate::{
 use tauri::{
     Manager, State, WebviewWindowBuilder,
     utils::config::WindowEffectsConfig,
-    webview::{PageLoadEvent, PageLoadPayload},
+    webview::PageLoadPayload,
     window::EffectState,
 };
 

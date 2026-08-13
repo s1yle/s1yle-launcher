@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback,  useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRouteParams } from '@/router/routeParams';
 import { useTranslation } from 'react-i18next';
@@ -10,7 +10,6 @@ import {
   Download,
   Flame,
   Gamepad2,
-  HardDrive,
   Hexagon,
   Loader2,
   RefreshCw,
@@ -18,13 +17,11 @@ import {
   Zap,
 } from 'lucide-react';
 import {
-  downloadAndDeploy,
+  download,
   getFabricVersions,
   getForgeVersions,
   getNeoForgeVersions,
   getOptifineVersions,
-  getVersionDownloadManifest,
-  getDiskFreeSpace,
   ModLoaderType,
   type ModLoaderVersionItem,
 } from '@/helper/rustInvoke';
@@ -66,20 +63,6 @@ const fetchLoaderVersions = async (
   }
 };
 
-const formatBytes = (bytes: number): string => {
-  if (!Number.isFinite(bytes) || bytes < 0) return '--';
-  if (bytes < 1024) return `${bytes} B`;
-  const units = ['KB', 'MB', 'GB', 'TB'];
-  let value = bytes;
-  let unit = '';
-  for (const u of units) {
-    value /= 1024;
-    unit = u;
-    if (value < 1024) break;
-  }
-  return `${value.toFixed(value >= 100 ? 0 : 1)} ${unit}`;
-};
-
 /** 版本详情与安装页面 - 配置实例、选择加载器并开始下载 */
 const VersionDetailWithInstall: React.FC = () => {
   const { t } = useTranslation();
@@ -89,10 +72,9 @@ const VersionDetailWithInstall: React.FC = () => {
   const { error: notifyError, info } = useNotification();
   const startDownloadProgress = useDownloadStore(s => s.startDownloadProgress);
   const errorDownloadProgress = useDownloadStore(s => s.errorDownloadProgress);
-  const basePath = useDownloadStore(s => s.basePath);
   const setCurrentPath = useNavStore(s => s.setCurrentPath);
 
-  const [instanceName, setInstanceName] = useState('');
+  const [gameName, setInstanceName] = useState('');
   const [expanded, setExpanded] = useState<LoaderKey | null>(null);
   const [selected, setSelected] = useState<{ type: ModLoaderType | null; version: string | null }>({ type: null, version: null });
   const [loaderState, setLoaderState] = useState<Record<LoaderKey, { loading: boolean; error: string | null; versions: ModLoaderVersionItem[] }>>({
@@ -102,8 +84,6 @@ const VersionDetailWithInstall: React.FC = () => {
     fabric: { loading: false, error: null, versions: [] },
     optifine: { loading: false, error: null, versions: [] },
   });
-  const [estSize, setEstSize] = useState<number | null>(null);
-  const [freeSpace, setFreeSpace] = useState<number | null>(null);
   const [starting, setStarting] = useState(false);
   const loadedRef = useRef<Record<LoaderKey, boolean>>({ vanilla: true, forge: false, neoforge: false, fabric: false, optifine: false });
 
@@ -112,41 +92,6 @@ const VersionDetailWithInstall: React.FC = () => {
       setInstanceName(versionId);
     }
   }, [versionId]);
-
-  useEffect(() => {
-    if (!versionId) return;
-
-    let cancelled = false;
-    const loadStorageInfo = async () => {
-      try {
-        const manifest = await getVersionDownloadManifest(versionId);
-        if (cancelled) return;
-        const total = [
-          manifest.client_jar?.size ?? 0,
-          ...manifest.libraries.map(f => f.size ?? 0),
-          ...manifest.assets.map(f => f.size ?? 0),
-          ...manifest.natives.map(f => f.size ?? 0),
-          manifest.asset_index?.size ?? 0,
-        ].reduce((a, b) => a + b, 0);
-        setEstSize(total);
-      } catch {
-        if (!cancelled) setEstSize(-1);
-      }
-    };
-
-    const loadFreeSpace = async () => {
-      try {
-        const free = await getDiskFreeSpace(basePath || '/');
-        if (!cancelled) setFreeSpace(free);
-      } catch {
-        if (!cancelled) setFreeSpace(-1);
-      }
-    };
-
-    loadStorageInfo();
-    loadFreeSpace();
-    return () => { cancelled = true; };
-  }, [versionId, basePath]);
 
   const toggleLoader = useCallback((key: LoaderKey) => {
     if (key === 'vanilla') {
@@ -186,36 +131,37 @@ const VersionDetailWithInstall: React.FC = () => {
   const handleStart = useCallback(async () => {
     if (starting) return;
     if (!versionId) return;
-    if (!instanceName.trim()) {
-      notifyError(t('download.install.installFailed'), t('download.install.instanceNamePlaceholder'));
+    if (!gameName.trim()) {
+      notifyError(t('download.install.installFailed'), t('download.install.gameNamePlaceholder'));
       return;
     }
 
     setStarting(true);
     startDownloadProgress(versionId);
-    info(
-      t('download.install.downloadStarted'),
-      t('download.install.downloadStartedMsg', { version: versionId })
-    );
+    // info(
+      // t('download.install.downloadStarted'),
+      // t('download.install.downloadStartedMsg', { version: versionId })
+    // );
 
-    navigate('/download/game');
-    setCurrentPath('/download/game');
+    // navigate('/download/game');
+    // setCurrentPath('/download/game');
 
     try {
-      await downloadAndDeploy({
-        instance_name: instanceName.trim(),
+      await download({
+        game_name: gameName.trim(),
         version_id: versionId,
         loader_type: selected.type ?? ModLoaderType.Vanilla,
         loader_version: selected.version,
-        target_existing_instance: null,
+        target_existing_game: null,
       });
       await refreshAll();
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       errorDownloadProgress(versionId, msg);
+      setStarting(false);
       notifyError(t('download.install.downloadFailed'), msg);
     }
-  }, [versionId, instanceName, selected, starting, startDownloadProgress, errorDownloadProgress, info, notifyError, navigate, setCurrentPath, t]);
+  }, [versionId, gameName, selected, starting, startDownloadProgress, errorDownloadProgress, info, notifyError, navigate, setCurrentPath, t]);
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-[var(--color-bg-primary)] relative">
@@ -227,14 +173,14 @@ const VersionDetailWithInstall: React.FC = () => {
             <div className="flex items-center gap-2 mb-4">
               <Box className="w-5 h-5 text-[var(--color-primary)]" />
               <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
-                {t('download.install.instanceName')}
+                {t('download.install.gameName')}
               </h2>
             </div>
             <input
               type="text"
-              value={instanceName}
+              value={gameName}
               onChange={e => setInstanceName(e.target.value)}
-              placeholder={versionId ?? t('download.install.instanceNamePlaceholder')}
+              placeholder={versionId ?? t('download.install.gameNamePlaceholder')}
               className="w-full px-4 py-2.5 rounded-lg text-sm bg-[var(--color-input)] border border-[var(--color-border)] text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-shadow"
             />
           </section>
@@ -331,11 +277,10 @@ const VersionDetailWithInstall: React.FC = () => {
                                       <button
                                         key={item.version}
                                         onClick={() => handleSelectVersion(entry.key, item.version)}
-                                        className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer border ${
-                                          active
+                                        className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer border ${active
                                             ? 'bg-[var(--color-primary-bg)] border-[var(--color-primary)] text-[var(--color-primary)]'
                                             : 'bg-[var(--color-surface-hover)] border-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-active)] hover:text-[var(--color-text-primary)]'
-                                        }`}
+                                          }`}
                                       >
                                         <span className="font-mono truncate">{item.version}</span>
                                         {item.stable && (
@@ -362,70 +307,22 @@ const VersionDetailWithInstall: React.FC = () => {
       </div>
 
       {/* 底部下载按钮 */}
-      <div className="flex-shrink-0 px-6 py-4 border-t border-[var(--color-border)] bg-[var(--color-bg-primary)]/80 backdrop-blur-md">
-        <motion.button
-          initial={{ y: 24, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 26, delay: 0.15 }}
-          whileHover={{ scale: 1.015, y: -2 }}
-          whileTap={{ scale: 0.975 }}
-          onClick={handleStart}
-          disabled={starting}
-          className="relative w-full overflow-hidden py-4 rounded-2xl flex items-center justify-center gap-3 font-bold text-lg text-white cursor-pointer shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
-          style={{
-            background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 50%, var(--color-primary) 100%)',
-            backgroundSize: '200% 100%',
-            boxShadow: '0 8px 28px var(--color-primary-20)',
-          }}
-        >
-          <motion.span
-            className="absolute inset-y-0 w-1/3 bg-white/20 blur-md"
-            style={{ left: '-40%' }}
-            animate={{ left: ['-40%', '120%'] }}
-            transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut', repeatDelay: 1.2 }}
-          />
-          {starting ? (
-            <Loader2 className="w-6 h-6 animate-spin" />
-          ) : (
-            <motion.span
-              animate={{ y: [0, -3, 0] }}
-              transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              <Download className="w-6 h-6" />
-            </motion.span>
-          )}
-          {starting ? t('download.install.installing') : t('download.install.installButton')}
-        </motion.button>
-      </div>
-
-      {/* 存储信息 - 右下角 */}
-      <motion.div
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.3, duration: 0.35 }}
-        className="fixed bottom-[92px] right-4 z-30 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/90 backdrop-blur-md shadow-xl px-4 py-3 min-w-[180px]"
+      <motion.button
+        onClick={handleStart}
+        disabled={starting}
+        className="relative overflow-hidden py-2.5
+          flex items-center justify-center gap-3 font-light
+          cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed
+          bg-(--color-surface) hover:bg-(--color-surface-hover)"
       >
-        <div className="flex items-center gap-2 mb-2">
-          <HardDrive className="w-4 h-4 text-[var(--color-primary)]" />
-          <span className="text-xs font-semibold text-[var(--color-text-primary)]">
-            {t('download.install.storage')}
-          </span>
-        </div>
-        <div className="space-y-1.5 text-xs">
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-[var(--color-text-tertiary)]">{t('download.install.estimatedSize')}</span>
-            <span className="font-mono text-[var(--color-text-primary)]">
-              {estSize === null ? t('download.install.calculating') : estSize < 0 ? t('download.install.unknown') : formatBytes(estSize)}
-            </span>
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-[var(--color-text-tertiary)]">{t('download.install.freeSpace')}</span>
-            <span className={`font-mono ${freeSpace !== null && estSize !== null && freeSpace >= 0 && estSize >= 0 && freeSpace < estSize ? 'text-[var(--color-warning)]' : 'text-[var(--color-text-primary)]'}`}>
-              {freeSpace === null ? t('download.install.calculating') : freeSpace < 0 ? t('download.install.unknown') : formatBytes(freeSpace)}
-            </span>
-          </div>
-        </div>
-      </motion.div>
+        {starting ? (
+          <Loader2 className="w-6 h-6 animate-spin" />
+        ) : (
+          <Download className="w-6 h-6" />
+        )}
+        {starting ? t('download.install.installing') : t('download.install.installButton')}
+      </motion.button>
+
     </div>
   );
 };

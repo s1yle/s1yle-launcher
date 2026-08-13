@@ -20,7 +20,7 @@ export interface ShellSpec {
 /**
  * 推导当前页面的布局壳体规格。
  * 规则：
- * - FULLSCREEN：island → 仅悬浮窗口控制，不包框架；classic → 原生头部 + 无侧边栏
+ * - FULLSCREEN：统一原生头部 + 无侧边栏（页面未自绘 header 时由框架统一提供）
  * - NATIVE_HEADER：隐藏灵动岛，使用原生顶部栏；island 模式下侧边栏策略看 ownSidebar
  * - 其余：跟随用户模式（island → 灵动岛 + 80px 留白；classic → 原生头部 + 全局侧边栏）
  */
@@ -31,10 +31,10 @@ export function resolveShell(mode: UIMode, route: RouteConfig): ShellSpec {
 
   if (fullscreen) {
     return {
-      header: mode === UIMode.ISLAND ? 'floating' : 'native',
+      header: 'native',
       sidebar: 'none',
       topInset: 0,
-      frame: mode === UIMode.CLASSIC,
+      frame: true,
     };
   }
 

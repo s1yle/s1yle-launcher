@@ -1,46 +1,43 @@
 // src-tauri/src/lib.rs
 mod account;
 mod admin_account;
+mod app_context;
 mod background;
 mod config;
 mod download;
 mod font;
-mod instance;
+mod game;
 mod java;
 mod launch;
 mod logging;
 mod microsoft_login;
 mod modloader;
 mod render;
+mod system;
+mod types;
 mod window;
 
-use crate::account::AccountType;
-use crate::config::{
-    AppConfig, ConfigManager, WindowPosition, WindowPositions, clear_login_state, export_config,
-    get_config_value, get_instance_config, import_config, remove_instance_config, reset_config,
-    save_login_state, set_config_value, update_instance_config,
-};
+use crate::app_context::AppContext;
+use crate::types::AccountType;
+use crate::config::{ConfigManager, clear_login_state, save_login_state, set_config_value};
 
 use crate::microsoft_login::{
     cancel_device_code, get_login_status, poll_and_complete_login, start_device_code,
 };
 
 use crate::download::DownloadManager;
-use crate::window::{
-    WindowType, apply_window_config, create_and_show_window, load_window_position_by_label,
-};
+use crate::window::{WindowType, create_and_show_window};
 use chrono::Utc;
 use std::sync::OnceLock;
 use std::time::Instant;
 use tauri::webview::PageLoadEvent;
-use tauri::{Manager, WebviewUrl, WindowEvent};
-use tauri_plugin_dialog::{Dialog, MessageDialogButtons};
+use tauri::{Manager, WebviewUrl};
 use tauri_plugin_keyring::KeyringExt;
 
 pub use crate::account::{
-    add_admin_account, add_player_account, delete_account, get_account_list, get_current_account,
+    add_player_account, delete_account, get_account_list, get_current_account,
     get_current_account_token, init_account_manager, initialize_account_system,
-    load_accounts_from_disk, save_accounts_to_disk, set_current_account,
+    set_current_account,
 };
 pub use crate::admin_account::{
     bind_player_to_admin, get_admin_info, get_bound_players, init_admin_manager,
@@ -54,29 +51,28 @@ pub use crate::launch::{
 pub use crate::window::{load_window_position, save_window_position};
 
 pub use download::{
-    cancel_download, clear_completed_tasks, deploy_version_files, deploy_version_global,
-    deploy_version_to_instance, download_and_deploy, download_file, get_download_base_path,
-    get_download_task, get_download_tasks, get_game_versions, get_version_detail,
-    get_version_download_manifest, get_version_manifest, is_version_deployed,
-    set_download_base_path,
+    cancel_download, cancel_version_download, clear_completed_tasks, download,
+    get_download_tasks, get_game_versions, get_version_detail, get_version_download_manifest,
+    get_version_manifest,
 };
 
-pub use crate::instance::{
-    GameInstance, InstanceManager, add_known_path, add_validated_folder, copy_instance,
-    create_instance, delete_instance, get_instance, get_instance_settings, get_instances_path,
-    get_system_memory, get_memory_usage, get_display_resolutions, migrate_directory_structure, remove_known_path, rename_instance,
-    scan_instances, scan_known_mc_paths, select_java_path, set_default_folder, update_instance,
-    update_instance_settings, validate_folder,
+pub use crate::game::{
+    Game, GameManager, create_game, delete_game, get_game, get_game_root, get_game_settings,
+    rename_game, scan_games, set_game_root, update_game, update_game_settings,
+};
+
+pub use crate::system::{get_display_resolutions, get_memory_usage, get_system_memory};
+
+pub use crate::java::{
+    JavaInstallation, get_java_version, scan_java_installations, select_java_path,
 };
 
 pub use crate::modloader::{
     LibraryInfo, ModLoaderInfo, ModLoaderManager, ModLoaderType, ModLoaderVersionItem,
     ModLoaderVersionList, build_fabric_launch_config, build_forge_launch_config,
-    get_fabric_version_detail, get_fabric_versions, get_forge_versions,
-    get_installed_mod_loaders, get_neoforge_versions, get_optifine_versions,
+    get_fabric_version_detail, get_fabric_versions, get_forge_versions, get_installed_mod_loaders,
+    get_neoforge_versions, get_optifine_versions,
 };
-
-pub use crate::java::{JavaInstallation, get_java_version, scan_java_installations};
 
 pub use logging::{init_logging, log_frontend};
 
@@ -201,24 +197,75 @@ fn is_login_expired(login_time: &str) -> bool {
     elapsed.num_hours() > 7 * 24
 }
 
+/// 初始化应用上下文（组合根）
+///
+/// - 工作目录：`WECRAFT_WORK_DIR` 环境变量 → 回退 exe 所在目录
+/// - 游戏根目录：配置文件中 `app.game_dir` → 回退工作目录
+fn init_app_context() -> AppContext {
+    use std::path::PathBuf;
+
+    let work_dir = std::env::var("WECRAFT_WORK_DIR")
+        .map(PathBuf::from)
+        .ok()
+        .or_else(|| {
+            std::env::current_exe()
+                .ok()
+                // /home/scc/repos/s1yle-launcher/src-tauri/target/debug/WeCraft-Launcher.parent()
+                .and_then(|p| p.parent().map(|d| d.to_path_buf()))
+        })
+        .unwrap_or_else(|| PathBuf::from("."));
+
+    let game_root = resolve_game_root(&work_dir);
+    log_info!(
+        "工作目录: {} | 游戏根目录: {}",
+        work_dir.display(),
+        game_root.display()
+    );
+    AppContext::new(work_dir, game_root)
+}
+
+/// 从配置文件读取持久化的游戏根目录（app.game_dir），读取失败/为空时回退 /工作目录/.minecraft
+fn resolve_game_root(work_dir: &std::path::Path) -> std::path::PathBuf {
+    let config_path = work_dir.join(".wecraft.json");
+    if let Ok(content) = std::fs::read_to_string(&config_path) {
+        if let Ok(root) = serde_json::from_str::<serde_json::Value>(&content) {
+            if let Some(dir) = root
+                .get("app")
+                .and_then(|a| a.get("game_root"))
+                .and_then(|g| g.as_str())
+            {
+                if !dir.trim().is_empty() {
+                    return std::path::PathBuf::from(dir);
+                }
+            }
+        }
+    }
+    work_dir.join(".minecraft").to_path_buf()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let download_path = &*config::DOWNLOAD_BASE_PATH;
+    // ====== 组合根（Composition Root）：ctx → 管理器 → manage ======
+    // AppContext 是唯一"路径事实源"，四个管理器通过构造注入持有其克隆，
+    // 运行时共享同一份游戏根目录（set_game_root 即时生效）。
+    let app_context = init_app_context();
+    app_context
+        .ensure_dirs()
+        .expect("初始化基础目录失败");
 
-    let download_manager = DownloadManager::new(download_path.to_path_buf().clone());
-    let mod_loader_manager = ModLoaderManager::new(download_path.to_path_buf());
-    let instance_manager = InstanceManager::new();
-
-    let app_config = AppConfig::default();
-    let config_manager: ConfigManager = ConfigManager::new(app_config, WindowPositions::default());
+    let config_manager = ConfigManager::new(app_context.clone());
+    let download_manager = DownloadManager::new();
+    let mod_loader_manager = ModLoaderManager::new(app_context.clone());
+    let game_manager = GameManager::new(app_context.clone());
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_keyring::init())
+        .manage(app_context)
         .manage(download_manager)
         .manage(mod_loader_manager)
-        .manage(instance_manager)
+        .manage(game_manager)
         .manage(config_manager)
         .setup(|app| {
             let start = Instant::now();
@@ -246,9 +293,6 @@ pub fn run() {
             )?;
 
             init_logging(app)?;
-
-            let cm: tauri::State<'_, ConfigManager> = app.state();
-            let _ = cm.load_config_from_disk();
 
             // 异步执行：判断登录态 → 创建目标窗口 → 关闭加载窗口
             tauri::async_runtime::spawn(async move {
@@ -366,7 +410,6 @@ pub fn run() {
             window::save_window_position_by_label,
             window::load_window_position_by_label,
             add_player_account,
-            add_admin_account,
             get_account_list,
             get_current_account,
             get_current_account_token,
@@ -378,27 +421,16 @@ pub fn run() {
             tauri_get_launch_config,
             tauri_update_launch_config,
             log_frontend,
-            save_accounts_to_disk,
-            load_accounts_from_disk,
-            save_login_state,
-            clear_login_state,
             initialize_account_system,
             get_version_manifest,
             get_version_detail,
             get_version_download_manifest,
-            download_file,
-            download_and_deploy,
+            download,
             get_download_tasks,
-            get_download_task,
             cancel_download,
+            cancel_version_download,
             clear_completed_tasks,
             get_game_versions,
-            get_download_base_path,
-            set_download_base_path,
-            deploy_version_files,
-            deploy_version_global,
-            deploy_version_to_instance,
-            is_version_deployed,
             get_fabric_versions,
             get_fabric_version_detail,
             build_fabric_launch_config,
@@ -408,51 +440,31 @@ pub fn run() {
             get_neoforge_versions,
             get_optifine_versions,
             get_disk_free_space,
-            scan_instances,
-            get_instance,
-            create_instance,
-            delete_instance,
-            copy_instance,
-            rename_instance,
-            update_instance,
-            get_instances_path,
-            scan_known_mc_paths,
-            add_known_path,
-            set_default_folder,
-            remove_known_path,
-            validate_folder,
-            add_validated_folder,
-            migrate_directory_structure,
+            scan_games,
+            get_game,
+            create_game,
+            delete_game,
+            rename_game,
+            update_game,
+            get_game_root,
+            set_game_root,
             // 游戏设置相关命令
-            get_instance_settings,
-            update_instance_settings,
-            get_system_memory,
-            get_memory_usage,
-            get_display_resolutions,
-            select_java_path,
+            get_game_settings,
+            update_game_settings,
+            // 系统相关命令
+            system::get_system_memory,
+            system::get_memory_usage,
+            system::get_display_resolutions,
+            java::select_java_path,
             open_url,
             open_folder,
             // 配置相关命令
             config::get_config,
-            config::update_config,
-            get_config_value,
             set_config_value,
-            get_instance_config,
-            update_instance_config,
-            remove_instance_config,
-            reset_config,
-            export_config,
-            import_config,
+            save_login_state,
+            clear_login_state,
             // 背景相关命令
             background::select_background_image,
-            // 路径配置命令
-            config::get_path_config,
-            config::update_path_config,
-            config::get_instance_path,
-            config::get_versions_path,
-            config::get_libraries_path,
-            config::get_assets_path,
-            config::get_natives_path,
             scan_java_installations,
             get_java_version,
             // 字体

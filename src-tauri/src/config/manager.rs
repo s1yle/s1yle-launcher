@@ -1,245 +1,61 @@
-use crate::config::{
-    AppConfig, CONFIG_APPLICATION, CONFIG_FILE_PATH, ConfigManager, InstanceConfig, MIN_HEIGHT,
-    MIN_WIDTH, PathConfig, WindowPosition, WindowPositions,
-};
-use crate::{log_error, log_info};
+use crate::app_context::AppContext;
+use crate::config::{ConfigManager, MIN_HEIGHT, MIN_WIDTH, SystemConfig, WindowPosition};
+use crate::log_info;
+use serde::{de::DeserializeOwned, Serialize};
 use serde_json::Value;
-use std::{collections::HashMap, fs, path::PathBuf, sync::Mutex};
+use std::path::PathBuf;
+use std::sync::Mutex;
 
 impl ConfigManager {
-    /// 创建新的 ConfigManager，如果配置文件不存在则创建目录
-    pub fn new(config: AppConfig, windows: WindowPositions) -> Self {
-        if !config.base_path.exists() {
-            log_info!("启动器配置文件不存在，即将创建！");
-            if let Some(parent) = config.base_path.parent() {
-                if let Err(e) = fs::create_dir_all(parent) {
-                    log_error!("启动器配置文件目录创建失败：{}", e);
-                }
-            }
+    /// 创建配置管理器（组合根注入 ctx，读取并缓存配置）
+    pub fn new(ctx: AppContext) -> Self {
+        let mut config: SystemConfig =
+            Self::read_section_impl(&ctx, "app").unwrap_or_default();
+        if config.game_root.as_os_str().is_empty() {
+            config.game_root = ctx.game_root();
         }
         Self {
+            ctx,
             config: Mutex::new(config),
-            windows: Mutex::new(windows),
         }
-    }
-
-    /// 获取配置文件路径
-    pub fn get_config_file_path() -> PathBuf {
-        let config_dir = &*CONFIG_APPLICATION;
-        let _ = fs::create_dir_all(config_dir);
-        (*CONFIG_FILE_PATH).clone()
     }
 
     /// 获取全局应用配置
-    pub fn get_config(&self) -> Result<AppConfig, String> {
+    pub fn get_config(&self) -> Result<SystemConfig, String> {
         self.config
             .lock()
             .map_err(|e| format!("获取配置锁失败：{}", e))
             .map(|guard| guard.clone())
     }
 
-    /// 更新全局应用配置并保存到磁盘
-    pub fn update_config(&self, new_config: AppConfig) -> Result<(), String> {
-        *self.config.lock().map_err(|e| e.to_string())? = new_config;
-        self.save_to_disk()
-    }
-
-    /// 将配置保存到磁盘文件
-    fn save_to_disk(&self) -> Result<(), String> {
-        let path = Self::get_config_file_path();
-        let json = serde_json::to_string_pretty(&*self.config.lock().map_err(|e| e.to_string())?)
-            .map_err(|e| format!("序列化配置失败：{}", e))?;
-        fs::write(&path, json).map_err(|e| format!("写入配置文件失败：{}", e))?;
-        log_info!("配置保存成功：{}", path.to_string_lossy());
+    /// 保存配置到磁盘（合并写入，不影响 accounts/admin_accounts 节）
+    pub fn save(&self) -> Result<(), String> {
+        let config = self.get_config()?;
+        self.write_section("app", &config)?;
+        log_info!("配置保存成功");
         Ok(())
     }
 
-    /// 从磁盘加载配置
-    pub fn load_config_from_disk(&self) -> Result<(), String> {
-        let path = Self::get_config_file_path();
-        if !path.exists() {
-            log_info!("ℹ️ 配置文件不存在，使用默认配置");
-            return Ok(());
-        }
-        let content = fs::read_to_string(&path).map_err(|e| format!("读取配置文件失败：{}", e))?;
-        let loaded: AppConfig =
-            serde_json::from_str(&content).map_err(|e| format!("解析配置文件失败：{}", e))?;
-        *self.config.lock().map_err(|e| e.to_string())? = loaded;
-
-        let window_positions = {
-            let config = self.config.lock().map_err(|e| e.to_string())?;
-            config.window_positions.clone()
-        };
-        *self.windows.lock().map_err(|e| e.to_string())? = window_positions;
-
-        log_info!("✅ 配置加载成功");
-        Ok(())
-    }
-
-    /// 获取所有窗口位置配置
-    pub fn get_window_positions(&self) -> Result<Option<WindowPositions>, String> {
-        let windows_guard = self
-            .windows
-            .lock()
-            .map_err(|e| format!("获取窗口位置锁失败：{}", e))?;
-        Ok(Some(windows_guard.clone()))
+    /// 根据点号分隔的路径写入配置值（增量更新）
+    pub fn set_value(&self, key: &str, value: Value) -> Result<(), String> {
+        let mut config = self.get_config()?;
+        let mut json_val =
+            serde_json::to_value(&config).map_err(|e| format!("配置转 JSON 失败：{}", e))?;
+        set_nested_value(&mut json_val, &parse_key_path(key), value)?;
+        config =
+            serde_json::from_value(json_val).map_err(|e| format!("JSON 转回配置失败：{}", e))?;
+        *self.config.lock().map_err(|e| e.to_string())? = config;
+        self.save()
     }
 
     /// 按窗口类型获取位置
     pub fn get_window_pos_by_label(&self, label: &str) -> Result<Option<WindowPosition>, String> {
-        let windows_guard = self
-            .windows
-            .lock()
-            .map_err(|e| format!("获取窗口位置锁失败：{}", e))?;
+        let config = self.get_config()?;
         match label {
-            "main" => Ok(windows_guard.main.clone()),
-            "login" => Ok(windows_guard.login.clone()),
+            "main" => Ok(config.window_positions.main.clone()),
+            "login" => Ok(config.window_positions.login.clone()),
             _ => Ok(None),
         }
-    }
-
-    /// 根据点号分隔的路径获取配置值
-    pub fn get_value(&self, key: &str) -> Result<Option<String>, String> {
-        let config = self.get_config()?;
-        let mut json_val =
-            serde_json::to_value(&config).map_err(|e| format!("配置转 JSON 失败：{}", e))?;
-        let path = parse_key_path(key);
-        let value = get_nested_value(&mut json_val, &path)?;
-        Ok(value.map(|v| v.to_string()))
-    }
-
-    /// 根据点号分隔的路径写入配置值, 该函数实际使用可能跟 update_config 没什么区别，因为都是全量写入文件系统
-    pub fn write_config(&self, key: &str, val: serde_json::Value) -> Result<(), String> {
-        let mut config = self.get_config()?;
-        let mut json_val =
-            serde_json::to_value(&config).map_err(|e| format!("配置转 JSON 失败：{}", e))?;
-        let path = parse_key_path(key);
-        let new_val = val;
-        set_nested_value(&mut json_val, &path, new_val)?;
-        config =
-            serde_json::from_value(json_val).map_err(|e| format!("JSON 转回配置失败：{}", e))?;
-        self.update_config(config)
-    }
-
-    // ==================== 实例配置管理方法 ====================
-
-    /// 获取实例配置
-    pub fn get_instance_config(&self, instance_id: &str) -> Result<Option<InstanceConfig>, String> {
-        let config = self.get_config()?;
-        Ok(config.instance_configs.get(instance_id).cloned())
-    }
-
-    /// 更新实例配置
-    pub fn update_instance_config(
-        &self,
-        instance_id: &str,
-        new_config: InstanceConfig,
-    ) -> Result<(), String> {
-        let mut config = self.get_config()?;
-        config
-            .instance_configs
-            .insert(instance_id.to_string(), new_config);
-        self.update_config(config)
-    }
-
-    /// 删除实例配置
-    pub fn remove_instance_config(&self, instance_id: &str) -> Result<(), String> {
-        let mut config = self.get_config()?;
-        config.instance_configs.remove(instance_id);
-        self.update_config(config)
-    }
-
-    /// 获取所有实例配置
-    pub fn get_all_instance_configs(&self) -> Result<HashMap<String, InstanceConfig>, String> {
-        let config = self.get_config()?;
-        Ok(config.instance_configs.clone())
-    }
-
-    // ==================== 实例配置管理 ====================
-
-    /// 保存实例配置到独立文件
-    pub fn save_instance_config_to_file(
-        &self,
-        instance_id: &str,
-        config: &InstanceConfig,
-    ) -> Result<(), String> {
-        use crate::config::INSTANCE_CONFIGS_DIR;
-
-        let config_dir = &*INSTANCE_CONFIGS_DIR;
-        fs::create_dir_all(config_dir).map_err(|e| format!("创建实例配置目录失败：{}", e))?;
-
-        let config_path = config_dir.join(format!("{}.json", instance_id));
-        let json = serde_json::to_string_pretty(config)
-            .map_err(|e| format!("序列化实例配置失败：{}", e))?;
-
-        fs::write(&config_path, json).map_err(|e| format!("写入实例配置文件失败：{}", e))?;
-
-        log_info!("实例配置已保存到：{}", config_path.to_string_lossy());
-        Ok(())
-    }
-
-    /// 从独立文件加载实例配置
-    pub fn load_instance_config_from_file(
-        &self,
-        instance_id: &str,
-    ) -> Result<Option<InstanceConfig>, String> {
-        use crate::config::INSTANCE_CONFIGS_DIR;
-
-        let config_path = INSTANCE_CONFIGS_DIR.join(format!("{}.json", instance_id));
-
-        if !config_path.exists() {
-            return Ok(None);
-        }
-
-        let content =
-            fs::read_to_string(&config_path).map_err(|e| format!("读取实例配置文件失败：{}", e))?;
-
-        let config: InstanceConfig =
-            serde_json::from_str(&content).map_err(|e| format!("解析实例配置文件失败：{}", e))?;
-
-        Ok(Some(config))
-    }
-
-    /// 删除实例配置文件
-    pub fn delete_instance_config_file(&self, instance_id: &str) -> Result<(), String> {
-        use crate::config::INSTANCE_CONFIGS_DIR;
-
-        let config_path = INSTANCE_CONFIGS_DIR.join(format!("{}.json", instance_id));
-
-        if config_path.exists() {
-            fs::remove_file(&config_path).map_err(|e| format!("删除实例配置文件失败：{}", e))?;
-        }
-
-        Ok(())
-    }
-
-    /// 同步实例配置（同时更新全局配置和独立文件）
-    pub fn sync_instance_config(
-        &self,
-        instance_id: &str,
-        config: &InstanceConfig,
-    ) -> Result<(), String> {
-        // 更新全局配置
-        self.update_instance_config(instance_id, config.clone())?;
-
-        // 保存到独立文件
-        self.save_instance_config_to_file(instance_id, config)?;
-
-        Ok(())
-    }
-
-    /// 重置配置到默认值
-    pub fn reset_config(&self) -> Result<(), String> {
-        let default = AppConfig::default();
-        self.update_config(default)
-    }
-
-    /// 更新所有窗口位置
-    pub fn update_window_positions(&self, positions: WindowPositions) -> Result<(), String> {
-        let mut config = self.get_config()?;
-        config.window_positions = positions.clone();
-        *self.windows.lock().map_err(|e| e.to_string())? = positions;
-        self.update_config(config)
     }
 
     /// 按窗口类型更新位置
@@ -249,120 +65,85 @@ impl ConfigManager {
         pos: WindowPosition,
     ) -> Result<(), String> {
         let mut config = self.get_config()?;
-        let mut windows = self.windows.lock().map_err(|e| e.to_string())?;
-
         match label {
-            "main" => {
-                config.window_positions.main = Some(pos.clone());
-                windows.main = Some(pos);
-            }
-            "login" => {
-                config.window_positions.login = Some(pos.clone());
-                windows.login = Some(pos);
-            }
+            "main" => config.window_positions.main = Some(pos),
+            "login" => config.window_positions.login = Some(pos),
             _ => return Err(format!("未知窗口类型: {}", label)),
         }
-
-        drop(windows);
-        self.update_config(config)
+        *self.config.lock().map_err(|e| e.to_string())? = config;
+        self.save()
     }
 
-    /// 使用动态路径更新配置值
-    pub fn update_value(&self, key_path: &str, value: Value) -> Result<(), String> {
-        let config = self.get_config()?;
-        let mut config_value =
-            serde_json::to_value(&config).map_err(|e| format!("序列化配置失败：{}", e))?;
+    // ==================== 游戏根目录 ====================
 
-        let path_segments: Vec<&str> = key_path.split('.').collect();
-        set_nested_value(&mut config_value, &path_segments, value)?;
-
-        let new_config: AppConfig =
-            serde_json::from_value(config_value).map_err(|e| format!("反序列化配置失败：{}", e))?;
-
-        self.update_config(new_config)
-    }
-
-    /// 使用动态路径删除配置值
-    pub fn remove_value(&self, key_path: &str) -> Result<(), String> {
-        let config = self.get_config()?;
-        let mut config_value =
-            serde_json::to_value(&config).map_err(|e| format!("序列化配置失败：{}", e))?;
-
-        let path_segments: Vec<&str> = key_path.split('.').collect();
-        remove_nested_value(&mut config_value, &path_segments)?;
-
-        let new_config: AppConfig =
-            serde_json::from_value(config_value).map_err(|e| format!("反序列化配置失败：{}", e))?;
-
-        self.update_config(new_config)
-    }
-
-    /// 导出配置到文件
-    pub fn export_config(&self, target_path: PathBuf) -> Result<(), String> {
-        let config = self.get_config()?;
-        let json =
-            serde_json::to_string_pretty(&config).map_err(|e| format!("序列化配置失败：{}", e))?;
-        fs::write(&target_path, json).map_err(|e| format!("写入配置失败：{}", e))?;
-        log_info!("配置已导出到：{}", target_path.to_string_lossy());
+    /// 设置游戏根目录并持久化（写入配置 app.game_dir + 更新运行时 ctx）
+    pub fn set_game_root(&self, game_root: &PathBuf) -> Result<(), String> {
+        if game_root.as_os_str().is_empty() {
+            return Err("游戏根目录不能为空".to_string());
+        }
+        let mut config = self.get_config()?;
+        self.ctx.set_game_root(game_root.clone());
+        config.game_root = game_root.clone();
+        *self.config.lock().map_err(|e| e.to_string())? = config;
+        self.save()?;
+        log_info!("游戏根目录已切换: {}", game_root.to_string_lossy());
         Ok(())
     }
 
-    /// 从文件导入配置（支持版本迁移）
-    pub fn import_config(&self, source_path: PathBuf) -> Result<(), String> {
-        let content =
-            fs::read_to_string(&source_path).map_err(|e| format!("读取配置失败：{}", e))?;
-        let imported: AppConfig =
-            serde_json::from_str(&content).map_err(|e| format!("解析配置失败：{}", e))?;
+    // ==================== 统一配置节读写（原 store 模块） ====================
 
-        // 版本迁移
-        let migrated = self.migrate_config(imported)?;
-        self.update_config(migrated)
+    /// 读取指定顶层键的配置节（反序列化为 T）
+    pub(crate) fn read_section<T: DeserializeOwned>(&self, key: &str) -> Option<T> {
+        Self::read_section_impl(&self.ctx, key)
     }
 
-    /// 配置版本迁移（支持未来版本升级）
-    fn migrate_config(&self, mut config: AppConfig) -> Result<AppConfig, String> {
-        let current_version = crate::config::CONFIG_VERSION;
+    /// 写入指定顶层键的配置节（不影响其他键）
+    pub(crate) fn write_section<T: Serialize>(&self, key: &str, value: &T) -> Result<(), String> {
+        let value = serde_json::to_value(value).map_err(|e| format!("序列化配置节失败: {e}"))?;
+        self.write_section_value(key, &value)
+    }
 
-        if config.version < current_version {
-            log_info!(
-                "检测到旧版本配置 (v{} -> v{})",
-                config.version,
-                current_version
-            );
+    /// 写入指定顶层键的配置节（原始 JSON）
+    pub(crate) fn write_section_value(
+        &self,
+        key: &str,
+        value: &serde_json::Value,
+    ) -> Result<(), String> {
+        let mut root = read_file(&self.ctx.launcher_config_path());
+        root[key] = value.clone();
+        write_file(&self.ctx.launcher_config_path(), &root)
+    }
 
-            // 版本迁移逻辑
-            match config.version {
-                0 => {
-                    // v0 -> v1 迁移（未来实现）
-                    config.version = 1;
-                }
-                _ => {}
-            }
-
-            // 递归迁移
-            if config.version < current_version {
-                return self.migrate_config(config);
-            }
-        }
-
-        Ok(config)
+    /// 读取指定顶层键的配置节（静态版本，用于构造阶段）
+    fn read_section_impl<T: DeserializeOwned>(ctx: &AppContext, key: &str) -> Option<T> {
+        read_file(&ctx.launcher_config_path())
+            .get(key)
+            .and_then(|v| serde_json::from_value(v.clone()).ok())
     }
 }
 
-/// 解析点号分隔的配置键为路径段
+/// 读取整个配置文件为 JSON Value（文件缺失或损坏返回空对象）
+fn read_file(path: &std::path::Path) -> serde_json::Value {
+    match std::fs::read_to_string(path) {
+        Ok(content) => serde_json::from_str(&content).unwrap_or_else(|_| serde_json::json!({})),
+        Err(_) => serde_json::json!({}),
+    }
+}
+
+/// 写入整个配置文件（保证目录存在）
+fn write_file(path: &std::path::Path, root: &serde_json::Value) -> Result<(), String> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| format!("创建配置目录失败: {e}"))?;
+    }
+    let json = serde_json::to_string_pretty(root).map_err(|e| format!("序列化配置失败: {e}"))?;
+    std::fs::write(path, json).map_err(|e| format!("写入配置文件失败: {e}"))
+}
+
+// ==================== JSON 路径工具 ====================
+
+/// 将点号分隔的配置路径拆分为路径段
 fn parse_key_path(key: &str) -> Vec<&str> {
     key.split('.').collect()
-}
-
-/// 根据路径段获取嵌套 JSON 值
-fn get_nested_value(value: &mut Value, path: &[&str]) -> Result<Option<Value>, String> {
-    let mut current = value;
-    for segment in path {
-        current = current
-            .get_mut(segment)
-            .ok_or_else(|| format!("配置路径不存在：{}", segment))?;
-    }
-    Ok(Some(current.clone()))
 }
 
 /// 根据路径段设置嵌套 JSON 值（自动创建中间节点）
@@ -370,53 +151,17 @@ fn set_nested_value(value: &mut Value, path: &[&str], new_val: Value) -> Result<
     let mut current = value;
     let (last, segments) = path.split_last().ok_or("空的配置路径")?;
 
-    // 遍历路径，如果中间节点不存在则创建
     for segment in segments {
         if !current.get(segment).is_some() {
-            // 如果节点不存在，创建一个空对象
             current[*segment] = Value::Object(serde_json::Map::new());
         }
-
-        // 确保当前节点是对象类型
         if !current[segment].is_object() {
             return Err(format!("配置路径不是对象类型：{}", segment));
         }
-
         current = current.get_mut(segment).unwrap();
     }
 
-    // 设置最终值
     current[last] = new_val;
-    Ok(())
-}
-
-/// 根据路径段删除嵌套 JSON 值
-fn remove_nested_value(value: &mut Value, path: &[&str]) -> Result<(), String> {
-    if path.is_empty() {
-        return Err("空的配置路径".to_string());
-    }
-
-    let mut current = value;
-
-    // 遍历到倒数第二个节点
-    for segment in &path[..path.len() - 1] {
-        current = current
-            .get_mut(*segment)
-            .ok_or_else(|| format!("配置路径不存在：{}", segment))?;
-
-        if !current.is_object() {
-            return Err(format!("配置路径不是对象类型：{}", segment));
-        }
-    }
-
-    // 删除最后一个节点
-    let last = path.last().ok_or("空的配置路径")?;
-    if let Some(obj) = current.as_object_mut() {
-        obj.remove(*last);
-    } else {
-        return Err(format!("无法删除配置项：{}", last));
-    }
-
     Ok(())
 }
 
@@ -428,64 +173,81 @@ pub fn window_check(pos: &mut WindowPosition) {
     if pos.y <= 0 {
         pos.y = 1;
     }
-    if pos.height < *MIN_HEIGHT {
-        pos.height = *MIN_HEIGHT;
+    if pos.height < MIN_HEIGHT {
+        pos.height = MIN_HEIGHT;
     }
-    if pos.width < *MIN_WIDTH {
-        pos.width = *MIN_WIDTH;
+    if pos.width < MIN_WIDTH {
+        pos.width = MIN_WIDTH;
     }
 }
 
-/// 获取配置文件路径（兼容旧接口）
-pub fn get_config_path() -> Result<PathBuf, String> {
-    let config_dir = &*CONFIG_APPLICATION;
-    fs::create_dir_all(config_dir).map_err(|e| format!("创建配置目录失败：{}", e))?;
-    Ok((*CONFIG_FILE_PATH).clone())
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use std::sync::atomic::{AtomicU64, Ordering};
 
-// ==================== 路径配置管理方法 ====================
-
-impl ConfigManager {
-    /// 获取路径配置
-    pub fn get_path_config(&self) -> Result<PathConfig, String> {
-        let config = self.get_config()?;
-        Ok(config.path_config)
+    /// 生成唯一临时目录（每个测试独立，可并行）
+    fn temp_dir(tag: &str) -> std::path::PathBuf {
+        static COUNTER: AtomicU64 = AtomicU64::new(0);
+        let n = COUNTER.fetch_add(1, Ordering::SeqCst);
+        let dir = std::env::temp_dir()
+            .join(format!("wecraft-test-{}-{}-{}", tag, std::process::id(), n));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        dir
     }
 
-    /// 更新路径配置
-    pub fn update_path_config(&self, path_config: PathConfig) -> Result<(), String> {
-        let mut config = self.get_config()?;
-        config.path_config = path_config;
-        self.update_config(config)
+    fn manager(tag: &str) -> (ConfigManager, std::path::PathBuf) {
+        let dir = temp_dir(tag);
+        let ctx = AppContext::new(dir.clone(), dir.join("games"));
+        (ConfigManager::new(ctx), dir)
     }
 
-    /// 获取实例目录路径
-    pub fn get_instance_dir(&self, instance_name: &str) -> Result<PathBuf, String> {
-        let path_config = self.get_path_config()?;
-        Ok(path_config.get_instance_dir(instance_name))
+    #[test]
+    fn set_value_writes_nested_path() {
+        let (manager, dir) = manager("config-nested");
+        manager
+            .set_value("login_state.is_logged_in", serde_json::json!(true))
+            .unwrap();
+        let config = manager.get_config().unwrap();
+        assert!(config.login_state.is_logged_in);
+        let on_disk: Value = serde_json::from_str(
+            &fs::read_to_string(dir.join(".wecraft.json")).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(on_disk["app"]["login_state"]["is_logged_in"], true);
     }
 
-    /// 获取 versions 目录路径
-    pub fn get_versions_dir(&self, instance_name: &str) -> Result<PathBuf, String> {
-        let path_config = self.get_path_config()?;
-        Ok(path_config.get_versions_dir(instance_name))
+    #[test]
+    fn read_write_section_roundtrip() {
+        let (manager, _dir) = manager("config-section");
+        manager.write_section("accounts", &serde_json::json!({"count": 3})).unwrap();
+        let loaded: serde_json::Value = manager.read_section("accounts").unwrap();
+        assert_eq!(loaded["count"], 3);
     }
 
-    /// 获取 libraries 目录路径
-    pub fn get_libraries_dir(&self, instance_name: &str) -> Result<PathBuf, String> {
-        let path_config = self.get_path_config()?;
-        Ok(path_config.get_libraries_dir(instance_name))
+    #[test]
+    fn set_game_root_persists_and_switches() {
+        let (manager, _dir) = manager("config-game-dir");
+        let new_root = std::env::temp_dir().join(format!("wecraft-gameroot-{}", std::process::id()));
+        manager.set_game_root(&new_root).unwrap();
+        assert_eq!(manager.ctx.game_root().to_string_lossy(), new_root.to_string_lossy());
     }
 
-    /// 获取 assets 目录路径
-    pub fn get_assets_dir(&self, instance_name: &str) -> Result<PathBuf, String> {
-        let path_config = self.get_path_config()?;
-        Ok(path_config.get_assets_dir(instance_name))
-    }
-
-    /// 获取 natives 目录路径
-    pub fn get_natives_dir(&self, instance_name: &str) -> Result<PathBuf, String> {
-        let path_config = self.get_path_config()?;
-        Ok(path_config.get_natives_dir(instance_name))
+    #[test]
+    fn window_check_corrects_invalid_values() {
+        let mut pos = WindowPosition {
+            x: 0,
+            y: -5,
+            width: 100,
+            height: 100,
+            maximized: false,
+        };
+        window_check(&mut pos);
+        assert_eq!(pos.x, 1);
+        assert_eq!(pos.y, 1);
+        assert_eq!(pos.width, MIN_WIDTH);
+        assert_eq!(pos.height, MIN_HEIGHT);
     }
 }

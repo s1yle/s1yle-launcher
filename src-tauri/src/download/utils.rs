@@ -6,8 +6,8 @@ use std::io::Read;
 
 /// 分块下载的块大小（4MB）
 pub const CHUNK_SIZE: u64 = 4 * 1024 * 1024;
-/// 最大并发分块数
-pub const MAX_CHUNKS: usize = 16;
+/// 最大并发分块数（BMCLAPI 短时限流约 10 次/60s，避免瞬间打满）
+pub const MAX_CHUNKS: usize = 8;
 /// 最大重试次数
 pub const MAX_RETRIES: u32 = 3;
 
@@ -173,4 +173,102 @@ pub fn get_native_classifier(library: &Library) -> Option<(String, String)> {
     let classifier_suffix = natives.get(native_key)?;
     let classifier = format!("natives-{}-{}", os, classifier_suffix);
     Some((classifier, native_key.to_string()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::download::models::{Library, Rule, RuleOs};
+
+    #[test]
+    fn mirror_url_maps_known_prefixes() {
+        let mapped = mirror_url("https://libraries.minecraft.net/foo/bar.jar").unwrap();
+        assert_eq!(
+            mapped,
+            "https://bmclapi2.bangbang93.com/libraries/foo/bar.jar"
+        );
+
+        let mapped =
+            mirror_url("https://resources.download.minecraft.net/ab/abc123").unwrap();
+        assert_eq!(mapped, "https://bmclapi2.bangbang93.com/assets/ab/abc123");
+
+        let mapped = mirror_url("https://launcher.mojang.com/mc/game/1.20.4/").unwrap();
+        assert_eq!(
+            mapped,
+            "https://bmclapi2.bangbang93.com/mc/launcher/mc/game/1.20.4/"
+        );
+    }
+
+    #[test]
+    fn mirror_url_returns_none_for_unknown_prefix() {
+        assert_eq!(mirror_url("https://example.com/file"), None);
+    }
+
+    #[test]
+    fn verify_file_sha1_matches_and_mismatches() {
+        let dir = std::env::temp_dir().join(format!("wecraft-utils-test-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("data.bin");
+        fs::write(&file, b"hello world").unwrap();
+
+        let sha1 = calculate_file_sha1(&file).unwrap();
+        assert_eq!(sha1, "2aae6c35c94fcfb415dbe95f408b9ce91ee846ed");
+        assert!(verify_file_sha1(&file, &sha1).unwrap());
+        assert!(
+            !verify_file_sha1(&file, "0000000000000000000000000000000000000000").unwrap()
+        );
+
+        fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn rules_allow_empty_is_true() {
+        assert!(rules_allow(&[]));
+    }
+
+    #[test]
+    fn rules_allow_current_os() {
+        let os = get_current_os();
+        let rule = |action: &str| Rule {
+            action: action.to_string(),
+            features: None,
+            os: Some(RuleOs {
+                name: Some(os.to_string()),
+                version: None,
+                version_range: None,
+                arch: None,
+            }),
+        };
+
+        assert!(rules_allow(&[rule("allow")]));
+        assert!(!rules_allow(&[rule("disallow")]));
+    }
+
+    #[test]
+    fn get_native_classifier_detects_current_platform() {
+        let native_key = match (get_current_os(), get_current_arch()) {
+            ("windows", "x64") => "windows-x64",
+            ("windows", _) => "windows-x86",
+            ("osx", _) => "osx",
+            ("linux", "x64") => "linux-x64",
+            ("linux", "arm64") => "linux-arm64",
+            ("linux", _) => "linux-x86",
+            _ => return,
+        };
+
+        let mut natives = std::collections::HashMap::new();
+        natives.insert(native_key.to_string(), "test".to_string());
+        let library = Library {
+            name: "test".to_string(),
+            downloads: None,
+            natives: Some(natives),
+            rules: vec![],
+            extract: None,
+            extra: serde_json::Map::new(),
+        };
+
+        let (classifier, key) = get_native_classifier(&library).unwrap();
+        assert_eq!(key, native_key);
+        assert!(classifier.starts_with("natives-"));
+    }
 }

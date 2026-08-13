@@ -1,8 +1,7 @@
 import {  InvokeOptions } from "@tauri-apps/api/core";
 import { invokeRust } from "./client";
 import { logger } from "@/helper/logger";
-import type { VersionManifest, VersionDownloadManifest, DownloadProgress, DownloadTask, MigrationResult, DeployResult } from "./types/download";
-import type { DeployOptions } from "./types/download";
+import type { VersionManifest, VersionDownloadManifest, DownloadTask, DownloadOptions, DownloadResult } from "./types/download";
 
 /**
  * 获取 Minecraft 版本清单
@@ -45,83 +44,6 @@ export const invokeGetVersionDownloadManifest = async (
 };
 
 /**
- * 下载单个文件
- * @param versionId 版本 ID
- * @param url 下载 URL
- * @param filename 保存文件名
- * @param sha1 SHA1 校验值（可选）
- * @param skipVerify 是否跳过完整性校验（可选）
- * @param totalSize 文件总大小（可选）
- * @param options Tauri invoke 选项
- * @returns 下载进度信息
- */
-export const invokeDownloadFile = async (
-  versionId: string,
-  url: string,
-  filename: string,
-  sha1?: string,
-  skipVerify?: boolean,
-  totalSize?: number,
-  options?: InvokeOptions
-): Promise<DownloadProgress> => {
-  logger.info('开始下载文件', { url, filename, sha1, skipVerify, totalSize, versionId });
-
-  const args: any = { versionId, url, filename };
-  if (sha1 !== undefined) args.sha1 = sha1;
-  if (skipVerify !== undefined) args.skip_verify = skipVerify;
-  if (totalSize !== undefined) args.total_size = totalSize;
-
-  return await invokeRust("download_file", args, options);
-};
-
-/**
- * 部署版本文件到实例目录
- * @param versionId 版本 ID
- * @param instancePath 实例路径
- * @param options Tauri invoke 选项
- * @returns 部署结果字符串
- */
-export const invokeDeployVersionFiles = async (
-  versionId: string,
-  instancePath: string,
-  options?: InvokeOptions
-): Promise<string> => {
-  logger.info('部署版本文件到实例', { versionId, instancePath });
-  return await invokeRust("deploy_version_files", {
-    versionId,
-    instance_path: instancePath
-  }, options);
-};
-
-/**
- * 部署版本（全局资源）
- * @param versionId 版本 ID
- * @param options Tauri invoke 选项
- * @returns 部署结果字符串
- */
-export const invokeDeployVersionHmcl = async (
-  versionId: string,
-  options?: InvokeOptions
-): Promise<string> => {
-  logger.info('部署版本（全局资源）', { versionId });
-  return await invokeRust("deploy_version_global", {
-    version_id: versionId
-  }, options);
-};
-
-/**
- * 迁移目录结构（旧格式 -> 新格式）
- * @param options Tauri invoke 选项
- * @returns 迁移结果
- */
-export const invokeMigrateDirectoryStructure = async (
-  options?: InvokeOptions
-): Promise<MigrationResult> => {
-  logger.info('迁移目录结构');
-  return await invokeRust("migrate_directory_structure", {}, options);
-};
-
-/**
  * 获取所有下载任务
  * @param options Tauri invoke 选项
  * @returns 下载任务列表
@@ -131,20 +53,6 @@ export const invokeGetDownloadTasks = async (
 ): Promise<DownloadTask[]> => {
   logger.info('获取下载任务列表');
   return await invokeRust("get_download_tasks", {}, options);
-};
-
-/**
- * 获取单个下载任务
- * @param taskId 任务 ID
- * @param options Tauri invoke 选项
- * @returns 下载任务信息，不存在返回 null
- */
-export const invokeGetDownloadTask = async (
-  taskId: string,
-  options?: InvokeOptions
-): Promise<DownloadTask | null> => {
-  logger.info('获取下载任务', { taskId });
-  return await invokeRust("get_download_task", { taskId }, options);
 };
 
 /**
@@ -159,6 +67,20 @@ export const invokeCancelDownload = async (
 ): Promise<string> => {
   logger.info('取消下载任务', { taskId });
   return await invokeRust("cancel_download", { taskId }, options);
+};
+
+/**
+ * 取消整个版本的部署下载（触发后端取消令牌，立即中断下载链路）
+ * @param versionId 版本 ID
+ * @param options Tauri invoke 选项
+ * @returns 操作结果字符串
+ */
+export const invokeCancelVersionDownload = async (
+  versionId: string,
+  options?: InvokeOptions
+): Promise<string> => {
+  logger.info('取消版本下载', { versionId });
+  return await invokeRust("cancel_version_download", { versionId }, options);
 };
 
 /** 清理已完成的下载任务 */
@@ -187,16 +109,16 @@ export const invokeGetGameVersions = async (
  * @param invokeOptions Tauri invoke 选项
  * @returns 部署结果
  */
-export const invokeDownloadAndDeploy = async (
-  options: DeployOptions,
+export const invokeDownload = async (
+  options: DownloadOptions,
   invokeOptions?: InvokeOptions
-): Promise<DeployResult> => {
+): Promise<DownloadResult> => {
   logger.info('下载并部署实例', options);
-  return await invokeRust("download_and_deploy", {
+  return await invokeRust("download", {
     options: {
       ...options,
       loader_version: options.loader_version || null,
-      target_existing_instance: options.target_existing_instance || null
+      target_existing_game: options.target_existing_game || null
     }
   }, invokeOptions);
 };

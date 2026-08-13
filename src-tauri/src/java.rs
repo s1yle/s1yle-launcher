@@ -75,10 +75,10 @@ fn is_jdk_at_path(java_home: &PathBuf) -> bool {
 
 /// 获取 java 可执行文件名
 #[cfg(target_os = "windows")]
-const JAVA_EXECUTABLE: &str = "java.exe";
+const _JAVA_EXECUTABLE: &str = "java.exe";
 
 #[cfg(not(target_os = "windows"))]
-const JAVA_EXECUTABLE: &str = "java";
+const _JAVA_EXECUTABLE: &str = "java";
 
 // =============================================================================
 // Linux 平台实现
@@ -384,6 +384,25 @@ pub async fn get_java_version(path: String) -> Result<JavaInstallation, String> 
         vendor,
         is_jdk,
     })
+}
+
+/// 选择 Java 可执行文件（系统文件选择器）
+#[tauri::command]
+pub async fn select_java_path(app: tauri::AppHandle) -> Result<Option<String>, String> {
+    use tauri_plugin_dialog::DialogExt;
+
+    let (tx, rx) = std::sync::mpsc::channel();
+
+    app.dialog().file().pick_file(move |path| {
+        let path_str = path.and_then(|p| p.as_path().map(|p| p.to_string_lossy().to_string()));
+        let _ = tx.send(path_str);
+    });
+
+    // 在 tokio 中等待通道
+    match tokio::task::block_in_place(|| rx.recv()) {
+        Ok(result) => Ok(result),
+        Err(_) => Err("通道接收失败".to_string()),
+    }
 }
 
 // =============================================================================

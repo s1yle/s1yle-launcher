@@ -1,35 +1,19 @@
-use crate::admin_account::AdminSession;
+use crate::config::ConfigManager;
 use crate::microsoft_login::token_store::{delete_mc_token, get_mc_token};
 use chrono::Local;
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, fs, sync::Mutex};
-use tauri::command;
+use std::{collections::HashMap, sync::Mutex};
+use tauri::{command, Manager};
 use uuid::Uuid;
 
 use crate::log_info;
+use crate::APP_HANDLE;
 
 // ======================== 类型定义 ========================
 
-/// 账户类型枚举
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
-pub enum AccountType {
-    /// 占位符
-    #[serde(rename = "none")]
-    None,
-    /// 微软正版账户
-    #[serde(rename = "microsoft")]
-    Microsoft,
-    /// 离线账户
-    #[serde(rename = "offline")]
-    Offline,
-    /// 第三方账户
-    #[serde(rename = "third-party")]
-    ThirdParty,
-    /// 服主账户
-    #[serde(rename = "admin")]
-    Admin,
-}
+/// 账户类型（定义见 crate::types）
+pub use crate::types::AccountType;
 
 /// 账户基本信息（公开暴露给前端）
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -60,7 +44,6 @@ pub struct Account {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct AccountManager {
     accounts: HashMap<String, Account>,
-    admin_accounts: HashMap<String, AdminSession>,
     current_uuid: Option<String>,
 }
 
@@ -68,7 +51,6 @@ impl Default for AccountManager {
     fn default() -> Self {
         Self {
             accounts: HashMap::new(),
-            admin_accounts: HashMap::new(),
             current_uuid: None,
         }
     }
@@ -79,25 +61,10 @@ static ACCOUNT_MANAGER: OnceCell<Mutex<AccountManager>> = OnceCell::new();
 
 // ======================== 核心逻辑：文件存储 ========================
 
-/// 获取账户数据文件路径
-fn get_accounts_file_path() -> Result<std::path::PathBuf, String> {
-    let config_dir = &*crate::config::CONFIG_APPLICATION;
-    std::fs::create_dir_all(config_dir).map_err(|e| format!("创建配置目录失败: {}", e))?;
-    Ok(config_dir.join("accounts.json"))
-}
-
 /// 从磁盘加载账户数据（启动时调用一次）
 pub fn load_accounts_from_disk_internal() -> Result<(), String> {
-    let path = get_accounts_file_path()?;
-
-    if !path.exists() {
-        return Ok(());
-    }
-
-    let content = fs::read_to_string(&path).map_err(|e| format!("读取账户文件失败: {}", e))?;
-
-    let loaded_manager: AccountManager = serde_json::from_str(&content)
-        .map_err(|e| format!("解析账户文件失败 (JSON格式错误): {}", e))?;
+    let cm = config_manager()?;
+    let loaded_manager = cm.read_section::<AccountManager>("accounts").unwrap_or_default();
 
     let mut manager = ACCOUNT_MANAGER
         .get()
@@ -111,21 +78,23 @@ pub fn load_accounts_from_disk_internal() -> Result<(), String> {
 
 /// 将当前内存中的账户数据保存到磁盘（内部调用）
 fn save_accounts_to_disk_internal() -> Result<(), String> {
-    let path = get_accounts_file_path()?;
     let manager = ACCOUNT_MANAGER
         .get()
         .ok_or("账户管理器未初始化")?
         .lock()
         .map_err(|e| format!("锁获取失败: {}", e))?;
 
-    let json_str = serde_json::to_string_pretty(&*manager)
-        .map_err(|e| format!("序列化账户数据失败: {}", e))?;
-
-    fs::write(&path, json_str).map_err(|e| format!("写入账户文件失败: {}", e))?;
-
-    log_info!("账号文件保存成功：{}", path.to_string_lossy());
-
+    config_manager()?.write_section("accounts", &*manager)?;
+    log_info!("账号文件保存成功");
     Ok(())
+}
+
+/// 获取统一配置管理器（经 APP_HANDLE 定位，与 window.rs 同模式）
+fn config_manager() -> Result<tauri::State<'static, ConfigManager>, String> {
+    APP_HANDLE
+        .get()
+        .ok_or_else(|| "APP_HANDLE 未初始化".to_string())
+        .map(|h| h.state::<ConfigManager>())
 }
 
 /// 公共保存接口（如果需要手动强制保存）
@@ -192,10 +161,7 @@ pub fn init_account_manager() {
 }
 
 /// 向管理器添加账户并自动保存到磁盘
-pub fn add_account_to_manager(
-    account: Option<Account>,
-    admin_account: Option<AdminSession>,
-) -> Result<(), String> {
+pub fn add_account_to_manager(account: Option<Account>) -> Result<(), String> {
     let mut manager = ACCOUNT_MANAGER
         .get()
         .ok_or("账户管理器未初始化")?
@@ -211,14 +177,7 @@ pub fn add_account_to_manager(
         manager.accounts.insert(uuid, acc);
     }
 
-    if manager.admin_accounts.is_empty() == false {
-        if let Some(admin) = admin_account {
-            let admin_id = admin.clone().admin_id;
-            manager.admin_accounts.insert(admin_id, admin);
-        }
-    }
-
-    // 释放锁后再保存（避免死锁，虽然这里作用域结束自动释放，但这是个好习惯）
+    // 释放锁后再保存（避免死锁）
     drop(manager);
     save_accounts_to_disk_internal()?; // 修改后自动保存
     auto_select_default_account()?;
@@ -309,26 +268,6 @@ pub fn initialize_account_system() -> Result<(), String> {
     Ok(())
 }
 
-/// 添加管理员账户到统一账户列表
-#[command]
-pub fn add_admin_account(
-    email: String,
-    admin_id: String,
-    bound_player_uuids: Vec<String>,
-    login_time: String,
-) -> Result<String, String> {
-    let admin_session = AdminSession {
-        email,
-        admin_id: admin_id.clone(),
-        bound_player_uuids,
-        login_time,
-    };
-
-    add_account_to_manager(None, Some(admin_session))?;
-
-    Ok(format!("管理员账户添加成功，ID: {}", admin_id))
-}
-
 /// 添加新账户（支持 microsoft/offline 两种类型）
 #[command]
 pub fn add_player_account(
@@ -358,7 +297,7 @@ pub fn add_player_account(
 
     let account = Account::new(name, account_type, access_token, refresh_token);
     let uuid = account.info.uuid.clone();
-    add_account_to_manager(Some(account), None)?;
+    add_account_to_manager(Some(account))?;
 
     Ok(format!("账户创建成功，UUID: {}", uuid))
 }
@@ -455,16 +394,4 @@ pub fn delete_account(app: tauri::AppHandle, uuid: String) -> Result<String, Str
 #[command]
 pub fn set_current_account(uuid: String) -> Result<String, String> {
     set_current_account_internal(uuid)
-}
-
-/// 手动保存账户数据到磁盘
-#[command]
-pub fn save_accounts_to_disk() -> Result<(), String> {
-    save_accounts_to_disk_internal()
-}
-
-/// 手动从磁盘加载账户数据
-#[command]
-pub fn load_accounts_from_disk() -> Result<(), String> {
-    load_accounts_from_disk_internal()
 }

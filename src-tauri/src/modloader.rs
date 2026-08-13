@@ -1,8 +1,8 @@
+use crate::app_context::AppContext;
 use crate::log_info;
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::State;
 
@@ -194,8 +194,8 @@ const FABRIC_META_BASE: &str = "https://meta.fabricmc.net/v2";
 
 /// 模组加载器管理器
 pub struct ModLoaderManager {
-    /// 基础下载路径
-    pub base_path: PathBuf,
+    /// 应用上下文（组合根注入，versions 目录来源）
+    ctx: AppContext,
     /// Fabric 版本缓存
     pub fabric_cache: Mutex<HashMap<String, FabricVersionResponse>>,
     /// Forge 版本缓存
@@ -203,41 +203,42 @@ pub struct ModLoaderManager {
 }
 
 impl ModLoaderManager {
-    /// 创建新的 ModLoaderManager 实例
-    pub fn new(base_path: PathBuf) -> Self {
+    /// 创建新的 ModLoaderManager 实例（组合根注入 ctx）
+    pub fn new(ctx: AppContext) -> Self {
         Self {
-            base_path,
+            ctx,
             fabric_cache: Mutex::new(HashMap::new()),
             forge_cache: Mutex::new(HashMap::new()),
         }
     }
 
     /// 获取已安装的模组加载器列表
-    pub fn get_installed_mod_loaders(&self, version_id: &str) -> Vec<ModLoaderType> {
-        let version_dir = self.base_path.join("versions").join(version_id);
+    ///
+    /// 规则：游戏目录名恰好等于版本号 → 纯净版；
+    /// `{version_id}-fabric` / `{version_id}-forge` → 对应加载器。
+    pub fn get_installed_mod_loaders(
+        &self,
+        version_id: &str,
+    ) -> Result<Vec<ModLoaderType>, String> {
+        let versions_dir = self.ctx.versions_dir();
+
         let mut loaders = Vec::new();
 
-        if version_dir.exists() {
+        if versions_dir.join(version_id).exists() {
             loaders.push(ModLoaderType::Vanilla);
         }
 
-        let fabric_dir = self
-            .base_path
-            .join("versions")
-            .join(format!("{}-fabric", version_id));
+        let fabric_dir = versions_dir.join(format!("{}-fabric", version_id));
         if fabric_dir.exists() {
             loaders.push(ModLoaderType::Fabric);
         }
 
-        let forge_dir = self
-            .base_path
-            .join("versions")
-            .join(format!("{}-forge", version_id));
+        let forge_dir = versions_dir.join(format!("{}-forge", version_id));
         if forge_dir.exists() {
             loaders.push(ModLoaderType::Forge);
         }
 
-        loaders
+        Ok(loaders)
     }
 }
 
@@ -538,7 +539,7 @@ pub async fn build_forge_launch_config(
 pub fn get_installed_mod_loaders(
     version_id: String,
     mod_loader_manager: State<'_, ModLoaderManager>,
-) -> Vec<ModLoaderType> {
+) -> Result<Vec<ModLoaderType>, String> {
     mod_loader_manager.get_installed_mod_loaders(&version_id)
 }
 

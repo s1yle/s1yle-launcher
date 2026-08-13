@@ -1,13 +1,13 @@
+use crate::config::ConfigManager;
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
-use std::fs;
 use std::sync::Mutex;
-use tauri::command;
-use uuid::Uuid;
+use tauri::{command, Manager};
 
 use crate::log_info;
+use crate::APP_HANDLE;
 
 /// 管理员账户信息
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -58,13 +58,6 @@ impl Default for AdminManager {
 /// 全局管理员管理器实例
 static ADMIN_MANAGER: OnceCell<Mutex<AdminManager>> = OnceCell::new();
 
-/// 获取管理员数据文件路径
-fn get_admin_file_path() -> Result<std::path::PathBuf, String> {
-    let config_dir = &*crate::config::CONFIG_APPLICATION;
-    fs::create_dir_all(config_dir).map_err(|e| format!("创建配置目录失败: {}", e))?;
-    Ok(config_dir.join("admin_accounts.json"))
-}
-
 /// 使用 SHA-256 加盐哈希密码
 fn hash_password(password: &str, salt: &str) -> String {
     let mut hasher = Sha256::new();
@@ -73,21 +66,13 @@ fn hash_password(password: &str, salt: &str) -> String {
     hex::encode(hasher.finalize())
 }
 
-/// 生成随机盐值
-fn generate_salt() -> String {
-    Uuid::new_v4().to_string()
-}
-
-/// 从磁盘加载管理员数据
+/// 从磁盘加载管理员数据（统一配置文件中 admin_accounts 节）
 fn load_admin_from_disk() -> Result<(), String> {
-    let path = get_admin_file_path()?;
-    if !path.exists() {
-        return Ok(());
-    }
-    let content =
-        fs::read_to_string(&path).map_err(|e| format!("读取管理员配置文件失败: {}", e))?;
-    let manager: AdminManager =
-        serde_json::from_str(&content).map_err(|e| format!("解析管理员配置失败: {}", e))?;
+    let cm = APP_HANDLE
+        .get()
+        .ok_or_else(|| "APP_HANDLE 未初始化".to_string())?
+        .state::<ConfigManager>();
+    let manager = cm.read_section::<AdminManager>("admin_accounts").unwrap_or_default();
     let mut guard = ADMIN_MANAGER
         .get()
         .ok_or("管理员管理器未初始化")?
@@ -98,16 +83,18 @@ fn load_admin_from_disk() -> Result<(), String> {
     Ok(())
 }
 
-/// 保存管理员数据到磁盘
+/// 保存管理员数据到磁盘（统一配置文件中 admin_accounts 节）
 fn save_admin_to_disk() -> Result<(), String> {
-    let path = get_admin_file_path()?;
     let guard = ADMIN_MANAGER
         .get()
         .ok_or("管理员管理器未初始化")?
         .lock()
         .map_err(|e| format!("获取锁失败: {}", e))?;
-    let json = serde_json::to_string_pretty(&*guard).map_err(|e| format!("序列化失败: {}", e))?;
-    fs::write(&path, json).map_err(|e| format!("写入管理员配置失败: {}", e))?;
+    let cm = APP_HANDLE
+        .get()
+        .ok_or_else(|| "APP_HANDLE 未初始化".to_string())?
+        .state::<ConfigManager>();
+    cm.write_section("admin_accounts", &*guard)?;
     log_info!("管理员账号保存成功");
     Ok(())
 }

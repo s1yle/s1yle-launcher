@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useInstanceStore } from '@/stores/instanceStore';
 import { logger } from '@/helper/logger';
-import { getInstanceSettings, updateInstanceSettings, GameSettings, selectJavaPath, scanJavaInstallations, JavaInstallation, getMemoryUsage, getDisplayResolutions } from '@/helper/rustInvoke';
+import { getGameSettings, updateGameSettings, GameSettings, selectJavaPath, scanJavaInstallations, JavaInstallation, getMemoryUsage, getDisplayResolutions } from '@/helper/rustInvoke';
 import { SettingsPanel, Toggle, Slider, useNotification } from '@/components/common';
 import PartitionBar, { getPartitionColor } from '@/components/common/PartitionBar';
 import { DropDownOption } from '@/components/common/DropDown';
@@ -73,7 +73,7 @@ const InstanceGameSettings = () => {
     const loadSettings = async () => {
       try {
         setSettingsLoading(true);
-        const loadedSettings = await getInstanceSettings(instance.id);
+        const loadedSettings = await getGameSettings(instance.name);
         console.log('[GameSettings] Loaded settings:', loadedSettings);
         setSettings(loadedSettings);
         lastSavedSettings.current = JSON.stringify(loadedSettings);
@@ -136,7 +136,7 @@ const InstanceGameSettings = () => {
     const timer = setTimeout(async () => {
       try {
         console.log('[GameSettings] Saving settings:', settings);
-        await updateInstanceSettings(instance.id, settings);
+        await updateGameSettings(instance.name, settings);
         lastSavedSettings.current = currentSettingsStr;
         success(t('settings.saved', '设置已保存'));
       } catch (e) {
@@ -189,7 +189,7 @@ const InstanceGameSettings = () => {
   const handleAutoMemoryChange = (checked: boolean) => {
     setAutoMemory(checked);
     if (checked) {
-      // 自动分配：不写入配置，游戏分配段实时展示 HMCL 风格推荐值
+      // 自动分配: 剩余空隙 = total - (已用 + 游戏分配)
       // 推荐最大值 = 可用内存 - 2G（系统/浏览器预留），下限 1G，上限不超总内存
     } else {
       updateSetting('min_memory', 1024);
@@ -205,7 +205,7 @@ const InstanceGameSettings = () => {
   };
 
   // PCL 语义：可用 = 总 - 已用；游戏分配 part 与滑块同源（min_memory 设定值），
-  // 自动分配时实时展示 HMCL 风格推荐值；剩余空隙 = total - (已用 + 游戏分配)
+  // 自动分配时实时展示: 剩余空隙 = total - (已用 + 游戏分配)
   const availMemory = Math.max(0, systemMemory - usedMemory);
   // HMCL 风格推荐值：可用内存 - 2G（系统/浏览器预留），下限 1G，上限不超总内存
   const recommendedMemory = Math.max(1024, Math.min(availMemory - 2048, systemMemory || 16384));

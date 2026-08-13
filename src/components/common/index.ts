@@ -57,10 +57,6 @@ export type {
   NotificationType,
 } from './NotificationProvider';
 
-/** 版本筛选下拉组件 */
-export { default as VersionFilterDropdown } from './Version/VersionFilterDropdown';
-/** 版本筛选下拉 Props / 选项类型 */
-export type { VersionFilterDropdownProps, VersionFilterOption } from './Version/VersionFilterDropdown';
 /** 版本分类类型 */
 export type { VersionCategory } from '../../utils/versionFilter';
 

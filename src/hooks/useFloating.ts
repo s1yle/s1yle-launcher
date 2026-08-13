@@ -142,7 +142,19 @@ function getFlippedPlacement(placement: FloatingPlacement): FloatingPlacement {
 }
 
 /**
- * 检测给定位置是否超出视口边界。
+ * 视口碰撞检测结果。
+ */
+interface ViewportCollision {
+  /** 是否发生碰撞（水平或垂直） */
+  collides: boolean;
+  /** 是否水平方向溢出 */
+  horizontal: boolean;
+  /** 是否垂直方向溢出 */
+  vertical: boolean;
+}
+
+/**
+ * 检测给定位置是否超出视口边界，并区分碰撞方向。
  */
 function detectViewportCollision(
   x: number,
@@ -150,13 +162,14 @@ function detectViewportCollision(
   floatingWidth: number,
   floatingHeight: number,
   boundary: CollisionBoundary,
-): boolean {
-  return (
+): ViewportCollision {
+  const horizontal =
     x < (boundary.left ?? 0) ||
-    x + floatingWidth > window.innerWidth - (boundary.right ?? 0) ||
+    x + floatingWidth > window.innerWidth - (boundary.right ?? 0);
+  const vertical =
     y < (boundary.top ?? 0) ||
-    y + floatingHeight > window.innerHeight - (boundary.bottom ?? 0)
-  );
+    y + floatingHeight > window.innerHeight - (boundary.bottom ?? 0);
+  return { collides: horizontal || vertical, horizontal, vertical };
 }
 
 /**
@@ -216,7 +229,8 @@ function resolveOverlap(
  * - **origin 模式**：在绝对坐标 (`originX`, `originY`) 处定位
  *
  * 定位保障（按优先级）：
- * 1. **L1 视口翻转**（仅 anchor 模式）：检测到视口碰撞时自动翻转 placement
+ * 1. **L1 视口碰撞**（仅 anchor 模式）：放置方向的同轴碰撞时翻转 placement；
+ *    跨轴碰撞（如紧贴窗口边缘导致的横向溢出）则夹紧到视口内
  * 2. **L2 元素避开**：检测到与 `avoidRefs` 重叠时沿最短位移推开
  * 3. **L3 弹簧动画**：由调用方（Portal）通过 Framer Motion 驱动平滑过渡
  *
@@ -280,28 +294,45 @@ export function useFloating(options: UseFloatingOptions): UseFloatingReturn {
       pos = calculateAnchorPosition(triggerRect, floatingRect, currentPlacement, offset);
 
       if (autoFlip) {
-        const collides = detectViewportCollision(
+        const collision = detectViewportCollision(
           pos.x, pos.y,
           floatingRect.width, floatingRect.height,
           collisionBoundary,
         );
-        if (collides) {
-          const flipped = getFlippedPlacement(currentPlacement);
-          pos = calculateAnchorPosition(triggerRect, floatingRect, flipped, offset);
-          currentPlacement = flipped;
-          // TODO: re-run detectViewportCollision on the flipped position;
-          //       the flipped placement might also collide in edge cases
+
+        if (collision.collides) {
+          const { side } = parsePlacement(currentPlacement);
+          const isVerticalSide = side === 'top' || side === 'bottom';
+
+          // 仅当碰撞发生在放置方向的同轴上才翻转。
+          // 例：bottom 放置时水平溢出（如紧贴窗口右缘）不应导致垂直翻转到上方，
+          // 否则下拉框会莫名其妙地往上弹出。
+          if (isVerticalSide ? collision.vertical : collision.horizontal) {
+            const flipped = getFlippedPlacement(currentPlacement);
+            pos = calculateAnchorPosition(triggerRect, floatingRect, flipped, offset);
+            currentPlacement = flipped;
+          }
+
+          // 跨轴溢出（或翻转后仍溢出）时夹紧到视口内，保证浮动层可见
+          pos.x = Math.max(
+            collisionBoundary.left ?? 0,
+            Math.min(pos.x, window.innerWidth - floatingRect.width - (collisionBoundary.right ?? 0)),
+          );
+          pos.y = Math.max(
+            collisionBoundary.top ?? 0,
+            Math.min(pos.y, window.innerHeight - floatingRect.height - (collisionBoundary.bottom ?? 0)),
+          );
         }
       }
     } else if (isOrigin) {
       pos = { x: originX, y: originY };
 
-      const clamped = detectViewportCollision(
+      const collision = detectViewportCollision(
         pos.x, pos.y,
         floatingRect.width, floatingRect.height,
         collisionBoundary,
       );
-      if (clamped) {
+      if (collision.collides) {
         pos.x = Math.max(
           collisionBoundary.left ?? 0,
           Math.min(pos.x, window.innerWidth - floatingRect.width - (collisionBoundary.right ?? 0)),

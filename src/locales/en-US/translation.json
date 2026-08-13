@@ -175,6 +175,13 @@
     "cancel": "Cancel",
     "overallProgress": "Overall Progress",
     "failed": "Failed",
+    "phase": {
+      "downloading_libraries": "Downloading libraries",
+      "downloading_assets": "Downloading assets",
+      "downloading_natives": "Downloading natives",
+      "downloading_client": "Downloading client jar",
+      "downloading_index": "Downloading asset index"
+    },
     "install": {
       "title": "Install New Game",
       "instanceName": "Instance Name",

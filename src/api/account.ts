@@ -43,35 +43,6 @@ export const invokeAddPlayerAccount = async (
 };
 
 /**
- * 添加管理员账户
- * @param email 管理员邮箱
- * @param password 密码
- * @param options Tauri invoke 选项
- * @returns 操作结果字符串
- */
-export const invokeAddAdminAccount = async (
-  email: string,
-  admin_id: string,
-  bound_player_uuids: string[],
-  login_time: string,
-  options?: InvokeOptions
-): Promise<string> => {
-  const trimmedEmail = email.trim();
-  if (!trimmedEmail || !trimmedEmail.includes('@')) {
-    throw new Error("请输入有效的邮箱地址");
-  }
-
-  logger.info('准备调用 add_admin_account', { email: trimmedEmail });
-
-  return await invokeRust("add_admin_account", {
-    email: trimmedEmail,
-    adminId: admin_id,
-    boundPlayerUuids: bound_player_uuids,
-    loginTime: login_time,
-  }, options);
-};
-
-/**
  * 获取账户列表
  * @param options Tauri invoke 选项
  * @returns 账户信息数组
@@ -136,34 +107,6 @@ export const invokeSetCurrentAccount = async (
 ): Promise<string> => {
   logger.info('准备调用 set_current_account', { uuid });
   return await invokeRust("set_current_account", { uuid }, options);
-};
-
-/**
- * 保存账户列表到磁盘
- * @param args 额外参数（可选）
- * @param options Tauri invoke 选项
- * @returns Rust 命令返回结果
- */
-export const invokeSaveAccount = async (
-  args?: InvokeArgs,
-  options?: InvokeOptions
-): Promise<any> => {
-  logger.info('准备调用 save_accounts_to_disk', args);
-  return await invokeRust("save_accounts_to_disk", args, options);
-};
-
-/**
- * 从磁盘加载账户列表
- * @param args 额外参数（可选）
- * @param options Tauri invoke 选项
- * @returns Rust 命令返回结果
- */
-export const invokeLoadAccount = async (
-  args?: InvokeArgs,
-  options?: InvokeOptions
-): Promise<any> => {
-  logger.info('准备调用 load_accounts_from_disk', args);
-  return await invokeRust("load_accounts_from_disk", args, options);
 };
 
 /**

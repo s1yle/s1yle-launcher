@@ -6,7 +6,7 @@ import {
   invokeGetCurrentAccount,
   invokeSetCurrentAccount,
   invokeDeleteAccount,
-  invokeAddPlayerAccount, invokeAddAdminAccount,
+  invokeAddPlayerAccount,
   invokeAccInit,
 } from '@/api/account';
 import { invokeGetConfig } from '@/api/config';
@@ -137,26 +137,6 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     const ok = isRegister
       ? await adminStore.register(email, password)
       : await adminStore.login(email, password);
-
-    // 持久化存储admin account
-    if (isRegister) {
-      if (adminStore.session) {
-        await invokeAddAdminAccount(
-          adminStore.session?.email,
-          adminStore.session?.adminId,
-          adminStore.session?.bound_player_uuids,
-          adminStore.session?.loginTime
-        );
-      } else {
-        await invokeAddAdminAccount(
-          "unknown",
-          "unknown",
-          ["unknown"],
-          "1970/1/1"
-        );
-      }
-      await get().loadAccounts();
-    }
 
     if (!ok) return false;
 

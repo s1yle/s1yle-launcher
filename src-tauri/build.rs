@@ -49,7 +49,7 @@ fn main() {
             "get_version_detail",
             "get_version_download_manifest",
             "download_file",
-            "download_and_deploy",
+            "download",
             "get_download_tasks",
             "get_download_task",
             "cancel_download",
@@ -120,7 +120,9 @@ fn main() {
             "start_device_code",
             "complete_microsoft_login",
             "cancel_device_code",
-            "poll_and_complete_login"
+            "poll_and_complete_login",
+            "get_game_root",
+            "set_game_root"
         ]),
     ))
     .unwrap();

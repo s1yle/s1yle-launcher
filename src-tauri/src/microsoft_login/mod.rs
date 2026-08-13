@@ -8,8 +8,9 @@ mod types;
 mod uuid;
 mod xbox;
 
-use crate::account::{add_account_to_manager, Account, AccountInfo, AccountType};
+use crate::account::{add_account_to_manager, Account, AccountInfo};
 use crate::microsoft_login::token_store::set_mc_token;
+use crate::types::AccountType;
 use chrono::Local;
 pub use oauth::{get_devicecode, get_user_authorize};
 use serde::{Deserialize, Serialize};
@@ -229,7 +230,7 @@ pub async fn poll_and_complete_login(app: tauri::AppHandle) -> Result<AccountInf
         access_token: Some(token.access_token.clone()),
         refresh_token: Some(token.refresh_token.clone()),
     };
-    add_account_to_manager(Some(account), None)?;
+    add_account_to_manager(Some(account))?;
 
     SESSION.lock().await.status = LoginStatus::Done;
     emit_progress(&app, "done", "登录完成");

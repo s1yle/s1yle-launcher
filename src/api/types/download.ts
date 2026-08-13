@@ -88,22 +88,10 @@ export interface VersionDownloadManifest {
   asset_index: FileDownload | null;
 }
 
-/** 目录结构迁移结果 */
-export interface MigrationResult {
-  /** 已迁移的版本列表 */
-  migrated_versions: string[];
-  /** 已迁移的库数量 */
-  migrated_libraries: number;
-  /** 已迁移的资源数量 */
-  migrated_assets: number;
-  /** 迁移过程中的错误信息 */
-  errors: string[];
-}
-
 /** 下载部署选项 */
-export interface DeployOptions {
+export interface DownloadOptions {
   /** 实例名称 */
-  instance_name: string;
+  game_name: string;
   /** 版本 ID */
   version_id: string;
   /** 模组加载器类型 */
@@ -111,17 +99,17 @@ export interface DeployOptions {
   /** 模组加载器版本（可为 null 使用默认） */
   loader_version: string | null;
   /** 已存在的目标实例 ID（覆盖时使用） */
-  target_existing_instance: string | null;
+  target_existing_game: string | null;
 }
 
 /** 部署结果 */
-export interface DeployResult {
+export interface DownloadResult {
   /** 是否成功 */
   success: boolean;
   /** 部署后的实例 ID */
-  instance_id: string;
+  game_id: string;
   /** 实例名称 */
-  instance_name: string;
+  game_name: string;
   /** Minecraft 版本 */
   version: string;
   /** 已部署文件数 */

@@ -1,11 +1,9 @@
-import { GameInstance, KnownPath } from "@/helper/rustInvoke";
+import { GameInstance } from "@/helper/rustInvoke";
 import { t } from "i18next";
 import { JSX } from "react";
 
 /** 实例列表组件的 Props */
 export interface InstanceProps {
-    knownFolders: KnownPath[];
-    selectedFolderId: string | null;
     refresh: () => Promise<void>;
     searchQuery: string;
     setSearchQuery: (query: string) => void;

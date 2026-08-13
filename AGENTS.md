@@ -69,20 +69,21 @@ src/
 └── server/           # 服务端 SDK（OpenAPI 生成）
 
 src-tauri/src/
-├── lib.rs            # ~70+ 命令注册
+├── lib.rs            # ~60+ 命令注册
 ├── account.rs, launch.rs, window.rs, modloader.rs
 ├── admin_account.rs, background.rs, logging.rs
 ├── font.rs, java.rs, render.rs
+├── paths.rs, types.rs, system.rs
 ├── config/           # 配置模块
 ├── download/         # 下载模块（镜像/分块重试/并发见 utils.rs + downloader.rs）
-└── instance/         # 实例模块（layout.rs = 路径唯一事实源）
+└── game/             # 实例模块（layout.rs = 路径唯一事实源，commands/manager/scanner/storage/settings/validator）
 ```
 
 ---
 
 ## 4. 路由
 
-自动生成 → [`docs/generated/routes.md`](docs/generated/routes.md)（共 22 条路由）
+自动生成 → [`docs/generated/routes.md`](docs/generated/routes.md)（共 21 条路由）
 
 | 分组 | 路径 |
 |------|------|
@@ -154,13 +155,12 @@ import { getConfig, updateConfig, launchInstance } from '@/helper/rustInvoke';
 
 | 分类 | 命令示例 | TypeScript 封装 |
 |------|----------|----------------|
-| **配置** | `get_config`, `set_config_value`, `reset_config`, `export_config` | `getConfig()`, `setConfigValue()` 等 |
-| **路径** | `get_path_config`, `update_path_config`, `get_instance_path` 等 | `getPathConfig()`, `getInstancePath()` 等 |
-| **实例** | `scan_instances`, `create_instance`, `delete_instance` 等 | `scanInstances()`, `createInstance()` 等 |
-| **实例设置** | `get_instance_settings`, `update_instance_settings`, `get_system_memory` | `getInstanceSettings()` 等 |
-| **下载** | `get_version_manifest`, `download_and_deploy`, `cancel_download` 等 | `getVersionManifest()`, `downloadAndDeploy()` 等 |
-| **模组加载器** | `get_fabric_versions`, `get_forge_versions`, `install_with_loaders` 等 | `getFabricVersions()`, `installWithLoaders()` 等 |
-| **账户** | `add_account`, `get_account_list`, `delete_account` 等 | `invokeAddAccount()`, `getAccountList()` 等 |
+| **配置** | `get_config`, `set_config_value`, `save_login_state`, `clear_login_state` | `getConfig()`, `setConfigValue()` 等 |
+| **实例** | `scan_games`, `create_game`, `delete_game`, `rename_game`, `update_game`, `get_game`, `get_games_path` | `scanGames()`, `createGame()` 等 |
+| **实例设置** | `get_game_settings`, `update_game_settings`, `get_system_memory` | `getGameSettings()` 等 |
+| **下载** | `get_version_manifest`, `download`, `get_version_detail`, `cancel_download` | `getVersionManifest()`, `download()` 等 |
+| **模组加载器** | `get_fabric_versions`, `get_forge_versions`, `get_installed_mod_loaders` 等 | `getFabricVersions()`, `getInstalledModLoaders()` 等 |
+| **账户** | `add_player_account`, `get_account_list`, `delete_account` 等 | `invokeAddPlayerAccount()`, `getAccountList()` 等 |
 | **管理员** | `register_admin`, `login_admin`, `bind_player_to_admin` 等 | `apiRegisterAdmin()`, `apiLoginAdmin()` 等 |
 | **启动** | `tauri_launch_instance`, `tauri_stop_instance`, `tauri_get_launch_status` | `launchInstance()`, `stopInstance()` 等 |
 | **窗口** | `save_window_position`, `load_window_position`, `close_window` | `saveWindowPosition()` 等 |
@@ -171,9 +171,9 @@ import { getConfig, updateConfig, launchInstance } from '@/helper/rustInvoke';
 | **背景** | `select_background_image` | 直接 `invoke` |
 
 **注意事项**:
-- 更新配置必须用 `setConfigValue()` 增量更新，禁止用 `update_config()` 完整覆盖
+- 更新配置必须用 `setConfigValue()` 增量更新
 - 外部链接使用 Tauri `openUrl` API
-- Rust 后端命令通过 `lib.rs` 的 `generate_handler!` 注册（~70+ 命令）
+- Rust 后端命令通过 `lib.rs` 的 `generate_handler!` 注册（~60+ 命令）
 
 ---
 
@@ -263,7 +263,8 @@ pnpm docs:gen:routes  # 脚本: src/router/routes.tsx → docs/generated/routes.
 - 路由: `src/router/routes.tsx` 组件直接挂载（`component: React.lazy(...)`），禁止新增第二份组件注册表；父路由省略 component 自动跳首个子路由
 - 路由参数: 页面取参统一用 `useRouteParams()`（来自 `src/router/routeParams.ts`），禁止使用 React Router 原生 `useParams`
 - 命令契约: `src/api/generated-commands.json` 由 `scripts/generate-commands-contract.ts` 自动生成，前端 invoke 任何未注册命令会在 `client.ts` 中间件直接抛错
-- 路径单一事实源: 实例/版本目录一律经 `src-tauri/src/instance/layout.rs`（`version_dir_in` / `scan_all_installed_versions` / `is_version_installed` 等），禁止自行拼接 `versions/{v}/{v}.jar` 类路径
+- 路径单一事实源: 实例/版本目录一律经 `src-tauri/src/game/layout.rs`（`game_dir_by_game_name` / `scan_all_installed_versions` / `is_version_installed` 等），禁止自行拼接 `versions/{v}/{v}.jar` 类路径
+- 目录结构: 游戏目录 = 实例目录 `{base}/.minecraft/versions/{gameName}/`，jar/json/natives 平放，实例记录 `wecraft_{gameName}.json`；`create_game` 等命令以 `game_name`（目录名）为身份标识
 
 ---
 
@@ -286,7 +287,7 @@ docs/
 │   ├── config/            #   src/config/ (7 types)
 │   └── helper/            #   src/helper/ (re-exports from api/)
 ├── rust/                  ← 自动生成 (pnpm docs:gen:rust, cargo doc)
-├── generated/routes.md    ← 自动生成 (pnpm docs:gen:routes, 22 条路由)
+├── generated/routes.md    ← 自动生成 (pnpm docs:gen:routes, 21 条路由)
 ├── AGENTS.md              ← 人工维护 (本文件)
 ├── architecture.md        ← 人工维护
 ├── GUIDE.md               ← 人工维护

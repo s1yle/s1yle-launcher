@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { ArrowLeft, HelpCircle, Minus, X, Loader2 } from 'lucide-react';
 import { InstallCard, LoaderIcon, useNotification } from '../components/common';
-import { getVersionDetail, createInstance, ModLoaderType, openUrl } from '../helper/rustInvoke';
+import { getVersionDetail, createGame, ModLoaderType, openUrl } from '../helper/rustInvoke';
 import { checkLoaderCompatibility, getWikiUrl } from '../utils/modloaderCompat';
 import { useNavStore } from '../stores/navStore';
 import { useInstanceStore } from '../stores/instanceStore';
@@ -102,7 +102,7 @@ const VersionInstall = () => {
       const loaderType = selectedLoader?.modLoaderType || ModLoaderType.Vanilla;
       const loaderVersion = selectedLoader?.selectedVersion || undefined;
 
-      await createInstance(instanceName.trim(), versionId, loaderType, loaderVersion);
+      await createGame(instanceName.trim(), versionId, loaderType, loaderVersion);
       await refresh();
       success(t('common.success'), t('download.install.installComplete'));
       navigate('/instance-list');

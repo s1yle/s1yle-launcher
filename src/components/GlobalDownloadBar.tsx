@@ -1,18 +1,24 @@
 import { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Download } from 'lucide-react';
 import { useDownloadStore } from '../stores/downloadStore';
+import { getRouteConfigByPath } from '../router/config';
 import { Z_INDEX } from '../utils/zIndex';
 
 /**
  * 全局下载进度条 - 轻量替代浮动下载面板。
  * 有下载任务时在顶部居中显示聚合进度，点击跳转 /download/progress 查看详情。
+ * 当前路由配置 hideGlobalDownloadBar 时隐藏（如下载进度页本身）。
  */
 const GlobalDownloadBar = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const downloadingVersions = useDownloadStore((s) => s.downloadingVersions);
+
+  const currentRoute = getRouteConfigByPath(location.pathname);
+  if (currentRoute?.hideGlobalDownloadBar) return null;
 
   const activeList = useMemo(() => {
     return Array.from(downloadingVersions.values()).filter((v) => v.status === 'downloading');
@@ -28,7 +34,11 @@ const GlobalDownloadBar = () => {
   return (
     <button
       onClick={() => navigate('/download/progress')}
-      className="fixed left-1/2 -translate-x-1/2 top-14 flex items-center gap-3 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/90 backdrop-blur-md shadow-lg px-4 py-2 cursor-pointer hover:bg-[var(--color-surface-hover)] transition-colors"
+      className="fixed left-1/2 -translate-x-1/2 top-15 flex 
+        items-center gap-3 rounded-full 
+        border border-[var(--color-border)] bg-[var(--color-surface)]/90 
+        backdrop-blur-md shadow-lg px-4 py-2 cursor-pointer 
+        hover:bg-[var(--color-surface-hover)] transition-colors"
       style={{ zIndex: Z_INDEX.POPUP }}
       title={t('download.progressTitle')}
     >

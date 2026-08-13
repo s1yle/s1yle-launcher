@@ -2,13 +2,13 @@ import { useState, useCallback, useMemo, memo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
 import { useDownloadStore } from '../../stores/downloadStore';
-import { GameVersion, openFolder, openUrl } from '../../helper/rustInvoke';
-import { VersionListItem, VersionFilterDropdown, EmptyState, useNotification, VirtualList, Page, PageSection } from '../../components/common';
+import { GameVersion, openFolder, openUrl, getGamesPath } from '../../helper/rustInvoke';
+import { VersionListItem, EmptyState, useNotification, VirtualList, Page, PageSection, Spinner } from '../../components/common';
+import DropDown from '@/components/common/DropDown';
 import { useNavStore } from '../../stores/navStore';
 import { getWikiUrl } from '../../utils/modloaderCompat';
-import { VersionCategory, filterVersionsByCategory, debugVersionTypes } from '../../utils/versionFilter';
+import { VersionCategory, filterVersionsByCategory, countVersionsByCategory, debugVersionTypes } from '../../utils/versionFilter';
 import BottomBar from '@/components/common/BottomBar/BottomBar';
 import { useShallow } from 'zustand/shallow';
 
@@ -23,7 +23,6 @@ const DownloadGame: React.FC = () => {
     manifest,
     installedVersions,
     completedVersions,
-    basePath,
     loading,
     error,
   } = useDownloadStore(
@@ -31,7 +30,6 @@ const DownloadGame: React.FC = () => {
       manifest: s.manifest,
       installedVersions: s.installedVersions,
       completedVersions: s.completedVersions,
-      basePath: s.basePath,
       loading: s.loading,
       error: s.error,
     }))
@@ -40,13 +38,27 @@ const DownloadGame: React.FC = () => {
   // 函数引用永不变化，单独取出不导致重渲染
   const loadManifest = useDownloadStore(s => s.loadManifest);
   const loadInstalledVersions = useDownloadStore(s => s.loadInstalledVersions);
-  const loadBasePath = useDownloadStore(s => s.loadBasePath);
+  const [gamesPath, setGamesPath] = useState('');
 
   const { error: notifyError } = useNotification();
 
   const [filter, setFilter] = useState<VersionCategory>('release');
   const [searchQuery, setSearchQuery] = useState('');
   const initializedRef = useRef(false);
+
+  const filterOptions = useMemo(() => {
+    const counts = countVersionsByCategory(manifest?.versions || []);
+    return ([
+      ['all', 'download.versionFilter.all'],
+      ['release', 'download.versionFilter.release'],
+      ['snapshot', 'download.versionFilter.snapshot'],
+      ['april', 'download.versionFilter.aprilFool'],
+      ['old', 'download.versionFilter.old'],
+    ] as const).map(([id, key]) => ({
+      id,
+      label: `${t(key)} (${counts[id]})`,
+    }));
+  }, [t, manifest?.versions]);
 
   useEffect(() => {
     if (initializedRef.current) return;
@@ -56,8 +68,8 @@ const DownloadGame: React.FC = () => {
       console.error('[DownloadGame] 加载已安装版本失败:', e);
     });
 
-    loadBasePath().catch(e => {
-      console.error('[DownloadGame] 加载下载路径失败:', e);
+    getGamesPath().then(setGamesPath).catch(e => {
+      console.error('[DownloadGame] 加载游戏目录失败:', e);
     });
 
     if (!manifest) {
@@ -117,13 +129,13 @@ const DownloadGame: React.FC = () => {
   }, [error, t]);
 
   const handleOpenDownloadFolder = useCallback(async () => {
-    if (!basePath) return;
+    if (!gamesPath) return;
     try {
-      await openFolder(basePath);
+      await openFolder(gamesPath);
     } catch (e) {
       notifyError(t('notification.error'), e instanceof Error ? e.message : t('notification.error'));
     }
-  }, [basePath, notifyError, t]);
+  }, [gamesPath, notifyError, t]);
 
   const renderVersionItem = useCallback((version: GameVersion) => (
     <VersionListItem
@@ -163,62 +175,36 @@ const DownloadGame: React.FC = () => {
                   }}
                 />
               </div>
-              <VersionFilterDropdown
-                value={filter}
-                onChange={setFilter}
-                versions={manifest?.versions || []}
+              <DropDown
+                options={filterOptions}
+                value={filterOptions.find(o => o.id === filter)}
+                onSelect={(o) => setFilter(o.id as VersionCategory)}
               />
             </motion.div>
           </PageSection>
 
-          {manifest?.latest && (
-            <PageSection>
-              <motion.div
-                initial={{ y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.1, margin: '-40px' }}
-                transition={{ type: 'spring', stiffness: 400, damping: 22 }}
-              >
-                <div className="p-2 rounded-lg flex-shrink-0 px-4 mx-5"
-                  style={{ backgroundColor: 'var(--color-primary-bg)', borderColor: 'var(--color-primary)', borderWidth: '1px', borderStyle: 'solid' }}
-                >
-                  <p className="text-sm" style={{ color: 'var(--color-primary)' }}>
-                    {t('download.latestRelease')}: <span className="font-mono font-bold">{manifest.latest.release}</span>
-                    {manifest.latest.snapshot !== manifest.latest.release && (
-                      <> | {t('download.latestSnapshot')}: <span className="font-mono font-bold">{manifest.latest.snapshot}</span></>
-                    )}
-                  </p>
-                </div>
-              </motion.div>
-            </PageSection>
-          )}
-
           {isLoading ? (
             <PageSection>
-              <div className="flex-1 flex flex-col items-center justify-center gap-3">
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                >
-                  <Loader2 className="w-10 h-10" style={{ color: 'var(--color-primary)' }} />
-                </motion.div>
-                <span className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>{t('common.loading')}</span>
-              </div>
+              <Spinner active message={t('common.loading')} />
             </PageSection>
           ) : versionsToShow.length === 0 ? (
             <PageSection>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.1, margin: '-40px' }}
-                transition={{ type: 'spring', stiffness: 400, damping: 22 }}
-              >
-                <EmptyState
-                  icon="search"
-                  title={t('download.noVersion')}
-                  description={t('download.noVersionDesc')}
-                />
-              </motion.div>
+              {loading ? (
+                <Spinner active message={t('common.loading')} />
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.1, margin: '-40px' }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+                >
+                  <EmptyState
+                    icon="search"
+                    title={t('download.noVersion')}
+                    description={t('download.noVersionDesc')}
+                  />
+                </motion.div>
+              )}
             </PageSection>
           ) : (
             <div className="flex-1 min-h-0 px-4">
@@ -241,7 +227,7 @@ const DownloadGame: React.FC = () => {
         dir='download.downloadDir'
         cmdOpen='common.open'
         title='download.openFolder'
-        path={basePath}
+        path={gamesPath}
         handleOpenDownloadFolder={handleOpenDownloadFolder}
       />
 

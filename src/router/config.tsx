@@ -60,6 +60,14 @@ export const getSidebarGroups = (): Record<SidebarGroup, SidebarMenuItem[]> => {
 };
 
 /**
+ * 根据路径查找路由配置（单参数便捷入口，内部使用全局 routes）
+ * @param path - 目标路径
+ * @returns 匹配的路由配置，未找到返回 undefined
+ */
+export const getRouteConfigByPath = (path: string): RouteConfig | undefined =>
+  findRouteByPath(path, routes);
+
+/**
  * 根据路径递归查找路由配置
  * @param path - 目标路径
  * @param routeList - 路由配置列表

@@ -1,14 +1,11 @@
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
 import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import { getSidebarGroups, routes, sidebarMenuItems, SidebarMenuItem, findRouteByPath, SidebarGroup, autoJumpToFirstChild } from '../../../router/config';
 import BaseSidebarLayout from './layouts/BaseSidebarLayout';
 import { logger } from '../../../helper/logger';
-import { openUrl, openFolder } from '../../../helper/rustInvoke';
-import { useInstanceStore } from '@/stores/instanceStore';
-import { Folder } from 'lucide-react';
-import { BaseSidebarContent, ConfirmPopup, useNotification, SkinAvatar } from '@/components/common';
+import { openUrl } from '../../../helper/rustInvoke';
+import { BaseSidebarContent, useNotification, SkinAvatar } from '@/components/common';
 import { useAuthStore } from '@/stores/authStore';
 import { useAccountSelectionStore } from '@/stores/accountSelectionStore';
 import { UserPlus } from 'lucide-react';
@@ -30,7 +27,6 @@ const SmartSidebar = ({ onMenuClick = () => {}, footer, header, ownSidebar = fal
   const location = useLocation();
   const { t } = useTranslation();
   const groups = getSidebarGroups();
-  const selectedFolderId = useInstanceStore(s => s.selectedFolderId);
 
 
   // 侧边栏按钮点击辅助函数
@@ -70,15 +66,7 @@ const SmartSidebar = ({ onMenuClick = () => {}, footer, header, ownSidebar = fal
     return !!(item.children && item.children.length > 0);
   };
 
-  const knownFolders = useInstanceStore(s => s.knownFolders);
-  const removeKnownFolder = useInstanceStore(s => s.removeKnownFolder);
   const { success, error: notifyError } = useNotification();
-
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [deletingName, setDeletingName] = useState('');
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [ _setCurrentMenuItem] = useState();
 
   // 获取到 current 及 parent 的SidebarMenuItem
   const findMenuItemsByPath = (path: string): { current: SidebarMenuItem | undefined, parent: SidebarMenuItem | undefined } => {
@@ -157,75 +145,7 @@ const SmartSidebar = ({ onMenuClick = () => {}, footer, header, ownSidebar = fal
     sidebarItems = accountItems;
   }
 
-  // 生成动态文件夹菜单项
-  let folderItems: SidebarMenuItem[] = location.pathname.startsWith('/instance-list') ?
-    knownFolders.map(f => ({
-      id: `folder-${f.id}`,
-      type: 'action' as const,
-      title: f.name,
-      titleI18nKey: '',
-      icon: <Folder className="w-4 h-4" />,
-      action: () => useInstanceStore.getState().setSelectedFolder(f.id),
-      group: 'game' as SidebarGroup,
-    })) : [];
-
-
-
   // ------------------------- 辅助函数部分 -------------------------
-
-  const SYSTEM_FOLDER_IDS = new Set(['default', 'official', 'home-mc']);
-
-  // 获取可删除的游戏文件夹
-  const deletableIds = new Set(
-    folderItems.filter(f => !SYSTEM_FOLDER_IDS.has(f.id.replace('folder-', ''))).map(f => f.id)
-  );
-
-  // 删除游戏文件夹辅助函数
-  const handleDeleteFolder = (itemId: string) => {
-    const folderId = itemId.replace('folder-', '');
-    const folder = knownFolders.find(f => f.id === folderId);
-    setDeletingId(itemId);
-    setDeletingName(folder?.name || folderId);
-    setShowDeleteConfirm(true);
-  };
-
-  // 打开游戏文件夹辅助函数
-  const handleOpenFolder = async (itemId: string) => {
-    const folderId = itemId.replace('folder-', '');
-    const folder = knownFolders.find(f => f.id === folderId);
-    if (folder?.path) {
-      try {
-        await openFolder(folder.path);
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : t('notification.error');
-        notifyError(t('instances.openFolderFailed', '打开文件夹失败'), msg);
-      }
-    }
-  };
-
-  // 确认删除辅助函数
-  const handleConfirmDelete = async () => {
-    if (!deletingId) return;
-    setIsDeleting(true);
-    try {
-      const folderId = deletingId.replace('folder-', '');
-      await removeKnownFolder(folderId);
-      success(
-        t('instances.folderRemoved', '目录已移除'),
-        t('instances.folderRemovedMsg', '"{{name}}" 已从列表中移除', { name: deletingName })
-      );
-      setShowDeleteConfirm(false);
-      setDeletingId(null);
-      setDeletingName('');
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : t('notification.error');
-      notifyError(t('instances.removeFolderFailed', '删除失败'), msg);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  // 右键菜单辅助函数
   const handleContextMenuAction = (parentId: string, actionId: string) => {
     logger.info(`Context menu action: parent=${parentId}, action=${actionId}`);
     useContextMenuAction(parentId, actionId, t, {
@@ -285,42 +205,13 @@ const SmartSidebar = ({ onMenuClick = () => {}, footer, header, ownSidebar = fal
 
                 isItemActive={(id) => {
                   if (isAccountPage) return id === `account-${useAccountSelectionStore.getState().selectedUuid}`;
-                  return id === `folder-${selectedFolderId}`;
+                  return false;
                 }}
                 groupTitle={currentMenuItem?.title || parentMenuItem?.title || ''}
                 groupTitleI18nKey={currentMenuItem?.titleI18nKey || parentMenuItem?.titleI18nKey}
-                onItemDelete={handleDeleteFolder}
-                onItemOpenFolder={handleOpenFolder}
-                deletableItemIds={deletableIds}
                 onContextMenuAction={handleContextMenuAction}
               >
               </BaseSidebarContent>
-
-              {/* 弹框确认是否删除 */}
-              {showDeleteConfirm && (
-                <ConfirmPopup
-                  isOpen={showDeleteConfirm}
-                  title={t('instances.confirmRemoveFolder', '删除游戏目录')}
-                  message={t('instances.confirmRemoveFolderDesc', '确定要删除目录 "{{name}}" 吗？此操作仅从列表中移除记录，不会删除实际文件。', { name: deletingName })}
-                  confirmText={t('common.delete', '删除')}
-                  cancelText={t('common.cancel', '取消')}
-                  confirmType="danger"
-                  showIcon
-                  iconType="warning"
-                  loading={isDeleting}
-                  onConfirm={handleConfirmDelete}
-                  onCancel={() => {
-                    setShowDeleteConfirm(false);
-                    setDeletingId(null);
-                    setDeletingName('');
-                  }}
-                  onClose={() => {
-                    setShowDeleteConfirm(false);
-                    setDeletingId(null);
-                    setDeletingName('');
-                  }}
-                />
-              )}
             </motion.div>
           </AnimatePresence>
         </BaseSidebarLayout>

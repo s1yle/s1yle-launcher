@@ -5,7 +5,83 @@
 
 ---
 
-## 2026-06-25 - 文档体系重构：全覆盖自动生成 + 精简人工维护
+## 2026-08-10 - 实例模块重构：instance → game（PCL2 式目录结构）
+
+### 更新概述
+
+后端 `instance` 模块整体重命名为 `game`，目录结构改为 PCL2 风格：**游戏目录 = 实例目录**，jar/json 平放于游戏目录内，删除 `.smcl/download` 下载缓存层。
+
+### 变更
+
+1. **目录结构（`game/layout.rs` = 路径唯一事实源）**
+   - 旧：`{base}/.minecraft/versions/{v}/{v}.jar` + `.smcl/download/versions/{v}/`（下载缓存）+ `{v}/versions/{v}/natives`
+   - 新：`{base}/.minecraft/versions/{gameName}/`（游戏目录=工作目录），`{gameName}.jar`/`{gameName}.json`/`natives/` 平放，实例记录 `wecraft_{gameName}.json` 随目录
+   - 删除 `paths::DOWNLOAD_BASE_PATH`、`DownloadManager.base_path`、`get_version_download_path`
+
+2. **命令重命名（前后端 + 契约同步）**
+   - `scan_instances`→`scan_games`、`get_instance`→`get_game`、`create_instance`→`create_game`、`delete_instance`→`delete_game`、`rename_instance`→`rename_game`、`update_instance`→`update_game`、`get_instances_path`→`get_games_path`、`get_instance_settings`→`get_game_settings`、`update_instance_settings`→`update_game_settings`
+   - 命令参数由 `id`（UUID）统一改为 `game_name`（目录名即身份）
+   - 删除命令：`download_file`、`get_download_base_path`、`set_download_base_path`、`deploy_version_to_instance`、`deploy_version_files`、`copy_instance`
+
+3. **配置**
+   - 删除 `SystemConfig.download_path` + `get/set_download_path`（下载缓存不再存在）
+   - 删除失效的旧文件迁移测试（迁移逻辑已由统一 `system_config.json` 取代）
+
+4. **下载部署（`download` 命令）**
+   - 客户端 jar / 版本 JSON / natives 平放写入游戏目录
+   - `get_installed_mod_loaders` 改为扫描游戏目录（`{name}`/`{name}-fabric`/`{name}-forge`）
+
+5. **前端**
+   - `src/api/instance.ts` → `src/api/game.ts`，`rustInvoke` 导出改为 `scanGames/createGame/deleteGame/renameGame/updateGame/getGameSettings/...`
+   - `instanceStore`/`downloadStore` 改用新命令；删除 `downloadStore` 中失效的旧版逐文件下载/部署流程与 basePath 状态
+   - `copyInstance` 前端降级为「建新记录 + 复制设置」（后端已无文件复制命令）
+
+---
+
+## 2026-08-10 - 后端配置架构重构：统一配置 + 消除循环依赖 + 死代码清理
+
+### 更新概述
+
+后端 `config`/`account`/`admin_account`/`download`/`instance` 模块重构：消除 `config ↔ account` 循环依赖、将分散的 3 个配置文件合并为单一 `system_config.json`、删除 9 个未使用命令及大量死代码、初始化流程线性化、补强单元测试。
+
+### 变更
+
+1. **统一配置**
+   - 新增 `src-tauri/src/paths.rs` — 静态路径唯一事实源（零依赖），`instance/layout.rs` 等模块路径引用统一改为 `crate::paths`
+   - 新增 `src-tauri/src/types.rs` — `AccountType` 共享类型（从 `config/models.rs` 迁出）
+   - `config/models.rs` — 删除 `AppConfig`/静态路径，新增 `SystemConfig`（version/download_path/window_positions/login_state/known_folders）
+   - 新增 `config/store.rs` — 统一配置文件读写（read → merge → write）
+   - `config/manager.rs` — 重写：`ConfigManager::load()` 内置 `migrate_legacy_files()`，旧 `app_config.json`/`accounts.json`/`admin_accounts.json` 自动迁移并备份为 `.json.bak`；窗口位置/download_path/known_paths 存取集中于此
+   - `account.rs`/`admin_account.rs` — 存储改走 `store`，删除重复的管理员存储与死函数 `generate_salt`，修复 `account.rs:214` 疑似逻辑 bug
+   - `download/commands.rs::set_download_base_path` — 持久化到 ConfigManager
+
+2. **删除 9 个未使用命令**（同步清理 `lib.rs` 注册、前端 API 包装、AGENTS.md 条目）
+   - 配置：`update_config`/`get_config_value`/`reset_config`/`export_config`/`import_config`
+   - 账户：`add_admin_account`/`save_accounts_to_disk`/`load_accounts_from_disk`
+   - 下载：`get_download_task`
+   - `authStore.loginAsAdmin` 移除已失效的本地管理员持久化块（前端已走远程 SDK）
+
+3. **死代码清理**
+   - 删除 `DeployProgress`/`deploy_file_to_path`/`get_temp_path`/`AssetIndex`，移除多余的 `#[allow(dead_code)]`
+   - `deploy.rs` — Phase 1-3 下载循环抽取为 `download_group_with_progress()` 公共函数
+   - 删除 `admin_account.rs` 未用的 `uuid` 导入
+
+4. **初始化线性化**
+   - `run()`：`ensure_dirs → ConfigManager::load → DownloadManager/ModLoaderManager/InstanceManager → manage()`，移除 setup 中冗余的配置加载
+
+5. **测试补强**（26 个测试全部通过）
+   - `paths.rs` — 目录创建/幂等/路径层级
+   - `download/utils.rs` — 镜像映射/SHA1 校验/规则匹配/原生库分类器
+   - `config/manager.rs` — 旧配置迁移/幂等跳过/set_value/window_check
+   - `instance/layout.rs` — 路径推导/版本扫描/已安装判定
+
+**影响文件**:
+- `src-tauri/src/` — paths.rs、types.rs（新增），config/（models/store/manager/commands 重写），account.rs、admin_account.rs、lib.rs、download/（deploy/commands/manager/models）、instance/layout.rs、window.rs
+- `src/api/`、`src/helper/rustInvoke.ts`、`src/stores/authStore.ts`、`src/config/` — 前端契约同步
+- `AGENTS.md`、`docs/architecture.md` — 命令表与配置约定更新
+
+---
+
 
 ### 更新概述
 

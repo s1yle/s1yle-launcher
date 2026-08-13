@@ -9,7 +9,6 @@ import {
   Gamepad2,
   Package,
   FolderTree,
-  FolderPlus,
   RefreshCw,
   Sparkles,
   Puzzle,
@@ -29,7 +28,7 @@ import {
 import { LayoutMode, RouteConfig, SidebarGroup, SidebarType } from "./models";
 import { UserRole } from '@/stores/userRoleStore';
 import InstanceManageButton from '@/components/common/sidebar/renderer/InstanceManageButton';
-import { handleAddGameFolder, handleRefreshInstances } from './actionHandler';
+import { handleRefreshInstances } from './actionHandler';
 
 /** 页面组件按路由懒加载（每个路由独立 chunk） */
 const Loading = lazy(() => import('../pages/Loading'));
@@ -245,16 +244,6 @@ export const routes: RouteConfig[] = [
           group: SidebarGroup.GAME
         },
         {
-          id: 'add-game-folder',
-          type: 'action',
-          title: '添加游戏目录',
-          titleI18nKey: 'instances.addGameFolder',
-          icon: <FolderPlus className="w-4 h-4" />,
-          path: '/instance-list',
-          group: SidebarGroup.GAME,
-          action: handleAddGameFolder,
-        },
-        {
           id: 'install-modpack',
           type: 'action',
           title: '导入整合包',
@@ -458,6 +447,7 @@ export const routes: RouteConfig[] = [
     component: DownloadProgress,
     header: { type: SidebarType.SECONDARY, title: '下载进度', titleI18nKey: 'download.progressTitle' },
     layoutMode: LayoutMode.FULLSCREEN,
-    parentPath: '/download'
+    parentPath: '/download',
+    hideGlobalDownloadBar: true,
   },
 ];

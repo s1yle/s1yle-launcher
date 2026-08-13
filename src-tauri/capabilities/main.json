@@ -80,7 +80,7 @@
     "allow-get-version-detail",
     "allow-get-version-download-manifest",
     "allow-download-file",
-    "allow-download-and-deploy",
+    "allow-download",
     "allow-get-download-tasks",
     "allow-get-download-task",
     "allow-cancel-download",
@@ -158,6 +158,8 @@
     "allow-microsoft-poll-complete",
     "allow-complete-microsoft-login",
     "allow-cancel-device-code",
-    "allow-poll-and-complete-login"
+    "allow-poll-and-complete-login",
+    "allow-get-game-root",
+    "allow-set-game-root"
   ]
 }

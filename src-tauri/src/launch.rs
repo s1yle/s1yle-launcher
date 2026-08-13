@@ -4,10 +4,13 @@
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::{Child, Command};
 use std::sync::Mutex;
 
+use tauri::State;
+
+use crate::app_context::AppContext;
 use crate::download::models::{Library, Rule};
 use crate::download::utils::rules_allow;
 use crate::log_info;
@@ -57,7 +60,7 @@ pub struct LaunchConfig {
     /// 用户属性（--userProperties）
     #[serde(default)]
     pub user_properties: Option<String>,
-    /// natives 解压目录（默认 {game_dir}/versions/{version}/natives）
+    /// natives 解压目录（默认 {game_dir}/natives）
     #[serde(default)]
     pub natives_dir: Option<String>,
     /// 账户类型（microsoft/offline/thirdparty）
@@ -245,7 +248,8 @@ fn expand_argument_list(
 /// 递归合并继承链：子版本字段覆盖父版本，libraries 按名称去重合并
 fn merge_version_json(
     version_json: &serde_json::Value,
-    game_dir: &Path,
+    game_dir: &PathBuf,
+    ctx: &AppContext,
     visited: &mut Vec<String>,
 ) -> Result<serde_json::Value, String> {
     let version_id = version_json["id"]
@@ -259,10 +263,7 @@ fn merge_version_json(
         }
         visited.push(parent_id.to_string());
 
-        let parent_path = game_dir
-            .join("versions")
-            .join(parent_id)
-            .join(format!("{}.json", parent_id));
+        let parent_path = ctx.version_json_in_dir(game_dir, &parent_id);
 
         if !parent_path.exists() {
             return Err(format!(
@@ -276,7 +277,7 @@ fn merge_version_json(
         let parent: serde_json::Value = serde_json::from_str(&parent_raw)
             .map_err(|e| format!("解析父版本 JSON 失败: {}", e))?;
 
-        merge_version_json(&parent, game_dir, visited)?
+        merge_version_json(&parent, game_dir, ctx, visited)?
     } else {
         serde_json::Value::Null
     };
@@ -298,8 +299,7 @@ fn merge_version_json(
                 let mut merged_libs: Vec<serde_json::Value> = parent_libs
                     .into_iter()
                     .filter(|lib| {
-                        !lib
-                            .get("name")
+                        !lib.get("name")
                             .and_then(|n| n.as_str())
                             .map(|n| child_names.contains(n))
                             .unwrap_or(false)
@@ -363,7 +363,11 @@ fn merge_version_json(
         parent
     };
 
-    log_info!("版本 {} 继承链合并完成 (visited: {:?})", version_id, visited);
+    log_info!(
+        "版本 {} 继承链合并完成 (visited: {:?})",
+        version_id,
+        visited
+    );
     let _ = &mut merged;
     Ok(merged)
 }
@@ -407,10 +411,10 @@ impl TemplateContext {
 // ======================== 启动参数构建 ========================
 
 /// 读取本地版本 JSON 并组装启动参数
-fn build_launch_args(config: &LaunchConfig) -> Result<(String, Vec<String>), String> {
+fn build_launch_args(config: &LaunchConfig, ctx: &AppContext) -> Result<(String, Vec<String>), String> {
     let game_dir = PathBuf::from(&config.game_dir);
-    let version_dir = crate::instance::layout::version_dir_in(&game_dir, &config.version);
-    let version_json_path = version_dir.join(format!("{}.json", config.version));
+
+    let version_json_path = ctx.version_json_in_dir(&game_dir, &config.version);
 
     if !version_json_path.exists() {
         return Err(format!(
@@ -425,18 +429,18 @@ fn build_launch_args(config: &LaunchConfig) -> Result<(String, Vec<String>), Str
         serde_json::from_str(&raw).map_err(|e| format!("解析版本 JSON 失败: {}", e))?;
 
     let mut visited = vec![config.version.clone()];
-    let merged = merge_version_json(&version_json, &game_dir, &mut visited)?;
+    let merged = merge_version_json(&version_json, &game_dir, ctx, &mut visited)?;
 
     // ---- 目录路径 ----
     let libraries_dir = game_dir.join("libraries");
     let assets_dir = PathBuf::from(&config.assets_dir);
-    let natives_dir = config
-        .natives_dir
-        .as_ref()
-        .map(PathBuf::from)
-        .unwrap_or_else(|| version_dir.join("natives"));
+    let natives_dir = if let Some(dir) = config.natives_dir.as_ref() {
+        PathBuf::from(dir)
+    } else {
+        ctx.natives_dir()
+    };
 
-    let game_jar = crate::instance::layout::version_jar_in_dir(&game_dir, &config.version);
+    let game_jar = ctx.version_json_in_dir(&game_dir, &config.version);
 
     // ---- classpath ----
     let mut classpath = Vec::new();
@@ -467,11 +471,7 @@ fn build_launch_args(config: &LaunchConfig) -> Result<(String, Vec<String>), Str
     let version_type = config
         .version_type
         .clone()
-        .or_else(|| {
-            merged["type"]
-                .as_str()
-                .map(|t| t.to_string())
-        })
+        .or_else(|| merged["type"].as_str().map(|t| t.to_string()))
         .unwrap_or_else(|| "release".to_string());
 
     let user_type = match config.account_type.as_deref() {
@@ -489,8 +489,14 @@ fn build_launch_args(config: &LaunchConfig) -> Result<(String, Vec<String>), Str
     let mut template_values = HashMap::new();
     template_values.insert("auth_player_name".into(), config.username.clone());
     template_values.insert("version_name".into(), config.version.clone());
-    template_values.insert("game_directory".into(), game_dir.to_string_lossy().to_string());
-    template_values.insert("assets_root".into(), assets_dir.to_string_lossy().to_string());
+    template_values.insert(
+        "game_directory".into(),
+        game_dir.to_string_lossy().to_string(),
+    );
+    template_values.insert(
+        "assets_root".into(),
+        assets_dir.to_string_lossy().to_string(),
+    );
     template_values.insert("assets_index_name".into(), asset_index_id.clone());
     template_values.insert("auth_uuid".into(), config.uuid.clone());
     template_values.insert("auth_access_token".into(), access_token);
@@ -498,12 +504,21 @@ fn build_launch_args(config: &LaunchConfig) -> Result<(String, Vec<String>), Str
     template_values.insert("version_type".into(), version_type);
     template_values.insert(
         "user_properties".into(),
-        config.user_properties.clone().unwrap_or_else(|| "{}".to_string()),
+        config
+            .user_properties
+            .clone()
+            .unwrap_or_else(|| "{}".to_string()),
     );
     template_values.insert("classpath".into(), classpath_str.clone());
-    template_values.insert("natives_directory".into(), natives_dir.to_string_lossy().to_string());
+    template_values.insert(
+        "natives_directory".into(),
+        natives_dir.to_string_lossy().to_string(),
+    );
     template_values.insert("launcher_name".into(), "wecraft".to_string());
-    template_values.insert("launcher_version".into(), env!("CARGO_PKG_VERSION").to_string());
+    template_values.insert(
+        "launcher_version".into(),
+        env!("CARGO_PKG_VERSION").to_string(),
+    );
     template_values.insert(
         "resolution_width".into(),
         config
@@ -549,7 +564,9 @@ fn build_launch_args(config: &LaunchConfig) -> Result<(String, Vec<String>), Str
     }
 
     // natives 目录（旧版本 JSON 无 arguments 时补充）
-    let has_java_library_path = jvm_args.iter().any(|a| a.starts_with("-Djava.library.path"));
+    let has_java_library_path = jvm_args
+        .iter()
+        .any(|a| a.starts_with("-Djava.library.path"));
     if !has_java_library_path {
         jvm_args.push(format!(
             "-Djava.library.path={}",
@@ -606,7 +623,7 @@ fn build_launch_args(config: &LaunchConfig) -> Result<(String, Vec<String>), Str
 // ======================== 核心启动逻辑 ========================
 
 /// 启动 Minecraft 实例
-pub fn launch_instance(config: Option<LaunchConfig>) -> Result<String, String> {
+pub fn launch_instance(config: Option<LaunchConfig>, ctx: &AppContext) -> Result<String, String> {
     let mut manager = LAUNCH_MANAGER
         .get()
         .ok_or("启动管理器未初始化")?
@@ -624,7 +641,7 @@ pub fn launch_instance(config: Option<LaunchConfig>) -> Result<String, String> {
     manager.status = LaunchStatus::Launching;
     manager.last_error = None;
 
-    let (main_class, launch_args) = build_launch_args(&manager.config)?;
+    let (main_class, launch_args) = build_launch_args(&manager.config, ctx)?;
 
     let java_path = manager.config.java_path.clone();
     let game_dir = manager.config.game_dir.clone();
@@ -754,8 +771,11 @@ pub fn update_launch_config(config: LaunchConfig) -> Result<String, String> {
 
 /// 前端命令：启动 Minecraft 实例
 #[tauri::command]
-pub fn tauri_launch_instance(config: Option<LaunchConfig>) -> Result<String, String> {
-    launch_instance(config)
+pub fn tauri_launch_instance(
+    config: Option<LaunchConfig>,
+    ctx: State<'_, AppContext>,
+) -> Result<String, String> {
+    launch_instance(config, &ctx)
 }
 
 /// 前端命令：停止 Minecraft 实例

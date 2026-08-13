@@ -60,9 +60,10 @@ src-tauri/src/
 ├── modloader.rs     # Fabric/Forge 模组加载器
 ├── render.rs        # 皮肤渲染（头像/斜二测/披风）
 ├── window.rs        # 窗口管理（位置/创建/关闭）
-├── config/          # 配置模块（manager/models/commands）
-├── download/        # 下载模块（downloader/deploy/versions）
-└── instance/        # 实例模块（manager/settings/validator）
+├── paths.rs         # 静态路径唯一事实源
+├── config/          # 配置模块（manager/models/commands/store）
+├── download/        # 下载模块（downloader/commands/version）
+└── game/            # 实例模块（layout=路径唯一事实源，commands/manager/scanner/storage/settings/validator）
 ```
 
 ---
@@ -92,7 +93,7 @@ await config.setConfigValue('theme.accentColor', 'blue');
 config.on('theme.mode', (newValue) => { ... });
 ```
 
-**关键约定**: 更新配置必须用 `setConfigValue()` 增量更新，禁止 `update_config()` 完整覆盖。
+**关键约定**: 更新配置必须用 `setConfigValue()` 增量更新。
 
 ---
 

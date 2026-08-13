@@ -7,15 +7,12 @@ import { openFolder } from '../../helper/rustInvoke';
 import { InstanceListItem, EmptyState, useNotification,  Skeleton, Page, PageSection } from '../../components/common';
 import Instance from './Instance';
 import BottomBar from '@/components/common/BottomBar/BottomBar';
-import { logger } from '@/helper/logger';
 import { staggerContainer, staggerItem } from '../../utils/animations';
 
 /** 实例列表页面 - 展示所有已安装的游戏实例 */
 const InstanceList: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const selectedFolderId = useInstanceStore(s => s.selectedFolderId);
-  const knownFolders = useInstanceStore(s => s.knownFolders);
   const selectedInstanceId = useInstanceStore(s => s.selectedInstanceId);
   const {
     instances,
@@ -34,8 +31,7 @@ const InstanceList: React.FC = () => {
 
   const { success, error: notifyError } = useNotification();
 
-  const selectedFolder = knownFolders.find(f => f.id === selectedFolderId);
-  const currentPath = selectedFolder?.path || instancesPath;
+  const currentPath = instancesPath;
 
   const filteredInstances = getFilteredInstances();
   console.log("[filteredInstances] 扫描并过滤后的实力列表：", filteredInstances);
@@ -73,7 +69,6 @@ const InstanceList: React.FC = () => {
 
   useEffect(() => {
     init();
-    logger.info("选中的 Game Folder ID 为：", selectedFolderId);
   }, [init]);
 
   const handleSelect = (id: string) => {
@@ -163,8 +158,6 @@ const InstanceList: React.FC = () => {
     <Page className="flex flex-col h-full">
       <PageSection>
         <Instance
-          knownFolders={knownFolders}
-          selectedFolderId={selectedFolderId}
           refresh={refresh}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
