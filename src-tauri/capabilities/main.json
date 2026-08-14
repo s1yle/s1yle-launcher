@@ -36,6 +36,7 @@
     "keyring:allow-delete-secret",
     "keyring:allow-has-secret",
     "dialog:default",
+    "dialog:allow-confirm",
     "allow-greet",
     "allow-get-system-info",
     "allow-close-window",
@@ -162,7 +163,13 @@
     "allow-get-game-root",
     "allow-set-game-root",
     "allow-scan-games",
+    "allow-get-game",
+    "allow-create-game",
+    "allow-delete-game",
+    "allow-rename-game",
+    "allow-update-game",
     "allow-get-game-settings",
-    "allow-update-game-settings"
+    "allow-update-game-settings",
+    "allow-validate-game"
   ]
 }

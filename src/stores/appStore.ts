@@ -9,6 +9,8 @@ interface SystemInfo {
   os: string;
   /** CPU 架构 */
   arch: string;
+  /** 启动器数据目录（.wecraft），用于访问全局兜底图标 */
+  wecraftDir: string;
 }
 
 /**

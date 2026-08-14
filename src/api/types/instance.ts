@@ -70,6 +70,8 @@ export interface Game {
   enabled: boolean;
   /** 版本是否损坏（扫描时计算：目录内缺失对应 jar 产物） */
   broken: boolean;
+  /** 是否空壳（扫描时计算：目录内除记录外无任何文件，未下载的"空壳"实例） */
+  empty: boolean;
   /** 实例级游戏设置 */
   game_settings?: GameSettings;
 }
@@ -86,4 +88,37 @@ export interface InstanceFormData {
   loader_version?: string;
   /** 图标路径（可选） */
   icon_path?: string;
+}
+
+/** 单文件完整性校验结果 */
+export interface FileCheck {
+  /** 分类：client / library / native / index / asset */
+  category: string;
+  /** 相对路径 */
+  path: string;
+  /** 状态：ok / missing / corrupt */
+  status: string;
+  /** 期望 SHA1 */
+  expected_sha1: string | null;
+  /** 期望大小 */
+  expected_size: number | null;
+  /** 实际大小（缺失时为 null） */
+  actual_size: number | null;
+}
+
+/** 实例完整性校验报告 */
+export interface GameValidation {
+  /** 是否完整可启动（无缺失/损坏） */
+  valid: boolean;
+  /** 目录是否为空壳（除 .wecraft 记录文件外无任何文件，即未下载的"空壳"实例） */
+  empty: boolean;
+  game_name: string;
+  version_id: string;
+  /** 已检查文件数 / 通过 / 缺失 / 损坏 */
+  checked: number;
+  ok: number;
+  missing: number;
+  corrupt: number;
+  /** 失败项明细（仅缺失/损坏） */
+  failed: FileCheck[];
 }

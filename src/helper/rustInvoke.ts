@@ -83,6 +83,8 @@ export const deleteGame = __.invokeDeleteGame;
 export const renameGame = __.invokeRenameGame;
 /** 更新实例信息 */
 export const updateGame = __.invokeUpdateGame;
+/** 校验实例完整性 （基于版本 JSON，deep 时对资源做 SHA1 全量校验） */
+export const validateGame = __.invokeValidateGame;
 
 /** 创建窗口 */
 export const createWindow = __.invokeCreateWindow;

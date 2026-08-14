@@ -7,8 +7,9 @@ import {
   updateGameSettings,
   getGameRoot,
   scanGames,
+  validateGame,
 } from '../helper/rustInvoke';
-import type { Game, GameSettings } from '../helper/rustInvoke';
+import type { Game, GameSettings, GameValidation } from '../helper/rustInvoke';
 import { ModLoaderType } from '../helper/rustInvoke';
 
 const STORAGE_KEY_GAME = 's1yle-selected-game';
@@ -66,11 +67,19 @@ interface GameState {
   viewMode: 'grid' | 'list';
   /** 游戏根目录（即 .minecraft 目录本身） */
   gameRoot: string;
+  /** 实例完整性校验结果（key = 游戏 id；null = 校验不可用，如版本 JSON 缺失） */
+  validations: Record<string, GameValidation | null>;
+  /** 是否正在后台校验实例完整性 */
+  validating: boolean;
 
   /** 初始化 Store（加载游戏、路径配置、恢复选中状态） */
   init: () => Promise<void>;
   /** 刷新游戏列表和根目录 */
   refresh: () => Promise<void>;
+  /** 校验全部实例完整性（后台并发执行；结果写入 validations 并同步 broken 标记） */
+  validateAll: () => Promise<void>;
+  /** 校验单个实例完整性（每次调用都执行，无缓存） */
+  checkGame: (id: string) => Promise<GameValidation | null>;
   /** 选中游戏（同时持久化到 localStorage） */
   setSelectedGame: (id: string | null) => void;
   /** 选中侧边栏项 */
@@ -119,6 +128,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   searchQuery: '',
   viewMode: 'grid',
   gameRoot: '',
+  validations: {},
+  validating: false,
 
   init: async () => {
     set({ loading: true, error: null });
@@ -155,6 +166,52 @@ export const useGameStore = create<GameState>((set, get) => ({
     } finally {
       set({ loading: false });
     }
+
+    // 主页/列表页入口：只校验当前选中的实例，避免全量 SHA1 哈希拖慢进入
+    const selected = get().selectedGameId;
+    if (selected) {
+      void get().checkGame(selected);
+    } else {
+      void get().validateAll();
+    }
+  },
+
+  validateAll: async () => {
+    const { games, validating } = get();
+    if (validating) return;
+    // 不按 version_id 过滤：空壳目录（无版本号）也必须校验以获得 empty 标记，前端据此隐藏
+    const targets = games;
+    if (targets.length === 0) return;
+
+    set({ validating: true });
+    const results: Record<string, GameValidation | null> = {};
+
+    // 受限并发（2 路），避免多实例同时 SHA1 哈希造成 IO 尖峰
+    let index = 0;
+    const workers = Array.from({ length: Math.min(2, targets.length) }, async () => {
+      while (index < targets.length) {
+        const game = targets[index++];
+        try {
+          results[game.id] = await validateGame(game.name);
+        } catch {
+          // 版本未知等：扫描阶段已标记 broken，此处留 null
+          results[game.id] = null;
+        }
+      }
+    });
+    await Promise.all(workers);
+
+    set((state) => {
+      const validations = { ...state.validations, ...results };
+      return {
+        validating: false,
+        validations,
+        games: state.games.map((g) => {
+          const report = validations[g.id];
+          return report ? { ...g, broken: !report.valid } : g;
+        }),
+      };
+    });
   },
 
   refresh: async () => {
@@ -178,6 +235,34 @@ export const useGameStore = create<GameState>((set, get) => ({
     } catch {
       // keep existing
     }
+
+    // 刷新后始终全量校验：保证空壳（无版本号）实例也能拿到 empty 标记，
+    // 不能只校验选中实例（否则空目录会继续显示并落入错误分组）
+    void get().validateAll();
+  },
+
+  /** 校验单个实例完整性（每次调用都执行，无缓存）；结果写入 validations 并同步 broken */
+  checkGame: async (id: string) => {
+    const game = get().games.find((g) => g.id === id);
+    if (!game) return null;
+
+    let report: GameValidation | null;
+    try {
+      report = await validateGame(game.name);
+    } catch {
+      // 版本未知等：扫描阶段已标记 broken，此处留 null
+      report = null;
+    }
+    set((state) => {
+      const validations = { ...state.validations, [id]: report };
+      return {
+        validations,
+        games: report
+          ? state.games.map((g) => (g.id === id ? { ...g, broken: !report.valid } : g))
+          : state.games,
+      };
+    });
+    return report;
   },
 
   setSelectedGame: (id: string | null) => {
@@ -224,6 +309,11 @@ export const useGameStore = create<GameState>((set, get) => ({
       const { games } = get();
       const game = games.find(i => i.id === id);
       await deleteGame(game?.name ?? id, true);
+      set((state) => {
+        const validations = { ...state.validations };
+        delete validations[id];
+        return { validations };
+      });
       const { selectedGameId } = get();
       await get().refresh();
       if (id === selectedGameId) {

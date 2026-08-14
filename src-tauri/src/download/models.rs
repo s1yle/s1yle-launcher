@@ -90,7 +90,7 @@ pub struct DownloadProgress {
 }
 
 /// 文件下载信息
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct FileDownload {
     /// 下载 URL
     pub url: String,
@@ -100,6 +100,9 @@ pub struct FileDownload {
     pub size: u64,
     /// 存储路径
     pub path: String,
+    /// 解压排除规则（仅原生库使用，普通文件为 None）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub extract: Option<LibraryExtract>,
 }
 
 /// 版本下载清单（包含客户端 jar、库文件、资源文件等）

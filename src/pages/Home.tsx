@@ -13,8 +13,13 @@ import { useState } from 'react';
 /** 主页 - 显示玩家档案和快捷启动按钮 */
 const Home = () => {
   const instance_init = useGameStore(s => s.init);
+  const selectedGame = useGameStore(s => s.getSelectedGame());
+  const gameReports = useGameStore(s => s.validations);
   const { currentRole } = useUserRoleStore();
   const adminSession = useAdminStore((s) => s.session);
+
+  // 空壳实例（目录内除记录外无任何文件）前端不显示启动入口
+  const isShellEmpty = selectedGame && gameReports[selectedGame.id]?.empty;
 
   const [accountName, setAccountName] = useState<string>('Steve');
 
@@ -61,7 +66,7 @@ const Home = () => {
         )}
       </PageSection>
 
-      {currentRole !== UserRole.ADMIN && <ActionButton />}
+      {currentRole !== UserRole.ADMIN && !isShellEmpty && <ActionButton />}
     </Page>
   );
 };

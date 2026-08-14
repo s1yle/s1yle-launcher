@@ -5,6 +5,7 @@ use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Mutex};
 use tauri::{command, Manager};
+use tauri_plugin_keyring::{CredentialType, CredentialValue, KeyringExt};
 use uuid::Uuid;
 
 use crate::log_info;
@@ -59,12 +60,117 @@ impl Default for AccountManager {
 // 全局状态
 static ACCOUNT_MANAGER: OnceCell<Mutex<AccountManager>> = OnceCell::new();
 
+// ======================== keyring token 存储 ========================
+
+/// keyring 键：mc_account_{uuid}
+fn account_token_key(uuid: &str) -> String {
+    format!("mc_account_{}", uuid)
+}
+
+/// 将账户 token 写入系统密钥环（Secret 类型，JSON 序列化，重复调用幂等）
+fn set_account_tokens(app: &tauri::AppHandle, account: &Account) -> Result<(), String> {
+    if account.access_token.is_none() && account.refresh_token.is_none() {
+        return Ok(());
+    }
+    let payload = serde_json::to_vec(&(
+        account.access_token.clone(),
+        account.refresh_token.clone(),
+    ))
+    .map_err(|e| format!("序列化 token 失败: {}", e))?;
+    app.keyring()
+        .set(
+            &account_token_key(&account.info.uuid),
+            CredentialType::Secret,
+            CredentialValue::Secret(payload),
+        )
+        .map_err(|e| format!("写入密钥环失败: {}", e))
+}
+
+/// 从系统密钥环读取账户 token，不存在或损坏返回 None
+fn get_account_tokens(
+    app: &tauri::AppHandle,
+    uuid: &str,
+) -> Option<(Option<String>, Option<String>)> {
+    match app
+        .keyring()
+        .get(&account_token_key(uuid), CredentialType::Secret)
+    {
+        Ok(CredentialValue::Secret(bytes)) => {
+            serde_json::from_slice::<(Option<String>, Option<String>)>(&bytes).ok()
+        }
+        _ => None,
+    }
+}
+
+/// 删除系统密钥环中的账户 token（忽略不存在）
+fn delete_account_tokens_from_keyring(app: &tauri::AppHandle, uuid: &str) {
+    let _ = app
+        .keyring()
+        .delete(&account_token_key(uuid), CredentialType::Secret);
+}
+
+/// 磁盘持久化格式（严格不含 token，兼容旧格式：旧字段被 serde 忽略）
+#[derive(Serialize, Deserialize, Clone, Debug)]
+struct DiskAccount {
+    info: AccountInfo,
+}
+
+/// 磁盘持久化账户管理器（token 只存在系统密钥环，绝不落盘）
+#[derive(Serialize, Deserialize, Clone, Debug)]
+struct DiskAccountManager {
+    accounts: HashMap<String, DiskAccount>,
+    current_uuid: Option<String>,
+}
+
+impl From<&AccountManager> for DiskAccountManager {
+    fn from(manager: &AccountManager) -> Self {
+        Self {
+            accounts: manager
+                .accounts
+                .iter()
+                .map(|(key, account)| {
+                    (key.clone(), DiskAccount {
+                        info: account.info.clone(),
+                    })
+                })
+                .collect(),
+            current_uuid: manager.current_uuid.clone(),
+        }
+    }
+}
+
 // ======================== 核心逻辑：文件存储 ========================
 
-/// 从磁盘加载账户数据（启动时调用一次）
+/// 从磁盘加载账户数据（启动时调用一次）。
+/// token 不落盘：旧格式残留的磁盘 token 迁移到密钥环，新格式从密钥环恢复内存 token。
 pub fn load_accounts_from_disk_internal() -> Result<(), String> {
     let cm = config_manager()?;
-    let loaded_manager = cm.read_section::<AccountManager>("accounts").unwrap_or_default();
+    let mut loaded = cm
+        .read_section::<AccountManager>("accounts")
+        .unwrap_or_default();
+
+    let mut migrated = false;
+    if let Some(app) = APP_HANDLE.get() {
+        // 1. 旧格式（磁盘残留 token）→ 迁移入密钥环
+        for account in loaded.accounts.values() {
+            if account.access_token.is_some() || account.refresh_token.is_some() {
+                if set_account_tokens(app, account).is_ok() {
+                    migrated = true;
+                }
+            }
+        }
+        // 2. 从密钥环恢复 token 到内存（重启后启动/展示需要）
+        for account in loaded.accounts.values_mut() {
+            if account.access_token.is_none() && account.refresh_token.is_none() {
+                if let Some((access_token, refresh_token)) =
+                    get_account_tokens(app, &account.info.uuid)
+                {
+                    account.access_token = access_token;
+                    account.refresh_token = refresh_token;
+                }
+            }
+        }
+    }
 
     let mut manager = ACCOUNT_MANAGER
         .get()
@@ -72,11 +178,18 @@ pub fn load_accounts_from_disk_internal() -> Result<(), String> {
         .lock()
         .map_err(|e| format!("锁获取失败: {}", e))?;
 
-    *manager = loaded_manager;
+    *manager = loaded;
+    drop(manager);
+
+    if migrated {
+        // 迁移后立即落盘一次，剥离磁盘上的残留 token
+        save_accounts_to_disk_internal()?;
+    }
     Ok(())
 }
 
-/// 将当前内存中的账户数据保存到磁盘（内部调用）
+/// 将当前内存中的账户数据保存到磁盘（内部调用）。
+/// token 先同步到系统密钥环，磁盘仅写入剥离版（DiskAccountManager）。
 fn save_accounts_to_disk_internal() -> Result<(), String> {
     let manager = ACCOUNT_MANAGER
         .get()
@@ -84,8 +197,16 @@ fn save_accounts_to_disk_internal() -> Result<(), String> {
         .lock()
         .map_err(|e| format!("锁获取失败: {}", e))?;
 
-    config_manager()?.write_section("accounts", &*manager)?;
-    log_info!("账号文件保存成功");
+    if let Some(app) = APP_HANDLE.get() {
+        // 内存中的 token 同步入密钥环（新登录的账户首次落盘时入环）
+        for account in manager.accounts.values() {
+            let _ = set_account_tokens(app, account);
+        }
+    }
+
+    let disk: DiskAccountManager = (&*manager).into();
+    config_manager()?.write_section("accounts", &disk)?;
+    log_info!("账号文件保存成功（token 已剥离，仅存密钥环）");
     Ok(())
 }
 
@@ -383,6 +504,9 @@ pub fn delete_account(app: tauri::AppHandle, uuid: String) -> Result<String, Str
             }
         }
     }
+
+    // 清理按账户存储的密钥环 token
+    delete_account_tokens_from_keyring(&app, &uuid);
 
     save_accounts_to_disk_internal()?; // 修改后自动保存
     auto_select_default_account()?;

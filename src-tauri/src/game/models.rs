@@ -142,16 +142,21 @@ pub struct Game {
     pub server_address: Option<String>,
     /// 自动连接服务器端口
     pub server_port: Option<u16>,
-    // ==================== 计算字段（不持久化） ====================
+    // ==================== 计算字段（不持久化，但必须序列化给前端） ====================
+    // 注意：不能使用 `#[serde(skip)]`（序列化+反序列化都跳过，前端收不到字段）。
+    // `skip_deserializing` = 反序列化忽略（读记录文件时用默认值），序列化保留（invoke 返回前端）。
     /// 实例所在目录路径
-    #[serde(skip)]
+    #[serde(skip_deserializing)]
     pub path: String,
     /// 游戏设置视图（由记录字段派生）
-    #[serde(skip)]
+    #[serde(skip_deserializing)]
     pub game_settings: Option<GameSettings>,
     /// 版本损坏标记（扫描时计算：目录内缺少对应 jar/json 产物）
-    #[serde(skip)]
+    #[serde(skip_deserializing)]
     pub broken: bool,
+    /// 空壳标记（扫描时计算：目录内除记录与外置资源外无任何文件，未下载的"空壳"实例）
+    #[serde(skip_deserializing)]
+    pub empty: bool,
 }
 
 impl Game {
@@ -191,6 +196,7 @@ impl Game {
             path: String::new(),
             game_settings: None,
             broken: false,
+            empty: false,
         }
     }
 
@@ -269,5 +275,34 @@ impl Game {
 impl From<&Game> for GameSettings {
     fn from(instance: &Game) -> Self {
         instance.to_game_settings()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// 计算字段（path/game_settings/broken/empty）必须能序列化给前端，
+    /// 禁止使用 `#[serde(skip)]`（会把字段从序列化中一并剔除）
+    #[test]
+    fn computed_fields_are_serialized() {
+        let mut game = Game::new("test", "1.20.4", ModLoaderType::Vanilla, None, None);
+        game.broken = true;
+        game.empty = true;
+        game.path = "/tmp/game-root/versions/test".to_string();
+        game.game_settings = Some((&game).into());
+
+        let json = serde_json::to_string(&game).unwrap();
+        assert!(json.contains("\"broken\":true"), "broken 未序列化: {}", json);
+        assert!(json.contains("\"empty\":true"), "empty 未序列化: {}", json);
+        assert!(json.contains("\"path\""), "path 未序列化: {}", json);
+        assert!(json.contains("\"game_settings\""), "game_settings 未序列化: {}", json);
+
+        // 反序列化时计算字段被忽略（记录文件不含这些字段）
+        let loaded: Game = serde_json::from_str(&json).unwrap();
+        assert!(!loaded.broken);
+        assert!(!loaded.empty);
+        assert!(loaded.path.is_empty());
+        assert!(loaded.game_settings.is_none());
     }
 }

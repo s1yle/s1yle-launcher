@@ -122,10 +122,16 @@ fn main() {
             "cancel_device_code",
             "poll_and_complete_login",
             "scan_games",
+            "get_game",
+            "create_game",
+            "delete_game",
+            "rename_game",
+            "update_game",
             "get_game_root",
             "set_game_root",
             "get_game_settings",
             "update_game_settings",
+            "validate_game",
         ]),
     ))
     .unwrap();

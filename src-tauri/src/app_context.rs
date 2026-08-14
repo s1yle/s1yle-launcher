@@ -13,7 +13,8 @@
 //!     └── {gameName}/             ← 游戏目录（= 版本目录，jar/json/natives 平放）
 //!
 //! {launcher_work_dir}/            ← 启动器工作目录（配置/日志）
-//! └── .wecraft.json               ← 配置文件（含 game_dir 字段）
+//! └── .wecraft/                   ← 启动器数据目录（配置/图标）
+//!     └── .wecraft.json           ← 配置文件（含 game_dir 字段）
 //! ```
 
 use std::path::{Path, PathBuf};
@@ -119,9 +120,19 @@ impl AppContext {
 
     // ==================== 启动器工作目录相关 ====================
 
-    /// 配置文件：{work_dir}/.wecraft.json
+    /// 启动器数据目录：{work_dir}/.wecraft（配置、图标等）
+    pub fn wecraft_data_dir(&self) -> PathBuf {
+        self.launcher_work_dir.join(".wecraft")
+    }
+
+    /// 配置文件：{work_dir}/.wecraft/.wecraft.json
     pub fn launcher_config_path(&self) -> PathBuf {
-        self.launcher_work_dir.join(".wecraft.json")
+        self.wecraft_data_dir().join(".wecraft.json")
+    }
+
+    /// 全局兜底图标目录：{work_dir}/.wecraft/assets/icons
+    pub fn wecraft_icons_dir(&self) -> PathBuf {
+        self.wecraft_data_dir().join("assets").join("icons")
     }
 
     /// 日志目录：{work_dir}/logs
@@ -133,6 +144,7 @@ impl AppContext {
     pub fn ensure_dirs(&self) -> Result<(), String> {
         for dir in [
             &self.game_root(),
+            &self.wecraft_data_dir(),
         ] {
             std::fs::create_dir_all(dir)
                 .map_err(|e| format!("创建目录失败 {}: {}", dir.display(), e))?;
@@ -172,11 +184,15 @@ mod tests {
         );
         assert_eq!(
             c.launcher_config_path(),
-            PathBuf::from("/tmp/launcher-work/.wecraft.json")
+            PathBuf::from("/tmp/launcher-work/.wecraft/.wecraft.json")
         );
         assert_eq!(
             c.launcher_logs_dir(),
             PathBuf::from("/tmp/launcher-work/logs")
+        );
+        assert_eq!(
+            c.wecraft_icons_dir(),
+            PathBuf::from("/tmp/launcher-work/.wecraft/assets/icons")
         );
     }
 

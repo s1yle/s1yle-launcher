@@ -213,7 +213,7 @@ mod tests {
         let config = manager.get_config().unwrap();
         assert!(config.login_state.is_logged_in);
         let on_disk: Value = serde_json::from_str(
-            &fs::read_to_string(dir.join(".wecraft.json")).unwrap(),
+            &fs::read_to_string(dir.join(".wecraft").join(".wecraft.json")).unwrap(),
         )
         .unwrap();
         assert_eq!(on_disk["app"]["login_state"]["is_logged_in"], true);

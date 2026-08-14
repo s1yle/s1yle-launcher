@@ -174,23 +174,21 @@ let game_path = game_manager
         has_client_jar
     );
 
-    // ====== Phase 1-3: 下载库文件 / 资源文件 / 原生库，直接写入实例目录 ======
-    let game_root = app_context.game_root();
-
+    // ====== Phase 1-3: 下载库文件 / 资源文件 / 原生库（全局共享目录，路径一律来自 app_context） ======
     for (files, dest_base, phase) in [
         (
             &manifest.libraries,
-            game_root.join("libraries"),
+            app_context.libraries_dir(),
             "downloading_libraries",
         ),
         (
             &manifest.assets,
-            game_root.join("assets"),
+            app_context.assets_dir(),
             "downloading_assets",
         ),
         (
             &manifest.natives,
-            game_root.join("libraries"),
+            app_context.libraries_dir(),
             "downloading_natives",
         ),
     ] {
@@ -207,15 +205,19 @@ let game_path = game_manager
     // 如果有 natives 的话
     if !manifest.natives.is_empty() {
         let extract_start = Instant::now();
-        // 解压原生库到 natives 目录（平放于游戏目录）
+        // 解压原生库到 natives 目录
         let natives_dir = app_context.natives_dir();
         fs::create_dir_all(&natives_dir).map_err(|e| format!("创建 natives 目录失败: {}", e))?;
         for native in &manifest.natives {
             if cancel_token.is_cancelled() {
                 return Err("下载已取消".to_string());
             }
-            let jar_path = game_dir.join("libraries").join(&native.path);
-            extract_jar(&jar_path, &natives_dir)?;
+            let jar_path = app_context.libraries_dir().join(&native.path);
+            extract_jar(
+                &jar_path,
+                &natives_dir,
+                native.extract.as_ref().and_then(|e| e.exclude.as_deref()),
+            )?;
             log_info!("已解压原生库: {}", native.path);
         }
         log_info!(
@@ -258,10 +260,10 @@ let game_path = game_manager
         completed += 1;
     }
 
-    // ====== Phase 5: 资源索引 ======
+    // ====== Phase 5: 资源索引（{root}/assets/indexes/{id}.json，全局共享） ======
     if let Some(ref index) = manifest.asset_index {
         tracker.set_phase("downloading_index");
-        let dest = game_dir.join("assets").join(&index.path);
+        let dest = app_context.assets_dir().join(&index.path);
         if let Some(parent) = dest.parent() {
             fs::create_dir_all(parent).map_err(|e| format!("创建索引目录失败: {}", e))?;
         }

@@ -15,6 +15,7 @@ import { transitions } from "@/utils/animations"
 import { inferVersionType } from "@/utils/format"
 import IconButton from '../IconButton';
 import { PageSection } from '../Page';
+import { useAppStore } from '@/stores/appStore';
 
 /** 实例列表项组件 Props */
 interface InstanceListItemProps {
@@ -77,8 +78,13 @@ const InstanceListItem = ({
       setIconSrc(`asset://localhost/${instance.icon_path}`);
       return;
     }
-    const loaderIconPath = `${instance.path}/.smcl/assets/icons/${getLoaderIconPath(instance.loader_type)}`;
-    setIconSrc(`asset://localhost/${loaderIconPath}`);
+    const wecraftDir = useAppStore.getState().systemInfo?.wecraftDir;
+    if (wecraftDir) {
+      const loaderIconPath = `${wecraftDir}/assets/icons/${getLoaderIconPath(instance.loader_type)}`;
+      setIconSrc(`asset://localhost/${loaderIconPath}`);
+    } else {
+      setIconSrc(null);
+    }
   }, [instance]);
 
   const handleClick = () => {

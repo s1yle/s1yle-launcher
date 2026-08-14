@@ -12,6 +12,7 @@ use crate::log_info;
 /// 实例 CRUD、记录持久化（原 storage）、目录扫描（原 scanner）、
 /// 版本已安装判定（原 layout 根级函数）。
 /// dir 级纯路径函数（version_json_in_dir 等）见 [`AppContext`]。
+#[derive(Clone)]
 pub struct GameManager {
     /// 应用上下文（路径唯一事实源）
     ctx: AppContext,
@@ -27,13 +28,19 @@ impl GameManager {
 
     /// 获取指定名称的实例
     pub fn get_game(&self, game_name: &str) -> Option<Game> {
-        let mut record = self.load_record(game_name)?;
-        let game_dir = self.ctx.game_dir(&record.name);
+        let game_dir = self.ctx.game_dir(game_name);
         if !game_dir.is_dir() {
             return None;
         }
+        // 记录缺失/损坏时以目录名重建基础记录（与 scan_games 一致），
+        // 保证对"目录存在但无记录"的实例（如手动创建的空目录）也可操作
+        let mut record = self
+            .load_record(game_name)
+            .unwrap_or_else(|| Game::new(game_name, "", ModLoaderType::Vanilla, None, None));
+        record.name = game_name.to_string();
         record.path = game_dir.to_string_lossy().to_string();
         record.game_settings = Some((&record).into());
+        record.empty = super::validator::is_game_dir_empty(&game_dir);
         Some(record)
     }
 
@@ -247,6 +254,10 @@ impl GameManager {
                 } else {
                     game.broken = !path.join(format!("{}.jar", game.version_id)).is_file();
                 }
+
+                // 空壳判定：目录内除记录与图标外无任何文件（未下载的空壳）→ 前端直接不显示。
+                // 在扫描阶段同步标记，避免等待异步校验造成"先显示后隐藏"闪烁
+                game.empty = super::validator::is_game_dir_empty(&path);
 
                 game.path = path.to_string_lossy().to_string();
                 game.game_settings = Some((&game).into());

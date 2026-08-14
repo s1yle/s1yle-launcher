@@ -1,7 +1,7 @@
 import { InvokeOptions } from "@tauri-apps/api/core";
 import { invokeRust } from "./client";
 import { logger } from "@/helper/logger";
-import type { Game, GameSettings } from "./types/instance";
+import type { Game, GameSettings, GameValidation } from "./types/instance";
 
 /**
  * 获取实例的游戏设置
@@ -98,7 +98,7 @@ export const invokeGetGame = async (
   options?: InvokeOptions
 ): Promise<Game| null> => {
   logger.info('获取实例详情', { gameName });
-  return await invokeRust("get_game", { game_name: gameName }, options);
+  return await invokeRust("get_game", { gameName }, options);
 };
 
 /**
@@ -123,9 +123,9 @@ export const invokeCreateGame = async (
   return await invokeRust("create_game", {
     name,
     version,
-    loader_type: loaderType,
-    loader_version: loaderVersion,
-    icon_path: iconPath,
+    loaderType,
+    loaderVersion,
+    iconPath,
   }, options);
 };
 
@@ -141,7 +141,7 @@ export const invokeDeleteGame = async (
   options?: InvokeOptions
 ): Promise<void> => {
   logger.info('删除实例', { gameName, deleteFiles });
-  return await invokeRust("delete_game", { game_name: gameName, delete_files: deleteFiles }, options);
+  return await invokeRust("delete_game", { gameName, deleteFiles }, options);
 };
 
 /**
@@ -157,7 +157,7 @@ export const invokeRenameGame = async (
   options?: InvokeOptions
 ): Promise<Game> => {
   logger.info('重命名实例', { gameName, newName });
-  return await invokeRust("rename_game", { game_name: gameName, new_name: newName }, options);
+  return await invokeRust("rename_game", { gameName, newName }, options);
 };
 
 /**
@@ -175,7 +175,23 @@ export const invokeUpdateGame = async (
   options?: InvokeOptions
 ): Promise<Game> => {
   logger.info('更新实例', { gameName, name, enabled });
-  return await invokeRust("update_game", { game_name: gameName, name, enabled }, options);
+  return await invokeRust("update_game", { gameName, name, enabled }, options);
+};
+
+/**
+ * 校验实例完整性（基于版本 JSON：客户端 jar / 库文件 / 原生库 / 资源索引 / 资源文件）
+ * @param gameName 实例名称
+ * @param deep 是否对资源文件做 SHA1 校验（全量哈希较慢），默认 false（仅大小）
+ * @param options Tauri invoke 选项
+ * @returns 完整性校验报告
+ */
+export const invokeValidateGame = async (
+  gameName: string,
+  deep?: boolean,
+  options?: InvokeOptions
+): Promise<GameValidation> => {
+  logger.info('校验实例完整性', { gameName, deep });
+  return await invokeRust('validate_game', { gameName, deep }, options);
 };
 
 /**

@@ -100,43 +100,49 @@ pub fn rules_allow(rules: &[Rule]) -> bool {
         return true;
     }
 
+    /// 当前启动器启用的特性（对应 version.json 的 features 规则）：
+    /// 未启用任何特性（is_demo_user / has_custom_resolution / is_quick_play_* 等均为 false），
+    /// 因此规则声明某特性为 true 时不匹配、为 false 时匹配
+    fn feature_state(_key: &str) -> bool {
+        false
+    }
+
+    /// 单条规则是否命中（os 匹配 且 features 匹配），不命中则跳过该规则
+    fn rules_match(rule: &Rule) -> bool {
+        let os_match = match &rule.os {
+            Some(os) => {
+                let os_name_match =
+                    os.name.as_ref().map_or(true, |n| n == get_current_os());
+                let arch_match = os.arch.as_ref().map_or(true, |a| {
+                    if a.contains("64") {
+                        get_current_arch().contains("64")
+                    } else {
+                        !get_current_arch().contains("64")
+                    }
+                });
+                os_name_match && arch_match
+            }
+            None => true,
+        };
+
+        let features_match = match &rule.features {
+            Some(features) => features
+                .iter()
+                .all(|(key, want)| feature_state(key) == *want),
+            None => true,
+        };
+
+        os_match && features_match
+    }
+
     let mut allowed = true;
     for rule in rules {
+        if !rules_match(rule) {
+            continue;
+        }
         match rule.action.as_str() {
-            "allow" => {
-                if let Some(ref os) = rule.os {
-                    let os_match = os.name.as_ref().map_or(true, |n| n == get_current_os());
-                    let arch_match = os.arch.as_ref().map_or(true, |a| {
-                        if a.contains("64") {
-                            get_current_arch().contains("64")
-                        } else {
-                            !get_current_arch().contains("64")
-                        }
-                    });
-                    if os_match && arch_match {
-                        allowed = true;
-                    }
-                } else {
-                    allowed = true;
-                }
-            }
-            "disallow" => {
-                if let Some(ref os) = rule.os {
-                    let os_match = os.name.as_ref().map_or(true, |n| n == get_current_os());
-                    let arch_match = os.arch.as_ref().map_or(true, |a| {
-                        if a.contains("64") {
-                            get_current_arch().contains("64")
-                        } else {
-                            !get_current_arch().contains("64")
-                        }
-                    });
-                    if os_match && arch_match {
-                        allowed = false;
-                    }
-                } else {
-                    allowed = false;
-                }
-            }
+            "allow" => allowed = true,
+            "disallow" => allowed = false,
             _ => {}
         }
     }
@@ -242,6 +248,33 @@ mod tests {
 
         assert!(rules_allow(&[rule("allow")]));
         assert!(!rules_allow(&[rule("disallow")]));
+    }
+
+    #[test]
+    fn rules_allow_features_state() {
+        use std::collections::HashMap;
+
+        let feature_rule = |action: &str, features: Option<HashMap<String, bool>>| Rule {
+            action: action.to_string(),
+            features,
+            os: None,
+        };
+
+        // 未启用任何特性：要求 is_demo_user=true 的规则不匹配（跳过），无 os 的 disallow 同理
+        assert!(rules_allow(&[feature_rule(
+            "allow",
+            Some(HashMap::from([("is_demo_user".to_string(), false)]))
+        )]));
+        assert!(!rules_allow(&[feature_rule(
+            "disallow",
+            Some(HashMap::from([("has_custom_resolution".to_string(), false)]))
+        )]));
+
+        // 声明特性为 true 的规则不命中 → 不生效
+        assert!(rules_allow(&[feature_rule(
+            "disallow",
+            Some(HashMap::from([("is_demo_user".to_string(), true)]))
+        )]));
     }
 
     #[test]

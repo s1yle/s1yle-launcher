@@ -6,10 +6,11 @@ use super::manager::GameManager;
 use super::models::Game;
 use crate::app_context::AppContext;
 use crate::config::ConfigManager;
+use crate::log_info;
 use crate::log_warn;
 use crate::modloader::ModLoaderType;
 
-/// 兜底加载器图标文件名（写入每个实例目录的 .smcl/assets/icons/）
+/// 兜底加载器图标文件名（写入 {work_dir}/.wecraft/assets/icons/，全局一份）
 const LOADER_ICON_NAMES: [&str; 5] = [
     "vanilla.png",
     "fabric.png",
@@ -21,35 +22,47 @@ const LOADER_ICON_NAMES: [&str; 5] = [
 /// 兜底图标内容（打包的应用图标，按加载器名落盘后可由用户替换）
 const FALLBACK_ICON: &[u8] = include_bytes!("../../icons/32x32.png");
 
-/// 准备实例图标：
-/// 1. 将实例目录递归加入 asset 协议 scope，使前端 asset://localhost/ 可访问实例内文件
-/// 2. 缺失时写入兜底加载器图标（.smcl/assets/icons/{loader}.png）
-fn prepare_instance_icons(app: &AppHandle, dir: &Path) {
-    let icon_dir = dir.join(".smcl").join("assets").join("icons");
+/// 准备全局兜底图标：
+/// 1. 将启动器数据目录递归加入 asset 协议 scope，使前端 asset://localhost/ 可访问兜底图标
+/// 2. 缺失时写入兜底加载器图标（{work_dir}/.wecraft/assets/icons/{loader}.png，仅一次）
+/// 3. 清理实例目录内的遗留 .smcl 目录（旧版本按实例落盘图标），保持实例目录纯净
+fn prepare_instance_icons(app: &AppHandle, dir: &Path, ctx: &AppContext) {
+    let stale = dir.join(".smcl");
+    if stale.exists() {
+        if std::fs::remove_dir_all(&stale).is_ok() {
+            log_info!("已清理实例遗留图标目录: {}", stale.display());
+        }
+    }
+
+    let icon_dir = ctx.wecraft_icons_dir();
     if let Err(e) = std::fs::create_dir_all(&icon_dir) {
-        log_warn!("创建实例图标目录失败 {}: {}", icon_dir.display(), e);
+        log_warn!("创建全局图标目录失败 {}: {}", icon_dir.display(), e);
         return;
     }
     for name in LOADER_ICON_NAMES {
         let dest = icon_dir.join(name);
         if !dest.exists() {
             if let Err(e) = std::fs::write(&dest, FALLBACK_ICON) {
-                log_warn!("写入实例图标失败 {}: {}", dest.display(), e);
+                log_warn!("写入全局图标失败 {}: {}", dest.display(), e);
             }
         }
     }
     let _ = app.asset_protocol_scope().allow_directory(dir, true);
+    let _ = app
+        .asset_protocol_scope()
+        .allow_directory(ctx.wecraft_data_dir(), true);
 }
 
-/// 扫描所有已安装的实例（同时准备实例图标：asset scope 授权 + 兜底图标落盘）
+/// 扫描所有已安装的实例（同时准备全局兜底图标：asset scope 授权 + 兜底图标落盘）
 #[tauri::command]
 pub fn scan_games(
     app: AppHandle,
+    app_context: State<'_, AppContext>,
     game_manager: State<'_, GameManager>,
 ) -> Result<Vec<Game>, String> {
     let games = game_manager.scan_games()?;
     for game in &games {
-        prepare_instance_icons(&app, Path::new(&game.path));
+        prepare_instance_icons(&app, Path::new(&game.path), app_context.inner());
     }
     Ok(games)
 }
@@ -102,6 +115,29 @@ pub fn update_game(
     game_manager: State<'_, GameManager>,
 ) -> Result<Game, String> {
     game_manager.update_game(&game_name, name, enabled)
+}
+
+/// 校验实例完整性（基于版本 JSON：客户端 jar / 库文件 / 原生库 / 资源索引 / 资源文件）
+///
+/// `deep=true` 时对资源文件也做 SHA1 校验（耗时较长），默认仅校验大小。
+///
+/// 异步命令 + `spawn_blocking`：全量 SHA1 哈希耗时约 1s，避免占用 IPC 同步命令线程池
+/// （否则会阻塞同池的 `scan_games` 等命令，导致进入实例页 UI 卡顿）。
+#[tauri::command]
+pub async fn validate_game(
+    game_name: String,
+    deep: Option<bool>,
+    app_context: State<'_, AppContext>,
+    game_manager: State<'_, GameManager>,
+) -> Result<super::validator::GameValidation, String> {
+    let ctx = app_context.inner().clone();
+    let gm = game_manager.inner().clone();
+    let deep = deep.unwrap_or(false);
+    tauri::async_runtime::spawn_blocking(move || {
+        super::validator::validate_game_integrity(&ctx, &gm, &game_name, deep)
+    })
+    .await
+    .map_err(|e| format!("校验任务执行失败: {}", e))?
 }
 
 /// 获取当前游戏根目录（.minecraft 所在目录）

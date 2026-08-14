@@ -57,7 +57,7 @@ pub use download::{
 
 pub use crate::game::{
     Game, GameManager, create_game, delete_game, get_game, get_game_root, get_game_settings,
-    rename_game, scan_games, set_game_root, update_game, update_game_settings,
+    rename_game, scan_games, set_game_root, update_game, update_game_settings, validate_game,
 };
 
 pub use crate::system::{get_display_resolutions, get_memory_usage, get_system_memory};
@@ -91,6 +91,8 @@ fn greet(name: &str) -> String {
 struct SystemInfo {
     os: String,
     arch: String,
+    /// 启动器数据目录（.wecraft），供前端访问全局兜底图标等
+    wecraft_dir: String,
 }
 
 /// 获取当前操作系统和架构信息
@@ -118,9 +120,17 @@ fn get_system_info() -> Result<SystemInfo, String> {
         "unknown"
     };
 
+    let wecraft_dir = APP_HANDLE
+        .get()
+        .map(|h| h.state::<AppContext>().wecraft_data_dir())
+        .unwrap_or_else(|| std::path::PathBuf::from(".wecraft"))
+        .to_string_lossy()
+        .to_string();
+
     Ok(SystemInfo {
         os: os.to_string(),
         arch: arch.to_string(),
+        wecraft_dir,
     })
 }
 
@@ -220,26 +230,59 @@ fn init_app_context() -> AppContext {
         work_dir.display(),
         game_root.display()
     );
-    AppContext::new(work_dir, game_root)
+    let app_context = AppContext::new(work_dir, game_root);
+    migrate_legacy_config(&app_context);
+    app_context
 }
 
 /// 从配置文件读取持久化的游戏根目录（app.game_dir），读取失败/为空时回退 /工作目录/.minecraft
 fn resolve_game_root(work_dir: &std::path::Path) -> std::path::PathBuf {
-    let config_path = work_dir.join(".wecraft.json");
-    if let Ok(content) = std::fs::read_to_string(&config_path) {
-        if let Ok(root) = serde_json::from_str::<serde_json::Value>(&content) {
-            if let Some(dir) = root
-                .get("app")
-                .and_then(|a| a.get("game_root"))
-                .and_then(|g| g.as_str())
-            {
-                if !dir.trim().is_empty() {
-                    return std::path::PathBuf::from(dir);
+    // 新位置优先：{work_dir}/.wecraft/.wecraft.json（旧位置已废弃，仅作兼容回退）
+    let config_path = work_dir
+        .join(".wecraft")
+        .join(".wecraft.json");
+    let legacy_config_path = work_dir.join(".wecraft.json");
+    for path in [config_path, legacy_config_path] {
+        if let Ok(content) = std::fs::read_to_string(&path) {
+            if let Ok(root) = serde_json::from_str::<serde_json::Value>(&content) {
+                if let Some(dir) = root
+                    .get("app")
+                    .and_then(|a| a.get("game_root"))
+                    .and_then(|g| g.as_str())
+                {
+                    if !dir.trim().is_empty() {
+                        return std::path::PathBuf::from(dir);
+                    }
                 }
             }
         }
     }
     work_dir.join(".minecraft").to_path_buf()
+}
+
+/// 一次性迁移旧配置：{work_dir}/.wecraft.json → {work_dir}/.wecraft/.wecraft.json
+fn migrate_legacy_config(app_context: &AppContext) {
+    let legacy = app_context.launcher_work_dir().join(".wecraft.json");
+    if !legacy.exists() {
+        return;
+    }
+    let target = app_context.launcher_config_path();
+    if target.exists() {
+        return;
+    }
+    if let Some(parent) = target.parent() {
+        if std::fs::create_dir_all(parent).is_err() {
+            return;
+        }
+    }
+    match std::fs::rename(&legacy, &target) {
+        Ok(()) => log_info!("已迁移配置文件 {} → {}", legacy.display(), target.display()),
+        Err(_) => {
+            if std::fs::copy(&legacy, &target).is_ok() {
+                log_info!("已复制迁移配置文件 → {}", target.display());
+            }
+        }
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -446,6 +489,7 @@ pub fn run() {
             update_game,
             get_game_root,
             set_game_root,
+            validate_game,
             // 游戏设置相关命令
             get_game_settings,
             update_game_settings,

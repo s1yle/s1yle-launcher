@@ -38,7 +38,7 @@ pub fn asset_index_layout(index_id: &str) -> AssetIndexLayout {
 ///
 /// 现代布局按哈希存放于 objects/{xx}/{hash}；pre-1.6 与 legacy 为兼容旧版本，
 /// 按资源路径存放于 virtual/{pre-1.6|legacy}/{路径}。
-fn asset_store_path(layout: AssetIndexLayout, virtual_path: &str, hash: &str) -> String {
+pub(crate) fn asset_store_path(layout: AssetIndexLayout, virtual_path: &str, hash: &str) -> String {
     match layout {
         AssetIndexLayout::Pre16 => format!("virtual/pre-1.6/{}", virtual_path),
         AssetIndexLayout::Legacy => format!("virtual/legacy/{}", virtual_path),
@@ -172,6 +172,7 @@ pub async fn parse_version_json(
                         path: artifact.path.clone(),
                         sha1: artifact.sha1.clone(),
                         size: artifact.size,
+                        ..Default::default()
                     });
                 }
 
@@ -183,6 +184,8 @@ pub async fn parse_version_json(
                                 sha1: native_artifact.sha1.clone(),
                                 size: native_artifact.size,
                                 path: native_artifact.path.clone(),
+                                // 原生库解压排除规则（如 META-INF/），解压时按此跳过
+                                extract: library.extract.clone(),
                             });
                         }
                     }
@@ -217,6 +220,7 @@ pub async fn parse_version_json(
                 .map(String::from),
             size: version_json["assetIndex"]["size"].as_u64().unwrap_or(0),
             path: format!("indexes/{}.json", index_id),
+            ..Default::default()
         });
 
         let url = version_json["assetIndex"]["url"].as_str().unwrap_or("");
@@ -234,6 +238,7 @@ pub async fn parse_version_json(
                             sha1: Some(hash.clone()),
                             size: obj.size,
                             path: asset_store_path(layout, &virtual_path, hash),
+                            ..Default::default()
                         });
                     }
                 }
@@ -254,6 +259,7 @@ pub async fn parse_version_json(
                 sha1: client["sha1"].as_str().map(String::from),
                 size: client["size"].as_u64().unwrap_or(0),
                 path: format!("versions/{}/{}.jar", version_id, version_id),
+                ..Default::default()
             });
         }
     }

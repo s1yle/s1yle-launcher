@@ -787,9 +787,13 @@ struct ChunkResult {
     data: Vec<u8>,
 }
 
-/// 解压 jar 文件中的内容到指定目录（用于原生库）
-pub fn extract_jar(jar_path: &Path, dest_dir: &Path) -> Result<(), String> {
-
+/// 解压 jar 文件中的内容到指定目录（用于原生库）。
+/// `exclude` 中的条目会被跳过：以 `/` 结尾视为目录前缀匹配，否则按完整条目名精确匹配。
+pub fn extract_jar(
+    jar_path: &Path,
+    dest_dir: &Path,
+    exclude: Option<&[String]>,
+) -> Result<(), String> {
     let file = fs::File::open(jar_path).map_err(|e| format!("打开 jar 文件失败：{}", e))?;
 
     let mut archive = zip::ZipArchive::new(file).map_err(|e| format!("解析 zip 失败：{}", e))?;
@@ -798,6 +802,20 @@ pub fn extract_jar(jar_path: &Path, dest_dir: &Path) -> Result<(), String> {
         let mut file = archive
             .by_index(i)
             .map_err(|e| format!("读取 zip 条目失败：{}", e))?;
+
+        let name = file.name().to_string();
+        if let Some(excludes) = exclude {
+            let excluded = excludes.iter().any(|e| {
+                if e.ends_with('/') {
+                    name.starts_with(e)
+                } else {
+                    name == *e
+                }
+            });
+            if excluded {
+                continue;
+            }
+        }
 
         let outpath = match file.enclosed_name() {
             Some(path) => dest_dir.join(path),

@@ -431,16 +431,12 @@ fn build_launch_args(config: &LaunchConfig, ctx: &AppContext) -> Result<(String,
     let mut visited = vec![config.version.clone()];
     let merged = merge_version_json(&version_json, &game_dir, ctx, &mut visited)?;
 
-    // ---- 目录路径 ----
-    let libraries_dir = game_dir.join("libraries");
-    let assets_dir = PathBuf::from(&config.assets_dir);
-    let natives_dir = if let Some(dir) = config.natives_dir.as_ref() {
-        PathBuf::from(dir)
-    } else {
-        ctx.natives_dir()
-    };
+    // ---- 目录路径（一律来自 app_context，全局共享目录与下载/校验保持一致） ----
+    let libraries_dir = ctx.libraries_dir();
+    let assets_dir = ctx.assets_dir();
+    let natives_dir = ctx.natives_dir();
 
-    let game_jar = ctx.version_json_in_dir(&game_dir, &config.version);
+    let game_jar = ctx.version_jar_in_dir(&game_dir, &config.version);
 
     // ---- classpath ----
     let mut classpath = Vec::new();
@@ -448,6 +444,19 @@ fn build_launch_args(config: &LaunchConfig, ctx: &AppContext) -> Result<(String,
         classpath.push(libraries_dir.join(lib_path));
     }
     classpath.push(game_jar.clone());
+
+    // classpath 文件必须全部存在，否则 JVM 报错晦涩难懂，这里直接给出明确清单
+    let missing: Vec<String> = classpath
+        .iter()
+        .filter(|p| !p.is_file())
+        .map(|p| p.to_string_lossy().to_string())
+        .collect();
+    if !missing.is_empty() {
+        return Err(format!(
+            "以下库文件缺失，无法启动（请先在实例管理中修复完整性）：\n{}",
+            missing.join("\n")
+        ));
+    }
 
     let classpath_str = if cfg!(target_os = "windows") {
         classpath

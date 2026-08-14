@@ -1,7 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
+
 import { useTranslation } from 'react-i18next';
+
 import { motion, AnimatePresence } from 'framer-motion';
+
 import { Heart, Puzzle, Box, Archive, AlertTriangle, LucideIcon } from 'lucide-react';
+
+import { confirm } from '@tauri-apps/plugin-dialog';
+
 import { useGameStore } from '../../stores/gameStore';
 import { openFolder } from '../../helper/rustInvoke';
 import { useSafeNavigate } from '../../router/navigation';
@@ -57,6 +63,8 @@ const InstanceList: React.FC = () => {
     favoriteIds,
     toggleFavorite,
     isFavorite,
+    validations,
+    validateAll,
   } = useGameStore();
 
   const { success, error: notifyError } = useNotification();
@@ -70,12 +78,16 @@ const InstanceList: React.FC = () => {
       favorites: [], mods: [], regular: [], uncommon: [], broken: [],
     };
     for (const game of filteredGames) {
+      // 空壳实例（除记录外无任何文件）直接不显示：
+      // 优先用扫描阶段标记（game.empty，避免等待校验造成先显示后隐藏），
+      // 校验结果 empty 作为兜底（旧数据/边界情况）
+      if (game.empty || validations[game.id]?.empty) continue;
       map[categorizeInstance(game, favoriteIds)].push(game);
     }
     return GROUP_DEFS
       .map((def) => ({ ...def, items: map[def.key] }))
       .filter((group) => group.items.length > 0);
-  }, [filteredGames, favoriteIds]);
+  }, [filteredGames, favoriteIds, validations]);
 
   const [duplicateTargetId, setDuplicateTargetId] = useState<string | null>(null);
   const [duplicateName, setDuplicateName] = useState('');
@@ -109,8 +121,14 @@ const InstanceList: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    init();
-  }, [init]);
+    // 先等 init 完成（games 就绪）再全量校验：
+    // 若并行调用，validateAll 会在 games 为空时直接返回，
+    // 造成空壳实例（如手动创建的空目录）拿不到 empty 标记而继续显示
+    void (async () => {
+      await init();
+      await validateAll();
+    })();
+  }, [init, validateAll]);
 
   const handleSelect = (id: string) => {
     setSelectedGame(id);
@@ -118,7 +136,11 @@ const InstanceList: React.FC = () => {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(t('instances.confirmDelete', '确定要删除实例 "{{name}}" 吗？', { name }))) return;
+    const confirmed = await confirm(t('instances.confirmDelete', '确定要删除实例 "{{name}}" 吗？', { name }), {
+      title: t('instances.confirmDeleteTitle', '删除实例'),
+      kind: 'warning',
+    });
+    if (!confirmed) return;
     try {
       await remove(id);
       success(t('notification.instanceDeleted'), t('instances.deleteSuccess', '实例 "{{name}}" 已删除', { name }));

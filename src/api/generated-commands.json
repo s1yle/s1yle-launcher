@@ -80,5 +80,6 @@
   "tauri_update_launch_config",
   "unbind_player_from_admin",
   "update_game",
-  "update_game_settings"
+  "update_game_settings",
+  "validate_game"
 ]

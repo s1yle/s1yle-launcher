@@ -6,6 +6,8 @@ pub mod manager;
 pub mod models;
 /// 实例设置命令
 pub mod settings;
+/// 实例完整性校验
+pub mod validator;
 
 pub use commands::*;
 pub use manager::GameManager;
