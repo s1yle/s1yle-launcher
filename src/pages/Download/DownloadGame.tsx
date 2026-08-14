@@ -11,6 +11,7 @@ import { getWikiUrl } from '../../utils/modloaderCompat';
 import { VersionCategory, filterVersionsByCategory, countVersionsByCategory } from '../../utils/versionFilter';
 import BottomBar from '@/components/common/BottomBar/BottomBar';
 import { useShallow } from 'zustand/shallow';
+import { DURATION, EASING } from '@/utils/animations';
 
 const ITEM_HEIGHT = 72;
 
@@ -164,17 +165,20 @@ const DownloadGame: React.FC = () => {
   }, [fetchManifest]);
 
   return (
-    <Page className="flex flex-col h-full min-h-0">
+    <Page className="flex flex-col justify-center h-full min-h-0">
 
-      <div className="flex-1 min-h-0 px-0 py-2 overflow-hidden">
-        <div className="h-full min-h-0 flex flex-col">
+      <div className="min-h-0 pl-10 py-2 overflow-hidden">
+        <div className="max-w-4xl mx-auto h-full min-h-0 flex flex-col">
 
           <PageSection>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.1, margin: '-40px' }}
-              transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+              transition={{
+                opacity: { duration: DURATION.ELEMENT_ENTER, ease: EASING.OUT_FLUENT },
+                y: { ...EASING.SPRING_ENTER },
+              }}
               className="flex flex-col sm:flex-row gap-3 mb-3 flex-shrink-0 px-4"
             >
               <div className="flex-1">
@@ -223,7 +227,10 @@ const DownloadGame: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.1, margin: '-40px' }}
-                transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+                transition={{
+                  opacity: { duration: DURATION.ELEMENT_ENTER, ease: EASING.OUT_FLUENT },
+                  y: { ...EASING.SPRING_ENTER },
+                }}
               >
                 <EmptyState
                   icon="search"
@@ -240,7 +247,7 @@ const DownloadGame: React.FC = () => {
                 height="100%"
                 itemHeight={ITEM_HEIGHT}
                 overscan={5}
-                className="h-full"
+                className="h-full pr-4"
                 renderItem={renderVersionItem}
               />
             </div>

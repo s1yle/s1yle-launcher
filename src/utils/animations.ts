@@ -1,16 +1,30 @@
 import { Variants, Transition } from 'framer-motion';
 
 /**
- * ## DURATION — 动画持续时间常量（单一来源）
+ * # 统一动效核心（单一事实源）
  *
- * 所有动画组件的持续时间应引用此处，禁止硬编码魔数。
- * 命名层级：INSTANT（极快）→ FAST → NORMAL → MEDIUM → SLOW
+ * 全项目所有动画的时长、缓动曲线与变体均定义在此文件，禁止在组件中硬编码魔数。
+ * 文件按动画分类组织：
  *
- * @example
- * ```tsx
- * <motion.div transition={{ duration: DURATION.NORMAL }} />
- * <Animated duration={DURATION.MEDIUM} />
- * ```
+ * 1. 主导航页面切换 — 路由容器水平滑动（`createRouteSlideVariants` / `routeFade`）
+ * 2. 页面内部元素入场/出场 — `pageContainer` / `pageSection` / `sectionTitle`
+ * 3. 弹窗 — `modalOpen` / `modalOverlay`
+ * 4. 顶部悬浮通知 — `toast`
+ * 5. 下拉面板 — `dropdown`
+ * 6. 控件微交互 — `microInteractions`
+ * 7. 循环动画 — 加载类组件（Spinner / Skeleton / ProgressBar 等）统一由 Loading/ 分发
+ *
+ * ## 曲线约定
+ * - 入场位移（y/x/scale）用弹簧（`SPRING_ENTER`）轻微回弹，出场动画不带弹性（`IN_OUT_FLUENT`）
+ * - "弹簧质感"来自 Back 族曲线过冲，而非实时物理弹簧积分
+ */
+
+/**
+ * ## DURATION — 动画持续时间 token
+ *
+ * 命名层级：INSTANT（极快）→ FAST → NORMAL → MEDIUM → SLOW，
+ * 业务语义：ROUTE_SLIDE（路由滑动）、ELEMENT_*（元素入场/出场）、
+ * MODAL_*（弹窗开/关）、TOAST_*（通知入场/出场）、STAGGER_*（交错）。
  */
 export const DURATION = {
   INSTANT: 0.05,
@@ -18,42 +32,75 @@ export const DURATION = {
   NORMAL: 0.15,
   MEDIUM: 0.2,
   SLOW: 0.3,
-  PAGE_TRANSITION: 0.35,
-  SIDEBAR_TRANSITION: 0.2,
-  LAYOUT_DEBOUNCE: 0.10,
+  ROUTE_SLIDE: 0.32,
+  ELEMENT_ENTER: 0.32,
+  ELEMENT_EXIT: 0.26,
+  MODAL_OPEN: 0.34,
+  MODAL_CLOSE: 0.28,
+  TOAST_IN: 0.32,
+  TOAST_OUT: 0.26,
+  DROPDOWN: 0.26,
+  STAGGER_CHILD: 0.07,
+  STAGGER_SECTION: 0.1,
+  SIDEBAR_TRANSITION: 0.26,
+  LAYOUT_DEBOUNCE: 0.1,
 } as const;
 
 /**
- * ## EASING — 缓动函数预设
+ * ## EASING — 缓动曲线 token
  *
- * @property DEFAULT - 自定义三次贝塞尔 [0.25, 0.1, 0.25, 1]，适用于大多数 UI 动画
- * @property DEFAULT - 自定义三次贝塞尔 [0.1, 0.15, 0.1, 0.15]
- * @property SMOOTH - easeOut，快速进入、缓慢结束
- * @property SPRING - 弹簧 stiffness:500 damping:30，通用弹性
- * @property SPRING_BOUNCY - 弹力更强 stiffness:700 damping:20
- * @property SPRING_STIFF - 硬弹簧 stiffness:400 damping:15，用于图标悬停等微交互
+ * 曲线族（三次贝塞尔）：
+ * - `LINEAR` — 线性，匀速
+ * - `IN_FLUENT` — 立方缓动，先慢后快
+ * - `OUT_FLUENT` — 立方缓动，先快后慢
+ * - `IN_OUT_FLUENT` — 立方缓动，平滑启停（无越界）
+ * - `IN_BACK` — 先向后退再前进（回弹）
+ * - `SPRING_ENTER` — 元素入场位移弹簧（轻微回弹，弹性动效的主要来源）
+ *
+ * 弹簧族（用于布局与指示器跟位，如 layoutId 滑块）：
+ * - `SPRING` — 通用
+ * - `SPRING_ENTER` — 元素入场位移（y/x/scale），物理弹簧轻微回弹
+ * - `SPRING_SOFT` — 大容器级入场（灵动岛岛体等）
+ * - `SPRING_GENTLE` — 指示条移动
+ * - `SPRING_BOUNCY` — 强调回弹
+ * - `SPRING_STIFF` — 图标等小物件快速响应
  */
 export const EASING = {
-  DEFAULT: [0.25, 0.1, 0.25, 1] as const,
-  FAST: [0.1, 0.15, 0.1, 0.15] as const,
-  SMOOTH: 'easeOut' as const,
-  SPRING: { type: 'spring', stiffness: 500, damping: 30 } as Transition,
-  SPRING_BOUNCY: { type: 'spring', stiffness: 700, damping: 20 } as Transition,
-  SPRING_STIFF: { type: 'spring', stiffness: 400, damping: 15 } as Transition,
+  LINEAR: [0, 0, 1, 1] as const,
+  IN_FLUENT: [0.42, 0, 1, 1] as const,
+  OUT_FLUENT: [0, 0, 0.58, 1] as const,
+  IN_OUT_FLUENT: [0.42, 0, 0.58, 1] as const,
+  IN_BACK: [0.36, 0, 0.66, -0.56] as const,
+  OUT_BACK: [0.34, 1.15, 0.64, 1] as const,
+  SPRING: { type: 'spring', stiffness: 500, damping: 38 } as Transition,
+  SPRING_ENTER: { type: 'spring', stiffness: 250, damping: 30 } as Transition,
+  SPRING_SOFT: { type: 'spring', stiffness: 350, damping: 30 } as Transition,
+  SPRING_GENTLE: { type: 'spring', stiffness: 400, damping: 36 } as Transition,
+  SPRING_BOUNCY: { type: 'spring', stiffness: 700, damping: 28 } as Transition,
+  SPRING_STIFF: { type: 'spring', stiffness: 400, damping: 22 } as Transition,
+} as const;
+
+/**
+ * ## transitions — 过渡速记（基于 DURATION + EASING 组合）
+ *
+ * @example
+ * ```tsx
+ * <motion.div transition={transitions.fast} />
+ * ```
+ */
+export const transitions = {
+  fast: { duration: DURATION.FAST, ease: EASING.OUT_FLUENT } as Transition,
+  normal: { duration: DURATION.NORMAL, ease: EASING.OUT_FLUENT } as Transition,
+  slow: { duration: DURATION.SLOW, ease: EASING.OUT_FLUENT } as Transition,
+  spring: EASING.SPRING,
+  springBouncy: EASING.SPRING_BOUNCY,
 } as const;
 
 /**
  * ## microInteractions — 微交互预设（for whileHover / whileTap）
  *
  * 直接赋值给 Framer Motion 的 gesture props，统一所有组件的悬停/点击反馈。
- *
- * @example
- * ```tsx
- * <motion.button
- *   whileHover={microInteractions.buttonHover}
- *   whileTap={microInteractions.buttonTap}
- * />
- * ```
+ * 悬停缩放 1.05 与点击缩放 0.95 为统一按钮反馈基准。
  */
 export const microInteractions = {
   buttonHover: { scale: 1.05 },
@@ -76,158 +123,261 @@ export const microInteractions = {
 } as const;
 
 /**
- * ## transitions — 过渡预设（向后兼容）
- *
- * 基于 DURATION + EASING 组合，提供语义化过渡配置。
- * 新组件优先使用 DURATION 常量直接传值，旧组件可直接引用此对象。
- *
- * @example
- * ```tsx
- * <motion.div transition={transitions.fast} />
- * ```
+ * 路由方向判定窗口（毫秒）。
+ * 导航后该时间段内的方向视为"新鲜"，用于决定页面滑动方向。
  */
-export const transitions = {
-  fast: { duration: DURATION.FAST, ease: EASING.SMOOTH } as Transition,
-  normal: { duration: DURATION.NORMAL, ease: EASING.SMOOTH } as Transition,
-  slow: { duration: DURATION.SLOW, ease: EASING.SMOOTH } as Transition,
-  spring: EASING.SPRING,
-  springBouncy: EASING.SPRING_BOUNCY,
-} as const;
+export const ROUTE_DIRECTION_FRESH_MS = 500;
 
 /**
- * ## pageTransition — 页面切换入场/退场变体
+ * ## createRouteSlideVariants — 主页面切换（容器水平滑动）
  *
- * 由 RouterRenderer 使用，配合 AnimatePresence mode="wait" 实现页面过渡。
- * 组合了缩放（0.97→1）+ 轻微上移（y:5→0）效果。
+ * 由 RouterRenderer 使用。进入侧带弹性（SPRING_ENTER，弹簧轻微回弹）。
+ * 退出统一为淡出（不带 x）：保证动画中途变体切换时旧页无 x 目标可断开，永不冻结。
+ *
+ * @param forward - true 表示新页面从右侧滑入、旧页面滑向左侧
  */
-export const pageTransition: Variants = {
-  initial: { opacity: 0, scale: 0.97, y: 5 },
-  animate: { opacity: 1, scale: 1, y: 0 },
-  exit: { opacity: 0, scale: 0.98, y: -3 },
+export const createRouteSlideVariants = (forward: boolean): Variants => ({
+  initial: { x: forward ? '100%' : '-100%' },
+  animate: {
+    x: 0,
+    transition: { ...EASING.SPRING_ENTER },
+  },
+  exit: {
+    opacity: 0.5,
+    transition: { duration: DURATION.ELEMENT_EXIT, ease: EASING.IN_OUT_FLUENT },
+  },
+});
+
+/** 路由首屏/无方向时的纯淡入过渡（animate 含 x: 0，防止中途变体切换时滑入冻结）。
+ * 淡入/淡出收敛于半透明（0.5），避免切换中途页面全透明导致窗口空白闪烁。 */
+export const routeFade: Variants = {
+  initial: { opacity: 0.5 },
+  animate: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: DURATION.NORMAL, ease: EASING.OUT_FLUENT },
+  },
+  exit: {
+    opacity: 0.5,
+    transition: { duration: DURATION.NORMAL, ease: EASING.IN_OUT_FLUENT },
+  },
 };
 
-/** 页面级容器入场 — 交错子区块（Page 使用，单一事实源） */
+/**
+ * ## pageContainer — 页面容器
+ *
+ * 由 Page 使用，负责交错编排子区块（stagger），
+ * 页面内容自身的透明/位移动画由 pageSection 承担。
+ */
 export const pageContainer: Variants = {
-  initial: { opacity: 0 },
+  initial: { opacity: 0.8 },
   animate: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.05,
-      delayChildren: DURATION.PAGE_TRANSITION,
-      ease: EASING.SMOOTH,
+      staggerChildren: DURATION.STAGGER_CHILD,
+      delayChildren: DURATION.STAGGER_SECTION,
+    },
+  },
+  exit: {
+    opacity: 0,
+    transition: {
+      staggerChildren: DURATION.STAGGER_CHILD * 0.6,
+      staggerDirection: -1,
     },
   },
 };
 
-/** 页面区块入场（PageSection / Reveal 共用，单一事实源） */
+/**
+ * ## pageSection — 页面区块入场/出场（页面内部元素动画基准）
+ *
+ * 入场：透明度淡入（OUT_FLUENT）+ 垂直上浮 16px（SPRING_ENTER，弹性来源）
+ * 出场：透明度淡出 + 下移 12px（IN_OUT_FLUENT，无回弹）
+ *
+ * 规则：入场带弹性，出场不带弹性。
+ */
 export const pageSection: Variants = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-};
-
-/** 页面区块弹簧过渡（PageSection / Reveal 共用，单一事实源） */
-export const pageSectionSpring: Transition = { type: 'spring', stiffness: 400, damping: 22 };
-
-/**
- * ## sidebarSlide — 侧边栏面板滑入/滑出（完整面板级别）
- *
- * 由 AppSidebar 使用，基于 CSS 百分比宽度实现与 sidebarWidth 无关的滑动。
- */
-export const sidebarSlide: Variants = {
-  initial: { x: '-100%', opacity: 0 },
-  animate: { x: 0, opacity: 1 },
-  exit: { x: '100%', opacity: 0 },
-};
-
-/**
- * ## sidebarContent — 侧边栏内容区域切换
- *
- * 由 SmartSidebar 使用，在路由变化时切换侧边栏内容。
- * 轻微水平位移（±10px）+ 透明度变化。
- */
-export const sidebarContent: Variants = {
-  initial: { opacity: 0, x: -10 },
-  animate: { opacity: 1, x: 0 },
-  exit: { opacity: 0, x: 10 },
-};
-
-/**
- * ## sidebarItemStagger — 侧边栏菜单项入场
- *
- * 配合 stagger delay（index * 0.03）实现逐项滑入效果。
- * 旧版 BaseSidebarContent 使用，已逐步迁移到 `<Animated>` 组件。
- */
-export const sidebarItemStagger: Variants = {
-  initial: { opacity: 0, x: -8 },
-  animate: { opacity: 1, x: 0 },
-};
-
-/**
- * ## accordionExpand — 折叠面板展开/收起
- *
- * 通过 height: 0 ↔ auto + opacity 实现平滑展开/收起。
- * 旧版 BaseSidebarContent 的子菜单使用，已逐步迁移到 `<Animated accordion={}>`。
- */
-export const accordionExpand: Variants = {
-  initial: { opacity: 0, height: 0 },
-  animate: { opacity: 1, height: 'auto' },
-  exit: { opacity: 0, height: 0 },
-};
-
-/** 淡入变体 */
-export const fadeIn: Variants = {
-  initial: { opacity: 0 },
-  animate: { opacity: 1 },
-  exit: { opacity: 0 },
-};
-
-/** 淡入 + 上移变体 */
-export const fadeInUp: Variants = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -10 },
-};
-
-/** 淡入 + 下移变体 */
-export const fadeInDown: Variants = {
   initial: { opacity: 0, y: -20 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: 10 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: 'spring',
+      damping: 20,
+      stiffness: 400,
+    },
+  },
+  exit: {
+    opacity: 0.7,
+    y: -16,
+    transition: {
+      type: 'spring',
+      damping: 20,
+      stiffness: 400,
+    },
+  },
 };
 
-/** 淡入 + 缩放变体 */
-export const fadeInScale: Variants = {
-  initial: { opacity: 0, scale: 0.9 },
-  animate: { opacity: 1, scale: 1 },
-  exit: { opacity: 0, scale: 0.95 },
+/** 区块标题：水平偏移入场（TranslateX），出场无回弹 */
+export const sectionTitle: Variants = {
+  initial: { opacity: 0, x: 16 },
+  animate: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      opacity: { duration: DURATION.ELEMENT_ENTER, ease: EASING.OUT_FLUENT },
+      x: { ...EASING.SPRING_ENTER },
+    },
+  },
+  exit: {
+    opacity: 0,
+    x: -12,
+    transition: { duration: DURATION.ELEMENT_EXIT, ease: EASING.IN_OUT_FLUENT },
+  },
 };
 
-/** 右侧滑入变体 */
-export const slideInRight: Variants = {
-  initial: { opacity: 0, x: 20 },
-  animate: { opacity: 1, x: 0 },
-  exit: { opacity: 0, x: -10 },
+/** 弹窗内容：缩放 0.95→1 + 淡入（打开带动弹出，关闭无回弹） */
+export const modalOpen: Variants = {
+  initial: { opacity: 0, scale: 0.95 },
+  animate: {
+    opacity: 1,
+    scale: 1,
+    transition: {
+      opacity: { duration: DURATION.MODAL_OPEN, ease: EASING.OUT_FLUENT },
+      scale: { ...EASING.SPRING_ENTER },
+    },
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.95,
+    transition: { duration: DURATION.MODAL_CLOSE, ease: EASING.IN_OUT_FLUENT },
+  },
 };
 
-/** 左侧滑入变体 */
-export const slideInLeft: Variants = {
-  initial: { opacity: 0, x: -20 },
-  animate: { opacity: 1, x: 0 },
-  exit: { opacity: 0, x: 10 },
+/** 弹窗遮罩：淡入/淡出 */
+export const modalOverlay: Variants = {
+  initial: { opacity: 0 },
+  animate: {
+    opacity: 1,
+    transition: { duration: DURATION.MODAL_OPEN, ease: EASING.OUT_FLUENT },
+  },
+  exit: {
+    opacity: 0,
+    transition: { duration: DURATION.MODAL_CLOSE, ease: EASING.IN_OUT_FLUENT },
+  },
 };
 
-/** 缩放入场变体 */
-export const scaleIn: Variants = {
-  initial: { scale: 0.8, opacity: 0 },
-  animate: { scale: 1, opacity: 1 },
-  exit: { scale: 0.9, opacity: 0 },
+/** 顶部悬浮通知：从窗口顶部滑入（弹出），滑出无回弹 */
+export const toast: Variants = {
+  initial: { opacity: 0, y: -48 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      opacity: { duration: DURATION.TOAST_IN, ease: EASING.OUT_FLUENT },
+      y: { ...EASING.SPRING_ENTER },
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -24,
+    transition: { duration: DURATION.TOAST_OUT, ease: EASING.IN_OUT_FLUENT },
+  },
 };
 
-/** 列表项入场 + 悬停/点击变体 */
+/** 下拉面板：下滑 + 缩放淡入 */
+export const dropdown: Variants = {
+  initial: { opacity: 0, y: -10, scale: 0.98 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: DURATION.DROPDOWN, ease: EASING.OUT_FLUENT },
+  },
+  exit: {
+    opacity: 0,
+    y: -8,
+    scale: 0.98,
+    transition: { duration: DURATION.DROPDOWN, ease: EASING.IN_OUT_FLUENT },
+  },
+};
+
+/**
+ * ## staggerContainer / staggerItem — 错峰列表容器（配合互用，如实例列表）
+ */
+export const staggerContainer: Variants = {
+  initial: {},
+  animate: {
+    transition: {
+      staggerChildren: DURATION.STAGGER_CHILD,
+      delayChildren: DURATION.STAGGER_SECTION,
+    },
+  },
+  exit: {
+    transition: {
+      staggerChildren: DURATION.STAGGER_SECTION * 0.6,
+      staggerDirection: -1,
+    },
+  },
+};
+
+export const staggerItem: Variants = {
+  initial: { opacity: 0, y: 16 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      opacity: { duration: DURATION.ELEMENT_ENTER, ease: EASING.OUT_FLUENT },
+      y: { ...EASING.SPRING_ENTER },
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -12,
+    transition: { duration: DURATION.ELEMENT_EXIT, ease: EASING.IN_OUT_FLUENT },
+  },
+};
+
+/**
+ * 侧边栏错峰参数（组内菜单项入场延迟：起始延迟 + 序号 * 步长）。
+ * 供 sidebarStaggerContainer / sidebarStaggerItem 及 BaseSidebarContent 使用。
+ */
+export const SIDEBAR_STAGGER_DELAY = 0.15;
+export const SIDEBAR_STAGGER_STEP = 0.14;
+
+/** 侧边栏菜单项错峰容器 */
+export const sidebarStaggerContainer: Variants = {
+  initial: {},
+  animate: {
+    transition: {
+      staggerChildren: SIDEBAR_STAGGER_STEP,
+      delayChildren: SIDEBAR_STAGGER_DELAY,
+    },
+  },
+};
+
+/** 侧边栏菜单单项：水平偏移入场（弹性） */
+export const sidebarStaggerItem: Variants = {
+  initial: { opacity: 0, x: -16 },
+  animate: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      opacity: { duration: DURATION.ELEMENT_ENTER, ease: EASING.OUT_FLUENT },
+      x: { ...EASING.SPRING_ENTER },
+    },
+  },
+  exit: {
+    opacity: 0,
+    x: -12,
+    transition: { duration: DURATION.ELEMENT_EXIT, ease: EASING.IN_OUT_FLUENT },
+  },
+};
+
+/** 列表项入场 + 悬停/点击变体（交上级容器编排 stagger，自身不设 initial/animate） */
 export const listItem: Variants = {
   initial: { y: -20 },
-  animate: { y: 0 },
-  exit: { y: 20 },
+  animate: { y: 0, transition: { ...EASING.SPRING_ENTER } },
+  exit: { y: 20, transition: { duration: DURATION.ELEMENT_EXIT, ease: EASING.IN_OUT_FLUENT } },
   hover: microInteractions.listItemHover,
   tap: microInteractions.listItemTap,
 };
@@ -239,171 +389,25 @@ export const cardHover: Variants = {
     scale: 1.01,
     y: -2,
     boxShadow: '0 10px 40px -15px rgba(0, 0, 0, 0.3)',
-    transition: { duration: DURATION.FAST },
+    transition: { duration: DURATION.FAST, ease: EASING.OUT_FLUENT },
   },
   tap: { scale: 0.99, transition: { duration: DURATION.INSTANT } },
 };
 
-/** 按钮悬停 + 点击变体 */
-export const buttonHover: Variants = {
-  initial: { scale: 1 },
-  hover: { scale: 1.05, transition: transitions.fast },
-  tap: { scale: 0.95, transition: transitions.fast },
-};
-
-/** 图标按钮悬停 + 点击变体（带旋转） */
-export const iconButtonHover: Variants = {
-  initial: { scale: 1 },
-  hover: { scale: 1.15, rotate: 5, transition: transitions.spring },
-  tap: { scale: 0.9, transition: transitions.fast },
-};
-
-/** 模态弹窗遮罩层变体 */
-export const modalOverlay: Variants = {
-  initial: { opacity: 0 },
-  animate: { opacity: 1 },
-  exit: { opacity: 0 },
-};
-
-/** 模态弹窗内容变体 */
-export const modalContent: Variants = {
-  initial: { opacity: 0, scale: 0.95, y: 20 },
-  animate: { opacity: 1, scale: 1, y: 0 },
-  exit: { opacity: 0, scale: 0.95, y: 20 },
-};
-
-/** 下拉菜单变体 */
-export const dropdown: Variants = {
-  initial: { opacity: 0, scale: 0.95, y: -10 },
-  animate: { opacity: 1, scale: 1, y: 0 },
-  exit: { opacity: 0, scale: 0.95, y: -10 },
-};
-
-/** 通知弹窗变体（右侧滑入） */
-export const notification: Variants = {
-  initial: { opacity: 0, x: 300, scale: 0.9 },
-  animate: { opacity: 1, x: 0, scale: 1 },
-  exit: { opacity: 0, x: 300, scale: 0.9 },
-};
-
-/** 进度条宽度动画变体 */
-export const progressBar: Variants = {
-  initial: { width: 0 },
-  animate: (width: number) => ({ width: `${width}%` }),
-};
-
-/** 错峰容器变体（子元素依次入场） */
-export const staggerContainer: Variants = {
-  initial: { opacity: 0 },
+/** 淡入 + 上移变体（空状态等） */
+export const fadeInUp: Variants = {
+  initial: { opacity: 0, y: 20 },
   animate: {
     opacity: 1,
+    y: 0,
     transition: {
-      staggerChildren: 0.05,
-      delayChildren: 0.08,
+      opacity: { duration: DURATION.ELEMENT_ENTER, ease: EASING.OUT_FLUENT },
+      y: { ...EASING.SPRING_ENTER },
     },
   },
   exit: {
     opacity: 0,
-    transition: {
-      staggerChildren: 0.04,
-      staggerDirection: -1,
-    },
+    y: -10,
+    transition: { duration: DURATION.ELEMENT_EXIT, ease: EASING.IN_OUT_FLUENT },
   },
-};
-
-/** 错峰子项变体 */
-export const staggerItem: Variants = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -20 },
-};
-
-/** 侧边栏菜单项错峰入场 — spring 弹性交错 */
-export const sidebarStaggerContainer: Variants = {
-  initial: { opacity: 0 },
-  animate: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.14,
-      delayChildren: 0.15,
-    },
-  },
-};
-
-/** 侧边栏菜单单项 — 配合 sidebarStaggerContainer 使用 */
-export const sidebarStaggerItem: Variants = {
-  initial: { opacity: 0, x: -16 },
-  animate: {
-    opacity: 1,
-    x: 0,
-  },
-};
-
-/** 区块级错峰入场 — 配合 staggerContainer 使用 */
-export const staggerSection: Variants = {
-  initial: { opacity: 0, y: 10 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -5 },
-};
-
-/** 脉冲动画 */
-export const pulse = {
-  scale: [1, 1.05, 1],
-  transition: {
-    duration: 2,
-    repeat: Infinity,
-    ease: 'easeInOut',
-  },
-};
-
-/** 流光动画（骨架屏加载） */
-export const shimmer = {
-  x: ['-100%', '100%'],
-  transition: {
-    duration: 1.5,
-    repeat: Infinity,
-    ease: 'linear',
-  },
-};
-
-/**
- * 创建错峰容器变体
- * @param delay - 子项间的延迟时间（秒），默认 0.05
- * @returns Variants 对象
- */
-export const createStaggerVariants = (delay: number = 0.05): Variants => ({
-  initial: {},
-  animate: {
-    transition: {
-      staggerChildren: delay,
-      delayChildren: 0.1,
-    },
-  },
-  exit: {
-    transition: {
-      staggerChildren: delay,
-      staggerDirection: -1,
-    },
-  },
-});
-
-/**
- * 创建指定方向的滑入变体
- * @param direction - 滑动方向，默认 up
- * @returns Variants 对象
- */
-export const createSlideVariants = (direction: 'left' | 'right' | 'up' | 'down' = 'up'): Variants => {
-  const offset = 20;
-  const directions = {
-    left: { x: -offset, y: 0 },
-    right: { x: offset, y: 0 },
-    up: { x: 0, y: offset },
-    down: { x: 0, y: -offset },
-  };
-
-  return {
-    initial: { opacity: 0, ...directions[direction] },
-    animate: { opacity: 1, x: 0, y: 0 },
-    exit: { opacity: 0, ...directions[direction] },
-  };
 };

@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import type { ReactNode } from "react";
+import { EASING } from "@/utils/animations";
 
 export interface SelectorOption<T extends string> {
   value: T;
@@ -28,13 +29,10 @@ export const Selector = <T extends string>({
     <div className={`relative flex rounded-full bg-[var(--color-surface)]/80 border border-[var(--color-border)]/50 ${className}`}>
       <div className="relative flex items-center w-full">
         <motion.div
-          className="absolute inset-y-1 rounded-full bg-[var(--color-primary)]/15"
+          className="absolute inset-0 rounded-full bg-[var(--color-primary)]/15"
           layout
-          transition={{ type: "spring", stiffness: 400, damping: 30 }}
-          style={{
-            left: `calc(${selectedIndex * (100 / optionCount)}% + 3px)`,
-            width: `calc(${100 / optionCount}% - 6px)`,
-          }}
+          transition={EASING.SPRING_GENTLE}
+          style={{ width: `${100 / optionCount}%`, left: `${selectedIndex * (100 / optionCount)}%` }}
         />
         {options.map((option) => (
           <button

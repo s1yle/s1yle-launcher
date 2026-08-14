@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Inbox, Download, FolderOpen, Search, AlertTriangle, CheckCircle } from 'lucide-react';
-import { fadeInUp, transitions } from '../../utils/animations';
+import { DURATION, EASING, fadeInUp, microInteractions } from '../../utils/animations';
 
 /** 空状态占位组件 Props */
 export interface EmptyStateProps {
@@ -38,7 +38,6 @@ const EmptyState = ({
       initial="initial"
       animate="animate"
       exit="exit"
-      transition={transitions.normal}
     >
       <motion.div
         className="mb-4 opacity-50"
@@ -47,9 +46,9 @@ const EmptyState = ({
           opacity: [0.5, 0.7, 0.5]
         }}
         transition={{
-          duration: 3,
+          duration: DURATION.SLOW * 10,
           repeat: Infinity,
-          ease: 'easeInOut'
+          ease: EASING.IN_OUT_FLUENT
         }}
       >
         {icons[icon]}
@@ -58,7 +57,7 @@ const EmptyState = ({
         className="text-lg font-medium text-text-secondary mb-2"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, ...transitions.normal }}
+        transition={{ delay: DURATION.FAST, duration: DURATION.ELEMENT_ENTER, ease: EASING.OUT_FLUENT }}
       >
         {title}
       </motion.h3>
@@ -67,7 +66,7 @@ const EmptyState = ({
           className="text-sm text-text-tertiary mb-4 max-w-sm"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, ...transitions.normal }}
+          transition={{ delay: DURATION.MEDIUM, duration: DURATION.ELEMENT_ENTER, ease: EASING.OUT_FLUENT }}
         >
           {description}
         </motion.p>
@@ -78,9 +77,9 @@ const EmptyState = ({
           className="px-4 py-2 bg-primary hover:bg-primary-hover text-text-primary text-sm font-medium rounded-lg transition-colors shadow-md"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.3, ...transitions.spring }}
-          whileHover={{ scale: 1.05, y: -2 }}
-          whileTap={{ scale: 0.95 }}
+          transition={{ delay: DURATION.SLOW, ...EASING.SPRING }}
+          whileHover={microInteractions.buttonHover}
+          whileTap={microInteractions.buttonTap}
         >
           {action.label}
         </motion.button>

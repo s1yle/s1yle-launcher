@@ -5,7 +5,6 @@ import AppSidebar from './AppSidebar';
 import AppHeader from './AppHeader';
 import { ShellSpec } from './shell';
 import { useSidebar } from './useSidebar';
-import { Page, PageSection } from '@/components/common';
 
 /** AppShell 组件的 Props */
 export interface AppShellProps {

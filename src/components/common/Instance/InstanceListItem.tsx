@@ -11,7 +11,7 @@ import {
   LucideIcon,
 } from 'lucide-react';
 import ContextMenu, { useContextMenu, ContextMenuItemData } from "@/components/common/ContextMenu"
-import { listItem, transitions } from "@/utils/animations"
+import { transitions } from "@/utils/animations"
 import { inferVersionType } from "@/utils/format"
 import IconButton from '../IconButton';
 import { PageSection } from '../Page';
@@ -29,7 +29,6 @@ interface InstanceListItemProps {
   onOpenFolder?: () => void;
   onSettings?: () => void;
   onFavorite?: () => void;
-  index?: number;
   className?: string;
 }
 
@@ -64,7 +63,6 @@ const InstanceListItem = ({
   onRename,
   onSettings,
   onFavorite,
-  index = 0,
   className,
 }: InstanceListItemProps) => {
   const [iconSrc, setIconSrc] = useState<string | null>(null);
@@ -154,12 +152,7 @@ const InstanceListItem = ({
   return (
     <>
       <PageSection>
-        <motion.div
-          variants={listItem}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          transition={{ ...transitions.normal, delay: index * 0.03 }}
+        <div
           className={`
           flex items-center pl-1.5 pr-3 py-1
           cursor-pointer transition-all border-l-3
@@ -266,7 +259,7 @@ const InstanceListItem = ({
               renderIconButton(icon, title, onClick, danger, rotate)
             ))}
           </motion.div>
-        </motion.div>
+        </div>
       </PageSection>
 
       <ContextMenu

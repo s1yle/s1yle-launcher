@@ -237,6 +237,11 @@ export { Reveal } from './Reveal';
 export type { RevealProps } from './Reveal';
 
 /** 页面容器 / 页面区块组件 */
-export { Page, PageSection } from './Page';
+export { Page, PageSection, PageTitle } from './Page';
 /** 页面容器 / 页面区块 Props */
-export type { PageProps, PageSectionProps } from './Page';
+export type { PageProps, PageSectionProps, PageTitleProps } from './Page';
+
+/** 数字滚动显示组件 */
+export { CountUp } from './CountUp';
+/** 数字滚动显示 Props */
+export type { CountUpProps } from './CountUp';

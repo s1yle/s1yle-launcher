@@ -88,7 +88,6 @@ const InputDialog = ({
       title={title}
       size="sm"
       position="center"
-      animation="scale"
       showCloseButton
     >
       <div className="flex flex-col gap-4">

@@ -61,7 +61,7 @@ export const routes: RouteConfig[] = [
     needsScrollbar: false,
     layoutMode: LayoutMode.FULLSCREEN,
   },
-  {
+    {
     path: '/',
     component: Home,
     header: { type: SidebarType.MAIN, title: 'WeCraft! Launcher', titleI18nKey: 'header.title' },

@@ -8,9 +8,37 @@ import { type SidebarMenuItem } from '../../../../router/config';
 import { useGameStore } from '../../../../stores/gameStore';
 import ContextMenu, { ContextMenuItemData, useContextMenu } from '../../ContextMenu';
 import clsx from 'clsx';
-import { DURATION, EASING, microInteractions, transitions, sidebarStaggerContainer, sidebarStaggerItem } from '../../../../utils/animations';
+import { DURATION, EASING, microInteractions, transitions, sidebarStaggerContainer, SIDEBAR_STAGGER_DELAY, SIDEBAR_STAGGER_STEP } from '../../../../utils/animations';
 import { Animated } from '../../Animated';
 import { renderIcon } from '../../../../utils/iconRenderer';
+
+/** 侧边栏菜单项入场动画（显式序号错峰，不依赖变体编排） */
+const sidebarItemAnimation = (index: number) => ({
+  initial: { opacity: 0, x: -16 },
+  animate: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      opacity: {
+        duration: DURATION.ELEMENT_ENTER,
+        ease: EASING.OUT_FLUENT,
+        delay: SIDEBAR_STAGGER_DELAY + index * SIDEBAR_STAGGER_STEP,
+      },
+      x: {
+        ...EASING.SPRING_ENTER,
+        delay: SIDEBAR_STAGGER_DELAY + index * SIDEBAR_STAGGER_STEP,
+      },
+    },
+  },
+  exit: {
+    opacity: 0,
+    x: -12,
+    transition: {
+      opacity: { duration: DURATION.ELEMENT_EXIT, ease: EASING.IN_OUT_FLUENT },
+      x: { duration: DURATION.ELEMENT_EXIT, ease: EASING.IN_OUT_FLUENT },
+    },
+  },
+});
 
 /** 基础侧边栏内容组件 Props */
 export interface BaseSidebarContentProps {
@@ -226,7 +254,7 @@ const BaseSidebarContent = ({
       const isExpanded = expandedGroups.has(item.id);
 
       return (
-        <motion.div variants={sidebarStaggerItem} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
+        <motion.div {...sidebarItemAnimation(index)}>
           <button
             onClick={() => item.children?.length && toggleGroup(item.id)}
             className="w-full flex items-center 
@@ -257,8 +285,7 @@ const BaseSidebarContent = ({
       const CustomComponent = item.customRender;
       return (
         <motion.div
-          variants={sidebarStaggerItem}
-          transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+          {...sidebarItemAnimation(index)}
           style={{
             padding: level > 0 ? `${level * 0.75}rem` : `0.75rem`,
           }}
@@ -288,8 +315,7 @@ const BaseSidebarContent = ({
 
     return (
       <motion.div
-        variants={sidebarStaggerItem}
-        transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+        {...sidebarItemAnimation(index)}
         className='BaseSidebarContent'
       >
         <motion.button
@@ -327,7 +353,7 @@ const BaseSidebarContent = ({
               {item.id === 'refresh-instances' && spinningItems.has(item.id) ? (
                 <motion.span
                   animate={{ rotate: 360 }}
-                  transition={{ duration: 1, ease: 'linear', repeat: Infinity }}
+                  transition={{ duration: 1, ease: EASING.LINEAR, repeat: Infinity }}
                 >
                   {renderIcon(item.icon, '', 'lg')}
                 </motion.span>
@@ -377,7 +403,7 @@ const BaseSidebarContent = ({
             <motion.div
               layoutId="sidebarActiveIndicator"
               className="absolute left-0 top-[6px] bottom-[6px] w-[3px] rounded-r-full bg-[var(--color-primary)]"
-              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              transition={EASING.SPRING_GENTLE}
             />
           )}
         </motion.button>

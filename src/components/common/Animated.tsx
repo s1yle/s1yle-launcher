@@ -1,5 +1,6 @@
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { DURATION, EASING } from '@/utils/animations';
+import { pageSection } from '@/utils/animations';
 
 /** 滑动方向类型 */
 type SlideDirection = 'left' | 'right' | 'up' | 'down';
@@ -10,13 +11,15 @@ type SlideDirection = 'left' | 'right' | 'up' | 'down';
  * 每个 prop 代表一种独立的动画行为，多个行为通过变体对象合并自然组合。
  * 空行为（无 fade/slide/scale）时直接渲染 children，无额外包装。
  *
+ * 所有曲线/时长均引用统一动效核心（@utils/animations），禁止魔数。
+ *
  * @prop fade - 透明度 0→1
  * @prop slide - 方向滑入（offset ±10px）
  * @prop scale - 缩放 0.95→1（传 number 自定义初始值）
  * @prop accordion - 折叠展开（高度 0↔auto），基于 AnimatePresence 的条件挂载
  * @prop stagger - 交错容器（值为子项间延迟秒数），配合 `<Animated.Item>` 使用
  * @prop delay - 动画开始延迟（秒）
- * @prop duration - 动画持续时间（秒），默认 DURATION.NORMAL
+ * @prop duration - 动画持续时间（秒），默认 DURATION.ELEMENT_ENTER
  * @prop disabled - 禁用动画，直接渲染 children
  */
 export interface AnimatedProps {
@@ -36,11 +39,12 @@ export interface AnimatedProps {
 /**
  * 将行为 props 合并为 Framer Motion variants 对象。
  * 每个行为贡献自己的 initial / animate / exit 片段，通过 Object.assign 合并。
+ * 曲线约定：入场带弹性（SPRING_ENTER），出场不带弹性（IN_OUT_FLUENT）。
  */
 function getBehaviorVariants({ fade, slide, scale }: AnimatedProps): Variants {
-  const initial: Record<string, any> = {};
-  const animate: Record<string, any> = {};
-  const exit: Record<string, any> = {};
+  const initial: Record<string, number> = {};
+  const animate: Record<string, number> = {};
+  const exit: Record<string, number> = {};
 
   if (fade) {
     initial.opacity = 0;
@@ -54,8 +58,8 @@ function getBehaviorVariants({ fade, slide, scale }: AnimatedProps): Variants {
       left: 'right', right: 'left', up: 'down', down: 'up',
     };
     const dir: Record<SlideDirection, Record<string, number>> = {
-      left: { x: -offset },
-      right: { x: offset },
+      left: { x: offset },
+      right: { x: -offset },
       up: { y: offset },
       down: { y: -offset },
     };
@@ -72,15 +76,26 @@ function getBehaviorVariants({ fade, slide, scale }: AnimatedProps): Variants {
     exit.scale = 0.95;
   }
 
-  return { initial, animate, exit };
+  return {
+    initial,
+    animate: {
+      ...animate,
+      transition: {
+        opacity: { duration: DURATION.ELEMENT_ENTER, ease: EASING.OUT_FLUENT },
+        x: { ...EASING.SPRING_ENTER },
+        y: { ...EASING.SPRING_ENTER },
+        scale: { ...EASING.SPRING_ENTER },
+      },
+    },
+    exit: {
+      ...exit,
+      transition: { duration: DURATION.ELEMENT_EXIT, ease: EASING.IN_OUT_FLUENT },
+    },
+  };
 }
 
-/** Animated.Item 的子项入场变体 */
-const itemVariants: Variants = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -20 },
-};
+/** Animated.Item 的子项入场变体（与 pageSection 同一来源） */
+const itemVariants: Variants = pageSection;
 
 /**
  * 交错列表子项组件，配合 `<Animated stagger={}>` 容器使用。
@@ -129,12 +144,19 @@ function AnimatedInner({
   stagger,
   disabled = false,
   delay = 0,
-  duration = DURATION.NORMAL,
+  duration = DURATION.ELEMENT_ENTER,
   className,
   style,
   ...behaviors
 }: AnimatedProps): React.ReactElement {
-  const t = { duration: disabled ? 0 : duration, delay: disabled ? 0 : delay };
+  const behaviorTransition = disabled
+    ? { duration: 0 }
+    : {
+        opacity: { duration, ease: EASING.OUT_FLUENT, delay },
+        x: { ...EASING.SPRING_ENTER, delay },
+        y: { ...EASING.SPRING_ENTER, delay },
+        scale: { ...EASING.SPRING_ENTER, delay },
+      };
 
   // Accordion — needs AnimatePresence + conditional mount
   if (accordion !== undefined) {
@@ -145,7 +167,10 @@ function AnimatedInner({
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: disabled ? 0 : DURATION.MEDIUM, ease: EASING.DEFAULT }}
+            transition={disabled ? { duration: 0 } : {
+              opacity: { duration: DURATION.DROPDOWN, ease: EASING.OUT_FLUENT },
+              height: { duration: DURATION.DROPDOWN, ease: EASING.OUT_FLUENT },
+            }}
             className={`overflow-hidden ${className ?? ''}`}
             style={style}
           >
@@ -163,7 +188,7 @@ function AnimatedInner({
       animate: {
         transition: {
           staggerChildren: stagger,
-          delayChildren: disabled ? 0 : (delay || 0.1),
+          delayChildren: disabled ? 0 : (delay || DURATION.STAGGER_SECTION),
         },
       },
       exit: disabled ? {} : {
@@ -200,7 +225,7 @@ function AnimatedInner({
       initial="initial"
       animate="animate"
       exit="exit"
-      transition={t}
+      transition={behaviorTransition}
     >
       {children}
     </motion.div>

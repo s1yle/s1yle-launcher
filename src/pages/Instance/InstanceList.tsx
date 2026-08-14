@@ -8,9 +8,7 @@ import { openFolder } from '../../helper/rustInvoke';
 import { InstanceListItem, EmptyState, useNotification, Skeleton, Page, PageSection } from '../../components/common';
 import Instance from './Instance';
 import BottomBar from '@/components/common/BottomBar/BottomBar';
-import { staggerContainer, staggerItem } from '../../utils/animations';
-import type { Game } from '../../helper/rustInvoke';
-import { ModLoaderType } from '../../helper/rustInvoke';
+import type { Game } from '../../helper/rustInvoke'; import { ModLoaderType } from '../../helper/rustInvoke';
 
 type GroupKey = 'favorites' | 'mods' | 'regular' | 'uncommon' | 'broken';
 
@@ -159,16 +157,10 @@ const InstanceList: React.FC = () => {
     }
 
     return (
-      <motion.div
-        className="h-full overflow-y-auto scrollbar-hide-x space-y-3 px-5"
-        variants={staggerContainer}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-      >
+      <div className="h-full overflow-y-auto scrollbar-hide-x space-y-3 px-5">
         {groupedGames.map((group) => (
           <PageSection>
-            <div key={group.key} className="space-y-1 bg-(--color-surface) px-3 pb-3 rounded-(--radius-md)">
+            <div className="max-w-2xl mx-auto space-y-1 bg-(--color-surface) px-3 pb-3 rounded-(--radius-md)">
               {/* 类型说明 */}
               <div className="flex items-center gap-1.5 pb-2 pt-2">
                 <group.icon className="w-3.5 h-3.5 text-(--color-text-tertiary)" />
@@ -179,53 +171,51 @@ const InstanceList: React.FC = () => {
               </div>
 
               <AnimatePresence mode="popLayout">
-                {group.items.map((instance, index) => (
+                {group.items.map((instance) => (
                   <motion.div
                     key={instance.id}
-                    variants={staggerItem}
                     layout
                   >
-                    <InstanceListItem
-                      className='rounded-r-(--radius-sm)'
-                      instance={instance}
-                      selected={instance.id === selectedGameId}
-                      isFavorite={isFavorite(instance.id)}
-                      onSelect={() => handleSelect(instance.id)}
-                      onRename={() => { }}
-                      onDelete={() => handleDelete(instance.id, instance.name)}
-                      onOpenFolder={() => handleOpenFolder(instance.path)}
-                      onSettings={() => navigate(`/instance-manage/${instance.id}/game-settings`)}
-                      onFavorite={() => toggleFavorite(instance.id)}
-                      index={index}
-                    />
-                  </motion.div>
+                      <InstanceListItem
+                        className='rounded-r-(--radius-sm)'
+                        instance={instance}
+                        selected={instance.id === selectedGameId}
+                        isFavorite={isFavorite(instance.id)}
+                        onSelect={() => handleSelect(instance.id)}
+                        onRename={() => { }}
+                        onDelete={() => handleDelete(instance.id, instance.name)}
+                        onOpenFolder={() => handleOpenFolder(instance.path)}
+                        onSettings={() => navigate(`/instance-manage/${instance.id}/game-settings`)}
+                        onFavorite={() => toggleFavorite(instance.id)}
+                      />
+                    </motion.div>
                 ))}
               </AnimatePresence>
             </div>
           </PageSection>
         ))}
-      </motion.div>
+      </div>
     );
   };
 
   return (
     <Page className="flex flex-col h-full">
-        <Instance
-          refresh={refresh}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          filteredGames={filteredGames}
-          games={games}
-          error={error}
-          renderContent={renderContent}
-          gameRoot={gameRoot}
-          showDuplicateModal={showDuplicateModal}
-          duplicateName={duplicateName}
-          setDuplicateName={setDuplicateName}
-          handleConfirmDuplicate={handleConfirmDuplicate}
-          setShowDuplicateModal={setShowDuplicateModal}
-          setDuplicateTargetId={setDuplicateTargetId}
-        />
+      <Instance
+        refresh={refresh}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        filteredGames={filteredGames}
+        games={games}
+        error={error}
+        renderContent={renderContent}
+        gameRoot={gameRoot}
+        showDuplicateModal={showDuplicateModal}
+        duplicateName={duplicateName}
+        setDuplicateName={setDuplicateName}
+        handleConfirmDuplicate={handleConfirmDuplicate}
+        setShowDuplicateModal={setShowDuplicateModal}
+        setDuplicateTargetId={setDuplicateTargetId}
+      />
 
       <BottomBar
         dir='instances.instanceDir'

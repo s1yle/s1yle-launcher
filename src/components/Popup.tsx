@@ -1,9 +1,10 @@
 import React, { useEffect, useCallback, useState } from 'react';
-import { AnimatePresence,   motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { IconButton, Overlay } from './common';
 import { Portal } from './common/Portal';
 import { Z_INDEX } from '../utils/zIndex';
-import { DURATION } from '@/utils/animations';
+import { DURATION, modalOpen } from '@/utils/animations';
+import { useAnimation } from '@/hooks/useAnimation';
 import { X } from 'lucide-react';
 
 /** 通用弹窗组件 Props */
@@ -22,8 +23,7 @@ export interface PopupProps {
   className?: string;
   overlayClassName?: string;
   contentClassName?: string;
-  animation?: 'fade' | 'slide' | 'scale' | 'none';
-  animationDuration?: number;
+  animation?: 'none';
   ariaLabel?: string;
   ariaLabelledby?: string;
   ariaDescribedby?: string;
@@ -31,8 +31,8 @@ export interface PopupProps {
 
 /**
  * 通用弹窗组件。
- * 基于 Portal + Overlay 实现，支持 fade / slide / scale 三种动画，
- * 多种尺寸和位置，可自定义 footer。
+ * 基于 Portal + Overlay 实现，动画统一为弹窗动效：
+ * 打开 缩放 0.95→1 + 淡入（SPRING_ENTER，弹簧回弹）；关闭 缩放 1→0.95 + 淡出（IN_OUT_FLUENT，无回弹）。
  */
 const Popup = ({
   isOpen,
@@ -49,22 +49,22 @@ const Popup = ({
   className = '',
   overlayClassName = '',
   contentClassName = '',
-  animation = 'slide',
-  animationDuration = DURATION.NORMAL * 1000,
+  animation = undefined,
   ariaLabel,
   ariaLabelledby,
   ariaDescribedby,
 }: PopupProps) => {
+  const { enabled } = useAnimation();
   const [shouldRender, setShouldRender] = useState(isOpen);
 
   useEffect(() => {
     if (isOpen) {
       setShouldRender(true);
     } else if (shouldRender) {
-      const timer = setTimeout(() => setShouldRender(false), animationDuration);
+      const timer = setTimeout(() => setShouldRender(false), DURATION.MODAL_CLOSE * 1000 + 50);
       return () => clearTimeout(timer);
     }
-  }, [isOpen, shouldRender, animationDuration]);
+  }, [isOpen, shouldRender]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape' && closeOnEsc) {
@@ -114,26 +114,6 @@ const Popup = ({
 
   const noAnimation = animation === 'none';
 
-  const containerVariants = {
-    initial: noAnimation ? {} : ({ opacity: 0, scale: 0.96 } as const),
-    animate: noAnimation ? {} : ({
-      opacity: 1,
-      scale: 1,
-      transition: { staggerChildren: 0.06, delayChildren: 0.04 },
-    } as const),
-    exit: noAnimation ? {} : ({
-      opacity: 0,
-      scale: 0.97,
-      transition: { staggerChildren: 0.03, staggerDirection: -1 },
-    } as const),
-  };
-
-  const sectionVariants = {
-    initial: noAnimation ? {} : ({ opacity: 0, y: 10 } as const),
-    animate: noAnimation ? {} : ({ opacity: 1, y: 0 } as const),
-    exit: noAnimation ? {} : ({ opacity: 0, y: -5 } as const),
-  };
-
   const ariaProps: React.HTMLAttributes<HTMLDivElement> = {};
   if (ariaLabel) ariaProps['aria-label'] = ariaLabel;
   if (ariaLabelledby) ariaProps['aria-labelledby'] = ariaLabelledby;
@@ -160,16 +140,14 @@ const Popup = ({
                   border: '1px solid var(--color-border)',
                   borderRadius: '8px',
                 }}
-                variants={containerVariants}
-                initial="initial"
-                animate="animate"
-                exit="exit"
+                variants={noAnimation ? {} : modalOpen}
+                initial={noAnimation || !enabled ? false : 'initial'}
+                animate={noAnimation || !enabled ? false : 'animate'}
+                exit={noAnimation || !enabled ? undefined : 'exit'}
                 onClick={(e) => e.stopPropagation()}
               >
                 {(title || showCloseButton) && (
-                  <motion.div
-                    variants={sectionVariants}
-                    className="flex items-center justify-between px-5 py-4 border-b"
+                  <div className="flex items-center justify-between px-5 py-4 border-b"
                     style={{ borderColor: 'var(--color-border)' }}
                   >
                     {title && (
@@ -178,35 +156,24 @@ const Popup = ({
                       </div>
                     )}
                     {showCloseButton && (
-                      <button
+                      <IconButton
+                        icon={X}
                         onClick={onClose}
-                        className="text-text-secondary hover:text-text-primary 
-                          text-xl leading-none 
-                          transition-colors rounded-md cursor-pointer
-                        "
-                        style={{ color: 'var(--color-text-secondary)' }}
-                          aria-label="关闭弹窗"
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = 'var(--color-primary-10)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                        }}
-                      >
-                        <IconButton icon={X}/>
-                      </button>
+                        aria-label="关闭弹窗"
+                        className="text-text-secondary"
+                      />
                     )}
-                  </motion.div>
+                  </div>
                 )}
 
-                <motion.div variants={sectionVariants} className={`px-5 py-4 ${contentClassName}`}>
+                <div className={`px-5 py-4 ${contentClassName}`}>
                   {children}
-                </motion.div>
+                </div>
 
                 {footer && (
-                  <motion.div variants={sectionVariants} className="px-5 py-4" >
+                  <div className="px-5 py-4" >
                     {footer}
-                  </motion.div>
+                  </div>
                 )}
               </motion.div>
             </div>

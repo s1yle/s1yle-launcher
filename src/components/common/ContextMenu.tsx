@@ -4,7 +4,7 @@ import { LucideIcon } from 'lucide-react';
 import { Portal } from '@/components/common/Portal';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { Z_INDEX } from '@/utils/zIndex';
-import { dropdown, transitions } from '../../utils/animations';
+import { dropdown, microInteractions } from '../../utils/animations';
 import { renderIcon } from '../../utils/iconRenderer';
 
 /** 右键菜单项数据 */
@@ -84,22 +84,16 @@ const ContextMenu = ({
                 disabled={item.disabled}
                 className={`w-full px-3 py-1.5 text-left text-sm flex items-center gap-2 transition-colors ${
                   item.disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                } ${
+                  item.danger
+                    ? 'hover:bg-[var(--color-error-10)]'
+                    : 'hover:bg-[var(--color-primary-10)]'
                 }`}
                 style={{
                   color: item.danger ? 'var(--color-error)' : 'var(--color-text-secondary)',
+                  backgroundColor: 'transparent',
                 }}
-                whileHover={{ x: 2 }}
-                onMouseEnter={(e) => {
-                  if (!item.disabled) {
-                    e.currentTarget.style.backgroundColor = item.danger
-                      ? 'var(--color-error-10)'
-                      : 'var(--color-primary-10)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }}
-                transition={transitions.fast}
+                whileHover={microInteractions.contextMenuHover}
               >
                 {item.icon && renderIcon(item.icon)}
                 <span>{item.label}</span>

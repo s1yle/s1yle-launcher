@@ -10,6 +10,7 @@ import { useNotification, ConfirmPopup } from '@/components/common';
 import { getNavItemsByRole } from '@/router/nav';
 import { NavItem, SidebarGroup } from '@/router/models';
 import { autoJumpToFirstChild, findRouteByPath, routes } from '@/router/config';
+import { DURATION, EASING, dropdown, microInteractions, modalOpen } from '@/utils/animations';
 
 /** 灵动岛导航组件 Props */
 export interface DynamicIslandProps {
@@ -385,7 +386,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
         y: 0,
         scale: isDraggingNav ? 0.94 : 1,
       }}
-      transition={{ type: 'spring', stiffness: 350, damping: 24 }}
+      transition={EASING.SPRING_SOFT}
     >
       <motion.div
         ref={islandRef}
@@ -399,7 +400,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
           ${isExpanded ? 'gap-2 px-6' : ''}
         `}
         whileHover={{ scale: 1.02, y: -1 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+        transition={EASING.SPRING_BOUNCY}
         onMouseEnter={() => {
           setIsHovered(true);
           setIsExpanded(true);
@@ -433,7 +434,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
                   initial={{ opacity: 0, rotateY: -180, scale: 0.6 }}
                   animate={{ opacity: 1, rotateY: 0, scale: 1 }}
                   exit={{ opacity: 0, rotateY: 180, scale: 0.6 }}
-                  transition={{ duration: 0.25, ease: 'easeOut' }}
+                  transition={{ duration: DURATION.MEDIUM, ease: EASING.OUT_FLUENT }}
                   className="absolute inset-0"
                 >
                   <currentRoleConfig.icon className="w-4 h-4" />
@@ -447,7 +448,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 4 }}
-                  transition={{ duration: 0.15 }}
+                  transition={{ duration: DURATION.NORMAL, ease: EASING.OUT_FLUENT }}
                   className="whitespace-nowrap"
                 >
                   {currentRoleConfig.label}
@@ -462,10 +463,10 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
           {/* 角色下拉菜单 */}
           {hasMultipleRoles && showRoleMenu && (
             <motion.div
-              initial={{ opacity: 0, y: -8, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -8, scale: 0.95 }}
-              transition={{ duration: 0.15 }}
+              variants={dropdown}
+              initial="initial"
+              animate="animate"
+              exit="exit"
               className="absolute top-full left-0 mt-2 py-1.5 min-w-[140px]
                 bg-surface-solid
                 rounded-lg
@@ -512,8 +513,8 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
             initial: {},
             animate: {
               transition: {
-                staggerChildren: 0.05,
-                delayChildren: 0.08,
+                staggerChildren: DURATION.STAGGER_CHILD,
+                delayChildren: DURATION.STAGGER_SECTION,
               },
             },
           }}
@@ -528,6 +529,10 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
               variants={{
                 initial: { opacity: 0, y: 8 },
                 animate: { opacity: 1, y: 0 },
+              }}
+              transition={{
+                opacity: { duration: DURATION.ELEMENT_ENTER, ease: EASING.OUT_FLUENT },
+                y: { ...EASING.SPRING_ENTER },
               }}
             >
               <DynamicItem
@@ -583,10 +588,10 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
       <AnimatePresence>
         {showRoleGuide && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
+            variants={modalOpen}
+            initial="initial"
+            animate="animate"
+            exit="exit"
             className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72
               bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl
               shadow-2xl z-50 p-4"
@@ -640,7 +645,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: DURATION.MEDIUM, ease: EASING.OUT_FLUENT }}
             className="absolute top-full left-1/2 -translate-x-1/2 mt-1 whitespace-nowrap "
           >
             <span className="text-xs text-text-tertiary font-medium bg-[var(--color-bg-tertiary)] rounded-full px-3 py-1">
@@ -697,8 +702,8 @@ export const DynamicItem = ({ isMainMenu, handleItemClick, homeItem, isActive, i
         }}
         onMouseDown={(e) => e.stopPropagation()}
         disabled={isTransitioning}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        whileHover={microInteractions.buttonHover}
+        whileTap={microInteractions.buttonTap}
         className={`
             relative flex items-center gap-2 px-2 py-1 rounded-full
             text-sm font-medium transition-all duration-300 cursor-pointer z-10
@@ -739,7 +744,7 @@ export const DynamicItem = ({ isMainMenu, handleItemClick, homeItem, isActive, i
           <motion.div
             layoutId="activeIndicator"
             className="absolute inset-0 rounded-full bg-[var(--color-primary)]/15 -z-10"
-            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            transition={EASING.SPRING_GENTLE}
           />
         )}
       </motion.button>

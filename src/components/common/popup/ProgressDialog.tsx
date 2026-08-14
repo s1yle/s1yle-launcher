@@ -64,7 +64,6 @@ const ProgressDialog = ({
       title={title}
       size="md"
       position="center"
-      animation="scale"
       showCloseButton={isFinished}
     >
       <div className="flex flex-col items-center gap-4 py-4">

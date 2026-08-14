@@ -2,6 +2,7 @@ import { useContext } from 'react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { AnimatePresence, motion } from 'framer-motion';
+import { EASING } from '@/utils/animations';
 import { SettingsPanelItemContext } from './SettingsPanel/models';
 
 const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(inputs));
@@ -85,7 +86,7 @@ const Toggle = ({
             className='absolute top-0 left-0 w-6 h-6 bg-(--color-surface) rounded-(--radius-full) shadow-sm'
             animate={{ x: checked ? 28 : 0 }}
             whileTap={{ scale: 0.85 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            transition={EASING.SPRING}
           />
         </motion.button>
       </motion.div>

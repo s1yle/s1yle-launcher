@@ -1,6 +1,7 @@
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { motion } from 'framer-motion';
 import { Minus, X, Square } from 'lucide-react';
+import { DURATION, microInteractions } from '@/utils/animations';
 
 /**
  * 浮动窗口控制按钮组件。
@@ -44,7 +45,7 @@ const FloatingControls = () => {
       className="fixed top-0 right-0 z-[60] flex items-center gap-1"
       initial={{ opacity: 0, x: 0 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.4, delay: 0.1 }}
+      transition={{ duration: DURATION.SLOW, delay: DURATION.FAST }}
     >
       <div className="flex items-center gap-0.5 p-1
         bg-[var(--color-surface)]/70 ">
@@ -53,8 +54,8 @@ const FloatingControls = () => {
           className="w-8 h-8 flex items-center justify-center rounded-full
             text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]
             hover:bg-[var(--color-surface-hover)] transition-colors"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
+          whileHover={microInteractions.iconHover}
+          whileTap={microInteractions.iconTap}
           title="最小化"
         >
           <Minus className="w-4 h-4" />

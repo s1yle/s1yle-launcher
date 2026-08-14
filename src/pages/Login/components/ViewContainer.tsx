@@ -1,17 +1,12 @@
 import { motion, AnimatePresence } from "framer-motion";
 import type { ReactNode } from "react";
 import type { LoginView } from "../LoginGate";
+import { modalOpen } from "@/utils/animations";
 
 interface ViewContainerProps {
   view: LoginView;
   children: ReactNode;
 }
-
-const slideVariants = {
-  initial: { opacity: 0, scale: 0.95},
-  animate: { opacity: 1, scale: 1 },
-  exit: { opacity: 0, scale: 1 },
-};
 
 export function ViewContainer({ view, children }: ViewContainerProps) {
   return (
@@ -25,13 +20,10 @@ export function ViewContainer({ view, children }: ViewContainerProps) {
       <AnimatePresence mode="wait">
         <motion.div
           key={view}
-          variants={slideVariants}
+          variants={modalOpen}
           initial="initial"
           animate="animate"
           exit="exit"
-          transition={{
-            duration: 0.2, type: 'spring' 
-          }}
           className="w-full"
         >
           {children}

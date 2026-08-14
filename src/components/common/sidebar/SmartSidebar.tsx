@@ -7,9 +7,10 @@ import { logger } from '../../../helper/logger';
 import { openUrl } from '../../../helper/rustInvoke';
 import { BaseSidebarContent, useNotification, SkinAvatar } from '@/components/common';
 import { useAuthStore } from '@/stores/authStore';
+import { useNavStore } from '@/stores/navStore';
 import { useAccountSelectionStore } from '@/stores/accountSelectionStore';
 import { UserPlus } from 'lucide-react';
-import { DURATION } from '@/utils/animations';
+import { DURATION, EASING } from '@/utils/animations';
 import { useContextMenuAction } from '../../../router/contextMenuConfigs';
 
 /** 智能侧边栏组件 Props */
@@ -35,6 +36,9 @@ const SmartSidebar = ({ onMenuClick = () => {}, footer, header, ownSidebar = fal
 
     if (item.type === 'route' && item.path) {
       if (item.path === location.pathname) return;
+
+      // 侧边栏导航不继承灵动岛的滑动方向，强制淡入淡出
+      useNavStore.getState().setDirection(null);
 
       const route = findRouteByPath(item.path, routes);
       if (route?.autoNavigateToFirstChild && route.children && route.children.length > 0 && onMenuClick) {
@@ -115,6 +119,7 @@ const SmartSidebar = ({ onMenuClick = () => {}, footer, header, ownSidebar = fal
   // 账户页面：使用动态账户列表作为侧边栏
   const isAccountPage = location.pathname === '/account';
   const storeAccounts = useAuthStore(s => s.accounts);
+  const selectedAccountUuid = useAccountSelectionStore(s => s.selectedUuid);
   if (isAccountPage) {
     const accountItems: SidebarMenuItem[] = storeAccounts.map(acc => ({
       id: `account-${acc.uuid}`,
@@ -169,16 +174,16 @@ const SmartSidebar = ({ onMenuClick = () => {}, footer, header, ownSidebar = fal
       opacity: 1,
       x: 0,
       transition: {
-        x: { type: 'spring', stiffness: 400, damping: 22, delay: DURATION.PAGE_TRANSITION },
-        opacity: { duration: DURATION.FAST, ease: 'easeOut' as const, delay: DURATION.PAGE_TRANSITION },
+        x: { ...EASING.SPRING_SOFT, delay: DURATION.ROUTE_SLIDE },
+        opacity: { duration: DURATION.FAST, ease: EASING.OUT_FLUENT, delay: DURATION.ROUTE_SLIDE },
       },
     },
     exit: {
       opacity: 0,
       x: 16,
       transition: {
-        x: { duration: DURATION.FAST, ease: 'easeIn' as const },
-        opacity: { duration: DURATION.FAST, ease: 'easeIn' as const },
+        x: { duration: DURATION.FAST, ease: EASING.IN_FLUENT },
+        opacity: { duration: DURATION.FAST, ease: EASING.IN_FLUENT },
       },
     },
   } satisfies Variants;
@@ -204,7 +209,7 @@ const SmartSidebar = ({ onMenuClick = () => {}, footer, header, ownSidebar = fal
                 hasChildrenItems={hasChildrenItems}
 
                 isItemActive={(id) => {
-                  if (isAccountPage) return id === `account-${useAccountSelectionStore.getState().selectedUuid}`;
+                  if (isAccountPage) return id === `account-${selectedAccountUuid}`;
                   return false;
                 }}
                 groupTitle={currentMenuItem?.title || parentMenuItem?.title || ''}

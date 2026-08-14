@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useThemeStore, themePresets, ThemePreset } from '@/stores/themeStore';
 import YesOrNoBadge from './Badge/YesOrNoBadge';
 import { ComponentStackLayer } from './ContextStack/ContextStack';
+import { DURATION, EASING } from '@/utils/animations';
 
 interface TerminalThemePreviewProps {
   onSelect?: (theme: ThemePreset | undefined) => void;
@@ -51,8 +52,8 @@ const TerminalThemePreview = ({
                   y: activeTheme.id != preset.id ? -2 : 0
                 }}
                 transition={{
-                  duration: 0.1,
-                  type: 'spring'
+                  duration: DURATION.FAST,
+                  ease: EASING.OUT_FLUENT
                 }}
               >
 

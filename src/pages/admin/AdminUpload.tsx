@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion';
-import { Animated, Reveal } from '@/components/common';
+import { Animated, Page, PageSection } from '@/components/common';
 import { Upload, FileText, FolderOpen, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { DURATION, microInteractions, transitions } from '@/utils/animations';
+import { microInteractions, transitions } from '@/utils/animations';
 import { getUploads, postUploads } from '@/server/sdk.gen';
 import type { ModelsUploadResponse } from '@/server/types.gen';
 
@@ -100,14 +100,9 @@ const AdminUpload = () => {
   };
 
   return (
-    <div className="min-h-screen p-8 pt-24">
-      <Animated
-        fade
-        slide="up"
-        duration={DURATION.SLOW * 2}
-        className="max-w-7xl mx-auto"
-      >
-        <div className="mb-8">
+    <Page className="min-h-screen p-8 pt-24">
+      <div className="max-w-7xl mx-auto">
+        <PageSection className="mb-8">
           <h1 className="text-3xl font-bold text-[var(--color-text-primary)] mb-2 flex items-center gap-3">
             <Upload className="w-8 h-8 text-[var(--color-primary)]" />
             配置上传
@@ -115,15 +110,13 @@ const AdminUpload = () => {
           <p className="text-[var(--color-text-secondary)]">
             上传服务器配置文件、插件和资源包
           </p>
-        </div>
+        </PageSection>
 
-        <Reveal direction="up" distance={20} duration={0.5}>
+        <PageSection>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Animated
             fade
             slide="left"
-            delay={DURATION.MEDIUM}
-            duration={DURATION.SLOW * 2}
             className="lg:col-span-2"
           >
             <div
@@ -273,8 +266,6 @@ const AdminUpload = () => {
           <Animated
             fade
             slide="right"
-            delay={DURATION.SLOW + DURATION.FAST}
-            duration={DURATION.SLOW * 2}
             className="bg-[var(--color-surface)]/80 backdrop-blur-xl rounded-2xl border border-[var(--color-border)]/50 p-6 shadow-lg"
           >
             <h3 className="font-semibold text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
@@ -288,8 +279,7 @@ const AdminUpload = () => {
                   key={file.id}
                   fade
                   slide="left"
-                  delay={DURATION.SLOW + DURATION.MEDIUM + index * DURATION.FAST}
-                  duration={DURATION.NORMAL}
+                  delay={index * 0.03}
                   className="group flex items-start gap-3 p-3 rounded-xl hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
                 >
                   <div className="p-2 rounded-lg bg-[var(--color-bg-secondary)] group-hover:bg-[var(--color-primary)]/10 transition-colors mt-0.5">
@@ -320,9 +310,9 @@ const AdminUpload = () => {
             </button>
           </Animated>
         </div>
-        </Reveal>
-      </Animated>
-    </div>
+        </PageSection>
+      </div>
+    </Page>
   );
 };
 

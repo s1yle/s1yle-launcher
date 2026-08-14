@@ -8,6 +8,7 @@ import { SidebarMenuItem } from '@/router/models';
 import { Portal } from '@/components/common/Portal';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { Z_INDEX } from '@/utils/zIndex';
+import { DURATION, EASING, dropdown, microInteractions } from '@/utils/animations';
 
 interface InstanceManageButtonProps {
   item: SidebarMenuItem;
@@ -126,16 +127,16 @@ const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
             : 'bg-[var(--color-surface)] border-[var(--color-border)] hover:bg-[var(--color-surface-hover)]'
         }`}
         onClick={handleMainClick}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
+        whileHover={microInteractions.secondaryButtonHover}
+        whileTap={microInteractions.secondaryButtonTap}
       >
         {/* 左侧：图标 + 信息 */}
         <div className="flex items-center gap-3 flex-1 min-w-0">
           {/* 实例图标 */}
           <motion.div
             className="w-8 h-8 rounded-lg bg-[var(--color-primary-10)] flex items-center justify-center flex-shrink-0 overflow-hidden"
-            whileHover={{ scale: 1.1 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+            whileHover={microInteractions.iconHover}
+            transition={EASING.SPRING_STIFF}
           >
             {instance.icon_path ? (
               <img
@@ -166,7 +167,7 @@ const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
           className="flex-shrink-0 cursor-pointer p-1 text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
           onClick={handleToggleExpand}
           animate={{ rotate: showDropdown ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
+          transition={{ duration: DURATION.MEDIUM, ease: EASING.OUT_FLUENT }}
         >
           <ChevronDown className="w-4 h-4" />
         </motion.div>
@@ -179,10 +180,10 @@ const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
             <motion.div
               ref={dropdownRef}
               key="instance-dropdown"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.15 }}
+              variants={dropdown}
+              initial="initial"
+              animate="animate"
+              exit="exit"
               className="py-1 bg-[var(--color-surface-solid)] border border-[var(--color-border)] rounded-lg shadow-lg max-h-64 overflow-y-auto"
               style={{ boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)' }}
             >

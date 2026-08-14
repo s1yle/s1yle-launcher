@@ -28,6 +28,7 @@ import {
 } from '@/helper/rustInvoke';
 import { useNotification } from '@/components/common';
 import { useDownloadStore } from '../../stores/downloadStore';
+import { DURATION, EASING } from '@/utils/animations';
 import { refreshAll } from '../../stores/refreshStore';
 import { useNavStore } from '../../stores/navStore';
 type LoaderKey = 'vanilla' | 'forge' | 'neoforge' | 'fabric' | 'optifine';
@@ -246,7 +247,10 @@ const VersionDetailWithInstall: React.FC = () => {
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: 'auto', opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.25, ease: 'easeInOut' }}
+                            transition={{
+                              opacity: { duration: DURATION.DROPDOWN, ease: EASING.OUT_FLUENT },
+                              height: { duration: DURATION.DROPDOWN, ease: EASING.OUT_FLUENT },
+                            }}
                             className="overflow-hidden"
                           >
                             <div className="px-5 pb-4">

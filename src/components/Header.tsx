@@ -3,8 +3,9 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Minus, X } from 'lucide-react';
-import { IconButton, useNotification, getErrorMessage, Page, PageSection } from './common';
+import { IconButton, useNotification, getErrorMessage } from './common';
 import { getParentPath } from '../router/config';
+import { EASING } from '../utils/animations';
 
 interface HeaderProps {
   type: 'main' | 'sub';
@@ -75,7 +76,7 @@ const Header = ({ type, title, onBack }: HeaderProps) => {
               className="w-10 h-10 bg-warning rounded-lg flex items-center justify-center"
               whileHover={{ scale: 1.05, rotate: -2 }}
               whileTap={{ scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 400, damping: 15 }}
+              transition={EASING.SPRING_STIFF}
             >
               <span className="text-text-primary text-base font-bold">WeC!</span>
             </motion.div>

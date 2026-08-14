@@ -6,6 +6,7 @@ import { twMerge } from "tailwind-merge";
 import { useClickOutside } from "@/hooks/useClickOutside";
 import { Portal } from "./Portal";
 import { Z_INDEX } from "@/utils/zIndex";
+import { dropdown } from "@/utils/animations";
 
 const cn = (...inputs: (string | boolean | MotionStyle | undefined)[]) => twMerge(clsx(inputs));
 
@@ -201,10 +202,10 @@ const DropDown = ({
                   ${isDropdownTransparent ? '' : 'bg-(--color-surface-solid)'}
                   min-w-[200px]
                 `}
-                initial={{ y: -10, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: -10, opacity: 0 }}
-                transition={{ ease: 'backOut', duration: 0.2 }}
+                variants={dropdown}
+                initial="initial"
+                animate="animate"
+                exit="exit"
               >
 
                 {/* 搜索框 */}

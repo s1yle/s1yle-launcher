@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback, ReactNode } fr
 import { AnimatePresence, motion } from 'framer-motion';
 import { Portal } from './Portal';
 import { Z_INDEX } from '../../utils/zIndex';
+import { toast } from '../../utils/animations';
 import { Check, X, AlertTriangle, Info, Bug } from 'lucide-react';
 
 /** 通知类型 */
@@ -151,21 +152,16 @@ const NotificationContainer: React.FC<NotificationContainerProps> = ({ notificat
 
   return (
     <Portal preset="top-right" zIndex={Z_INDEX.TOAST}>
-      <div className="flex flex-col gap-3 pointer-events-none max-h-[calc(100vh-2rem)] overflow-hidden">
+      <div className="flex flex-col gap-3 pointer-events-none max-h-[calc(100vh-2rem)] overflow-hidden pt-2">
         <AnimatePresence mode="popLayout">
           {notifications.map((notification) => (
             <motion.div
               key={notification.id}
               layout
-              initial={{ opacity: 0, x: 100, scale: 0.9 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 100, scale: 0.9 }}
-              transition={{
-                type: 'spring',
-                stiffness: 500,
-                damping: 30,
-                mass: 0.8,
-              }}
+              variants={toast}
+              initial="initial"
+              animate="animate"
+              exit="exit"
               className="pointer-events-auto"
             >
               <NotificationToast notification={notification} onRemove={onRemove} />

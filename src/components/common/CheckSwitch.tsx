@@ -2,6 +2,7 @@ import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check } from 'lucide-react';
+import { EASING } from '@/utils/animations';
 
 const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(inputs));
 
@@ -65,7 +66,7 @@ const CheckSwitch = ({
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+              transition={EASING.SPRING_GENTLE}
               className="flex items-center justify-center text-(--color-text-primary)"
             >
               <Check className="w-3.5 h-3.5" strokeWidth={3} />

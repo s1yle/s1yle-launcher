@@ -1,5 +1,6 @@
-import React, { useState, useRef, useCallback, useMemo, memo } from 'react';
-import { Page, PageSection } from './Page';
+import React, { useState, useRef, useCallback, useMemo, useEffect, memo } from 'react';
+import { motion } from 'framer-motion';
+import { pageSection } from '@/utils/animations';
 
 /** 虚拟列表组件 Props */
 export interface VirtualListProps<T> {
@@ -25,8 +26,15 @@ function VirtualListInner<T>({
 }: VirtualListProps<T>) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
+  const [hasScrolled, setHasScrolled] = useState(false);
+
+  // items 变更（筛选/搜索）时重新允许入场动画
+  useEffect(() => {
+    setHasScrolled(false);
+  }, [items]);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    if (e.currentTarget.scrollTop > 0) setHasScrolled(true);
     setScrollTop(e.currentTarget.scrollTop);
   }, []);
 
@@ -66,23 +74,25 @@ function VirtualListInner<T>({
       style={{
         height,
         position: 'relative',
+        scrollbarGutter: 'stable',
         ...style,
       }}
     >
-      <Page>
-        {items.length > 0 && (
-          <div style={{ height: totalHeight, position: 'relative' }}>
-            {visibleItems.map(({ item, index, style: itemStyle }) => (
-              <PageSection key={keyExtractor(item)}>
-                <div style={itemStyle}>
-                  {renderItem(item, index, itemStyle)}
-                </div>
-              </PageSection>
-            ))}
-          </div>
-        )}
-      </Page>
-
+      {items.length > 0 && (
+        <div style={{ height: totalHeight, position: 'relative' }}>
+          {visibleItems.map(({ item, index, style: itemStyle }) => (
+            <motion.div
+              key={keyExtractor(item)}
+              variants={pageSection}
+              initial={hasScrolled ? false : 'initial'}
+              animate="animate"
+              style={itemStyle}
+            >
+              {renderItem(item, index, itemStyle)}
+            </motion.div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

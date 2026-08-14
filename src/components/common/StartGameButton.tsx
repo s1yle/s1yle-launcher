@@ -4,6 +4,7 @@ import { Loader2, Gamepad2 } from 'lucide-react';
 import { launchInstance, stopInstance, getLaunchStatus, LaunchStatus, getCurrentAccount, getCurrentAccountToken } from '../../helper/rustInvoke';
 import { useGameStore } from '../../stores/gameStore';
 import type { AccountInfo } from '../../helper/rustInvoke';
+import { DURATION, EASING } from '../../utils/animations';
 
 /** 启动游戏按钮组件 Props */
 export interface StartGameButtonProps {
@@ -181,6 +182,7 @@ const ActionButton = ({ onClick }: StartGameButtonProps) => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: DURATION.NORMAL, ease: EASING.OUT_FLUENT }}
           className="bg-[var(--color-context-bg)] text-[var(--color-text-primary)] px-5 py-3 rounded-xl shadow-xl max-w-sm text-sm border border-[var(--color-context-border)] backdrop-blur-xl"
         >
           <div className="flex items-center gap-2">

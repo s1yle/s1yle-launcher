@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import { routes, findRouteByPath } from "../router/config";
 import { parseRouteParams, RouteParamsContext } from "../router/routeParams";
 import { useAnimation } from "../hooks/useAnimation";
-import { DURATION, pageTransition } from "../utils/animations";
+import { ROUTE_DIRECTION_FRESH_MS, createRouteSlideVariants, routeFade } from "../utils/animations";
 import { useNavStore } from "../stores/navStore";
 
 const PageFallback = () => (
@@ -42,7 +42,7 @@ const RouterRenderer = ({
   const location = useLocation();
   const navigate = useNavigate();
   const currentPathname = location.pathname;
-  const { enabled, transition } = useAnimation();
+  const { enabled } = useAnimation();
   const route = findRouteByPath(currentPathname, routes);
 
   const Component = route?.component;
@@ -74,7 +74,7 @@ const RouterRenderer = ({
   useEffect(() => {
     const timer = window.setTimeout(() => {
       useNavStore.getState().setDirection(null);
-    }, DURATION.PAGE_TRANSITION * 1000 + 150);
+    }, ROUTE_DIRECTION_FRESH_MS);
     return () => window.clearTimeout(timer);
   }, [currentPathname]);
 
@@ -152,20 +152,12 @@ const variant: Variants = (() => {
     if (!enabled) return NO_ANIMATION;
 
     const { direction: dir, directionAt } = useNavStore.getState();
-    const isFresh = dir !== null && Date.now() - directionAt < 500;
+    const isFresh = dir !== null && Date.now() - directionAt < ROUTE_DIRECTION_FRESH_MS;
 
     if (isFresh && (dir === 'right' || dir === 'left')) {
-      return {
-        initial: dir === 'right' ? { opacity: 1, x: '100%' } : { opacity: 1, x: '-100%' },
-        animate: { opacity: 1, x: 0 },
-        exit: pageTransition.exit,
-      };
+      return createRouteSlideVariants(dir === 'right');
     }
-    return {
-      initial: pageTransition.initial,
-      animate: { ...pageTransition.animate, x: 0 },
-      exit: pageTransition.exit,
-    };
+    return routeFade;
   })();
 
   if (!Component) {
@@ -185,10 +177,6 @@ const variant: Variants = (() => {
           initial="initial"
           animate="animate"
           exit="exit"
-          transition={transition({
-            x: { duration: DURATION.PAGE_TRANSITION, ease: [0.25, 0.1, 0.25, 1] },
-            opacity: { duration: DURATION.PAGE_TRANSITION * 0.5, ease: 'easeOut' },
-          })}
         >
           <div style={sidebarStyle}>{sidebar}</div>
           <div className="flex-1 overflow-y-auto overflow-x-hidden relative">
