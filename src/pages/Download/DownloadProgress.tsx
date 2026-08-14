@@ -34,7 +34,7 @@ const DownloadProgress: React.FC = () => {
   const empty = activeList.length === 0 && errorList.length === 0;
 
   return (
-    <Page className="h-full flex flex-col overflow-hidden bg-[var(--color-bg-primary)]">
+    <Page className="h-full flex flex-col overflow-hidden">
       {/* 滚动内容区 */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-6 py-6 space-y-5 pb-10">

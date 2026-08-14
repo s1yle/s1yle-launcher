@@ -166,7 +166,7 @@ const VersionDetailWithInstall: React.FC = () => {
   }, [versionId, gameName, selected, starting, startDownloadProgress, errorDownloadProgress, info, notifyError, navigate, setCurrentPath, t]);
 
   return (
-    <Page className="h-full flex flex-col overflow-hidden bg-[var(--color-bg-primary)] relative">
+    <Page className="h-full flex flex-col overflow-hidden relative">
       {/* 滚动内容区 */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-3xl mx-auto px-6 py-6 space-y-5 pb-10">

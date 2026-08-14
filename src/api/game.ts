@@ -13,7 +13,7 @@ export const invokeGetGameSettings = async (
   gameName: string,
   options?: InvokeOptions
 ): Promise<GameSettings> => {
-  return invokeRust('get_game_settings', { game_name: gameName }, options);
+  return invokeRust('get_game_settings', { gameName }, options);
 };
 
 /**
@@ -28,7 +28,8 @@ export const invokeUpdateGameSettings = async (
   settings: GameSettings,
   options?: InvokeOptions
 ): Promise<Game> => {
-  return invokeRust('update_game_settings', { game_name: gameName, settings }, options);
+  console.warn(gameName);
+  return invokeRust('update_game_settings', { gameName, settings }, options);
 };
 
 /**

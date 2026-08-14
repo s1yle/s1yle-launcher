@@ -169,7 +169,7 @@ const SmartSidebar = ({ onMenuClick = () => {}, footer, header, ownSidebar = fal
   }
 
   const sidebarVariants = {
-    initial: { opacity: 0, x: -16 },
+    initial: { opacity: 0.8, x: -16 },
     animate: {
       opacity: 1,
       x: 0,

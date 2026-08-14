@@ -19,15 +19,8 @@ const sidebarItemAnimation = (index: number) => ({
     opacity: 1,
     x: 0,
     transition: {
-      opacity: {
-        duration: DURATION.ELEMENT_ENTER,
-        ease: EASING.OUT_FLUENT,
-        delay: SIDEBAR_STAGGER_DELAY + index * SIDEBAR_STAGGER_STEP,
-      },
-      x: {
-        ...EASING.SPRING_ENTER,
-        delay: SIDEBAR_STAGGER_DELAY + index * SIDEBAR_STAGGER_STEP,
-      },
+      ...EASING.OUT_FLUENT,
+      delay: SIDEBAR_STAGGER_DELAY + index * SIDEBAR_STAGGER_STEP,
     },
   },
   exit: {

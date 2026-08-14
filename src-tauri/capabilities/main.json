@@ -161,6 +161,8 @@
     "allow-poll-and-complete-login",
     "allow-get-game-root",
     "allow-set-game-root",
-    "allow-scan-games"
+    "allow-scan-games",
+    "allow-get-game-settings",
+    "allow-update-game-settings"
   ]
 }

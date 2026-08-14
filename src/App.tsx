@@ -26,8 +26,8 @@
 // 玩家身份需要使用正版/离线/第三方登录，每个玩家账户数据互相隔离(除了游戏实例)
 // 根据以上实现适合的账户界面初步 ui 设计
 
-import { useEffect, useCallback } from 'react';
-import { BrowserRouter as Router, useLocation, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter as Router, useLocation } from 'react-router-dom';
 import { routes, findRouteByPath } from './router/config';
 import { useNavStore } from './stores/navStore';
 import { useLastVisitedStore } from './stores/lastVisitedStore';
@@ -48,61 +48,20 @@ import { useAuthStore } from './stores/authStore';
 import { useAdminStore } from './stores/adminStore';
 import { useFontStore } from './stores';
 import { invokeRustFunction } from './api/client';
+import { useSafeNavigate } from './router/navigation';
 
 const MainLayout = () => {
   const location = useLocation();
-  const navigate = useNavigate();
 
   const setCurrentPath = useNavStore((s) => s.setCurrentPath);
   const { mode: uiMode } = useUIModeStore();
 
   const currentRoute = findRouteByPath(location.pathname, routes) || routes[0];
   const shell = resolveShell(uiMode, currentRoute);
-
-  const executeNavigation = useCallback((path: string) => {
-    setCurrentPath(path);
-    navigate(path);
-  }, [setCurrentPath, navigate]);
+  const safeNavigate = useSafeNavigate();
 
   const handleMenuClick = (targetPath: string) => {
-    if (targetPath === location.pathname) return;
-
-    let finalPath = targetPath;
-
-    // 处理带有 instanceId 的 路径
-    if (finalPath.includes(':instanceId')) {
-      const instance = useGameStore.getState().getSelectedGame();
-      if (instance) {
-        finalPath = finalPath.replace(':instanceId', instance.id);
-      } else {
-        logger.warn('No instance selected for instance-specific route');
-        return;
-      }
-    }
-
-    // 兜底：菜单项裸父路径（如 /instance-manage）未匹配路由时，跳转其首个子路由
-    if (!findRouteByPath(finalPath, routes)) {
-      const parentRoute = routes.find(r =>
-        r.autoNavigateToFirstChild &&
-        r.children?.length &&
-        r.path !== finalPath &&
-        r.path.startsWith(finalPath)
-      );
-      if (parentRoute?.path && parentRoute.children?.[0]?.path) {
-        let childPath = parentRoute.children[0].path;
-        if (childPath.includes(':instanceId')) {
-          const instance = useGameStore.getState().getSelectedGame();
-          if (!instance) {
-            logger.warn('No instance selected for instance-specific route');
-            return;
-          }
-          childPath = childPath.replace(':instanceId', instance.id);
-        }
-        finalPath = childPath;
-      }
-    }
-
-    executeNavigation(finalPath);
+    safeNavigate(targetPath);
   };
 
   useEffect(() => {

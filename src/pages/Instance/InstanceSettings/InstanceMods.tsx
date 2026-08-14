@@ -1,13 +1,13 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useRouteParams } from '@/router/routeParams';
+import { useSafeNavigate } from '@/router/navigation';
 import { useGameStore } from '../../../stores/gameStore';
 import { Page, PageSection } from '@/components/common';
 
 /** 实例模组管理页面（待实现） */
 const InstanceMods: React.FC = () => {
   const { instanceId } = useRouteParams();
-  const navigate = useNavigate();
+  const safeNavigate = useSafeNavigate();
   const getGame = useGameStore(s => s.getGame);
   const setSelectedGame = useGameStore(s => s.setSelectedGame);
 
@@ -17,7 +17,7 @@ const InstanceMods: React.FC = () => {
       if (inst) {
         setSelectedGame(instanceId);
       } else {
-        navigate('/instance-list');
+        safeNavigate('/instance-list');
       }
     }
   }, [instanceId]);

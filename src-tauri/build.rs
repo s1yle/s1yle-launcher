@@ -123,7 +123,9 @@ fn main() {
             "poll_and_complete_login",
             "scan_games",
             "get_game_root",
-            "set_game_root"
+            "set_game_root",
+            "get_game_settings",
+            "update_game_settings",
         ]),
     ))
     .unwrap();

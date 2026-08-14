@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, Puzzle, Box, Archive, AlertTriangle, LucideIcon } from 'lucide-react';
 import { useGameStore } from '../../stores/gameStore';
 import { openFolder } from '../../helper/rustInvoke';
+import { useSafeNavigate } from '../../router/navigation';
 import { InstanceListItem, EmptyState, useNotification, Skeleton, Page, PageSection } from '../../components/common';
 import Instance from './Instance';
 import BottomBar from '@/components/common/BottomBar/BottomBar';
@@ -39,7 +39,7 @@ const categorizeInstance = (instance: Game, favoriteIds: string[]): GroupKey => 
 /** 实例列表页面 - 展示所有已安装的游戏实例 */
 const InstanceList: React.FC = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const safeNavigate = useSafeNavigate();
   const selectedGameId = useGameStore(s => s.selectedGameId);
   const {
     games,
@@ -114,7 +114,7 @@ const InstanceList: React.FC = () => {
 
   const handleSelect = (id: string) => {
     setSelectedGame(id);
-    navigate('/');
+    safeNavigate('/');
   };
 
   const handleDelete = async (id: string, name: string) => {
@@ -163,11 +163,11 @@ const InstanceList: React.FC = () => {
             <div className="max-w-2xl mx-auto space-y-1 bg-(--color-surface) px-3 pb-3 rounded-(--radius-md)">
               {/* 类型说明 */}
               <div className="flex items-center gap-1.5 pb-2 pt-2">
-                <group.icon className="w-3.5 h-3.5 text-(--color-text-tertiary)" />
-                <span className="text-xs font-medium text-(--color-text-tertiary)">
+                <group.icon className="w-3.5 h-3.5 text-(--color-text-secondary)" />
+                <span className="text-xs font-medium text-(--color-text-secondary)">
                   {t(group.titleKey)}
                 </span>
-                <span className="text-xs text-(--color-text-tertiary)/60">{group.items.length}</span>
+                <span className="text-xs text-(--color-text-secondary)/60">{group.items.length}</span>
               </div>
 
               <AnimatePresence mode="popLayout">
@@ -185,7 +185,7 @@ const InstanceList: React.FC = () => {
                         onRename={() => { }}
                         onDelete={() => handleDelete(instance.id, instance.name)}
                         onOpenFolder={() => handleOpenFolder(instance.path)}
-                        onSettings={() => navigate(`/instance-manage/${instance.id}/game-settings`)}
+                        onSettings={() => safeNavigate(`/instance-manage/${instance.id}/game-settings`)}
                         onFavorite={() => toggleFavorite(instance.id)}
                       />
                     </motion.div>

@@ -133,32 +133,38 @@ export const ROUTE_DIRECTION_FRESH_MS = 500;
  *
  * 由 RouterRenderer 使用。进入侧带弹性（SPRING_ENTER，弹簧轻微回弹）。
  * 退出统一为淡出（不带 x）：保证动画中途变体切换时旧页无 x 目标可断开，永不冻结。
+ * 退出期间 pointerEvents: none，旧页面不会拦截任何点击（防僵尸层）。
  *
  * @param forward - true 表示新页面从右侧滑入、旧页面滑向左侧
  */
 export const createRouteSlideVariants = (forward: boolean): Variants => ({
-  initial: { x: forward ? '100%' : '-100%' },
+  initial: { x: forward ? '100%' : '-100%', pointerEvents: 'auto' },
   animate: {
     x: 0,
+    pointerEvents: 'auto',
     transition: { ...EASING.SPRING_ENTER },
   },
   exit: {
-    opacity: 0.5,
+    opacity: 0,
+    pointerEvents: 'none',
     transition: { duration: DURATION.ELEMENT_EXIT, ease: EASING.IN_OUT_FLUENT },
   },
 });
 
 /** 路由首屏/无方向时的纯淡入过渡（animate 含 x: 0，防止中途变体切换时滑入冻结）。
- * 淡入/淡出收敛于半透明（0.5），避免切换中途页面全透明导致窗口空白闪烁。 */
+ * 入场从半透明（0.5）淡入，出场收敛至全透明（0）：即使退出元素卡住不 unmount 也不会留下残影；
+ * 退出期间 pointerEvents: none，旧页面不会拦截任何点击。 */
 export const routeFade: Variants = {
-  initial: { opacity: 0.5 },
+  initial: { opacity: 0.5, pointerEvents: 'auto' },
   animate: {
     opacity: 1,
     x: 0,
+    pointerEvents: 'auto',
     transition: { duration: DURATION.NORMAL, ease: EASING.OUT_FLUENT },
   },
   exit: {
-    opacity: 0.5,
+    opacity: 0,
+    pointerEvents: 'none',
     transition: { duration: DURATION.NORMAL, ease: EASING.IN_OUT_FLUENT },
   },
 };

@@ -1,10 +1,11 @@
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Minus, X } from 'lucide-react';
 import { IconButton, useNotification, getErrorMessage } from './common';
 import { getParentPath } from '../router/config';
+import { useSafeNavigate } from '../router/navigation';
 import { EASING } from '../utils/animations';
 
 interface HeaderProps {
@@ -23,11 +24,11 @@ const Header = ({ type, title, onBack }: HeaderProps) => {
   const { error: notifyError, success: _notifySuccess } = useNotification();
 
   let location: ReturnType<typeof useLocation> | null = null;
-  let navigate: ReturnType<typeof useNavigate> | null = null;
+  let safeNavigate: ReturnType<typeof useSafeNavigate> | null = null;
 
   try {
     location = useLocation();
-    navigate = useNavigate();
+    safeNavigate = useSafeNavigate();
   } catch {
     // Outside <Router> — skip router hooks
   }
@@ -55,9 +56,8 @@ const Header = ({ type, title, onBack }: HeaderProps) => {
       onBack();
       return;
     }
-    if (location && navigate) {
-      const parentPath = getParentPath(location.pathname);
-      navigate(parentPath);
+    if (location && safeNavigate) {
+      safeNavigate(getParentPath(location.pathname));
     }
   };
 

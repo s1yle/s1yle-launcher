@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { ArrowLeft, HelpCircle, Minus, X, Loader2 } from 'lucide-react';
@@ -7,6 +7,7 @@ import { InstallCard, LoaderIcon, useNotification, Page, PageSection } from '../
 import { getVersionDetail, createGame, ModLoaderType, openUrl } from '../helper/rustInvoke';
 import { checkLoaderCompatibility, getWikiUrl } from '../utils/modloaderCompat';
 import { useNavStore } from '../stores/navStore';
+import { useSafeNavigate } from '../router/navigation';
 import { useGameStore } from '../stores/gameStore';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -30,7 +31,7 @@ interface LoaderState {
 const VersionInstall = () => {
   const { t } = useTranslation();
   const { versionId } = useParams<{ versionId: string }>();
-  const navigate = useNavigate();
+  const safeNavigate = useSafeNavigate();
   const { setCurrentPath } = useNavStore();
   const { refresh } = useGameStore();
   const { success, error: notifyError, info } = useNotification();
@@ -105,7 +106,7 @@ const VersionInstall = () => {
       await createGame(instanceName.trim(), versionId, loaderType, loaderVersion);
       await refresh();
       success(t('common.success'), t('download.install.installComplete'));
-      navigate('/instance-list');
+      safeNavigate('/instance-list');
       setCurrentPath('/instance-list');
     } catch (e) {
       notifyError(t('download.install.installFailed'), e instanceof Error ? e.message : '安装失败');
@@ -115,7 +116,7 @@ const VersionInstall = () => {
   };
 
   const handleBack = () => {
-    navigate('/download/game');
+    safeNavigate('/download/game');
     setCurrentPath('/download/game');
   };
 

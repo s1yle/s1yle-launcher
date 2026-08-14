@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '@/stores/gameStore';
 import { logger } from '@/helper/logger';
+import { useSafeNavigate } from '@/router/navigation';
 import { getGameSettings, updateGameSettings, GameSettings, selectJavaPath, scanJavaInstallations, JavaInstallation, getMemoryUsage, getDisplayResolutions } from '@/helper/rustInvoke';
 import { SettingsPanel, Toggle, Slider, useNotification, Page, PageSection } from '@/components/common';
 import PartitionBar, { getPartitionColor } from '@/components/common/PartitionBar';
@@ -13,7 +13,7 @@ import { useRouteParams } from '@/router/routeParams';
 const InstanceGameSettings = () => {
   const { t } = useTranslation();
   const { instanceId } = useRouteParams();
-  const navigate = useNavigate();
+  const safeNavigate = useSafeNavigate();
   const setSelectedGame = useGameStore(s => s.setSelectedGame);
   const getGame = useGameStore(s => s.getGame);
   const storeLoading = useGameStore(s => s.loading);
@@ -61,7 +61,7 @@ const InstanceGameSettings = () => {
       if (inst) {
         setSelectedGame(instanceId);
       } else {
-        navigate('/instance-list');
+        safeNavigate('/instance-list');
       }
     }
   }, [instanceId]);
@@ -267,7 +267,7 @@ const InstanceGameSettings = () => {
       <PageSection>
         <div className="max-w-4xl mx-auto space-y-6">
           <SettingsPanel
-            label='基础设置'
+            label={'基础设置 - ' + instance.name}
           >
           <Toggle
             label={t('settings.useInstanceSettings', '启用实例特定游戏设置')}

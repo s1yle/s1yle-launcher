@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Download } from 'lucide-react';
 import { useDownloadStore } from '../stores/downloadStore';
 import { getRouteConfigByPath } from '../router/config';
+import { useSafeNavigate } from '../router/navigation';
 import { Z_INDEX } from '../utils/zIndex';
 
 /**
@@ -13,7 +14,7 @@ import { Z_INDEX } from '../utils/zIndex';
  */
 const GlobalDownloadBar = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const safeNavigate = useSafeNavigate();
   const location = useLocation();
   const downloadingVersions = useDownloadStore((s) => s.downloadingVersions);
 
@@ -33,7 +34,7 @@ const GlobalDownloadBar = () => {
 
   return (
     <button
-      onClick={() => navigate('/download/progress')}
+      onClick={() => safeNavigate('/download/progress')}
       className="fixed left-1/2 -translate-x-1/2 top-15 flex 
         items-center gap-3 rounded-full 
         border border-[var(--color-border)] bg-[var(--color-surface)]/90 

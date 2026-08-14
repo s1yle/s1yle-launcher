@@ -72,36 +72,13 @@ const InstanceListItem = ({
   const { contextMenuState, showContextMenu, hideContextMenu } = useContextMenu();
 
   useEffect(() => {
-    const loadIcon = async () => {
-      if (instance.icon_path) {
-        setIconSrc(`asset://localhost/${instance.icon_path}`);
-        return;
-      }
-
-      const customIconPaths = [
-        `${instance.path}/icon.png`,
-        `${instance.path}/icon.jpg`,
-        `${instance.path}/icon.jpeg`,
-        `${instance.path}/icon.gif`,
-      ];
-
-      for (const iconPath of customIconPaths) {
-        try {
-          const response = await fetch(`asset://localhost/${iconPath}`);
-          if (response.ok) {
-            setIconSrc(`asset://localhost/${iconPath}`);
-            return;
-          }
-        } catch {
-          continue;
-        }
-      }
-
-      const loaderIconPath = `.smcl/assets/icons/${getLoaderIconPath(instance.loader_type)}`;
-      setIconSrc(`asset://localhost/${loaderIconPath}`);
-    };
-
-    loadIcon();
+    setIconError(false);
+    if (instance.icon_path) {
+      setIconSrc(`asset://localhost/${instance.icon_path}`);
+      return;
+    }
+    const loaderIconPath = `${instance.path}/.smcl/assets/icons/${getLoaderIconPath(instance.loader_type)}`;
+    setIconSrc(`asset://localhost/${loaderIconPath}`);
   }, [instance]);
 
   const handleClick = () => {
@@ -183,7 +160,7 @@ const InstanceListItem = ({
             transition={transitions.spring}
           >
             <div className="w-10 h-10 rounded-lg overflow-hidden 
-            bg-primary-bg flex items-center justify-center"
+              bg-primary-bg flex items-center justify-center"
             >
               {iconSrc && !iconError ? (
                 <img
@@ -194,7 +171,7 @@ const InstanceListItem = ({
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br 
-                from-primary/20 to-primary/40 flex items-center justify-center"
+                  from-primary/20 to-primary/40 flex items-center justify-center"
                 >
                   <Gamepad2 className="w-6 h-6 text-primary" />
                 </div>
@@ -202,13 +179,13 @@ const InstanceListItem = ({
             </div>
           </motion.div>
 
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 flex flex-col">
             {/* 实例名称 */}
-            <motion.span>
+            <motion.span className='font-light text-base/5 text-(--color-text-secondary)'>
               {instance.name}
             </motion.span>
-            <div className="flex items-center gap-2 text-text-tertiary text-sm">
-
+            <div className="flex items-center gap-2">
+              {/* 版本类型 + 版本id */}
               <span
                 className="rounded text-xs bg-surface-active text-(--color-text-tertiary)"
                 style={{ whiteSpace: "pre" }}
@@ -216,6 +193,7 @@ const InstanceListItem = ({
                 {inferVersionType(instance.version_id) + `\x20`}  {instance.version_id}
               </span>
 
+              {/* modloader */}
               {instance.loader_type !== ModLoaderType.Vanilla && (
                 <motion.span
                   className="text-sm bg-primary-bg text-secondary"
@@ -230,7 +208,7 @@ const InstanceListItem = ({
 
           {/* 收藏 / 删除 / 设置 */}
           <motion.div
-            className="flex items-center"
+            className="flex flex-row items-center"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: isHovered ? 1 : 0.0, x: 0 }}
             transition={transitions.normal}

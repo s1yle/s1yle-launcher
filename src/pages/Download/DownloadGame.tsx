@@ -1,5 +1,4 @@
 import { useState, useCallback, useMemo, memo, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useDownloadStore } from '../../stores/downloadStore';
@@ -7,6 +6,7 @@ import { GameVersion, openFolder, openUrl, getGameRoot } from '../../helper/rust
 import { VersionListItem, EmptyState, useNotification, VirtualList, Page, PageSection, Skeleton } from '../../components/common';
 import DropDown from '@/components/common/DropDown';
 import { useNavStore } from '../../stores/navStore';
+import { useSafeNavigate } from '../../router/navigation';
 import { getWikiUrl } from '../../utils/modloaderCompat';
 import { VersionCategory, filterVersionsByCategory, countVersionsByCategory } from '../../utils/versionFilter';
 import BottomBar from '@/components/common/BottomBar/BottomBar';
@@ -18,7 +18,7 @@ const ITEM_HEIGHT = 72;
 /** 游戏下载页面 - 浏览和下载 Minecraft 版本 */
 const DownloadGame: React.FC = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const safeNavigate = useSafeNavigate();
   const setCurrentPath = useNavStore((s) => s.setCurrentPath);
   const {
     manifest,
@@ -114,9 +114,9 @@ const DownloadGame: React.FC = () => {
     [completedVersions]);
 
   const handleVersionClick = useCallback((version: GameVersion) => {
-    navigate(`/download/game/${encodeURIComponent(version.id)}`);
+    safeNavigate(`/download/game/${encodeURIComponent(version.id)}`);
     setCurrentPath(`/download/game/${encodeURIComponent(version.id)}`);
-  }, [navigate, setCurrentPath]);
+  }, [safeNavigate, setCurrentPath]);
 
   const handleWikiClick = useCallback((versionId: string) => {
     openUrl(getWikiUrl(versionId));

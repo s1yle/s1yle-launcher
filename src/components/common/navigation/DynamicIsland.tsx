@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Crown, User, Home, ChevronDown,  FileQuestionMark, AlertTriangle, LogOut } from 'lucide-react';
 import { useUserRoleStore, UserRole } from '@/stores/userRoleStore';
@@ -10,6 +10,7 @@ import { useNotification, ConfirmPopup } from '@/components/common';
 import { getNavItemsByRole } from '@/router/nav';
 import { NavItem, SidebarGroup } from '@/router/models';
 import { autoJumpToFirstChild, findRouteByPath, routes } from '@/router/config';
+import { useSafeNavigate } from '@/router/navigation';
 import { DURATION, EASING, dropdown, microInteractions, modalOpen } from '@/utils/animations';
 
 /** 灵动岛导航组件 Props */
@@ -54,7 +55,7 @@ const BOTTOM_TEXTS = [
  * 悬浮式胶囊导航（顶部居中），毛玻璃背景，支持窗口拖曳 + 角色切换 180° 旋转动画。
  */
 const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
-  const navigate = useNavigate();
+  const safeNavigate = useSafeNavigate();
   const location = useLocation();
   const { currentRole, isTransitioning, switchRole } = useUserRoleStore();
   const [isExpanded, setIsExpanded] = useState(true);
@@ -140,7 +141,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
       if (onMenuClick) {
         onMenuClick(item.path);
       } else {
-        navigate(item.path);
+        safeNavigate(item.path);
       }
     }
   };
@@ -182,7 +183,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
 
     if (needsNavigate) {
       useNavStore.getState().setDirection('right');
-      navigate('/');
+      safeNavigate('/', { direction: 'right' });
     }
   };
 
@@ -343,7 +344,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
           } else if (onMenuClick) {
             onMenuClick(toPath);
           } else {
-            navigate(toPath);
+            safeNavigate(toPath);
           }
         }
       } else {
@@ -622,7 +623,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
                   <button
                     onClick={() => {
                       setShowRoleGuide(false);
-                      navigate('/account');
+                      safeNavigate('/account');
                     }}
                     className="px-3 py-1.5 rounded-lg text-xs font-medium
                       bg-[var(--color-primary)]/10 text-[var(--color-primary)]

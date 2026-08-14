@@ -1,11 +1,31 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { AnimatePresence, motion, type Variants } from "framer-motion";
-import React, { Suspense, useEffect, useState } from "react";
+import { motion, type Variants } from "framer-motion";
+import React, { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { routes, findRouteByPath } from "../router/config";
 import { parseRouteParams, RouteParamsContext } from "../router/routeParams";
 import { useAnimation } from "../hooks/useAnimation";
 import { ROUTE_DIRECTION_FRESH_MS, createRouteSlideVariants, routeFade } from "../utils/animations";
 import { useNavStore } from "../stores/navStore";
+import { usePageLifecycleStore } from "../stores/pageLifecycleStore";
+import { safeNavigate } from "../router/navigation";
+import { logger } from "../helper/logger";
+
+/** 退出层硬超时：超过该时长无论动画是否完成都强制移除旧页面（framer-motion + React 19 下退出动画可能不完成） */
+const EXIT_FALLBACK_MS = 800;
+
+/** 路由层：当前页 + 正在退出的旧页 */
+interface RouteLayer {
+  /** 唯一标识（同一路径可能短暂共存两个层） */
+  entryId: number;
+  /** 页面路径（pathname） */
+  path: string;
+  component: React.ComponentType;
+  params: Record<string, string>;
+  /** 是否为退出中的旧层（新层始终排在数组末尾，自然盖住旧层） */
+  isExiting: boolean;
+  /** 挂载时捕获的变体（退出期间不随全局方向变化而改变） */
+  variant: Variants;
+}
 
 const PageFallback = () => (
   <div className="h-full w-full flex items-center justify-center opacity-50 text-sm">
@@ -21,6 +41,35 @@ const MissingComponentPanel = ({ path }: { path: string }) => (
   </div>
 );
 
+/**
+ * 计算路由层入场/出场变体：
+ * - 动画关闭（useAnimation）→ 空变体
+ * - 方向新鲜（导航后 ROUTE_DIRECTION_FRESH_MS 内）且为左右方向 → 滑动变体
+ * - 其余 → 淡入淡出
+ */
+const computeRouteVariant = (enabled: boolean): Variants => {
+  if (!enabled) return { initial: {}, animate: {}, exit: {} };
+
+  const { direction: dir, directionAt } = useNavStore.getState();
+  const isFresh = dir !== null && Date.now() - directionAt < ROUTE_DIRECTION_FRESH_MS;
+
+  if (isFresh && (dir === 'right' || dir === 'left')) {
+    return createRouteSlideVariants(dir === 'right');
+  }
+  return routeFade;
+};
+
+/**
+ * 退出层硬超时移除器：动画完成回调失效时由它兜底移除（setState 驱动，必然生效）。
+ */
+const ExitRemover = ({ entryId, onRemove }: { entryId: number; onRemove: (id: number) => void }) => {
+  useEffect(() => {
+    const timer = window.setTimeout(() => onRemove(entryId), EXIT_FALLBACK_MS);
+    return () => window.clearTimeout(timer);
+  }, [entryId, onRemove]);
+  return null;
+};
+
 interface RouterRendererProps {
   sidebar?: React.ReactNode;
   showSidebar?: boolean;
@@ -32,6 +81,11 @@ interface RouterRendererProps {
  * 路由渲染器组件。
  * 根据当前路径匹配路由配置，动态渲染对应的页面组件。
  * 支持页面切换动画（左右滑动）和拖拽预览模式。
+ *
+ * 退出机制说明：不使用 AnimatePresence 的 safeToRemove（framer-motion 12 + React 19
+ * 下退出元素可能永不 unmount，导致残影/隐形层/后续入场冻结）。
+ * 改为自管理双层切换：旧层播放 exit 动画后由 onAnimationComplete 或硬超时
+ * （EXIT_FALLBACK_MS）触发 setState 移除，移除必然发生。
  */
 const RouterRenderer = ({
   sidebar,
@@ -48,11 +102,38 @@ const RouterRenderer = ({
   const Component = route?.component;
   const dragPreview = useNavStore((s) => s.dragPreview);
   const [dragProgress, setDragProgress] = useState(0);
+  const setMountedPath = usePageLifecycleStore((s) => s.setMountedPath);
+
+  const nextEntryId = useRef(1);
+
+  const [layers, setLayers] = useState<RouteLayer[]>(() => {
+    if (!route || !Component) return [];
+    return [
+      {
+        entryId: nextEntryId.current++,
+        path: currentPathname,
+        component: Component,
+        params: parseRouteParams(route.path, currentPathname),
+        isExiting: false,
+        variant: computeRouteVariant(enabled),
+      },
+    ];
+  });
+
+  /** 移除指定退出层（幂等，供动画完成回调与硬超时共用） */
+  const removeLayer = useCallback((entryId: number) => {
+    setLayers((prev) => prev.filter((layer) => layer.entryId !== entryId));
+  }, []);
 
   useEffect(() => {
     if (!route) return;
     if (!Component && route.children?.length) {
-      navigate(route.children[0].path, { replace: true });
+      const firstChild = route.children[0].path;
+      if (firstChild && firstChild !== currentPathname) {
+        safeNavigate(navigate, firstChild, { replace: true, currentPath: currentPathname });
+      } else {
+        logger.warn(`[RouterRenderer] 父路由无可跳转子路由: ${currentPathname}`);
+      }
     }
   }, [route, Component, navigate, currentPathname]);
 
@@ -78,8 +159,32 @@ const RouterRenderer = ({
     return () => window.clearTimeout(timer);
   }, [currentPathname]);
 
-  if (!route) {
-    console.error(`[RouterRenderer] 路由 "${currentPathname}" 未匹配任何定义`);
+  /** 路径变化：旧层标记退出，新层追加到末尾（盖住旧层） */
+  useEffect(() => {
+    if (!route || !Component) return;
+
+    setLayers((prev) => {
+      if (prev.some((layer) => !layer.isExiting && layer.path === currentPathname)) return prev;
+      const exiting = prev
+        .filter((layer) => !layer.isExiting)
+        .map((layer) => ({ ...layer, isExiting: true }));
+      return [
+        ...exiting,
+        {
+          entryId: nextEntryId.current++,
+          path: currentPathname,
+          component: Component,
+          params: parseRouteParams(route.path, currentPathname),
+          isExiting: false,
+          variant: computeRouteVariant(enabled),
+        },
+      ];
+    });
+    setMountedPath(currentPathname);
+  }, [currentPathname, route, Component, enabled, setMountedPath]);
+
+  if (!route || !Component) {
+    console.error(`[RouterRenderer] 路由 "${currentPathname}" 未挂载 component，且无子路由可跳转`);
     return <MissingComponentPanel path={currentPathname} />;
   }
 
@@ -146,48 +251,30 @@ const RouterRenderer = ({
     );
   }
 
-  const NO_ANIMATION: Variants = { initial: {}, animate: {}, exit: {} };
-
-const variant: Variants = (() => {
-    if (!enabled) return NO_ANIMATION;
-
-    const { direction: dir, directionAt } = useNavStore.getState();
-    const isFresh = dir !== null && Date.now() - directionAt < ROUTE_DIRECTION_FRESH_MS;
-
-    if (isFresh && (dir === 'right' || dir === 'left')) {
-      return createRouteSlideVariants(dir === 'right');
-    }
-    return routeFade;
-  })();
-
-  if (!Component) {
-    console.error(`[RouterRenderer] 路由 "${currentPathname}" 未挂载 component，且无子路由可跳转`);
-    return <MissingComponentPanel path={currentPathname} />;
-  }
-
-  const params = parseRouteParams(route.path, currentPathname);
-
   return (
     <div className="h-full relative overflow-hidden">
-      <AnimatePresence mode="popLayout">
+      {layers.map((layer) => (
         <motion.div
-          key={currentPathname}
+          key={layer.entryId}
           className="absolute inset-0 flex overflow-hidden"
-          variants={variant}
-          initial="initial"
-          animate="animate"
-          exit="exit"
+          variants={layer.variant}
+          initial={layer.isExiting ? false : 'initial'}
+          animate={layer.isExiting ? 'exit' : 'animate'}
+          onAnimationComplete={
+            layer.isExiting ? () => removeLayer(layer.entryId) : undefined
+          }
         >
+          {layer.isExiting && <ExitRemover entryId={layer.entryId} onRemove={removeLayer} />}
           <div style={sidebarStyle}>{sidebar}</div>
           <div className="flex-1 overflow-y-auto overflow-x-hidden relative">
-            <RouteParamsContext.Provider value={params}>
+            <RouteParamsContext.Provider value={layer.params}>
               <Suspense fallback={<PageFallback />}>
-                <Component />
+                <layer.component />
               </Suspense>
             </RouteParamsContext.Provider>
           </div>
         </motion.div>
-      </AnimatePresence>
+      ))}
     </div>
   );
 };
