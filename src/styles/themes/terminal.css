@@ -83,7 +83,7 @@
   --color-info-15: rgba(88, 166, 255, 0.15);
 
   /* 其他 */
-  --color-overlay: rgba(13, 17, 23, 0.85);
+  --color-overlay: rgba(13, 17, 23, 0.72);
   --color-backdrop-blur: 12px;
   --color-context-bg: #1c2128;
   --color-context-border: rgba(240, 246, 252, 0.1);
@@ -166,7 +166,7 @@
   --color-info-15: rgba(97, 175, 239, 0.15);
 
   /* 其他 */
-  --color-overlay: rgba(40, 44, 52, 0.88);
+  --color-overlay: rgba(40, 44, 52, 0.75);
   --color-backdrop-blur: 12px;
   --color-context-bg: #282c34;
   --color-context-border: rgba(255, 255, 255, 0.08);
@@ -249,7 +249,7 @@
   --color-info-15: rgba(136, 192, 208, 0.15);
 
   /* 其他 */
-  --color-overlay: rgba(46, 52, 64, 0.90);
+  --color-overlay: rgba(46, 52, 64, 0.78);
   --color-backdrop-blur: 14px;
   --color-context-bg: #3b4252;
   --color-context-border: rgba(216, 222, 233, 0.08);

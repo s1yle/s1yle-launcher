@@ -35,8 +35,8 @@ export const DURATION = {
   ROUTE_SLIDE: 0.32,
   ELEMENT_ENTER: 0.32,
   ELEMENT_EXIT: 0.26,
-  MODAL_OPEN: 0.34,
-  MODAL_CLOSE: 0.28,
+  MODAL_OPEN: 0.26,
+  MODAL_CLOSE: 0.2,
   TOAST_IN: 0.32,
   TOAST_OUT: 0.26,
   DROPDOWN: 0.26,
@@ -55,6 +55,8 @@ export const DURATION = {
  * - `OUT_FLUENT` — 立方缓动，先快后慢
  * - `IN_OUT_FLUENT` — 立方缓动，平滑启停（无越界）
  * - `IN_BACK` — 先向后退再前进（回弹）
+ * - `OUT_BACK` — 先前进再回退（回弹）
+ * - `OUT_EXPO` — 指数级缓出，极快起步后平滑衰减（macOS 弹窗/按钮弹出风格，无过冲）
  * - `SPRING_ENTER` — 元素入场位移弹簧（轻微回弹，弹性动效的主要来源）
  *
  * 弹簧族（用于布局与指示器跟位，如 layoutId 滑块）：
@@ -72,6 +74,7 @@ export const EASING = {
   IN_OUT_FLUENT: [0.42, 0, 0.58, 1] as const,
   IN_BACK: [0.36, 0, 0.66, -0.56] as const,
   OUT_BACK: [0.34, 1.15, 0.64, 1] as const,
+  OUT_EXPO: [0.16, 1, 0.3, 1] as const,
   SPRING: { type: 'spring', stiffness: 500, damping: 38 } as Transition,
   SPRING_ENTER: { type: 'spring', stiffness: 250, damping: 30 } as Transition,
   SPRING_SOFT: { type: 'spring', stiffness: 350, damping: 30 } as Transition,
@@ -241,30 +244,34 @@ export const sectionTitle: Variants = {
   },
 };
 
-/** 弹窗内容：缩放 0.95→1 + 淡入（打开带动弹出，关闭无回弹） */
+/** 弹窗内容：macOS 风格 — 弹出 scale 0.8→1 + 淡入（easeOutExpo 平滑，无生硬过冲），关闭轻微收缩 + 淡出（无回弹）。
+ * 打开时透明度先快速到位（FAST），缩放完整展开（MODAL_OPEN），保证放大过程清晰可见。 */
 export const modalOpen: Variants = {
-  initial: { opacity: 0, scale: 0.95 },
+  initial: { opacity: 1, scale: 0 },
   animate: {
     opacity: 1,
     scale: 1,
     transition: {
-      opacity: { duration: DURATION.MODAL_OPEN, ease: EASING.OUT_FLUENT },
-      scale: { ...EASING.SPRING_ENTER },
+      opacity: { duration: DURATION.FAST, ease: EASING.OUT_FLUENT },
+      scale: { duration: DURATION.MODAL_CLOSE, ease: EASING.IN_OUT_FLUENT },
     },
   },
   exit: {
     opacity: 0,
-    scale: 0.95,
-    transition: { duration: DURATION.MODAL_CLOSE, ease: EASING.IN_OUT_FLUENT },
+    scale: 0,
+    transition:{
+      ease: EASING.OUT_EXPO,
+      duration: DURATION.MODAL_OPEN
+    }
   },
 };
 
-/** 弹窗遮罩：淡入/淡出 */
+/** 弹窗遮罩：macOS 风格纯淡入/淡出（与弹窗内容同节奏） */
 export const modalOverlay: Variants = {
   initial: { opacity: 0 },
   animate: {
     opacity: 1,
-    transition: { duration: DURATION.MODAL_OPEN, ease: EASING.OUT_FLUENT },
+    transition: { duration: DURATION.DROPDOWN, ease: EASING.OUT_FLUENT },
   },
   exit: {
     opacity: 0,
@@ -406,10 +413,8 @@ export const fadeInUp: Variants = {
   animate: {
     opacity: 1,
     y: 0,
-    transition: {
-      opacity: { duration: DURATION.ELEMENT_ENTER, ease: EASING.OUT_FLUENT },
-      y: { ...EASING.SPRING_ENTER },
-    },
+    transition: EASING.SPRING_BOUNCY,
+    dur: DURATION.MEDIUM
   },
   exit: {
     opacity: 0,

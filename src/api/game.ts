@@ -33,6 +33,30 @@ export const invokeUpdateGameSettings = async (
 };
 
 /**
+ * 获取全局游戏设置（未启用独立设置时的默认值，所有游戏共用）
+ * @param options Tauri invoke 选项
+ * @returns 全局游戏设置
+ */
+export const invokeGetGlobalGameSettings = async (
+  options?: InvokeOptions
+): Promise<GameSettings> => {
+  return invokeRust('get_global_game_settings', {}, options);
+};
+
+/**
+ * 更新全局游戏设置
+ * @param settings 新的全局游戏设置
+ * @param options Tauri invoke 选项
+ * @returns 更新后的全局游戏设置
+ */
+export const invokeUpdateGlobalGameSettings = async (
+  settings: GameSettings,
+  options?: InvokeOptions
+): Promise<GameSettings> => {
+  return invokeRust('update_global_game_settings', { settings }, options);
+};
+
+/**
  * 获取系统可用内存
  * @param options Tauri invoke 选项
  * @returns 系统总内存（MB）

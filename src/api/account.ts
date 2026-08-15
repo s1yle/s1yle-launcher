@@ -69,19 +69,6 @@ export const invokeGetCurrentAccount = async (
 };
 
 /**
- * 获取当前账户的访问令牌（微软账户有效，离线账户返回 null）
- * @param options Tauri invoke 选项
- * @returns 访问令牌或 null
- */
-export const invokeGetCurrentAccountToken = async (
-  options?: InvokeOptions
-): Promise<string | null> => {
-  logger.info('准备调用 get_current_account_token');
-  const result = await invokeRust("get_current_account_token", {}, options);
-  return result as string | null;
-};
-
-/**
  * 删除账户
  * @param uuid 要删除的账户 UUID
  * @param options Tauri invoke 选项

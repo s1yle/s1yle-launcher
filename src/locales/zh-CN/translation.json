@@ -252,7 +252,9 @@
     "autoSelectGame": "自动选择游戏",
     "downloadSource": "下载源",
     "general": "通用",
-    "advanced": "高级"
+    "advanced": "高级",
+    "useGameSettings": "使用游戏独立设置",
+    "useGameSettingsDesc": "未启用时，修改将应用于所有游戏（全局设置）；启用后，以下设置将仅应用于当前游戏"
   },
   "multiplayer": {
     "title": "多人联机",

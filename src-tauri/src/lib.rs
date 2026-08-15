@@ -44,9 +44,10 @@ pub use crate::admin_account::{
     initialize_admin_system, is_admin_registered, login_admin, unbind_player_from_admin,
 };
 pub use crate::launch::{
-    LaunchConfig, LaunchGameInfo, LaunchStatus, LaunchStatusInfo, front_get_launch_config,
-    front_get_launch_games, front_get_launch_status, front_get_launch_status_by_key,
-    front_launch_game, front_stop_game, front_update_launch_config, init_launch_manager,
+    GameLogResult, LaunchConfig, LaunchGameInfo, LaunchStatus, LaunchStatusInfo,
+    front_get_game_log, front_get_launch_config, front_get_launch_games,
+    front_get_launch_status, front_get_launch_status_by_key, front_launch_game,
+    front_stop_game, front_update_launch_config, init_launch_manager,
 };
 pub use crate::window::{load_window_position, save_window_position};
 
@@ -57,7 +58,8 @@ pub use download::{
 
 pub use crate::game::{
     Game, GameManager, create_game, delete_game, get_game, get_game_root, get_game_settings,
-    rename_game, scan_games, set_game_root, update_game, update_game_settings, validate_game,
+    get_global_game_settings, rename_game, scan_games, set_game_root, update_game,
+    update_game_settings, update_global_game_settings, validate_game,
 };
 
 pub use crate::system::{get_display_resolutions, get_memory_usage, get_system_memory};
@@ -460,6 +462,7 @@ pub fn run() {
             front_get_launch_games,
             front_get_launch_config,
             front_update_launch_config,
+            front_get_game_log,
             log_frontend,
             initialize_account_system,
             get_version_manifest,
@@ -491,6 +494,8 @@ pub fn run() {
             // 游戏设置相关命令
             get_game_settings,
             update_game_settings,
+            get_global_game_settings,
+            update_global_game_settings,
             // 系统相关命令
             system::get_system_memory,
             system::get_memory_usage,

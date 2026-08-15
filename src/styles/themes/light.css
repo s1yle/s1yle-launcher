@@ -60,7 +60,7 @@
   --color-info-15: rgba(37, 99, 235, 0.15);
 
   /* 特效系统 - 保持不变 */
-  --color-overlay: rgba(0, 0, 0, 0.48);
+  --color-overlay: rgba(0, 0, 0, 0.35);
   --color-backdrop-blur: var(--blur-value, 16px);
   --color-context-bg: rgba(197, 211, 227, 0.95);
   --color-context-border: rgba(0, 0, 0, 0.10);

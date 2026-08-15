@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Loader2, Gamepad2, Square, RotateCcw, Info, Lightbulb, Cpu, MemoryStick, User } from 'lucide-react';
-import { getLaunchStatusByKey, stopGame } from '@/helper/rustInvoke';
-import { LaunchStatus, type Game, type LaunchStatusInfo } from '@/api';
+import { Loader2, Gamepad2, Square, RotateCcw, Info, Lightbulb, Cpu, MemoryStick, User, FolderOpen, AlertTriangle } from 'lucide-react';
+import { getLaunchStatusByKey, stopGame, openFolder, getGameSettings, getGlobalGameSettings } from '@/helper/rustInvoke';
+import { AccountInfo, LaunchStatus, type Game, type GameSettings, type LaunchStatusInfo } from '@/api';
 import { useAppStore } from '@/stores/appStore';
-import { ProgressBar } from '@/components/common';
+import { ProgressBar, GameLogViewer, Page, PageSection } from '@/components/common';
 import { LAUNCH_HINTS } from '@/utils/launchHints';
-import { DURATION, EASING } from '@/utils/animations';
 import { Z_INDEX } from '@/utils/zIndex';
 import pkg from '../../../../package.json';
 
@@ -17,7 +15,7 @@ export interface LaunchingOverlayProps {
   /** 启动的游戏 */
   game: Game;
   /** 启动账户名 */
-  username: string;
+  accountInfo: AccountInfo;
   /** 返回主页 */
   onExit: () => void;
 }
@@ -26,11 +24,13 @@ export interface LaunchingOverlayProps {
 const POLL_INTERVAL = 500;
 
 /** 启动覆盖层：展示后端真实启动进度 / 运行状态 / 关于 / 小贴士 */
-const LaunchingOverlay = ({ gameId, game, username, onExit }: LaunchingOverlayProps) => {
+const LaunchingOverlay = ({ gameId, game, accountInfo, onExit }: LaunchingOverlayProps) => {
   const [phase, setPhase] = useState<'launching' | 'running' | 'crashed'>('launching');
   const [info, setInfo] = useState<LaunchStatusInfo | null>(null);
   const [stopping, setStopping] = useState(false);
   const [hint, setHint] = useState(() => LAUNCH_HINTS[Math.floor(Math.random() * LAUNCH_HINTS.length)]);
+  // 实际生效的设置（未启用独立设置时为全局设置）；加载完成前回退到 store 快照
+  const [effectiveSettings, setEffectiveSettings] = useState<GameSettings>(() => game.game_settings ?? {});
 
   const systemInfo = useAppStore(s => s.systemInfo);
   const stoppedRef = useRef(false);
@@ -39,6 +39,21 @@ const LaunchingOverlay = ({ gameId, game, username, onExit }: LaunchingOverlayPr
   useEffect(() => {
     onExitRef.current = onExit;
   }, [onExit]);
+
+  // 拉取实际生效的设置（与启动逻辑一致：未启用独立设置时展示全局设置）
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([getGameSettings(game.name), getGlobalGameSettings()])
+      .then(([own, global]) => {
+        if (!cancelled) {
+          setEffectiveSettings(own.use_game_settings ? own : global);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [game.name]);
 
   // 随机轮换小贴士
   useEffect(() => {
@@ -58,10 +73,10 @@ const LaunchingOverlay = ({ gameId, game, username, onExit }: LaunchingOverlayPr
         setInfo(result);
         if (result.status === LaunchStatus.Running) {
           setPhase('running');
-        } 
+        }
         else if (result.status === LaunchStatus.Crashed) {
           setPhase('crashed');
-        } 
+        }
         // 这个分支好像没啥用，不知道是那里的问题，游戏窗口出来后立马关闭游戏之后反而没有出发这个分支
         else if (
           result.status === LaunchStatus.Stopped &&
@@ -89,9 +104,9 @@ const LaunchingOverlay = ({ gameId, game, username, onExit }: LaunchingOverlayPr
   const progress = phase === 'running' ? 100 : phase === 'crashed' ? 100 : (info?.progress ?? 0);
   const stage = info?.stage || (phase === 'launching' ? '正在准备启动环境' : '');
 
-  const settings = game.game_settings;
-  const javaPath = settings?.java_path || 'java';
-  const memoryMb = settings?.max_memory || 2048;
+  const settings = effectiveSettings;
+  const javaPath = settings.java_path || 'java';
+  const memoryMb = settings.max_memory || 2048;
 
   const handleStop = async () => {
     setStopping(true);
@@ -108,28 +123,25 @@ const LaunchingOverlay = ({ gameId, game, username, onExit }: LaunchingOverlayPr
       { icon: Gamepad2, label: '版本', value: game.version_id },
       { icon: Cpu, label: 'Java', value: javaPath },
       { icon: MemoryStick, label: '内存', value: `${memoryMb} MB` },
-      { icon: User, label: '账户', value: username },
+      { icon: User, label: '账户' + " (" + (accountInfo?.account_type || 'offline') + ")", value: accountInfo?.name || 'Steve' },
     ],
-    [game.version_id, javaPath, memoryMb, username]
+    [game.version_id, javaPath, memoryMb, accountInfo?.name]
   );
 
   return (
     <div
-      className="fixed inset-0 overflow-y-auto backdrop-blur-xl bg-[var(--color-surface)]/95 select-none"
+      className="fixed inset-0 overflow-y-auto backdrop-blur bg-(--color-surface)/95 select-none overflow-hidden"
       style={{ zIndex: Z_INDEX.MODAL }}
     >
-      <div className="min-h-full flex flex-col items-center justify-center px-6 py-10">
+      <div className="h-full min-h-xl flex flex-col items-center justify-center">
         {/* 主卡片 */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: DURATION.NORMAL, ease: EASING.OUT_FLUENT }}
-          className="w-full max-w-2xl rounded-3xl border border-[var(--color-context-border)] bg-[var(--color-context-bg)] shadow-2xl px-8 py-8"
+        <Page className="w-full max-w-xl rounded-(--radius-sm) 
+          bg-[var(--color-context-bg)] shadow-2xl px-8 py-8"
         >
           {/* 标题 + 加载动画 */}
-          <div className="flex flex-col items-center mb-8">
-            {phase === 'launching' ? (
-              <div className="flex gap-1.5 mb-5">
+          <PageSection className="flex flex-col items-center mb-2">
+            {phase === 'launching' && (
+              <div className="flex gap-1.5 mb-3">
                 {[0, 1, 2].map(i => (
                   <div
                     key={i}
@@ -138,32 +150,22 @@ const LaunchingOverlay = ({ gameId, game, username, onExit }: LaunchingOverlayPr
                   />
                 ))}
               </div>
-            ) : (
-              <div
-                className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-5 ${
-                  phase === 'running'
-                    ? 'bg-[var(--color-success)]/15 text-[var(--color-success)]'
-                    : 'bg-[var(--color-error)]/15 text-[var(--color-error)]'
-                }`}
-              >
-                {phase === 'running' ? <Gamepad2 className="w-7 h-7" /> : <Square className="w-6 h-6" />}
-              </div>
             )}
-            <h2 className="text-xl font-medium text-[var(--color-text-primary)]">
+            <h2 className="text-lg font-light text-[var(--color-text-primary)]">
               {phase === 'launching' && `正在启动 ${game.name}`}
               {phase === 'running' && `${game.name} 运行中`}
               {phase === 'crashed' && `${game.name} 启动失败`}
             </h2>
-            <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+            <p className="text-sm font-light text-[var(--color-text-secondary)] mt-1">
               {phase === 'launching' && 'Minecraft 正在启动，请稍候'}
               {phase === 'running' && '游戏已进入运行状态，可在此停止或返回'}
-              {phase === 'crashed' && '游戏未能正常启动，请检查日志后重试'}
+              {phase === 'crashed' && '游戏未能正常启动，可查看下方日志排查原因'}
             </p>
-          </div>
+          </PageSection>
 
           {/* 进度区 */}
           {phase !== 'running' && (
-            <div className="mb-8">
+            <PageSection className="mb-3">
               <ProgressBar
                 progress={progress}
                 label={phase === 'launching' ? stage : '启动失败'}
@@ -178,23 +180,46 @@ const LaunchingOverlay = ({ gameId, game, username, onExit }: LaunchingOverlayPr
                   请检查游戏完整性或 Java 配置后重试。
                 </p>
               )}
-            </div>
+            </PageSection>
+          )}
+
+          {/* 崩溃详情 */}
+          {phase === 'crashed' && (
+            <PageSection className="mb-3 space-y-3">
+              {(info?.crash_summary || info?.last_error) && (
+                <div className="flex items-start gap-2.5 rounded-xl border border-[var(--color-error)]/30 bg-[var(--color-error)]/10 px-4 py-3">
+                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-[var(--color-error)]" />
+                  <div className="min-w-0 text-sm text-[var(--color-text-primary)] whitespace-pre-wrap break-all">
+                    {info?.crash_summary || info?.last_error}
+                  </div>
+                </div>
+              )}
+              <GameLogViewer gameId={gameId} />
+              <button
+                onClick={() => openFolder(game.path)}
+                className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer"
+              >
+                <FolderOpen className="w-3.5 h-3.5" />
+                打开游戏目录
+              </button>
+            </PageSection>
           )}
 
           {/* 运行中状态 */}
           {phase === 'running' && (
-            <div className="mb-8 flex items-center justify-center gap-2">
+            <PageSection className="mb-3 flex items-center justify-center gap-2">
               <span className="w-2 h-2 rounded-full bg-[var(--color-success)] animate-pulse" />
               <span className="text-sm text-[var(--color-success)]">游戏运行中</span>
-            </div>
+            </PageSection>
           )}
 
           {/* 启动信息 */}
-          <div className="grid grid-cols-2 gap-3 mb-8">
+          <PageSection className="grid grid-cols-2 gap-3 mb-5">
             {infoItems.map(item => (
               <div
                 key={item.label}
-                className="flex items-center gap-3 rounded-xl bg-[var(--color-surface)] px-4 py-3 border border-[var(--color-context-border)]"
+                className="flex items-center gap-3 rounded-(--radius-sm) 
+                  bg-(--color-surface) px-4 py-3"
               >
                 <item.icon className="w-4 h-4 shrink-0 text-[var(--color-text-secondary)]" />
                 <div className="min-w-0">
@@ -203,25 +228,25 @@ const LaunchingOverlay = ({ gameId, game, username, onExit }: LaunchingOverlayPr
                 </div>
               </div>
             ))}
-          </div>
+          </PageSection>
 
           {/* 关于 */}
-          <div className="flex items-center gap-2 rounded-xl bg-[var(--color-surface)]/60 px-4 py-3 mb-4 text-xs text-[var(--color-text-tertiary)]">
+          <PageSection className="flex items-center gap-2 rounded-xl bg-[var(--color-surface)]/60 px-4 py-3 mb-3 text-xs text-[var(--color-text-tertiary)]">
             <Info className="w-3.5 h-3.5 shrink-0" />
             <span>
               WeCraft! Launcher v{pkg.version}
               {systemInfo?.os && ` · ${systemInfo.os} ${systemInfo.arch ?? ''}`}
             </span>
-          </div>
+          </PageSection>
 
           {/* 你知道吗 */}
-          <div className="flex items-start gap-2 rounded-xl bg-[var(--color-surface)]/60 px-4 py-3 mb-6 text-xs text-[var(--color-text-secondary)]">
+          <PageSection className="flex items-start gap-2 rounded-xl bg-[var(--color-surface)]/60 px-4 py-3 mb-6 text-xs text-[var(--color-text-secondary)]">
             <Lightbulb className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[var(--color-warning)]" />
             <span>{hint}</span>
-          </div>
+          </PageSection>
 
           {/* 操作按钮 */}
-          <div className="flex justify-center gap-3">
+          <PageSection className="flex justify-center gap-3">
             {phase === 'running' && (
               <button
                 onClick={handleStop}
@@ -243,16 +268,15 @@ const LaunchingOverlay = ({ gameId, game, username, onExit }: LaunchingOverlayPr
             )}
             <button
               onClick={onExit}
-              className={`px-6 py-2.5 rounded-(--radius-sm) transition-colors cursor-pointer ${
-                phase === 'running'
-                  ? 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] border border-[var(--color-context-border)]'
-                  : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
-              }`}
+              className={`px-6 py-2.5 rounded-(--radius-sm) transition-colors cursor-pointer ${phase === 'running'
+                  ? 'bg-(--color-surface) text-(--color-text-secondary) hover:bg-(--color-surface-hover)'
+                  : 'text-(--color-text-secondary) hover:text-(--color-text-primary)'
+                }`}
             >
               返回主页
             </button>
-          </div>
-        </motion.div>
+          </PageSection>
+        </Page>
       </div>
 
       <style>{`

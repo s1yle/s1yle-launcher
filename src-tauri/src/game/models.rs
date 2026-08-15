@@ -63,6 +63,57 @@ pub struct GameSettings {
     pub server_port: Option<u16>,
 }
 
+impl GameSettings {
+    /// 合并增量更新（忽略 None 字段）；`use_game_settings` 为行为开关，不参与合并
+    pub fn apply_update(&mut self, update: &GameSettings) {
+        if let Some(v) = &update.java_path {
+            self.java_path = Some(v.clone());
+        }
+        if let Some(v) = &update.java_version {
+            self.java_version = Some(v.clone());
+        }
+        if let Some(v) = update.min_memory {
+            self.min_memory = Some(v);
+        }
+        if let Some(v) = update.max_memory {
+            self.max_memory = Some(v);
+        }
+        if let Some(v) = &update.jvm_args {
+            self.jvm_args = Some(v.clone());
+        }
+        if let Some(v) = &update.isolation_mode {
+            self.isolation_mode = Some(v.clone());
+        }
+        if let Some(v) = update.width {
+            self.width = Some(v);
+        }
+        if let Some(v) = update.height {
+            self.height = Some(v);
+        }
+        if let Some(v) = update.fullscreen {
+            self.fullscreen = Some(v);
+        }
+        if let Some(v) = update.maximized {
+            self.maximized = Some(v);
+        }
+        if let Some(v) = update.vsync {
+            self.vsync = Some(v);
+        }
+        if let Some(v) = update.launcher_visible {
+            self.launcher_visible = Some(v);
+        }
+        if let Some(v) = &update.player_name {
+            self.player_name = Some(v.clone());
+        }
+        if let Some(v) = &update.server_address {
+            self.server_address = Some(v.clone());
+        }
+        if let Some(v) = update.server_port {
+            self.server_port = Some(v);
+        }
+    }
+}
+
 impl Default for GameSettings {
     fn default() -> Self {
         Self {
@@ -112,6 +163,9 @@ pub struct Game {
     /// 是否启用
     pub enabled: bool,
     // ==================== 游戏设置（持久化，平铺） ====================
+    /// 是否使用游戏独立的设置（false = 使用全局设置）
+    #[serde(default)]
+    pub use_game_settings: bool,
     /// Java 可执行文件路径
     pub java_path: Option<String>,
     /// Java 版本标识
@@ -178,6 +232,7 @@ impl Game {
             created_at: chrono::Utc::now().timestamp(),
             last_played: None,
             enabled: true,
+            use_game_settings: false,
             java_path: None,
             java_version: None,
             min_memory: 1024,
@@ -202,6 +257,7 @@ impl Game {
 
     /// 应用游戏设置 DTO（增量覆盖，忽略 None 字段）
     pub fn apply_settings(&mut self, settings: &GameSettings) {
+        self.use_game_settings = settings.use_game_settings;
         if let Some(v) = &settings.java_path {
             self.java_path = Some(v.clone());
         }
@@ -252,7 +308,7 @@ impl Game {
     /// 派生设置视图（供前端读取）
     pub fn to_game_settings(&self) -> GameSettings {
         GameSettings {
-            use_game_settings: true,
+            use_game_settings: self.use_game_settings,
             java_path: self.java_path.clone(),
             java_version: self.java_version.clone(),
             min_memory: Some(self.min_memory),
@@ -304,5 +360,30 @@ mod tests {
         assert!(!loaded.empty);
         assert!(loaded.path.is_empty());
         assert!(loaded.game_settings.is_none());
+    }
+
+    /// use_game_settings 开关必须真实持久化与回读（而非硬编码 true）
+    #[test]
+    fn use_game_settings_roundtrip() {
+        let mut game = Game::new("test", "1.20.4", ModLoaderType::Vanilla, None, None);
+        assert_eq!(game.to_game_settings().use_game_settings, false);
+
+        let mut settings = game.to_game_settings();
+        settings.use_game_settings = true;
+        settings.max_memory = Some(6144);
+        game.apply_settings(&settings);
+        assert!(game.use_game_settings);
+        assert_eq!(game.max_memory, 6144);
+        assert_eq!(game.to_game_settings().use_game_settings, true);
+
+        let record: Game = serde_json::from_str(&serde_json::to_string(&game).unwrap()).unwrap();
+        assert!(record.use_game_settings);
+
+        // 仅携带开关的增量更新（其余字段 None），关闭独立设置不应清除已保存的值
+        let disable: GameSettings =
+            serde_json::from_value(serde_json::json!({ "use_game_settings": false })).unwrap();
+        game.apply_settings(&disable);
+        assert!(!game.use_game_settings);
+        assert_eq!(game.max_memory, 6144, "关闭独立设置不应清除已保存的值");
     }
 }

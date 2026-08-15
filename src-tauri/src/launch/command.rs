@@ -3,12 +3,11 @@
 use tauri::State;
 
 use crate::{
-    LaunchConfig, LaunchGameInfo, LaunchStatus, LaunchStatusInfo, app_context::AppContext,
-    download::DownloadManager,
-    game::GameManager,
+    GameLogResult, LaunchConfig, LaunchGameInfo, LaunchStatus, LaunchStatusInfo,
+    app_context::AppContext, download::DownloadManager, game::GameManager,
     launch::{
-        get_launch_config, get_launch_games, get_launch_status, get_launch_status_by_key,
-        launch_game, stop_game, update_launch_config,
+        get_game_log, get_launch_config, get_launch_games, get_launch_status,
+        get_launch_status_by_key, launch_game, stop_game, update_launch_config,
     },
 };
 
@@ -57,4 +56,10 @@ pub fn front_get_launch_config() -> Result<LaunchConfig, String> {
 #[tauri::command]
 pub fn front_update_launch_config(config: LaunchConfig) -> Result<String, String> {
     update_launch_config(config)
+}
+
+/// 前端命令：增量拉取指定游戏的捕获日志（offset 为上次游标，0 表示全量）
+#[tauri::command]
+pub fn front_get_game_log(game_id: String, offset: usize) -> Result<GameLogResult, String> {
+    Ok(get_game_log(&game_id, offset))
 }

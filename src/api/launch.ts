@@ -2,7 +2,12 @@ import { InvokeOptions } from "@tauri-apps/api/core";
 import { invokeRust } from "./client";
 import { logger } from "@/helper/logger";
 import { LaunchStatus } from "./types/launch";
-import type { LaunchConfig, LaunchGameInfo, LaunchStatusInfo } from "./types/launch";
+import type {
+  GameLogResult,
+  LaunchConfig,
+  LaunchGameInfo,
+  LaunchStatusInfo,
+} from "./types/launch";
 
 /**
  * 启动 Minecraft 游戏（成功返回游戏会话唯一 ID，同一游戏目录可多开）
@@ -135,4 +140,23 @@ export const invokeUpdateLaunchConfig = async (
   }
   logger.info('更新启动配置', { config });
   return await invokeRust("front_update_launch_config", { config }, options);
+};
+
+/**
+ * 增量拉取指定游戏会话的捕获日志
+ * @param gameId 游戏会话唯一 ID
+ * @param offset 上次拉取游标（0 表示全量）
+ * @param options Tauri invoke 选项
+ * @returns 日志增量 + 新游标
+ */
+export const invokeGetGameLog = async (
+  gameId: string,
+  offset: number,
+  options?: InvokeOptions
+): Promise<GameLogResult> => {
+  const result = await invokeRust("front_get_game_log", { gameId, offset }, options);
+  if (typeof result !== 'object' || result === null || !Array.isArray(result.lines)) {
+    throw new Error("无效的游戏日志格式");
+  }
+  return result as GameLogResult;
 };

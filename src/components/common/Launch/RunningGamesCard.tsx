@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Gamepad2, Loader2, Square, ChevronUp } from 'lucide-react';
 import { getCurrentAccount, getGame, getLaunchGames, stopGame, type AccountInfo } from '@/helper/rustInvoke';
-import { Game, LaunchStatus, type LaunchGameInfo } from '@/api';
+import { AccountType, Game, LaunchStatus, type LaunchGameInfo } from '@/api';
 import { DURATION, EASING } from '@/utils/animations';
 import { Z_INDEX } from '@/utils/zIndex';
 import LaunchingOverlay from './LaunchingOverlay';
@@ -26,15 +26,15 @@ const RunningGamesCard = () => {
   const [stoppingId, setStoppingId] = useState<string | null>(null);
   const [shownSession, setShownSession] = useState<{ gameId: string } | null>(null);
   const [shownGame, setShownGame] = useState<Game | null>(null);
-  const [accountName, setAccountName] = useState<string>('Steve');
+  const [accountInfo, setAccountInfo] = useState<AccountInfo | null>(null);
 
   const loadProfile = useLoadingAction({
     key: 'home:profile',
     action: async () => {
       try {
         const currentAccount: AccountInfo | null = await getCurrentAccount();
-        if (currentAccount?.name) {
-          setAccountName(currentAccount.name);
+        if (currentAccount) {
+          setAccountInfo(currentAccount);
         }
       } catch (error) {
         console.error('加载账户信息失败:', error);
@@ -69,7 +69,13 @@ const RunningGamesCard = () => {
       <LaunchingOverlay
         gameId={shownSession.gameId}
         game={shownGame}
-        username={accountName}
+        accountInfo={accountInfo ?? {
+          name: 'Steve',
+          uuid: '',
+          account_type: AccountType.Offline,
+          create_time: '',
+          last_login_time: null,
+        }}
         onExit={() => setShownSession(null)}
       />
     );

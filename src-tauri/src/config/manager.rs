@@ -1,5 +1,6 @@
 use crate::app_context::AppContext;
 use crate::config::{ConfigManager, MIN_HEIGHT, MIN_WIDTH, SystemConfig, WindowPosition};
+use crate::game::models::GameSettings;
 use crate::log_info;
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::Value;
@@ -70,6 +71,22 @@ impl ConfigManager {
             "login" => config.window_positions.login = Some(pos),
             _ => return Err(format!("未知窗口类型: {}", label)),
         }
+        *self.config.lock().map_err(|e| e.to_string())? = config;
+        self.save()
+    }
+
+    // ==================== 全局游戏设置（未启用独立设置时的默认值） ====================
+
+    /// 获取全局游戏设置
+    pub fn get_global_game_settings(&self) -> Result<GameSettings, String> {
+        self.get_config().map(|config| config.game_settings)
+    }
+
+    /// 更新全局游戏设置（增量合并，忽略 None 字段；强制独立开关为 false）
+    pub fn update_global_game_settings(&self, settings: &GameSettings) -> Result<(), String> {
+        let mut config = self.get_config()?;
+        config.game_settings.apply_update(settings);
+        config.game_settings.use_game_settings = false;
         *self.config.lock().map_err(|e| e.to_string())? = config;
         self.save()
     }
@@ -253,5 +270,23 @@ mod tests {
         assert_eq!(pos.y, 1);
         assert_eq!(pos.width, MIN_WIDTH);
         assert_eq!(pos.height, MIN_HEIGHT);
+    }
+
+    #[test]
+    fn global_game_settings_roundtrip() {
+        let (manager, _dir) = manager("config-global-gs");
+
+        let mut update = crate::game::models::GameSettings::default();
+        update.max_memory = Some(6144);
+        update.use_game_settings = true; // 全局更新必须忽略该开关
+        manager.update_global_game_settings(&update).unwrap();
+
+        let global = manager.get_global_game_settings().unwrap();
+        assert_eq!(global.max_memory, Some(6144));
+        assert!(!global.use_game_settings, "全局设置不允许启用独立开关");
+
+        // 重载后仍保留（同一 ConfigManager 缓存 + 磁盘）
+        let reloaded = ConfigManager::new(manager.ctx.clone());
+        assert_eq!(reloaded.get_global_game_settings().unwrap().max_memory, Some(6144));
     }
 }

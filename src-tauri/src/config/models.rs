@@ -4,6 +4,7 @@ use std::sync::Mutex;
 use serde::{Deserialize, Serialize};
 
 use crate::app_context::AppContext;
+use crate::game::models::GameSettings;
 
 /// 配置文件版本
 pub const CONFIG_VERSION: u32 = 1;
@@ -60,6 +61,10 @@ pub struct SystemConfig {
     #[serde(default)]
     pub window_positions: WindowPositions,
 
+    /// 全局游戏设置（未启用游戏独立设置时的默认值，所有游戏共用）
+    #[serde(default)]
+    pub game_settings: GameSettings,
+
     /// 配置文件版本
     #[serde(default = "default_version")]
     pub version: u32,
@@ -74,6 +79,7 @@ impl Default for SystemConfig {
         Self {
             game_root: PathBuf::new(),
             window_positions: WindowPositions::default(),
+            game_settings: GameSettings::default(),
             version: CONFIG_VERSION,
         }
     }

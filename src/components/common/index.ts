@@ -44,6 +44,11 @@ export { default as Overlay } from './Loading/Overlay';
 /** 遮罩层 Props */
 export type { OverlayProps } from './Loading/Overlay';
 
+/** 游戏日志查看器组件 */
+export { default as GameLogViewer } from './Launch/GameLogViewer';
+/** 游戏日志查看器 Props */
+export type { GameLogViewerProps } from './Launch/GameLogViewer';
+
 /** 通知 Provider 及 useNotification Hook */
 export {
   NotificationProvider,

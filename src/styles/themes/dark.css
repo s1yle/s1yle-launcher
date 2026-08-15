@@ -61,7 +61,7 @@
   --color-info-15: rgba(96, 165, 250, 0.15);
 
   /* 特效系统 - 完全适配彩色背景 */
-  --color-overlay: rgba(0, 0, 0, 0.55);
+  --color-overlay: rgba(0, 0, 0, 0.42);
   --color-backdrop-blur: var(--blur-value, 16px);
   --color-context-bg: rgba(29, 58, 84, 0.95);
   --color-context-border: rgba(255, 255, 255, 0.12);

@@ -14,6 +14,7 @@
   "delete_account",
   "delete_game",
   "download",
+  "front_get_game_log",
   "front_get_launch_config",
   "front_get_launch_games",
   "front_get_launch_status",
@@ -37,6 +38,7 @@
   "get_game",
   "get_game_root",
   "get_game_settings",
+  "get_global_game_settings",
   "get_installed_mod_loaders",
   "get_java_version",
   "get_login_state",
@@ -84,5 +86,6 @@
   "unbind_player_from_admin",
   "update_game",
   "update_game_settings",
+  "update_global_game_settings",
   "validate_game"
 ]

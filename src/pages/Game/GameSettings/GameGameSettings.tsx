@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/stores/gameStore';
 import { logger } from '@/helper/logger';
 import { useSafeNavigate } from '@/router/navigation';
-import { getGameSettings, updateGameSettings, GameSettings, selectJavaPath, scanJavaInstallations, JavaInstallation, getMemoryUsage, getDisplayResolutions } from '@/helper/rustInvoke';
+import { getGameSettings, updateGameSettings, getGlobalGameSettings, updateGlobalGameSettings, GameSettings, selectJavaPath, scanJavaInstallations, JavaInstallation, getMemoryUsage, getDisplayResolutions } from '@/helper/rustInvoke';
 import { SettingsPanel, Toggle, Slider, useNotification, Page, PageSection } from '@/components/common';
 import PartitionBar, { getPartitionColor } from '@/components/common/PartitionBar';
 import { DropDownOption } from '@/components/common/DropDown';
@@ -21,6 +21,10 @@ const GameGameSettings = () => {
   const { success, error: notifyError } = useNotification();
 
   const [settings, setSettings] = useState<GameSettings>({});
+  // 全局游戏设置（未启用独立设置时，界面展示/编辑的就是它，对所有游戏生效）
+  const [globalSettings, setGlobalSettings] = useState<GameSettings>({});
+  // 游戏独立设置原始值（加载时拉取；切换开关时作为恢复基线）
+  const gameSettingsRef = useRef<GameSettings>({});
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [javaPaths, setJavaPaths] = useState<JavaInstallation[]>([]);
   const [systemMemory, setSystemMemory] = useState(0);
@@ -73,13 +77,25 @@ const GameGameSettings = () => {
     const loadSettings = async () => {
       try {
         setSettingsLoading(true);
-        const loadedSettings = await getGameSettings(game.name);
+        const [loadedSettings, global] = await Promise.all([
+          getGameSettings(game.name),
+          getGlobalGameSettings(),
+        ]);
         console.log('[GameSettings] Loaded settings:', loadedSettings);
-        setSettings(loadedSettings);
-        lastSavedSettings.current = JSON.stringify(loadedSettings);
+        console.log('[GameSettings] Global settings:', global);
+        setGlobalSettings(global);
+        gameSettingsRef.current = loadedSettings;
+
+        // 未启用独立设置 → 界面展示/编辑全局设置；启用 → 展示/编辑游戏独立设置
+        const merged = loadedSettings.use_game_settings
+          ? { ...loadedSettings }
+          : { ...global, use_game_settings: false };
+
+        setSettings(merged);
+        lastSavedSettings.current = JSON.stringify(merged);
         isInitialLoad.current = true;
         // 开关状态与持久化配置同步（无 min/max 即自动分配中）
-        setAutoMemory(!loadedSettings.min_memory && !loadedSettings.max_memory);
+        setAutoMemory(!merged.min_memory && !merged.max_memory);
 
         // 扫描常见的 Java 安装路径
         const commonJavaPaths = await scanCommonJavaPaths();
@@ -136,7 +152,12 @@ const GameGameSettings = () => {
     const timer = setTimeout(async () => {
       try {
         console.log('[GameSettings] Saving settings:', settings);
-        await updateGameSettings(game.name, settings);
+        // 启用独立设置 → 保存到当前游戏；未启用 → 保存到全局设置
+        if (settings.use_game_settings) {
+          await updateGameSettings(game.name, settings);
+        } else {
+          await updateGlobalGameSettings(settings);
+        }
         lastSavedSettings.current = currentSettingsStr;
         success(t('settings.saved', '设置已保存'));
       } catch (e) {
@@ -185,12 +206,37 @@ const GameGameSettings = () => {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
+  // 切换“使用游戏独立设置”
+  // - 启用：以全局设置（或此前已保存的独立设置）为基线赋给当前游戏并立即落盘
+  // - 关闭：仅写回开关（保留已保存的独立值，再次启用时恢复）；界面上回到全局设置
+  const handleUseGameSettingsChange = async (checked: boolean) => {
+    try {
+      if (checked) {
+        const base = gameSettingsRef.current.use_game_settings
+          ? { ...gameSettingsRef.current }
+          : { ...globalSettings };
+        const next = { ...base, use_game_settings: true };
+        gameSettingsRef.current = next;
+        setSettings(next);
+        lastSavedSettings.current = JSON.stringify(next);
+        await updateGameSettings(game.name, next);
+      } else {
+        setSettings({ ...globalSettings, use_game_settings: false });
+        await updateGameSettings(game.name, { use_game_settings: false });
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      notifyError(t('settings.saveFailed', '保存设置失败'), msg);
+    }
+  };
+
   // 内存自动分配开关（显式状态 state，加载时从配置同步）
   const handleAutoMemoryChange = (checked: boolean) => {
     setAutoMemory(checked);
     if (checked) {
-      // 自动分配: 剩余空隙 = total - (已用 + 游戏分配)
-      // 推荐最大值 = 可用内存 - 2G（系统/浏览器预留），下限 1G，上限不超总内存
+      // 自动分配：把当前推荐值真正写入设置（防抖落盘），保证启动时使用的是实际分配值
+      updateSetting('min_memory', 1024);
+      updateSetting('max_memory', recommendedMemory);
     } else {
       updateSetting('min_memory', 1024);
       updateSetting('max_memory', 2048);
@@ -204,14 +250,14 @@ const GameGameSettings = () => {
     return `${mb} MB`;
   };
 
-  // PCL 语义：可用 = 总 - 已用；游戏分配 part 与滑块同源（min_memory 设定值），
+// PCL 语义：可用 = 总 - 已用；游戏分配 part 与滑块同源（max_memory = -Xmx，启动实际分配值），
   // 自动分配时实时展示: 剩余空隙 = total - (已用 + 游戏分配)
   const availMemory = Math.max(0, systemMemory - usedMemory);
   // HMCL 风格推荐值：可用内存 - 2G（系统/浏览器预留），下限 1G，上限不超总内存
   const recommendedMemory = Math.max(1024, Math.min(availMemory - 2048, systemMemory || 16384));
   const gameMemory = autoMemory
     ? Math.min(recommendedMemory, availMemory)
-    : Math.min(settings.min_memory || 4096, availMemory);
+    : Math.min(settings.max_memory || 2048, availMemory);
   const gapMemory = Math.max(0, availMemory - gameMemory);
 
   // 扫描系统中已安装的 Java
@@ -270,12 +316,15 @@ const GameGameSettings = () => {
             label={'基础设置 - ' + game.name}
           >
           <Toggle
-            label={t('settings.useGameSettings', '启用游戏特定游戏设置')}
+            label={t('settings.useGameSettings', '使用游戏独立设置')}
             bgHidden
             checked={settings.use_game_settings || false}
-            onChange={(checked) => updateSetting('use_game_settings', checked)}
+            onChange={handleUseGameSettingsChange}
             disabled={settingsLoading}
           />
+          <p className="text-xs text-text-tertiary px-4 pb-2">
+            {t('settings.useGameSettingsDesc', '未启用时，修改将应用于所有游戏（全局设置）；启用后，以下设置将仅应用于当前游戏')}
+          </p>
 
           {/* 基础设置 */}
           <SettingsPanel.Item
@@ -328,18 +377,20 @@ const GameGameSettings = () => {
                 className='mt-3'
               />
 
-              {/* 最低内存滑块（自动分配时整行隐藏）；填充色与条上"游戏分配"段同浅色 */}
+              {/* 内存分配滑块（-Xmx，启动实际使用的最大堆内存）；最低内存仅做展示/随动，不参与启动 */}
               {!autoMemory && (
                 <Slider
-                  value={settings.min_memory || 4096}
+                  value={settings.max_memory || 2048}
                   min={512}
                   max={systemMemory || 16384}
                   step={256}
                   onChange={(v) => {
-                    updateSetting('min_memory', v);
-                    updateSetting('max_memory', Math.max(v, settings.max_memory || 4096));
+                    updateSetting('max_memory', v);
+                    if (Math.min(settings.min_memory ?? 1024, v) !== (settings.min_memory ?? 1024)) {
+                      updateSetting('min_memory', v);
+                    }
                   }}
-                  label={t('settings.minMemory', '最低内存')}
+                  label={t('settings.memoryDesc', '分配给游戏的最大内存')}
                   unit="MB"
                   fillColor={getPartitionColor({ level: 2 })}
                   clampMax={systemMemory || 16384}
@@ -361,7 +412,7 @@ const GameGameSettings = () => {
                     value: gameMemory,
                     // 分配占满可用内存时（gap 为 0）才展示"（可用 X GB）"后缀
                     dataText: gapMemory === 0
-                      ? `${formatMemory(settings.min_memory ? settings.min_memory : -1)}（${t('settings.memoryAvailable', '可用')} ${formatMemory(availMemory)}）`
+                      ? `${formatMemory(settings.max_memory ? settings.max_memory : -1)}（${t('settings.memoryAvailable', '可用')} ${formatMemory(availMemory)}）`
                       : formatMemory(gameMemory),
                     level: 2,
                   },

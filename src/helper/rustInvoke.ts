@@ -7,7 +7,6 @@ import * as __ from "@/api";
 export const getAccountList = __.invokeGetAccountList;
 /** 获取当前选中的账户 */
 export const getCurrentAccount = __.invokeGetCurrentAccount;
-export const getCurrentAccountToken = __.invokeGetCurrentAccountToken;
 /** 删除指定账户 */
 export const deleteAccount = __.invokeDeleteAccount;
 /** 设置当前激活的账户 */
@@ -27,6 +26,8 @@ export const getLaunchGames = __.invokeGetLaunchGames;
 export const getLaunchConfig = __.invokeGetLaunchConfig;
 /** 更新启动配置 */
 export const updateLaunchConfig = __.invokeUpdateLaunchConfig;
+/** 增量拉取指定游戏会话的捕获日志 */
+export const getGameLog = __.invokeGetGameLog;
 
 /** 获取版本清单 */
 export const getVersionManifest = __.invokeGetVersionManifest;
@@ -69,6 +70,10 @@ export const scanGames = __.invokeScanGames;
 export const getGameSettings = __.invokeGetGameSettings;
 /** 更新游戏设置 */
 export const updateGameSettings = __.invokeUpdateGameSettings;
+/** 获取全局游戏设置 */
+export const getGlobalGameSettings = __.invokeGetGlobalGameSettings;
+/** 更新全局游戏设置 */
+export const updateGlobalGameSettings = __.invokeUpdateGlobalGameSettings;
 /** 获取系统内存信息 */
 export const getSystemMemory = __.invokeGetSystemMemory;
 /** 获取系统内存使用情况（[已用, 总] MB） */

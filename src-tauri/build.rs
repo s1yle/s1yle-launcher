@@ -133,6 +133,8 @@ fn main() {
             "set_game_root",
             "get_game_settings",
             "update_game_settings",
+            "get_global_game_settings",
+            "update_global_game_settings",
             "validate_game",
         ]),
     ))

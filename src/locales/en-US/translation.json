@@ -252,7 +252,9 @@
     "autoSelectGame": "Auto-select Game",
     "downloadSource": "Download Source",
     "general": "General",
-    "advanced": "Advanced"
+    "advanced": "Advanced",
+    "useGameSettings": "Use game-specific settings",
+    "useGameSettingsDesc": "When disabled, changes apply to all games (global settings). When enabled, the settings below apply only to this game."
   },
   "multiplayer": {
     "title": "Multiplayer",

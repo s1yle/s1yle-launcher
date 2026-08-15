@@ -428,9 +428,9 @@ pub(super) fn build_launch_args(
     // ---- JVM 参数 ----
     let mut jvm_args: Vec<String> = Vec::new();
 
-    // 内存参数
+    // 内存参数（PCL 语义：滑块只映射 -Xmx；初始堆 -Xms 不自动生成，
+    // 交由 JVM 默认策略，用户可在自定义 JVM 参数中手动指定）
     jvm_args.push(format!("-Xmx{}M", config.memory_mb));
-    jvm_args.push(format!("-Xms{}M", config.memory_mb / 2));
 
     // log4j 配置
     if let Some(logging_path) = merged["logging"]["client"]["file"]["path"].as_str() {

@@ -34,6 +34,25 @@ export interface LaunchGameInfo {
   stage: string;
 }
 
+/** 游戏日志等级 */
+export type GameLogLevel = 'info' | 'warn' | 'error' | 'fatal';
+
+/** 单条游戏日志行 */
+export interface GameLogLine {
+  /** 日志等级 */
+  level: GameLogLevel;
+  /** 日志文本 */
+  text: string;
+}
+
+/** 日志增量拉取结果 */
+export interface GameLogResult {
+  /** 下次拉取的游标位置 */
+  offset: number;
+  /** 本段日志行 */
+  lines: GameLogLine[];
+}
+
 /** 指定游戏会话的状态 + 进度快照 */
 export interface LaunchStatusInfo {
   /** 启动状态 */
@@ -42,6 +61,10 @@ export interface LaunchStatusInfo {
   progress: number;
   /** 当前阶段文案 */
   stage: string;
+  /** 最近一次错误信息 */
+  last_error?: string | null;
+  /** 崩溃原因摘要（崩溃时生成） */
+  crash_summary?: string | null;
 }
 
 /** 游戏启动配置 */

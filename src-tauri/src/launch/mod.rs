@@ -5,9 +5,10 @@
 
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
+use core::convert::{From, Into};
 use std::collections::HashMap;
-use std::path::PathBuf;
-use std::process::{Child, Command};
+use std::path::{Path, PathBuf};
+use std::process::{Child, Command, Stdio};
 use std::sync::{Mutex, MutexGuard};
 use uuid::Uuid;
 
@@ -20,7 +21,10 @@ use crate::log_info;
 
 mod args;
 pub mod command;
+mod log;
+mod window;
 pub use command::*;
+pub use log::{GameLogResult, LogLevel, LogLine};
 
 // ======================== 类型定义 ========================
 
@@ -131,6 +135,11 @@ pub struct LaunchGameInfo {
     pub stage: String,
 }
 
+/// 增量拉取指定游戏的日志（游标式，offset=0 时返回全部现存日志）
+pub fn get_game_log(game_id: &str, offset: usize) -> GameLogResult {
+    log::get_game_log(game_id, offset)
+}
+
 /// 指定游戏的状态 + 进度快照（暴露给前端）
 #[derive(Serialize, Clone, Debug)]
 pub struct LaunchStatusInfo {
@@ -140,6 +149,12 @@ pub struct LaunchStatusInfo {
     pub progress: u32,
     /// 当前阶段文案
     pub stage: String,
+    /// 最近一次错误信息
+    #[serde(default)]
+    pub last_error: Option<String>,
+    /// 崩溃原因摘要（崩溃时生成）
+    #[serde(default)]
+    pub crash_summary: Option<String>,
 }
 
 /// 单个游戏的运行时状态
@@ -150,6 +165,12 @@ struct RunningGame {
     last_error: Option<String>,
     progress: u32,
     stage: String,
+    /// 进程退出码（Running 态退出时记录）
+    exit_code: Option<i32>,
+    /// 崩溃原因摘要（分析日志生成）
+    crash_summary: Option<String>,
+    /// 日志缓冲键（与 start_capture 使用的 game_id 一致）
+    log_key: String,
 }
 
 /// 启动管理器状态（多子进程，以每次启动生成的游戏 ID 为 key）
@@ -195,11 +216,18 @@ fn update_process_status(game: &mut RunningGame) -> Result<(), String> {
         if let Some(child) = &mut game.child_process {
             match child.try_wait() {
                 Ok(Some(status)) => {
+                    game.exit_code = status.code();
                     game.status = if status.success() {
                         LaunchStatus::Stopped
                     } else {
                         LaunchStatus::Crashed
                     };
+                    if game.status == LaunchStatus::Crashed {
+                        let summary = analyze_crash(&game);
+                        game.crash_summary = summary;
+                    } else {
+                        game.crash_summary = None;
+                    }
                     game.child_process = None;
                 }
                 Ok(None) => {}
@@ -260,10 +288,61 @@ fn set_game_failed(game_id: &str, error: &str) {
         if let Some(game) = manager.processes.get_mut(game_id) {
             game.status = LaunchStatus::Crashed;
             game.last_error = Some(error.to_string());
+            if game.crash_summary.is_none() {
+                game.crash_summary = analyze_crash(game);
+            }
             game.child_process = None;
         }
     }
     log_info!("❌ {}: {}", game_id, error);
+}
+
+/// 崩溃原因分析：扫描捕获日志做关键词启发式匹配，并检索 JVM 崩溃报告文件。
+/// 返回可读摘要；无命中时返回 None（前端展示 last_error）。
+fn analyze_crash(game: &RunningGame) -> Option<String> {
+    let logs = log::scan_logs(&game.log_key, MAX_CRASH_SCAN_LINES);
+    let joined = logs
+        .iter()
+        .map(|l| l.text.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    if joined.contains("OutOfMemoryError") || joined.contains("Out of memory") {
+        return Some("游戏内存不足 (OutOfMemoryError)，建议在设置中增大分配内存".to_string());
+    }
+    if joined.contains("UnsupportedClassVersionError") {
+        return Some("Java 版本不匹配 (UnsupportedClassVersionError)，请安装更新的 Java".to_string());
+    }
+    if joined.contains("NoClassDefFoundError") {
+        return Some("缺失类或依赖 (NoClassDefFoundError)，可能是模组或游戏文件损坏".to_string());
+    }
+    if joined.contains("A fatal error has been detected by the Java Runtime Environment") {
+        return Some("JVM 发生致命错误，已检索崩溃报告".to_string());
+    }
+
+    let game_dir = PathBuf::from(&game.config.game_dir);
+    if find_by_prefix(&game_dir, "hs_err_pid").is_some() {
+        return Some("检测到 JVM 崩溃报告 (hs_err_pid*.log)，可在游戏目录中查看".to_string());
+    }
+    if game_dir.join("crash-reports").join("latest-crash.txt").exists() {
+        return Some("检测到游戏崩溃报告 (crash-reports/latest-crash.txt)".to_string());
+    }
+    None
+}
+
+/// 崩溃扫描的最大日志行数（取尾部）
+const MAX_CRASH_SCAN_LINES: usize = 200;
+
+/// 目录下是否有以指定前缀命名的文件
+fn find_by_prefix(dir: &Path, prefix: &str) -> Option<PathBuf> {
+    let entries = std::fs::read_dir(dir).ok()?;
+    for entry in entries.flatten() {
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name.starts_with(prefix) {
+            return Some(entry.path());
+        }
+    }
+    None
 }
 
 /// 启动 Minecraft 游戏：立即返回游戏唯一 ID（同一游戏目录可并行启动多次），
@@ -292,6 +371,9 @@ pub fn launch_game(
             last_error: None,
             progress: 0,
             stage: "正在初始化".to_string(),
+            exit_code: None,
+            crash_summary: None,
+            log_key: game_id.clone(),
         });
     drop(manager);
 
@@ -422,8 +504,8 @@ async fn run_launch_pipeline(
         }
     };
 
-    // ====== 阶段 4: 启动 Java 进程（90% → 100%） ======
-    set_game_progress(game_id, 95, "正在启动 Java 进程");
+    // ====== 阶段 4: 启动 Java 进程并等待游戏窗口出现（90% → 100%） ======
+    set_game_progress(game_id, 95, "正在启动游戏窗口");
 
     // 启动前检查：用户可能已在后台阶段停止该游戏
     let cancelled = lock_manager()
@@ -442,24 +524,117 @@ async fn run_launch_pipeline(
     match Command::new(&config.java_path)
         .args(&launch_args)
         .current_dir(&game_dir)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .spawn()
     {
-        Ok(child) => {
+        Ok(mut child) => {
+            log::start_capture(game_id, &mut child);
             if let Ok(mut manager) = lock_manager() {
                 if let Some(game) = manager.processes.get_mut(game_id) {
                     game.child_process = Some(child);
-                    game.status = LaunchStatus::Running;
-                    game.progress = 100;
-                    game.stage = "游戏运行中".to_string();
                 }
             }
-            log_info!("✅ Minecraft 启动成功: {}", game_id);
+            log_info!("✅ Minecraft Java 进程已启动: {}", game_id);
             log_info!("  主类: {}", main_class);
+            wait_for_game_window(game_id).await;
         }
         Err(e) => {
             let error_msg = format!("启动失败: {}", e);
             set_game_failed(game_id, &error_msg);
         }
+    }
+}
+
+/// 等待游戏窗口出现后置为 Running（每 500ms 检测一次，最长 90 秒兜底）。
+/// 期间用户可停止游戏；进程提前退出视为启动失败。
+async fn wait_for_game_window(game_id: &str) {
+    use std::time::{Duration, Instant};
+
+    let pid = lock_manager()
+        .ok()
+        .and_then(|m| {
+            m.processes
+                .get(game_id)
+                .and_then(|g| g.child_process.as_ref())
+                .map(|c| c.id())
+        })
+        .unwrap_or(0);
+    if pid == 0 {
+        set_game_failed(game_id, "启动失败: 无法获取游戏进程");
+        return;
+    }
+
+    let deadline = Instant::now() + Duration::from_secs(90);
+    loop {
+        // 1. 进程是否已退出或已被用户停止
+        if let Ok(mut manager) = lock_manager() {
+            if let Some(game) = manager.processes.get_mut(game_id) {
+                match game.child_process.as_mut().map(|c| c.try_wait()) {
+                    Some(Ok(Some(status))) => {
+                        game.exit_code = status.code();
+                        let msg = format!("启动失败: 游戏进程已退出 (代码 {})", game.exit_code.unwrap_or(-1));
+                        set_game_failed(game_id, &msg);
+                        return;
+                    }
+                    Some(Ok(None)) => {}
+                    Some(Err(e)) => {
+                        let msg = format!("启动失败: 检查进程状态出错: {}", e);
+                        set_game_failed(game_id, &msg);
+                        return;
+                    }
+                    None => {
+                        // child 已被 stop_one 取走，说明用户停止了游戏
+                        log_info!("等待窗口期间游戏 {} 已被停止", game_id);
+                        return;
+                    }
+                }
+            } else {
+                return;
+            }
+        }
+
+        // 2. 检测游戏窗口是否出现
+        if crate::launch::window::process_has_visible_window(pid) {
+            if let Ok(mut manager) = lock_manager() {
+                if let Some(game) = manager.processes.get_mut(game_id) {
+                    game.status = LaunchStatus::Running;
+                    game.progress = 100;
+                    game.stage = "游戏运行中".to_string();
+                }
+            }
+            log_info!("🎮 Minecraft 窗口已出现，进入运行状态: {}", game_id);
+            return;
+        }
+
+        // 3. 超时兜底：进程仍存活则视为运行中
+        if Instant::now() >= deadline {
+            let alive = if let Ok(mut manager) = lock_manager() {
+                manager
+                    .processes
+                    .get_mut(game_id)
+                    .and_then(|g| g.child_process.as_mut())
+                    .map(|c| c.try_wait().map(|w| w.is_none()).unwrap_or(false))
+                    .unwrap_or(false)
+            } else {
+                false
+            };
+            if alive {
+                if let Ok(mut manager) = lock_manager() {
+                    if let Some(game) = manager.processes.get_mut(game_id) {
+                        game.status = LaunchStatus::Running;
+                        game.progress = 100;
+                        game.stage = "游戏运行中".to_string();
+                    }
+                }
+                log_info!("⏱ 等待窗口超时，进程存活，按运行中处理: {}", game_id);
+                return;
+            }
+            set_game_failed(game_id, "启动失败: 等待游戏窗口超时");
+            return;
+        }
+
+        tokio::time::sleep(Duration::from_millis(500)).await;
     }
 }
 
@@ -608,12 +783,16 @@ pub fn get_launch_status_by_key(game_id: &str) -> Result<LaunchStatusInfo, Strin
                 status: game.status.clone(),
                 progress: game.progress,
                 stage: game.stage.clone(),
+                last_error: game.last_error.clone(),
+                crash_summary: game.crash_summary.clone(),
             })
         }
         None => Ok(LaunchStatusInfo {
             status: LaunchStatus::Idle,
             progress: 0,
             stage: String::new(),
+            last_error: None,
+            crash_summary: None,
         }),
     }
 }
@@ -669,6 +848,9 @@ mod tests {
             last_error: None,
             progress: 0,
             stage: String::new(),
+            exit_code: None,
+            crash_summary: None,
+            log_key: String::new(),
         }
     }
 

@@ -20,7 +20,7 @@ const Home = () => {
   // 空壳游戏（目录内除记录外无任何文件）前端不显示启动入口
   const isShellEmpty = selectedGame && gameReports[selectedGame.id]?.empty;
 
-  const [accountName, setAccountName] = useState<string>('Steve');
+  const [curAccountInfo, setCurAccountInfo] = useState<AccountInfo | null>(null);
   const [launchSession, setLaunchSession] = useState<{ gameId: string } | null>(null);
 
   const loadProfile = useLoadingAction({
@@ -29,7 +29,7 @@ const Home = () => {
       try {
         const currentAccount: AccountInfo | null = await getCurrentAccount();
         if (currentAccount?.name) {
-          setAccountName(currentAccount.name);
+          setCurAccountInfo(currentAccount);
         }
       } catch (error) {
         console.error('加载账户信息失败:', error);
@@ -59,7 +59,7 @@ const Home = () => {
         ) : (
           <LoadingSurface loadingKey="home:profile" skeleton="profile">
             <PlayerProfile
-              name={accountName}
+              name={curAccountInfo?.name ? curAccountInfo.name : "Steve"}
               role={currentRole}
             />
           </LoadingSurface>
@@ -72,11 +72,11 @@ const Home = () => {
 
       {currentRole !== UserRole.ADMIN && <RunningGamesCard />}
 
-      {launchSession && selectedGame && (
+      {launchSession && selectedGame && curAccountInfo && (
         <LaunchingOverlay
           game={selectedGame}
           gameId={launchSession.gameId}
-          username={accountName}
+          accountInfo={curAccountInfo}
           onExit={() => setLaunchSession(null)}
         />
       )}

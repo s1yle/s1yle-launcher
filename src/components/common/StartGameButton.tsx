@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Loader2, Gamepad2 } from 'lucide-react';
-import { launchGame, getCurrentAccount, getCurrentAccountToken } from '../../helper/rustInvoke';
+import { motion } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
+import { launchGame, getCurrentAccount, getGameSettings, getGlobalGameSettings } from '../../helper/rustInvoke';
 import { useGameStore } from '../../stores/gameStore';
 import type { AccountInfo } from '../../helper/rustInvoke';
 import { useNotification } from './NotificationProvider';
+import { fadeInUp } from '@/utils/animations';
 
 /** 启动游戏按钮组件 Props */
 export interface StartGameButtonProps {
@@ -40,15 +42,19 @@ const ActionButton = ({ onLaunched, className }: StartGameButtonProps) => {
 
     setIsLoading(true);
     try {
+      // 启动前实时拉取最新设置（避免设置页保存后 store 快照过期）；
+      // 未启用独立设置时使用全局设置，启用时才使用游戏独立设置
+      const [gameSettings, globalSettings] = await Promise.all([
+        getGameSettings(selectedGame.name),
+        getGlobalGameSettings(),
+      ]);
+      const settings = gameSettings.use_game_settings ? gameSettings : globalSettings;
+      const javaPath = settings.java_path || 'java';
+      const maxMemory = settings.max_memory || 2048;
+
       const username = currentAccount?.name || 'Steve';
       const uuid = currentAccount?.uuid || '069a79f4-44e9-4726-a5be-fca90e38aaf5';
       const accountType = currentAccount?.account_type || 'offline';
-      const accountToken = await getCurrentAccountToken();
-      const accessToken = accountType === 'microsoft' ? accountToken || undefined : undefined;
-
-      const settings = selectedGame.game_settings;
-      const javaPath = settings?.java_path || 'java';
-      const maxMemory = settings?.max_memory || 2048;
 
       const gameId = await launchGame({
         java_path: javaPath,
@@ -59,11 +65,10 @@ const ActionButton = ({ onLaunched, className }: StartGameButtonProps) => {
         natives_dir: `${selectedGame.path}/versions/${selectedGame.version_id}/natives`,
         username,
         uuid,
-        access_token: accessToken,
         account_type: accountType,
-        jvm_args: settings?.jvm_args || [],
-        resolution_width: settings?.width,
-        resolution_height: settings?.height,
+        jvm_args: settings.jvm_args || [],
+        resolution_width: settings.width,
+        resolution_height: settings.height,
       });
 
       onLaunched?.(gameId);
@@ -75,14 +80,20 @@ const ActionButton = ({ onLaunched, className }: StartGameButtonProps) => {
   };
 
   return (
-    <div className="fixed bottom-8 right-8 flex flex-col items-center space-y-1">
+    <motion.div
+      variants={fadeInUp}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+     className="fixed bottom-8 right-8 flex flex-col items-center space-y-1"
+    >
 
       <button
         onClick={handleLaunch}
         disabled={isLoading}
         className={`
         group relative overflow-hidden
-        bg-(--color-primary) hover:bg-(--color-primary-hover)
+        bg-(--color-primary-bg) hover:bg-(--color-primary-hover)/70
         py-4 rounded-(--radius-sm)
         transition-all duration-300
         disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer
@@ -98,16 +109,18 @@ const ActionButton = ({ onLaunched, className }: StartGameButtonProps) => {
           </div>
         ) : (
           <>
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 text-(--color-text-primary)">
               <span className="text-base/2 font-light tracking-wide">启动游戏</span>
             </div>
-            <span className="text-xs font-light opacity-90 mt-2.5 tracking-wider uppercase">
+            <span className="text-xs font-light opacity-90 mt-2.5 
+              tracking-wider uppercase text-(--color-text-primary)"
+            >
               {selectedGame ? `${selectedGame.name} (${selectedGame.version_id})` : '未选择游戏'}
             </span>
           </>
         )}
       </button>
-    </div>
+    </motion.div>
   );
 };
 

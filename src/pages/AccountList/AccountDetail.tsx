@@ -1,10 +1,12 @@
+// TODO: 测试一下如果登录了已经登录了的正版账户，会怎么样？
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { UserPlus, Trash2, LogIn, Star, Crown, Link2, LogOut, ExternalLink, Copy, X, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useAdminStore } from "@/stores/adminStore";
 import { useAccountSelectionStore } from "@/stores/accountSelectionStore";
 import { useLoadingAction } from "@/hooks/useLoadingAction";
-import { LoadingSurface, SkinAvatar, ConfirmPopup, useNotification, Animated, Page, PageSection, SettingsPanel, EmptyState } from "@/components/common";
+import { LoadingSurface, SkinAvatar, ConfirmPopup, useNotification, Page, PageSection, SettingsPanel, EmptyState } from "@/components/common";
 import Popup from "@/components/Popup";
 import { logger } from "@/helper/logger";
 import { AccountType, cancelDeviceCode, DeviceCodeResponse, pollAndCompleteLogin, startDeviceCode } from "@/api";
@@ -260,20 +262,20 @@ const AccountDetail = () => {
           </SettingsPanel>
         </PageSection>
 
-          {/* 删除确认 */}
-          <ConfirmPopup
-            isOpen={showDeleteConfirm}
-            title="确认删除"
-            message={`确定要删除 ${account?.name} 吗？此操作不可撤销。`}
-            confirmText="删除"
-            cancelText="取消"
-            confirmType="danger"
-            showIcon
-            iconType="warning"
-            onConfirm={handleDeleteAccount}
-            onCancel={() => setShowDeleteConfirm(false)}
-            onClose={() => setShowDeleteConfirm(false)}
-          />
+        {/* 删除确认 */}
+        <ConfirmPopup
+          isOpen={showDeleteConfirm}
+          title="确认删除"
+          message={`确定要删除 ${account?.name} 吗？此操作不可撤销。`}
+          confirmText="删除"
+          cancelText="取消"
+          confirmType="danger"
+          showIcon
+          iconType="warning"
+          onConfirm={handleDeleteAccount}
+          onCancel={() => setShowDeleteConfirm(false)}
+          onClose={() => setShowDeleteConfirm(false)}
+        />
       </LoadingSurface>
 
       {/* 添加弹窗 */}
@@ -400,7 +402,7 @@ const AddAccountPopup = ({
 
   return (
     <Popup isOpen={isOpen} onClose={handleClose} contentClassName="flex items-center justify-center" title="添加账户">
-      <div className="p-1 space-y-4 w-80 text-center">
+      <div className="p-1 space-y-4 w-90 text-center">
         {loginPhase === "completing" ? (
           <div className="flex flex-col items-center gap-3 py-6">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -421,23 +423,15 @@ const AddAccountPopup = ({
               />
             )}
 
-            <Animated stagger={0.08}>
-              {addType === AccountType.Offline && (
-                <Animated.Item>
-                  <AddOffline addName={addName} setAddName={setAddName} adding={adding} onConfirm={onConfirm} />
-                </Animated.Item>
-              )}
-              {addType === AccountType.Microsoft && (
-                <Animated.Item>
-                  <AddMicrosoft onClose={handleClose} onCodePhase={setCodePhase} onCodeSuccess={handleCodeSuccess} codePhase={codePhase} />
-                </Animated.Item>
-              )}
-              {addType === AccountType.ThirdParty && (
-                <Animated.Item>
-                  <AddThirdparty addName={addName} setAddName={setAddName} adding={adding} onConfirm={onConfirm} />
-                </Animated.Item>
-              )}
-            </Animated>
+            {addType === AccountType.Offline && (
+              <AddOffline addName={addName} setAddName={setAddName} adding={adding} onConfirm={onConfirm} />
+            )}
+            {addType === AccountType.Microsoft && (
+              <AddMicrosoft onClose={handleClose} onCodePhase={setCodePhase} onCodeSuccess={handleCodeSuccess} codePhase={codePhase} />
+            )}
+            {addType === AccountType.ThirdParty && (
+              <AddThirdparty addName={addName} setAddName={setAddName} adding={adding} onConfirm={onConfirm} />
+            )}
           </>
         )}
       </div>
@@ -454,32 +448,50 @@ interface AddOfflineProps {
   onConfirm: () => void;
 }
 
-const AddOffline = ({ addName, setAddName, adding, onConfirm }: AddOfflineProps) => (
-  <>
-    <input
-      value={addName}
-      onChange={(e) => setAddName(e.target.value)}
-      placeholder="游戏名称（1-16 字符）"
-      maxLength={16}
-      className="w-full px-3 py-2 rounded-lg mb-2
-        bg-surface-hover border border-border
-        text-text-primary text-sm placeholder-text-secondary/50
-        focus:outline-none focus:border-primary/50 
-        focus:ring-1 focus:ring-primary/20"
-    />
-    <button
-      onClick={onConfirm}
-      disabled={!addName.trim() || adding}
-      className="w-full py-2 rounded-lg bg-gradient-to-r 
-        from-primary to-primary/90 text-white font-medium
-        hover:from-primary/90 hover:to-primary/80 
-        disabled:opacity-50 transition-all text-sm flex items-center justify-center gap-2"
-    >
-      {adding ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-      <span>{adding ? "添加中..." : "添加"}</span>
-    </button>
-  </>
-);
+const AddOffline = ({ addName, setAddName, adding, onConfirm }: AddOfflineProps) => {
+  const [disabledInput, setDisabledInput] = useState(false);
+
+  useEffect(() => {
+    setDisabledInput(!addName.trim() || adding);
+  }, [addName]);
+
+  return (
+    <>
+      <input
+        value={addName}
+        onChange={(e) => setAddName(e.target.value)}
+        placeholder="游戏名称（1-16 字符）"
+        maxLength={16}
+        className="w-full px-3 py-2 rounded-lg mb-2
+        bg-surface-hover border border-(--color-border)
+        text-primary text-sm placeholder-text-secondary/50
+        focus:ring-1 focus:ring-(--color-primary)
+        "
+      />
+      <button
+        onClick={onConfirm}
+        disabled={disabledInput}
+        className={`
+          flex items-center justify-center gap-1.5
+          w-full py-2 rounded-(--radius-sm)
+          bg-(--color-primary)
+          hover:bg-(--color-primary-hover) hover:text-(--color-text-primary) 
+          active:bg-primary-active
+          text-(--color-text-primary) text-sm font-light
+          transition-colors
+          disabled:opacity/50
+          disabled:text-(--color-text-disabled)
+          disabled:cursor-not-allowed
+          focus:outline-none focus:border-(--color-primary)/50
+          focus:ring-1 focus:ring-(--color-primary)/20`
+        }
+      >
+        {adding ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+        <span>{adding ? "添加中..." : "添加"}</span>
+      </button>
+    </>
+  )
+};
 
 // ── AddMicrosoft ──
 
@@ -581,7 +593,8 @@ const AddMicrosoft = ({ onClose, onCodePhase, onCodeSuccess, codePhase }: AddMic
       </p>
       <button
         onClick={() => openUrl("https://www.minecraft.net/zh-hans/store/minecraft-deluxe-collection")}
-        className="flex items-center justify-center gap-1.5 text-xs text-primary hover:underline mx-auto"
+        className="flex items-center justify-center gap-1.5 text-xs 
+          text-primary hover:underline mx-auto font-light text-(--color-secondary)"
       >
         <ExternalLink className="w-3.5 h-3.5" />
         购买 Minecraft
@@ -589,8 +602,9 @@ const AddMicrosoft = ({ onClose, onCodePhase, onCodeSuccess, codePhase }: AddMic
       <button
         onClick={handleLogin}
         disabled={loading}
-        className="w-full py-2 rounded-lg bg-gradient-to-r from-primary to-primary/90 text-white font-medium
-          hover:from-primary/90 hover:to-primary/80 disabled:opacity-50 transition-all text-sm
+        className="w-full py-2 rounded-lg bg-gradient-to-r from-primary to-primary/90 font-light
+          bg-(--color-primary) hover:bg-(--color-primary-hover) 
+          disabled:opacity-50 transition-all text-sm
           flex items-center justify-center gap-2"
       >
         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
@@ -609,7 +623,7 @@ interface AddThirdpartyProps {
   onConfirm: () => void;
 }
 
-const AddThirdparty = ({}: AddThirdpartyProps) => (
+const AddThirdparty = ({ }: AddThirdpartyProps) => (
   <>
     <h1>暂无... 开发中...</h1>
   </>

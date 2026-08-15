@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { IconButton, Overlay } from './common';
 import { Portal } from './common/Portal';
 import { Z_INDEX } from '../utils/zIndex';
-import { DURATION, modalOpen } from '@/utils/animations';
+import { modalOpen, modalOverlay } from '@/utils/animations';
 import { useAnimation } from '@/hooks/useAnimation';
 import { X } from 'lucide-react';
 
@@ -61,8 +61,7 @@ const Popup = ({
     if (isOpen) {
       setShouldRender(true);
     } else if (shouldRender) {
-      const timer = setTimeout(() => setShouldRender(false), DURATION.MODAL_CLOSE * 1000 + 50);
-      return () => clearTimeout(timer);
+       setShouldRender(false)
     }
   }, [isOpen, shouldRender]);
 
@@ -123,61 +122,71 @@ const Popup = ({
     <Portal preset={position} zIndex={Z_INDEX.POPUP}>
       <AnimatePresence>
         {shouldRender && (
-          <Overlay active={true} zIndex={Z_INDEX.POPUP} fixed
-              onOverlayClick={handleOverlayClick}
+          <motion.div
+            key="popup-layer"
+            className="flex items-center justify-center fixed inset-0 pointer-events-none"
+            variants={noAnimation ? {} : modalOverlay}
+            initial={noAnimation || !enabled ? false : 'initial'}
+            animate={noAnimation || !enabled ? false : 'animate'}
+            exit={noAnimation || !enabled ? undefined : 'exit'}
           >
-            <div
-              className={`w-full h-full pointer-events-auto flex ${positionClasses[position]} ${overlayClassName}`}
-              role="dialog"
-              aria-modal="true"
-              {...ariaProps}
+            <Overlay active={true} zIndex={Z_INDEX.POPUP} fixed
+                onOverlayClick={handleOverlayClick} overLayClassName={overlayClassName}
+                animateMask={false}
             >
-              <motion.div
-                key="popup-content"
-                className={`w-full ${sizeClasses[size]} pointer-events-auto ${className}`}
-                style={{
-                  backgroundColor: 'var(--color-surface-solid)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '8px',
-                }}
-                variants={noAnimation ? {} : modalOpen}
-                initial={noAnimation || !enabled ? false : 'initial'}
-                animate={noAnimation || !enabled ? false : 'animate'}
-                exit={noAnimation || !enabled ? undefined : 'exit'}
-                onClick={(e) => e.stopPropagation()}
+              <div
+                className={`w-full h-full pointer-events-auto flex ${positionClasses[position]}`}
+                role="dialog"
+                aria-modal="true"
+                {...ariaProps}
               >
-                {(title || showCloseButton) && (
-                  <div className="flex items-center justify-between px-5 py-4 border-b"
-                    style={{ borderColor: 'var(--color-border)' }}
-                  >
-                    {title && (
-                      <div className="text-lg font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-                        {typeof title === 'string' ? <h2>{title}</h2> : title}
-                      </div>
-                    )}
-                    {showCloseButton && (
-                      <IconButton
-                        icon={X}
-                        onClick={onClose}
-                        aria-label="关闭弹窗"
-                        className="text-text-secondary"
-                      />
-                    )}
-                  </div>
-                )}
+                <motion.div
+                  key="popup-content"
+                  className={`w-full ${sizeClasses[size]} pointer-events-auto ${className}`}
+                  style={{
+                    backgroundColor: 'var(--color-surface-solid)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-sm)',
+                  }}
+                  variants={noAnimation ? {} : modalOpen}
+                  initial={noAnimation || !enabled ? false : 'initial'}
+                  animate={noAnimation || !enabled ? false : 'animate'}
+                  exit={noAnimation || !enabled ? undefined : 'exit'}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {(title || showCloseButton) && (
+                    <div className="flex items-center justify-between px-4 py-2 border-b"
+                      style={{ borderColor: 'var(--color-border)' }}
+                    >
+                      {title && (
+                        <div className="text-lg font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                          {typeof title === 'string' ? <h2>{title}</h2> : title}
+                        </div>
+                      )}
+                      {showCloseButton && (
+                        <IconButton
+                          icon={X}
+                          onClick={onClose}
+                          aria-label="关闭弹窗"
+                          className="text-text-secondary"
+                        />
+                      )}
+                    </div>
+                  )}
 
-                <div className={`px-5 py-4 ${contentClassName}`}>
-                  {children}
-                </div>
-
-                {footer && (
-                  <div className="px-5 py-4" >
-                    {footer}
+                  <div className={`px-5 py-4 ${contentClassName}`}>
+                    {children}
                   </div>
-                )}
-              </motion.div>
-            </div>
-          </Overlay>
+
+                  {footer && (
+                    <div className="px-5 py-4" >
+                      {footer}
+                    </div>
+                  )}
+                </motion.div>
+              </div>
+            </Overlay>
+          </motion.div>
         )}
       </AnimatePresence>
     </Portal>
