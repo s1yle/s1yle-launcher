@@ -1,27 +1,27 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Crown, Mail } from 'lucide-react';
 import ActionButton from '../components/common/StartGameButton';
 import PlayerProfile from '../components/common/home/PlayerProfile';
-import { LoadingSurface, Page, PageSection } from '@/components/common';
+import { LaunchingOverlay, RunningGamesCard, LoadingSurface, Page, PageSection } from '@/components/common';
 import { useGameStore } from '../stores/gameStore';
 import { useAdminStore } from '../stores/adminStore';
 import { useUserRoleStore, UserRole } from '../stores/userRoleStore';
 import { getCurrentAccount, type AccountInfo } from '../helper/rustInvoke';
 import { useLoadingAction } from '@/hooks/useLoadingAction';
-import { useState } from 'react';
 
 /** 主页 - 显示玩家档案和快捷启动按钮 */
 const Home = () => {
-  const instance_init = useGameStore(s => s.init);
+  const game_init = useGameStore(s => s.init);
   const selectedGame = useGameStore(s => s.getSelectedGame());
   const gameReports = useGameStore(s => s.validations);
   const { currentRole } = useUserRoleStore();
   const adminSession = useAdminStore((s) => s.session);
 
-  // 空壳实例（目录内除记录外无任何文件）前端不显示启动入口
+  // 空壳游戏（目录内除记录外无任何文件）前端不显示启动入口
   const isShellEmpty = selectedGame && gameReports[selectedGame.id]?.empty;
 
   const [accountName, setAccountName] = useState<string>('Steve');
+  const [launchSession, setLaunchSession] = useState<{ gameId: string } | null>(null);
 
   const loadProfile = useLoadingAction({
     key: 'home:profile',
@@ -38,9 +38,9 @@ const Home = () => {
   });
 
   useEffect(() => {
-    instance_init();
+    game_init();
     loadProfile();
-  }, [instance_init, loadProfile]);
+  }, [game_init, loadProfile]);
 
   return (
     <Page className="flex flex-col items-center justify-center min-h-[calc(100vh-120px)] p-0">
@@ -66,7 +66,20 @@ const Home = () => {
         )}
       </PageSection>
 
-      {currentRole !== UserRole.ADMIN && !isShellEmpty && <ActionButton />}
+      {currentRole !== UserRole.ADMIN && !isShellEmpty && (
+        <ActionButton onLaunched={(gameId) => setLaunchSession({ gameId })} />
+      )}
+
+      {currentRole !== UserRole.ADMIN && <RunningGamesCard />}
+
+      {launchSession && selectedGame && (
+        <LaunchingOverlay
+          game={selectedGame}
+          gameId={launchSession.gameId}
+          username={accountName}
+          onExit={() => setLaunchSession(null)}
+        />
+      )}
     </Page>
   );
 };

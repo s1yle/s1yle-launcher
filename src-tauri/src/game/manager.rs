@@ -6,10 +6,10 @@ use crate::app_context::AppContext;
 use crate::modloader::ModLoaderType;
 use crate::log_info;
 
-/// 实例管理器门面
+/// 游戏管理器门面
 ///
-/// 组合根处构造注入 `AppContext`，持有全部实例域逻辑：
-/// 实例 CRUD、记录持久化（原 storage）、目录扫描（原 scanner）、
+/// 组合根处构造注入 `AppContext`，持有全部游戏域逻辑：
+/// 游戏 CRUD、记录持久化（原 storage）、目录扫描（原 scanner）、
 /// 版本已安装判定（原 layout 根级函数）。
 /// dir 级纯路径函数（version_json_in_dir 等）见 [`AppContext`]。
 #[derive(Clone)]
@@ -19,21 +19,21 @@ pub struct GameManager {
 }
 
 impl GameManager {
-    /// 创建新的实例管理器（组合根注入 ctx）
+    /// 创建新的游戏管理器（组合根注入 ctx）
     pub fn new(ctx: AppContext) -> Self {
         Self { ctx }
     }
 
-    // ==================== 实例 CRUD ====================
+    // ==================== 游戏 CRUD ====================
 
-    /// 获取指定名称的实例
+    /// 获取指定名称的游戏
     pub fn get_game(&self, game_name: &str) -> Option<Game> {
         let game_dir = self.ctx.game_dir(game_name);
         if !game_dir.is_dir() {
             return None;
         }
         // 记录缺失/损坏时以目录名重建基础记录（与 scan_games 一致），
-        // 保证对"目录存在但无记录"的实例（如手动创建的空目录）也可操作
+        // 保证对"目录存在但无记录"的游戏（如手动创建的空目录）也可操作
         let mut record = self
             .load_record(game_name)
             .unwrap_or_else(|| Game::new(game_name, "", ModLoaderType::Vanilla, None, None));
@@ -44,7 +44,7 @@ impl GameManager {
         Some(record)
     }
 
-    /// 创建新实例（目录 + 记录）
+    /// 创建新游戏（目录 + 记录）
     pub fn create_game(
         &self,
         name: &str,
@@ -57,50 +57,50 @@ impl GameManager {
 
         let game_dir = self.ctx.game_dir(name);
         if game_dir.exists() {
-            return Err(format!("实例 {} 已存在", name));
+            return Err(format!("游戏 {} 已存在", name));
         }
 
-        fs::create_dir_all(&game_dir).map_err(|e| format!("创建实例目录失败：{}", e))?;
+        fs::create_dir_all(&game_dir).map_err(|e| format!("创建游戏目录失败：{}", e))?;
 
         let record = Game::new(name, version, loader_type, loader_version, icon_path);
         self.save_record(&record)?;
 
-        log_info!("实例创建成功：{} ({})", name, version);
+        log_info!("游戏创建成功：{} ({})", name, version);
         self.get_game(name)
-            .ok_or_else(|| "创建实例后加载失败".to_string())
+            .ok_or_else(|| "创建游戏后加载失败".to_string())
     }
 
-    /// 删除实例（delete_files=true 同时删除实例目录）
+    /// 删除游戏（delete_files=true 同时删除游戏目录）
     pub fn delete_game(&self, game_name: &str, delete_files: bool) -> Result<(), String> {
         let game = self
             .get_game(game_name)
-            .ok_or_else(|| format!("实例不存在: {}", game_name))?;
+            .ok_or_else(|| format!("游戏不存在: {}", game_name))?;
 
         self.delete_record(game_name);
 
         if delete_files {
             let game_dir = self.ctx.game_dir(&game.name);
             if game_dir.exists() {
-                fs::remove_dir_all(&game_dir).map_err(|e| format!("删除实例失败: {}", e))?;
+                fs::remove_dir_all(&game_dir).map_err(|e| format!("删除游戏失败: {}", e))?;
             }
         }
 
-        log_info!("实例已删除：{} ({})", game.name, game_name);
+        log_info!("游戏已删除：{} ({})", game.name, game_name);
         Ok(())
     }
 
-    /// 重命名实例（重命名目录 + 更新记录）
+    /// 重命名游戏（重命名目录 + 更新记录）
     pub fn rename_game(&self, game_name: &str, new_name: &str) -> Result<Game, String> {
         validate_name(new_name)?;
 
         let game = self
             .get_game(game_name)
-            .ok_or_else(|| format!("实例不存在: {}", game_name))?;
+            .ok_or_else(|| format!("游戏不存在: {}", game_name))?;
 
         let old_dir = self.ctx.game_dir(&game.name);
         let new_dir = self.ctx.game_dir(new_name);
         if new_dir.exists() {
-            return Err(format!("实例 {} 已存在", new_name));
+            return Err(format!("游戏 {} 已存在", new_name));
         }
 
         fs::rename(&old_dir, &new_dir).map_err(|e| format!("重命名失败: {}", e))?;
@@ -109,12 +109,12 @@ impl GameManager {
         record.name = new_name.to_string();
         self.save_record(&record)?;
 
-        log_info!("实例重命名成功：{} -> {}", new_name, game_name);
+        log_info!("游戏重命名成功：{} -> {}", new_name, game_name);
         self.get_game(new_name)
-            .ok_or_else(|| "重命名实例后加载失败".to_string())
+            .ok_or_else(|| "重命名游戏后加载失败".to_string())
     }
 
-    /// 更新实例信息（名称、启用状态）
+    /// 更新游戏信息（名称、启用状态）
     pub fn update_game(
         &self,
         game_name: &str,
@@ -123,7 +123,7 @@ impl GameManager {
     ) -> Result<Game, String> {
         let game = self
             .get_game(game_name)
-            .ok_or_else(|| format!("实例不存在: {}", game_name))?;
+            .ok_or_else(|| format!("游戏不存在: {}", game_name))?;
 
         let mut record = game;
         if let Some(n) = name {
@@ -138,9 +138,9 @@ impl GameManager {
         Ok(record)
     }
 
-    // ==================== 实例记录（原 storage 模块） ====================
+    // ==================== 游戏记录（原 storage 模块） ====================
 
-    /// 加载实例记录
+    /// 加载游戏记录
     pub fn load_record(&self, game_name: &str) -> Option<Game> {
         let rpath = self.ctx.record_path(game_name);
         Self::load_record_from_path(&rpath)
@@ -155,25 +155,25 @@ impl GameManager {
         serde_json::from_str::<Game>(&content).ok()
     }
 
-    /// 保存实例记录到磁盘
+    /// 保存游戏记录到磁盘
     pub fn save_record(&self, record: &Game) -> Result<(), String> {
         let rpath = self.ctx.record_path(&record.name);
         if let Some(parent) = rpath.parent() {
-            fs::create_dir_all(parent).map_err(|e| format!("创建实例记录目录失败：{}", e))?;
+            fs::create_dir_all(parent).map_err(|e| format!("创建游戏记录目录失败：{}", e))?;
         }
         let content =
-            serde_json::to_string_pretty(record).map_err(|e| format!("序列化实例记录失败：{}", e))?;
-        fs::write(&rpath, content).map_err(|e| format!("写入实例记录失败：{}", e))?;
+            serde_json::to_string_pretty(record).map_err(|e| format!("序列化游戏记录失败：{}", e))?;
+        fs::write(&rpath, content).map_err(|e| format!("写入游戏记录失败：{}", e))?;
         Ok(())
     }
 
-    /// 删除实例记录（仅删除记录文件，不影响实例目录）
+    /// 删除游戏记录（仅删除记录文件，不影响游戏目录）
     fn delete_record(&self, game_name: &str) -> Result<(), String> {
         let rpath = self.ctx.record_path(game_name);
         fs::remove_file(rpath).map_err(|e| e.to_string())
     }
 
-    /// 列出所有实例记录文件路径（{root}/versions/{name}/.wecraft_{name}.json）
+    /// 列出所有游戏记录文件路径（{root}/versions/{name}/.wecraft_{name}.json）
     fn record_paths(&self) -> Vec<PathBuf> {
         let mut paths = Vec::new();
         if let Ok(entries) = fs::read_dir(self.ctx.versions_dir()) {
@@ -194,18 +194,18 @@ impl GameManager {
         paths
     }
 
-    /// 更新实例游戏设置（DTO 增量应用）
+    /// 更新游戏游戏设置（DTO 增量应用）
     pub fn update_game_settings(
         &self,
         game_name: &str,
         settings: &GameSettings,
     ) -> Result<Game, String> {
         let mut record =
-            self.load_record(game_name).ok_or_else(|| format!("实例不存在：{}", game_name))?;
+            self.load_record(game_name).ok_or_else(|| format!("游戏不存在：{}", game_name))?;
         record.apply_settings(settings);
         self.save_record(&record)?;
         self.get_game(game_name)
-            .ok_or_else(|| format!("实例不存在：{}", game_name))
+            .ok_or_else(|| format!("游戏不存在：{}", game_name))
     }
 
     // ==================== 版本扫描（原 layout 根级函数） ====================
@@ -298,13 +298,13 @@ impl GameManager {
 
 }
 
-/// 校验实例名称（非空、不含路径分隔符）
+/// 校验游戏名称（非空、不含路径分隔符）
 fn validate_name(name: &str) -> Result<(), String> {
     if name.trim().is_empty() {
-        return Err("实例名称不能为空".to_string());
+        return Err("游戏名称不能为空".to_string());
     }
     if name.contains('/') || name.contains('\\') || name.contains('\0') {
-        return Err("实例名称不能包含路径分隔符".to_string());
+        return Err("游戏名称不能包含路径分隔符".to_string());
     }
     Ok(())
 }

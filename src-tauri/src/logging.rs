@@ -194,7 +194,7 @@ impl Logger {
 
 // ==================== Global State ====================
 
-/// 全局 Logger 实例
+/// 全局 Logger 游戏
 static LOGGER: OnceLock<Logger> = OnceLock::new();
 
 // ==================== Macros ====================

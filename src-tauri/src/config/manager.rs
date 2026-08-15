@@ -208,15 +208,19 @@ mod tests {
     fn set_value_writes_nested_path() {
         let (manager, dir) = manager("config-nested");
         manager
-            .set_value("login_state.is_logged_in", serde_json::json!(true))
+            .set_value(
+                "window_positions.main",
+                serde_json::json!({"x": 1, "y": 2, "width": 800, "height": 600, "maximized": true}),
+            )
             .unwrap();
         let config = manager.get_config().unwrap();
-        assert!(config.login_state.is_logged_in);
+        let main = config.window_positions.main.unwrap();
+        assert!(main.maximized);
         let on_disk: Value = serde_json::from_str(
             &fs::read_to_string(dir.join(".wecraft").join(".wecraft.json")).unwrap(),
         )
         .unwrap();
-        assert_eq!(on_disk["app"]["login_state"]["is_logged_in"], true);
+        assert_eq!(on_disk["app"]["window_positions"]["main"]["maximized"], true);
     }
 
     #[test]

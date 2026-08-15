@@ -23,8 +23,8 @@ export { default as VersionCard } from './Version/VersionCard';
 /** 版本卡片 Props */
 export type { VersionCardProps } from './Version/VersionCard';
 
-/** 实例列表项组件 */
-export { default as InstanceListItem } from './Instance/InstanceListItem';
+/** 游戏列表项组件 */
+export { default as GameListItem } from './Game/GameListItem';
 
 /** 空状态占位组件 */
 export { default as EmptyState } from './EmptyState';
@@ -66,9 +66,17 @@ export { default as VersionListItem } from './Version/VersionListItem';
 export type { VersionListItemProps } from './Version/VersionListItem';
 
 /** 安装卡片组件 */
-export { default as InstallCard } from './Instance/InstallCard';
+export { default as InstallCard } from './Game/InstallCard';
 /** 安装卡片 Props / 状态类型 */
-export type { InstallCardProps, InstallCardStatus } from './Instance/InstallCard';
+export type { InstallCardProps, InstallCardStatus } from './Game/InstallCard';
+
+/** 启动进度遮罩组件（真实进度） */
+export { default as LaunchingOverlay } from './Launch/LaunchingOverlay';
+/** 启动进度遮罩 Props */
+export type { LaunchingOverlayProps } from './Launch/LaunchingOverlay';
+
+/** 运行中游戏卡片组件 */
+export { default as RunningGamesCard } from './Launch/RunningGamesCard';
 
 /** 全局顶部进度条组件 */
 export { default as GlobalLoadingBar } from './Loading/GlobalLoadingBar';

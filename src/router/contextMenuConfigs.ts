@@ -64,7 +64,7 @@ export const browseMenuConfig: ContextMenuGroupConfig = {
   ]
 };
 
-/** 实例管理菜单配置 */
+/** 游戏管理菜单配置 */
 export const manageMenuConfig: ContextMenuGroupConfig = {
   id: 'gm-manage',
   titleI18nKey: 'gameManage.manage',

@@ -135,16 +135,23 @@ pub fn rules_allow(rules: &[Rule]) -> bool {
         os_match && features_match
     }
 
+    let mut matched_any = false;
     let mut allowed = true;
     for rule in rules {
         if !rules_match(rule) {
             continue;
         }
+        matched_any = true;
         match rule.action.as_str() {
             "allow" => allowed = true,
             "disallow" => allowed = false,
             _ => {}
         }
+    }
+
+    // Mojang 语义：规则列表非空但一条都不匹配 → 不启用（如 osx-only 参数在 Linux 上必须剔除）
+    if !matched_any {
+        return false;
     }
     allowed
 }
@@ -251,6 +258,39 @@ mod tests {
     }
 
     #[test]
+    fn rules_allow_no_match_returns_false() {
+        // Mojang 语义：规则列表非空但全部不匹配（如 osx-only 参数在 Linux 上）→ 不启用
+        let osx_rule = Rule {
+            action: "allow".to_string(),
+            features: None,
+            os: Some(RuleOs {
+                name: Some("osx".to_string()),
+                version: None,
+                version_range: None,
+                arch: None,
+            }),
+        };
+        let linux_rule = Rule {
+            action: "allow".to_string(),
+            features: None,
+            os: Some(RuleOs {
+                name: Some("linux".to_string()),
+                version: None,
+                version_range: None,
+                arch: None,
+            }),
+        };
+
+        let os = get_current_os();
+        assert!(rules_allow(&[osx_rule.clone(), linux_rule.clone()]));
+        if os == "osx" {
+            assert!(rules_allow(&[osx_rule]));
+        } else {
+            assert!(!rules_allow(&[osx_rule]));
+        }
+    }
+
+    #[test]
     fn rules_allow_features_state() {
         use std::collections::HashMap;
 
@@ -270,8 +310,8 @@ mod tests {
             Some(HashMap::from([("has_custom_resolution".to_string(), false)]))
         )]));
 
-        // 声明特性为 true 的规则不命中 → 不生效
-        assert!(rules_allow(&[feature_rule(
+        // 声明特性为 true 的规则不命中（特性未启用）→ 规则列表无匹配 → 不生效
+        assert!(!rules_allow(&[feature_rule(
             "disallow",
             Some(HashMap::from([("is_demo_user".to_string(), true)]))
         )]));

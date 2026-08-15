@@ -36,7 +36,7 @@ const VersionInstall = () => {
   const { refresh } = useGameStore();
   const { success, error: notifyError, info } = useNotification();
 
-  const [instanceName, setInstanceName] = useState(versionId || '');
+  const [gameName, setGameName] = useState(versionId || '');
   const [loading, setLoading] = useState(true);
   const [installing, setInstalling] = useState(false);
   const [loaders, setLoaders] = useState<LoaderState[]>([]);
@@ -48,7 +48,7 @@ const VersionInstall = () => {
       try {
         const detail = await getVersionDetail(versionId);
         if (detail) {
-          setInstanceName(versionId);
+          setGameName(versionId);
         }
         initLoaders(versionId);
       } catch (e) {
@@ -92,8 +92,8 @@ const VersionInstall = () => {
   }, [t, info]);
 
   const handleInstall = async () => {
-    if (!versionId || !instanceName.trim()) {
-      notifyError('安装失败', '请输入实例名称');
+    if (!versionId || !gameName.trim()) {
+      notifyError('安装失败', '请输入游戏名称');
       return;
     }
 
@@ -103,11 +103,11 @@ const VersionInstall = () => {
       const loaderType = selectedLoader?.modLoaderType || ModLoaderType.Vanilla;
       const loaderVersion = selectedLoader?.selectedVersion || undefined;
 
-      await createGame(instanceName.trim(), versionId, loaderType, loaderVersion);
+      await createGame(gameName.trim(), versionId, loaderType, loaderVersion);
       await refresh();
       success(t('common.success'), t('download.install.installComplete'));
-      safeNavigate('/instance-list');
-      setCurrentPath('/instance-list');
+      safeNavigate('/game-list');
+      setCurrentPath('/game-list');
     } catch (e) {
       notifyError(t('download.install.installFailed'), e instanceof Error ? e.message : '安装失败');
     } finally {
@@ -196,14 +196,14 @@ const VersionInstall = () => {
 
           <div className="flex items-center gap-3">
             <label className="text-sm text-text-secondary whitespace-nowrap">
-              {t('download.install.instanceName')}
+              {t('download.install.gameName')}
             </label>
             <input
               type="text"
-              value={instanceName}
-              onChange={e => setInstanceName(e.target.value)}
+              value={gameName}
+              onChange={e => setGameName(e.target.value)}
               className="flex-1 px-4 py-2 bg-surface/80 border border-border/50 rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:border-primary transition-colors backdrop-blur-sm"
-              placeholder={t('download.install.instanceNamePlaceholder')}
+              placeholder={t('download.install.gameNamePlaceholder')}
             />
           </div>
         </PageSection>
@@ -245,11 +245,11 @@ const VersionInstall = () => {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={handleInstall}
-            disabled={installing || !instanceName.trim()}
+            disabled={installing || !gameName.trim()}
             className={cn(
               'px-8 py-3 rounded-lg text-sm font-medium transition-all',
               'bg-primary hover:bg-primary-hover text-text-primary',
-              (installing || !instanceName.trim()) && 'opacity-50 cursor-not-allowed'
+              (installing || !gameName.trim()) && 'opacity-50 cursor-not-allowed'
             )}
           >
             {installing ? (

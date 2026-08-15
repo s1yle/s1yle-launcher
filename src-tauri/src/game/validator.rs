@@ -1,4 +1,4 @@
-//! 实例完整性校验（基于版本 JSON 与本地文件，不触网）
+//! 游戏完整性校验（基于版本 JSON 与本地文件，不触网）
 //!
 //! 校验范围：
 //! - 客户端 jar（{game_dir}/{version}.jar）— SHA1
@@ -35,12 +35,12 @@ pub struct FileCheck {
     pub actual_size: Option<u64>,
 }
 
-/// 实例完整性校验报告
+/// 游戏完整性校验报告
 #[derive(Debug, Clone, Serialize)]
 pub struct GameValidation {
     /// 是否完整可启动（无缺失 / 无损坏）
     pub valid: bool,
-    /// 目录是否为空（除 .wecraft 记录与 .smcl 图标外无任何文件，即未下载的"空壳"实例）
+    /// 目录是否为空（除 .wecraft 记录与 .smcl 图标外无任何文件，即未下载的"空壳"游戏）
     pub empty: bool,
     pub game_name: String,
     pub version_id: String,
@@ -53,7 +53,7 @@ pub struct GameValidation {
     pub failed: Vec<FileCheck>,
 }
 
-/// 校验指定实例的完整性
+/// 校验指定游戏的完整性
 ///
 /// - `deep=true` 时对资源文件也做 SHA1 校验（全量哈希，数千文件耗时较长）；
 ///   默认仅校验客户端 jar / 库文件 / 原生库 / 资源索引的 SHA1，
@@ -66,14 +66,14 @@ pub fn validate_game_integrity(
 ) -> Result<GameValidation, String> {
     let game = manager
         .get_game(game_name)
-        .ok_or_else(|| format!("实例不存在: {}", game_name))?;
+        .ok_or_else(|| format!("游戏不存在: {}", game_name))?;
 
     let game_dir = ctx.game_dir(&game.name);
 
     // 第 1 层：目录是否为空壳（除 .wecraft 记录与 .smcl 图标外无任何文件）→ 前端不显示
     // 优先于版本未知判断：空目录（手动创建/下载未开始）无 version_id，也必须识别为空壳
     if is_game_dir_empty(&game_dir) {
-        log_info!("实例 {} 目录为空壳，跳过常规校验", game_name);
+        log_info!("游戏 {} 目录为空壳，跳过常规校验", game_name);
         return Ok(GameValidation {
             valid: false,
             empty: true,
@@ -89,13 +89,13 @@ pub fn validate_game_integrity(
 
     let version_id = game.version_id.clone();
     if version_id.is_empty() {
-        return Err(format!("实例 {} 版本未知（未完成下载）", game_name));
+        return Err(format!("游戏 {} 版本未知（未完成下载）", game_name));
     }
 
     // 第 2 层：版本 JSON 与客户端 jar 是否存在
     let version_json_path = ctx.version_json_in_dir(&game_dir, &version_id);
     if !version_json_path.is_file() {
-        log_info!("实例 {} 缺版本 JSON: {}", game_name, version_json_path.display());
+        log_info!("游戏 {} 缺版本 JSON: {}", game_name, version_json_path.display());
         let jar_path = ctx.version_jar_in_dir(&game_dir, &version_id);
         let mut failed = vec![FileCheck {
             category: "version".to_string(),
@@ -128,7 +128,7 @@ pub fn validate_game_integrity(
         });
     }
 
-    log_info!("校验实例 {} 完整性 (deep={})", game_name, deep);
+    log_info!("校验游戏 {} 完整性 (deep={})", game_name, deep);
     let content =
         std::fs::read_to_string(&version_json_path).map_err(|e| format!("读取版本 JSON 失败: {}", e))?;
     let version_json: serde_json::Value =
@@ -238,7 +238,7 @@ pub fn validate_game_integrity(
     }
 
     log_info!(
-        "实例 {} 校验完成: 检查 {} 项, 通过 {} 项, 缺失 {} 项, 损坏 {} 项",
+        "游戏 {} 校验完成: 检查 {} 项, 通过 {} 项, 缺失 {} 项, 损坏 {} 项",
         game_name,
         checked,
         ok,
@@ -259,7 +259,7 @@ pub fn validate_game_integrity(
     })
 }
 
-/// 判断实例目录是否为"空壳"：除 `.wecraft_*` 记录文件与 `.smcl` 图标目录外无任何文件
+/// 判断游戏目录是否为"空壳"：除 `.wecraft_*` 记录文件与 `.smcl` 图标目录外无任何文件
 pub fn is_game_dir_empty(game_dir: &Path) -> bool {
     let Ok(entries) = std::fs::read_dir(game_dir) else {
         return true;
@@ -548,7 +548,7 @@ mod tests {
     fn validate_intact_game() {
         let (ctx, gm) = setup_intact("intact");
         let report = validate_game_integrity(&ctx, &gm, "vg1", false).unwrap();
-        assert!(report.valid, "完整实例应通过校验: {:?}", report.failed);
+        assert!(report.valid, "完整游戏应通过校验: {:?}", report.failed);
         assert_eq!(report.checked, 4); // client + library + index + asset
         assert_eq!(report.ok, 4);
         assert_eq!(report.missing, 0);

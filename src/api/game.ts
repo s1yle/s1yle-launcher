@@ -1,11 +1,11 @@
 import { InvokeOptions } from "@tauri-apps/api/core";
 import { invokeRust } from "./client";
 import { logger } from "@/helper/logger";
-import type { Game, GameSettings, GameValidation } from "./types/instance";
+import type { Game, GameSettings, GameValidation } from "./types/game";
 
 /**
- * 获取实例的游戏设置
- * @param gameName 实例名称
+ * 获取游戏的游戏设置
+ * @param gameName 游戏名称
  * @param options Tauri invoke 选项
  * @returns 游戏设置
  */
@@ -17,11 +17,11 @@ export const invokeGetGameSettings = async (
 };
 
 /**
- * 更新实例的游戏设置
- * @param gameName 实例名称
+ * 更新游戏的游戏设置
+ * @param gameName 游戏名称
  * @param settings 新的游戏设置
  * @param options Tauri invoke 选项
- * @returns 更新后的游戏实例
+ * @returns 更新后的游戏
  */
 export const invokeUpdateGameSettings = async (
   gameName: string,
@@ -77,9 +77,9 @@ export const invokeSelectJavaPath = async (
 };
 
 /**
- * 扫描所有已安装的实例
+ * 扫描所有已安装的游戏
  * @param options Tauri invoke 选项
- * @returns 游戏实例列表
+ * @returns 游戏列表
  */
 export const invokeScanGames = async (
   options?: InvokeOptions
@@ -88,28 +88,28 @@ export const invokeScanGames = async (
 };
 
 /**
- * 获取单个实例详情
- * @param gameName 实例名称
+ * 获取单个游戏详情
+ * @param gameName 游戏名称
  * @param options Tauri invoke 选项
- * @returns 实例信息，不存在返回 null
+ * @returns 游戏信息，不存在返回 null
  */
 export const invokeGetGame = async (
   gameName: string,
   options?: InvokeOptions
 ): Promise<Game| null> => {
-  logger.info('获取实例详情', { gameName });
+  logger.info('获取游戏详情', { gameName });
   return await invokeRust("get_game", { gameName }, options);
 };
 
 /**
- * 创建新实例
- * @param name 实例名称
+ * 创建新游戏
+ * @param name 游戏名称
  * @param version Minecraft 版本号
  * @param loaderType 模组加载器类型
  * @param loaderVersion 加载器版本（可选）
  * @param iconPath 图标路径（可选）
  * @param options Tauri invoke 选项
- * @returns 新创建的实例
+ * @returns 新创建的游戏
  */
 export const invokeCreateGame = async (
   name: string,
@@ -119,7 +119,7 @@ export const invokeCreateGame = async (
   iconPath?: string,
   options?: InvokeOptions
 ): Promise<Game> => {
-  logger.info('创建实例', { name, version, loaderType });
+  logger.info('创建游戏', { name, version, loaderType });
   return await invokeRust("create_game", {
     name,
     version,
@@ -130,8 +130,8 @@ export const invokeCreateGame = async (
 };
 
 /**
- * 删除实例
- * @param gameName 实例名称
+ * 删除游戏
+ * @param gameName 游戏名称
  * @param deleteFiles 是否同时删除文件（默认 false）
  * @param options Tauri invoke 选项
  */
@@ -140,33 +140,33 @@ export const invokeDeleteGame = async (
   deleteFiles: boolean = false,
   options?: InvokeOptions
 ): Promise<void> => {
-  logger.info('删除实例', { gameName, deleteFiles });
+  logger.info('删除游戏', { gameName, deleteFiles });
   return await invokeRust("delete_game", { gameName, deleteFiles }, options);
 };
 
 /**
- * 重命名实例
- * @param gameName 实例名称
+ * 重命名游戏
+ * @param gameName 游戏名称
  * @param newName 新名称
  * @param options Tauri invoke 选项
- * @returns 更新后的实例
+ * @returns 更新后的游戏
  */
 export const invokeRenameGame = async (
   gameName: string,
   newName: string,
   options?: InvokeOptions
 ): Promise<Game> => {
-  logger.info('重命名实例', { gameName, newName });
+  logger.info('重命名游戏', { gameName, newName });
   return await invokeRust("rename_game", { gameName, newName }, options);
 };
 
 /**
- * 更新实例属性
- * @param gameName 实例名称
+ * 更新游戏属性
+ * @param gameName 游戏名称
  * @param name 新名称（可选）
  * @param enabled 是否启用（可选）
  * @param options Tauri invoke 选项
- * @returns 更新后的实例
+ * @returns 更新后的游戏
  */
 export const invokeUpdateGame = async (
   gameName: string,
@@ -174,13 +174,13 @@ export const invokeUpdateGame = async (
   enabled?: boolean,
   options?: InvokeOptions
 ): Promise<Game> => {
-  logger.info('更新实例', { gameName, name, enabled });
+  logger.info('更新游戏', { gameName, name, enabled });
   return await invokeRust("update_game", { gameName, name, enabled }, options);
 };
 
 /**
- * 校验实例完整性（基于版本 JSON：客户端 jar / 库文件 / 原生库 / 资源索引 / 资源文件）
- * @param gameName 实例名称
+ * 校验游戏完整性（基于版本 JSON：客户端 jar / 库文件 / 原生库 / 资源索引 / 资源文件）
+ * @param gameName 游戏名称
  * @param deep 是否对资源文件做 SHA1 校验（全量哈希较慢），默认 false（仅大小）
  * @param options Tauri invoke 选项
  * @returns 完整性校验报告
@@ -190,7 +190,7 @@ export const invokeValidateGame = async (
   deep?: boolean,
   options?: InvokeOptions
 ): Promise<GameValidation> => {
-  logger.info('校验实例完整性', { gameName, deep });
+  logger.info('校验游戏完整性', { gameName, deep });
   return await invokeRust('validate_game', { gameName, deep }, options);
 };
 

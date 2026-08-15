@@ -1,14 +1,14 @@
-import { Game } from "@/helper/rustInvoke";
+import type { Game as GameModel } from "@/helper/rustInvoke";
 import { t } from "i18next";
 import { JSX } from "react";
 
-/** 实例列表组件的 Props */
-export interface InstanceProps {
+/** 游戏列表组件的 Props */
+export interface GameProps {
     refresh: () => Promise<void>;
     searchQuery: string;
     setSearchQuery: (query: string) => void;
-    filteredGames: Game[];
-    games: Game[];
+    filteredGames: GameModel[];
+    games: GameModel[];
     error: string | null;
     renderContent: () => JSX.Element;
     gameRoot: string;
@@ -20,8 +20,8 @@ export interface InstanceProps {
     setDuplicateTargetId: (id: string | null) => void;
 }
 
-/** 实例列表布局组件 - 封装搜索、筛选和复制弹窗 */
-const Instance: React.FC<InstanceProps> = ({
+/** 游戏列表布局组件 - 封装搜索、筛选和复制弹窗 */
+const Game: React.FC<GameProps> = ({
     renderContent,
     showDuplicateModal,
     duplicateName,
@@ -41,15 +41,15 @@ const Instance: React.FC<InstanceProps> = ({
             {showDuplicateModal && (
                 <div className="fixed inset-0 bg-overlay flex items-center justify-center z-50">
                     <div className="bg-context-bg border border-border-hover rounded-xl p-6 w-full max-w-md">
-                        <h2 className="text-xl font-bold text-text-primary mb-4">{t('instances.duplicateInstance', '复制实例')}</h2>
+                        <h2 className="text-xl font-bold text-text-primary mb-4">{t('games.duplicateGame', '复制游戏')}</h2>
                         <div className="space-y-4">
                             <div>
-                                <label className="text-text-secondary text-sm mb-1 block">{t('instances.newInstanceName', '新实例名称')}</label>
+                                <label className="text-text-secondary text-sm mb-1 block">{t('games.newGameName', '新游戏名称')}</label>
                                 <input
                                     type="text"
                                     value={duplicateName}
                                     onChange={(e) => setDuplicateName(e.target.value)}
-                                    placeholder={t('instances.enterNewName', '输入新实例名称...')}
+                                    placeholder={t('games.enterNewName', '输入新游戏名称...')}
                                     autoFocus
                                     onKeyDown={(e) => e.key === 'Enter' && handleConfirmDuplicate()}
                                     className="w-full px-4 py-2 bg-surface border border-border-hover rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:border-primary"
@@ -81,4 +81,4 @@ const Instance: React.FC<InstanceProps> = ({
 
 }
 
-export default Instance;
+export default Game;

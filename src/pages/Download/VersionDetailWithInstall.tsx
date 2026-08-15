@@ -65,7 +65,7 @@ const fetchLoaderVersions = async (
   }
 };
 
-/** 版本详情与安装页面 - 配置实例、选择加载器并开始下载 */
+/** 版本详情与安装页面 - 配置游戏、选择加载器并开始下载 */
 const VersionDetailWithInstall: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -76,7 +76,7 @@ const VersionDetailWithInstall: React.FC = () => {
   const errorDownloadProgress = useDownloadStore(s => s.errorDownloadProgress);
   const setCurrentPath = useNavStore(s => s.setCurrentPath);
 
-  const [gameName, setInstanceName] = useState('');
+  const [gameName, setGameName] = useState('');
   const [expanded, setExpanded] = useState<LoaderKey | null>(null);
   const [selected, setSelected] = useState<{ type: ModLoaderType | null; version: string | null }>({ type: null, version: null });
   const [loaderState, setLoaderState] = useState<Record<LoaderKey, { loading: boolean; error: string | null; versions: ModLoaderVersionItem[] }>>({
@@ -91,7 +91,7 @@ const VersionDetailWithInstall: React.FC = () => {
 
   useEffect(() => {
     if (versionId) {
-      setInstanceName(versionId);
+      setGameName(versionId);
     }
   }, [versionId]);
 
@@ -170,7 +170,7 @@ const VersionDetailWithInstall: React.FC = () => {
       {/* 滚动内容区 */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-3xl mx-auto px-6 py-6 space-y-5 pb-10">
-          {/* 实例配置 */}
+          {/* 游戏配置 */}
           <PageSection className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
             <div className="flex items-center gap-2 mb-4">
               <Box className="w-5 h-5 text-[var(--color-primary)]" />
@@ -181,7 +181,7 @@ const VersionDetailWithInstall: React.FC = () => {
             <input
               type="text"
               value={gameName}
-              onChange={e => setInstanceName(e.target.value)}
+              onChange={e => setGameName(e.target.value)}
               placeholder={versionId ?? t('download.install.gameNamePlaceholder')}
               className="w-full px-4 py-2.5 rounded-lg text-sm bg-[var(--color-input)] border border-[var(--color-border)] text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-shadow"
             />

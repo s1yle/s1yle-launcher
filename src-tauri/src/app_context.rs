@@ -77,7 +77,7 @@ impl AppContext {
         self.versions_dir().join(game_name)
     }
 
-    /// 实例记录文件：{game_dir}/.wecraft_{name}.json
+    /// 游戏记录文件：{game_dir}/.wecraft_{name}.json
     pub fn record_path(&self, game_name: &str) -> PathBuf {
         self.game_dir(game_name)
             .join(format!(".wecraft_{}.json", game_name))
@@ -103,7 +103,7 @@ impl AppContext {
         game_dir.join(format!("{}.jar", version_id))
     }
 
-    /// 特定实例的 natives 解压目录：{root}/natives
+    /// 特定游戏的 natives 解压目录：{root}/natives
     pub fn natives_dir(&self) -> PathBuf {
         self.game_root().join("natives")
     }

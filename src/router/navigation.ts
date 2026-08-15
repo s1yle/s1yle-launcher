@@ -18,19 +18,19 @@ export interface SafeNavigateOptions {
 
 /**
  * 解析目标路径：
- * - `:instanceId` 自动替换为当前选中实例（无实例则拦截）
- * - 裸父路径（如 /instance-manage）未匹配路由时兜底到首个子路由
+ * - `:gameId` 自动替换为当前选中游戏（无游戏则拦截）
+ * - 裸父路径（如 /game-manage）未匹配路由时兜底到首个子路由
  */
 const resolveTargetPath = (path: string): string | null => {
   let target = path;
 
-  if (target.includes(':instanceId')) {
-    const instance = useGameStore.getState().getSelectedGame();
-    if (!instance) {
-      logger.warn(`[safeNavigate] 未选中游戏实例，取消导航: ${target}`);
+  if (target.includes(':gameId')) {
+    const game = useGameStore.getState().getSelectedGame();
+    if (!game) {
+      logger.warn(`[safeNavigate] 未选中游戏，取消导航: ${target}`);
       return null;
     }
-    target = target.split(':instanceId').join(instance.id);
+    target = target.split(':gameId').join(game.id);
   }
 
   if (!findRouteByPath(target, routes)) {
@@ -42,7 +42,7 @@ const resolveTargetPath = (path: string): string | null => {
     );
     if (parentRoute?.path && parentRoute.children?.[0]?.path) {
       const firstChild = parentRoute.children[0].path;
-      target = firstChild.includes(':instanceId')
+      target = firstChild.includes(':gameId')
         ? (resolveTargetPath(firstChild) ?? target)
         : firstChild;
     }
@@ -56,7 +56,7 @@ const resolveTargetPath = (path: string): string | null => {
  *
  * 内置安全检查：
  * - 目标与当前页面相同 → no-op（防重复导航/双击）
- * - `:instanceId` 自动替换，无选中实例 → 拦截
+ * - `:gameId` 自动替换，无选中游戏 → 拦截
  * - 目标路由不存在 → 兜底到父路由首个子路由
  * - 清理脏状态：拖拽预览（方向保留，陈旧方向由 RouterRenderer 的新鲜窗口自动失效）
  * - 页面关闭检查：location 与 DOM 实际挂载页面不一致时告警（僵尸页面，由 RouterRenderer
@@ -94,8 +94,8 @@ export function safeNavigate(
  *
  * @example
  * const safeNavigate = useSafeNavigate();
- * safeNavigate('/instance-list');
- * safeNavigate('/instance-manage/:instanceId/game-settings', { direction: 'right' });
+ * safeNavigate('/game-list');
+ * safeNavigate('/game-manage/:gameId/game-settings', { direction: 'right' });
  */
 export function useSafeNavigate() {
   const navigate = useNavigate();

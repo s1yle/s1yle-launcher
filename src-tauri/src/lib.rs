@@ -18,8 +18,8 @@ mod types;
 mod window;
 
 use crate::app_context::AppContext;
+use crate::config::{ConfigManager, set_config_value};
 use crate::types::AccountType;
-use crate::config::{ConfigManager, clear_login_state, save_login_state, set_config_value};
 
 use crate::microsoft_login::{
     cancel_device_code, get_login_status, poll_and_complete_login, start_device_code,
@@ -35,24 +35,24 @@ use tauri::{Manager, WebviewUrl};
 use tauri_plugin_keyring::KeyringExt;
 
 pub use crate::account::{
-    add_player_account, delete_account, get_account_list, get_current_account,
-    get_current_account_token, init_account_manager, initialize_account_system,
-    set_current_account,
+    add_player_account, clear_login_state, delete_account, get_account_list, get_current_account,
+    get_current_account_token, get_login_state, init_account_manager, initialize_account_system,
+    save_login_state, set_current_account,
 };
 pub use crate::admin_account::{
     bind_player_to_admin, get_admin_info, get_bound_players, init_admin_manager,
     initialize_admin_system, is_admin_registered, login_admin, unbind_player_from_admin,
 };
 pub use crate::launch::{
-    LaunchConfig, LaunchStatus, init_launch_manager, tauri_get_launch_config,
-    tauri_get_launch_status, tauri_launch_instance, tauri_stop_instance,
-    tauri_update_launch_config,
+    LaunchConfig, LaunchGameInfo, LaunchStatus, LaunchStatusInfo, front_get_launch_config,
+    front_get_launch_games, front_get_launch_status, front_get_launch_status_by_key,
+    front_launch_game, front_stop_game, front_update_launch_config, init_launch_manager,
 };
 pub use crate::window::{load_window_position, save_window_position};
 
 pub use download::{
-    cancel_download, cancel_version_download, clear_completed_tasks, download,
-    get_download_tasks, get_version_detail, get_version_download_manifest, get_version_manifest,
+    cancel_download, cancel_version_download, clear_completed_tasks, download, get_download_tasks,
+    get_version_detail, get_version_download_manifest, get_version_manifest,
 };
 
 pub use crate::game::{
@@ -238,9 +238,7 @@ fn init_app_context() -> AppContext {
 /// 从配置文件读取持久化的游戏根目录（app.game_dir），读取失败/为空时回退 /工作目录/.minecraft
 fn resolve_game_root(work_dir: &std::path::Path) -> std::path::PathBuf {
     // 新位置优先：{work_dir}/.wecraft/.wecraft.json（旧位置已废弃，仅作兼容回退）
-    let config_path = work_dir
-        .join(".wecraft")
-        .join(".wecraft.json");
+    let config_path = work_dir.join(".wecraft").join(".wecraft.json");
     let legacy_config_path = work_dir.join(".wecraft.json");
     for path in [config_path, legacy_config_path] {
         if let Ok(content) = std::fs::read_to_string(&path) {
@@ -291,9 +289,7 @@ pub fn run() {
     // AppContext 是唯一"路径事实源"，四个管理器通过构造注入持有其克隆，
     // 运行时共享同一份游戏根目录（set_game_root 即时生效）。
     let app_context = init_app_context();
-    app_context
-        .ensure_dirs()
-        .expect("初始化基础目录失败");
+    app_context.ensure_dirs().expect("初始化基础目录失败");
 
     let config_manager = ConfigManager::new(app_context.clone());
     let download_manager = DownloadManager::new();
@@ -336,15 +332,13 @@ pub fn run() {
 
             init_logging(app)?;
 
+            // 预先加载账户数据（登录状态在 accounts 节，窗口决策依赖）
+            let _ = crate::account::load_accounts_from_disk_internal();
+
             // 异步执行：判断登录态 → 创建目标窗口 → 关闭加载窗口
             tauri::async_runtime::spawn(async move {
-                let cm = match APP_HANDLE.get() {
-                    Some(h) => h.state::<ConfigManager>(),
-                    None => return,
-                };
-
-                let lg_state = match cm.get_config() {
-                    Ok(c) => c.login_state,
+                let lg_state = match crate::account::get_login_state() {
+                    Ok(s) => s,
                     Err(_) => return,
                 };
 
@@ -455,13 +449,17 @@ pub fn run() {
             get_account_list,
             get_current_account,
             get_current_account_token,
+            get_login_state,
             delete_account,
             set_current_account,
-            tauri_launch_instance,
-            tauri_stop_instance,
-            tauri_get_launch_status,
-            tauri_get_launch_config,
-            tauri_update_launch_config,
+            // 启动/停止 游戏
+            front_launch_game,
+            front_stop_game,
+            front_get_launch_status,
+            front_get_launch_status_by_key,
+            front_get_launch_games,
+            front_get_launch_config,
+            front_update_launch_config,
             log_frontend,
             initialize_account_system,
             get_version_manifest,

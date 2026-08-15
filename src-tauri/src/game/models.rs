@@ -5,9 +5,9 @@ use uuid::Uuid;
 /// 版本隔离模式
 ///
 /// 决定依赖库（libraries/assets）的存储方式：
-/// - `Global`：所有实例共享同一份依赖
+/// - `Global`：所有游戏共享同一份依赖
 /// - `Version`：按 Minecraft 版本隔离
-/// - `Instance`：每个实例完全独立
+/// - `Game`：每个游戏完全独立
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum IsolationMode {
@@ -23,14 +23,14 @@ impl Default for IsolationMode {
     }
 }
 
-/// 实例游戏设置（前端契约 DTO）
+/// 游戏游戏设置（前端契约 DTO）
 ///
-/// 全字段 Option，前端增量提交，由 [`GameInstance`] 与记录字段双向转换。
+/// 全字段 Option，前端增量提交，由 [`Game`] 与记录字段双向转换。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameSettings {
-    /// 是否使用实例独立的设置（否则继承全局配置）
+    /// 是否使用游戏独立的设置（否则继承全局配置）
     #[serde(default)]
-    pub use_instance_settings: bool,
+    pub use_game_settings: bool,
     /// Java 可执行文件路径
     pub java_path: Option<String>,
     /// Java 版本标识
@@ -66,7 +66,7 @@ pub struct GameSettings {
 impl Default for GameSettings {
     fn default() -> Self {
         Self {
-            use_instance_settings: false,
+            use_game_settings: false,
             java_path: None,
             java_version: None,
             min_memory: Some(4096),
@@ -86,15 +86,15 @@ impl Default for GameSettings {
     }
 }
 
-/// 游戏实例（唯一实例结构）
+/// 游戏（唯一游戏结构）
 ///
 /// 既是持久化记录（`{base}/.minecraft/versions/{game_name}/wecraft_{game_name}.json`），
 /// 也是返回前端的运行时视图。`path` 与 `game_settings` 为计算字段，不持久化。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Game {
-    /// 实例唯一标识
+    /// 游戏唯一标识
     pub id: String,
-    /// 实例显示名称（与实例目录名一致）
+    /// 游戏显示名称（与游戏目录名一致）
     pub name: String,
     /// 版本 ID（如 "1.20.1"）
     #[serde(alias = "version")]
@@ -145,7 +145,7 @@ pub struct Game {
     // ==================== 计算字段（不持久化，但必须序列化给前端） ====================
     // 注意：不能使用 `#[serde(skip)]`（序列化+反序列化都跳过，前端收不到字段）。
     // `skip_deserializing` = 反序列化忽略（读记录文件时用默认值），序列化保留（invoke 返回前端）。
-    /// 实例所在目录路径
+    /// 游戏所在目录路径
     #[serde(skip_deserializing)]
     pub path: String,
     /// 游戏设置视图（由记录字段派生）
@@ -154,13 +154,13 @@ pub struct Game {
     /// 版本损坏标记（扫描时计算：目录内缺少对应 jar/json 产物）
     #[serde(skip_deserializing)]
     pub broken: bool,
-    /// 空壳标记（扫描时计算：目录内除记录与外置资源外无任何文件，未下载的"空壳"实例）
+    /// 空壳标记（扫描时计算：目录内除记录与外置资源外无任何文件，未下载的"空壳"游戏）
     #[serde(skip_deserializing)]
     pub empty: bool,
 }
 
 impl Game {
-    /// 创建新实例记录（默认设置）
+    /// 创建新游戏记录（默认设置）
     pub fn new(
         name: &str,
         version_id: &str,
@@ -252,7 +252,7 @@ impl Game {
     /// 派生设置视图（供前端读取）
     pub fn to_game_settings(&self) -> GameSettings {
         GameSettings {
-            use_instance_settings: true,
+            use_game_settings: true,
             java_path: self.java_path.clone(),
             java_version: self.java_version.clone(),
             min_memory: Some(self.min_memory),
@@ -273,8 +273,8 @@ impl Game {
 }
 
 impl From<&Game> for GameSettings {
-    fn from(instance: &Game) -> Self {
-        instance.to_game_settings()
+    fn from(game: &Game) -> Self {
+        game.to_game_settings()
     }
 }
 

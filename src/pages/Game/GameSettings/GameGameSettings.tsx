@@ -9,10 +9,10 @@ import PartitionBar, { getPartitionColor } from '@/components/common/PartitionBa
 import { DropDownOption } from '@/components/common/DropDown';
 import { useRouteParams } from '@/router/routeParams';
 
-/** 实例游戏设置页面 - Java 配置、内存分配、窗口设置 */
-const InstanceGameSettings = () => {
+/** 游戏游戏设置页面 - Java 配置、内存分配、窗口设置 */
+const GameGameSettings = () => {
   const { t } = useTranslation();
-  const { instanceId } = useRouteParams();
+  const { gameId } = useRouteParams();
   const safeNavigate = useSafeNavigate();
   const setSelectedGame = useGameStore(s => s.setSelectedGame);
   const getGame = useGameStore(s => s.getGame);
@@ -33,7 +33,7 @@ const InstanceGameSettings = () => {
   const isInitialLoad = useRef(true);
   const lastSavedSettings = useRef<string>('');
 
-  const instance = instanceId ? getGame(instanceId) : null;
+  const game = gameId ? getGame(gameId) : null;
 
   // 分辨率选项：真实显示器模式 + 常用预设兜底（去重，保持顺序）
   // 注意：useMemo 必须与其它 hooks 一起置于提前 return 之前
@@ -56,24 +56,24 @@ const InstanceGameSettings = () => {
   }, [resolutionOptions, currentResolution]);
 
   useEffect(() => {
-    if (instanceId) {
-      const inst = getGame(instanceId);
+    if (gameId) {
+      const inst = getGame(gameId);
       if (inst) {
-        setSelectedGame(instanceId);
+        setSelectedGame(gameId);
       } else {
-        safeNavigate('/instance-list');
+        safeNavigate('/game-list');
       }
     }
-  }, [instanceId]);
+  }, [gameId]);
 
-  // 加载实例设置
+  // 加载游戏设置
   useEffect(() => {
-    if (!instance) return;
+    if (!game) return;
 
     const loadSettings = async () => {
       try {
         setSettingsLoading(true);
-        const loadedSettings = await getGameSettings(instance.name);
+        const loadedSettings = await getGameSettings(game.name);
         console.log('[GameSettings] Loaded settings:', loadedSettings);
         setSettings(loadedSettings);
         lastSavedSettings.current = JSON.stringify(loadedSettings);
@@ -93,7 +93,7 @@ const InstanceGameSettings = () => {
     };
 
     loadSettings();
-  }, [instance?.id]);
+  }, [game?.id]);
 
   // 加载显示器真实分辨率（失败静默，保留预设兜底）
   useEffect(() => {
@@ -123,7 +123,7 @@ const InstanceGameSettings = () => {
 
   // 保存设置（防抖）- 仅在用户修改后保存
   useEffect(() => {
-    if (!instance || settingsLoading || isInitialLoad.current) {
+    if (!game || settingsLoading || isInitialLoad.current) {
       isInitialLoad.current = false;
       return;
     }
@@ -136,7 +136,7 @@ const InstanceGameSettings = () => {
     const timer = setTimeout(async () => {
       try {
         console.log('[GameSettings] Saving settings:', settings);
-        await updateGameSettings(instance.name, settings);
+        await updateGameSettings(game.name, settings);
         lastSavedSettings.current = currentSettingsStr;
         success(t('settings.saved', '设置已保存'));
       } catch (e) {
@@ -146,7 +146,7 @@ const InstanceGameSettings = () => {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [instance?.id, settings, settingsLoading]);
+  }, [game?.id, settings, settingsLoading]);
 
   // 显示加载状态
   if (storeLoading || settingsLoading) {
@@ -159,20 +159,20 @@ const InstanceGameSettings = () => {
     );
   }
 
-  // 显示实例列表为空
+  // 显示游戏列表为空
   if (!games || games.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center text-text-tertiary">
-        {t('instances.noInstances', '暂无实例，请先添加游戏实例')}
+        {t('games.noGames', '暂无游戏，请先添加游戏')}
       </div>
     );
   }
 
-  // 显示未选择实例
-  if (!instance) {
+  // 显示未选择游戏
+  if (!game) {
     return (
       <div className="flex-1 flex items-center justify-center text-text-tertiary">
-        {t('instanceInfo.selectInstance', '请在侧边栏选择游戏实例')}
+        {t('gameInfo.selectGame', '请在侧边栏选择游戏')}
       </div>
     );
   }
@@ -267,26 +267,26 @@ const InstanceGameSettings = () => {
       <PageSection>
         <div className="max-w-4xl mx-auto space-y-6">
           <SettingsPanel
-            label={'基础设置 - ' + instance.name}
+            label={'基础设置 - ' + game.name}
           >
           <Toggle
-            label={t('settings.useInstanceSettings', '启用实例特定游戏设置')}
+            label={t('settings.useGameSettings', '启用游戏特定游戏设置')}
             bgHidden
-            checked={settings.use_instance_settings || false}
-            onChange={(checked) => updateSetting('use_instance_settings', checked)}
+            checked={settings.use_game_settings || false}
+            onChange={(checked) => updateSetting('use_game_settings', checked)}
             disabled={settingsLoading}
           />
 
           {/* 基础设置 */}
           <SettingsPanel.Item
-          // label={t('settings.useInstanceSettings', '启用实例特定游戏设置')}
-          // description={t('settings.useInstanceSettingsDesc', '启用后，以下设置将仅应用于当前实例，不影响其他实例。未启用时使用全局默认配置')}
+          // label={t('settings.useGameSettings', '启用游戏特定游戏设置')}
+          // description={t('settings.useGameSettingsDesc', '启用后，以下设置将仅应用于当前游戏，不影响其他游戏。未启用时使用全局默认配置')}
           >
 
             {/* Java 配置 */}
             <SettingsPanel.Sub
               label={t('settings.java.title', 'Java 配置')}
-              disabled={!settings.use_instance_settings}
+              disabled={!settings.use_game_settings}
             >
 
               {/* Java 路径选择 */}
@@ -316,7 +316,7 @@ const InstanceGameSettings = () => {
             <SettingsPanel.Sub
               label='游戏内存'
               gap='10px'
-              disabled={!settings.use_instance_settings}
+              disabled={!settings.use_game_settings}
             >
 
               {/* 自动分配开关 */}
@@ -378,7 +378,7 @@ const InstanceGameSettings = () => {
             {/* 窗口配置 */}
             <SettingsPanel.Sub
               label={t('settings.window.title', '窗口配置')}
-              disabled={!settings.use_instance_settings}
+              disabled={!settings.use_game_settings}
               gap='6px'
             >
               <SettingsPanel.Row
@@ -428,4 +428,4 @@ const InstanceGameSettings = () => {
   );
 };
 
-export default InstanceGameSettings;
+export default GameGameSettings;

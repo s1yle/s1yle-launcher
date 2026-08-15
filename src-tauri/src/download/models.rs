@@ -239,7 +239,7 @@ pub struct AssetObject {
 /// 部署选项（下载并部署请求参数）
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DownloadOptions {
-    /// 实例名称
+    /// 游戏名称
     pub game_name: String,
     /// 版本 ID
     pub version_id: String,
@@ -254,9 +254,9 @@ pub struct DownloadOptions {
 pub struct DownloadResult {
     /// 是否成功
     pub success: bool,
-    /// 实例 ID
+    /// 游戏 ID
     pub game_id: String,
-    /// 实例名称
+    /// 游戏名称
     pub game_name: String,
     /// 版本
     pub version: String,

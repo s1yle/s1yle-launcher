@@ -10,7 +10,7 @@ import { useClickOutside } from '@/hooks/useClickOutside';
 import { Z_INDEX } from '@/utils/zIndex';
 import { DURATION, EASING, dropdown, microInteractions } from '@/utils/animations';
 
-interface InstanceManageButtonProps {
+interface GameManageButtonProps {
   item: SidebarMenuItem;
   isActive: boolean;
   isExpanded?: boolean;
@@ -27,14 +27,14 @@ const LOADER_ICONS: Record<ModLoaderType, React.ComponentType<{ className?: stri
   [ModLoaderType.OptiFine]: Sun,
 };
 
-/** 实例管理按钮组件（侧边栏自定义渲染） */
-const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
+/** 游戏管理按钮组件（侧边栏自定义渲染） */
+const GameManageButton: React.FC<GameManageButtonProps> = ({
   item,
   isActive,
   onNavigate
 }) => {
   const { t } = useTranslation();
-  const instance = useGameStore(s => s.getSelectedGame());
+  const game = useGameStore(s => s.getSelectedGame());
   const games = useGameStore(s => s.games);
   const setSelectedGame = useGameStore(s => s.setSelectedGame);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -66,13 +66,13 @@ const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
 
   const handleMainClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!instance) return;
+    if (!game) return;
     
     // 如果有子项，自动导航到第一个子项
     if (item.children && item.children.length > 0 && onNavigate) {
       const firstChild = item.children[0];
       if (firstChild.path) {
-        // 不要提前替换 :instanceId，让 React Router 自己处理
+        // 不要提前替换 :gameId，让 React Router 自己处理
         onNavigate(firstChild.path);
       }
     } else if (item.path && onNavigate) {
@@ -86,13 +86,13 @@ const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
     setShowDropdown(!showDropdown);
   };
 
-  const handleInstanceSelect = (instanceId: string) => {
-    setSelectedGame(instanceId);
+  const handleGameSelect = (gameId: string) => {
+    setSelectedGame(gameId);
     setShowDropdown(false);
   };
 
-  // 无实例时的显示
-  if (!instance) {
+  // 无游戏时的显示
+  if (!game) {
     return (
       <div
         className={`w-full p-3 rounded-lg border transition-all duration-200 cursor-default ${
@@ -109,7 +109,7 @@ const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-sm font-semibold text-[var(--color-text-tertiary)]">
-              {t('instanceInfo.noInstance', '暂无实例')}
+              {t('gameInfo.noGame', '暂无游戏')}
             </div>
           </div>
         </div>
@@ -132,32 +132,32 @@ const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
       >
         {/* 左侧：图标 + 信息 */}
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          {/* 实例图标 */}
+          {/* 游戏图标 */}
           <motion.div
             className="w-8 h-8 rounded-lg bg-[var(--color-primary-10)] flex items-center justify-center flex-shrink-0 overflow-hidden"
             whileHover={microInteractions.iconHover}
             transition={EASING.SPRING_STIFF}
           >
-            {instance.icon_path ? (
+            {game.icon_path ? (
               <img
-                src={instance.icon_path}
-                alt={instance.name}
+                src={game.icon_path}
+                alt={game.name}
                 className="w-full h-full object-cover"
               />
             ) : (
               <span className="text-[var(--color-primary)]">
-                {getLoaderIcon(instance)}
+                {getLoaderIcon(game)}
               </span>
             )}
           </motion.div>
 
-          {/* 实例信息 */}
+          {/* 游戏信息 */}
           <div className="flex-1 min-w-0">
             <div className="text-sm font-semibold text-[var(--color-text-primary)] truncate">
-              {instance.name}
+              {game.name}
             </div>
             <div className="text-xs text-[var(--color-text-tertiary)] mt-0.5 truncate">
-              {formatVersionInfo(instance)}
+              {formatVersionInfo(game)}
             </div>
           </div>
         </div>
@@ -179,7 +179,7 @@ const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
           <AnimatePresence>
             <motion.div
               ref={dropdownRef}
-              key="instance-dropdown"
+              key="game-dropdown"
               variants={dropdown}
               initial="initial"
               animate="animate"
@@ -190,9 +190,9 @@ const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
               {games.map((inst) => (
                 <button
                   key={inst.id}
-                  onClick={() => handleInstanceSelect(inst.id)}
+                  onClick={() => handleGameSelect(inst.id)}
                   className={`w-full px-3 py-2 text-left flex items-center gap-2 transition-colors ${
-                    inst.id === instance.id
+                    inst.id === game.id
                       ? 'bg-[var(--color-primary-10)] text-[var(--color-text-primary)]'
                       : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]'
                   }`}
@@ -221,7 +221,7 @@ const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
                     </div>
                   </div>
 
-                  {inst.id === instance.id && (
+                  {inst.id === game.id && (
                     <div className="w-2 h-2 rounded-full bg-[var(--color-primary)] flex-shrink-0" />
                   )}
                 </button>
@@ -234,4 +234,4 @@ const InstanceManageButton: React.FC<InstanceManageButtonProps> = ({
   );
 };
 
-export default InstanceManageButton;
+export default GameManageButton;

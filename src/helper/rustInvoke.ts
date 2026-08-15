@@ -13,12 +13,16 @@ export const deleteAccount = __.invokeDeleteAccount;
 /** 设置当前激活的账户 */
 export const setCurrentAccount = __.invokeSetCurrentAccount;
 
-/** 启动游戏实例 */
-export const launchInstance = __.invokeLaunchInstance;
-/** 停止游戏实例 */
-export const stopInstance = __.invokeStopInstance;
+/** 启动游戏 */
+export const launchGame = __.invokeLaunchGame;
+/** 停止游戏 */
+export const stopGame = __.invokeStopGame;
 /** 获取启动状态 */
 export const getLaunchStatus = __.invokeGetLaunchStatus;
+/** 获取指定游戏会话的启动状态与真实进度 */
+export const getLaunchStatusByKey = __.invokeGetLaunchStatusByKey;
+/** 获取全部运行游戏会话快照 */
+export const getLaunchGames = __.invokeGetLaunchGames;
 /** 获取启动配置 */
 export const getLaunchConfig = __.invokeGetLaunchConfig;
 /** 更新启动配置 */
@@ -59,11 +63,11 @@ export const buildForgeLaunchConfig = __.invokeBuildForgeLaunchConfig;
 /** 获取已安装的模组加载器列表 */
 export const getInstalledModLoaders = __.invokeGetInstalledModLoaders;
 
-/** 扫描已安装的游戏实例 */
+/** 扫描已安装的游戏 */
 export const scanGames = __.invokeScanGames;
-/** 获取实例设置 */
+/** 获取游戏设置 */
 export const getGameSettings = __.invokeGetGameSettings;
-/** 更新实例设置 */
+/** 更新游戏设置 */
 export const updateGameSettings = __.invokeUpdateGameSettings;
 /** 获取系统内存信息 */
 export const getSystemMemory = __.invokeGetSystemMemory;
@@ -73,17 +77,17 @@ export const getMemoryUsage = __.invokeGetMemoryUsage;
 export const getDisplayResolutions = __.invokeGetDisplayResolutions;
 /** 弹出 Java 路径选择对话框 */
 export const selectJavaPath = __.invokeSelectJavaPath;
-/** 获取单个实例信息 */
+/** 获取单个游戏信息 */
 export const getGame = __.invokeGetGame;
-/** 创建新实例 */
+/** 创建新游戏 */
 export const createGame = __.invokeCreateGame;
-/** 删除实例 */
+/** 删除游戏 */
 export const deleteGame = __.invokeDeleteGame;
-/** 重命名实例 */
+/** 重命名游戏 */
 export const renameGame = __.invokeRenameGame;
-/** 更新实例信息 */
+/** 更新游戏信息 */
 export const updateGame = __.invokeUpdateGame;
-/** 校验实例完整性 （基于版本 JSON，deep 时对资源做 SHA1 全量校验） */
+/** 校验游戏完整性 （基于版本 JSON，deep 时对资源做 SHA1 全量校验） */
 export const validateGame = __.invokeValidateGame;
 
 /** 创建窗口 */

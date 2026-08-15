@@ -4,31 +4,31 @@ import { useSafeNavigate } from '@/router/navigation';
 import { useGameStore } from '../../../stores/gameStore';
 import { Page, PageSection } from '@/components/common';
 
-/** 实例材质包管理页面（待实现） */
-const InstanceResourcePacks: React.FC = () => {
-  const { instanceId } = useRouteParams();
+/** 游戏模组管理页面（待实现） */
+const GameMods: React.FC = () => {
+  const { gameId } = useRouteParams();
   const safeNavigate = useSafeNavigate();
   const getGame = useGameStore(s => s.getGame);
   const setSelectedGame = useGameStore(s => s.setSelectedGame);
 
   useEffect(() => {
-    if (instanceId) {
-      const inst = getGame(instanceId);
+    if (gameId) {
+      const inst = getGame(gameId);
       if (inst) {
-        setSelectedGame(instanceId);
+        setSelectedGame(gameId);
       } else {
-        safeNavigate('/instance-list');
+        safeNavigate('/game-list');
       }
     }
-  }, [instanceId]);
+  }, [gameId]);
 
   return (
     <Page className="flex-1 flex items-center justify-center">
       <PageSection>
-      材质包管理（实例：{instanceId}）
+        模组管理（游戏：{gameId}）
       </PageSection>
     </Page>
   );
 };
 
-export default InstanceResourcePacks;
+export default GameMods;

@@ -12,6 +12,38 @@ export enum LaunchStatus {
   Stopped = "Stopped",
 }
 
+/** 运行中游戏会话的快照信息 */
+export interface LaunchGameInfo {
+  /** 游戏会话唯一标识（UUID，每次启动生成） */
+  game_id: string;
+  /** 游戏目录（.minecraft 根目录） */
+  game_dir: string;
+  /** 启动状态 */
+  status: LaunchStatus;
+  /** 子进程 PID（未启动为 null） */
+  pid: number | null;
+  /** Minecraft 版本 */
+  version: string;
+  /** 用户名 */
+  username: string;
+  /** 最近一次错误信息 */
+  last_error: string | null;
+  /** 真实进度（0-100） */
+  progress: number;
+  /** 当前阶段文案 */
+  stage: string;
+}
+
+/** 指定游戏会话的状态 + 进度快照 */
+export interface LaunchStatusInfo {
+  /** 启动状态 */
+  status: LaunchStatus;
+  /** 真实进度（0-100） */
+  progress: number;
+  /** 当前阶段文案 */
+  stage: string;
+}
+
 /** 游戏启动配置 */
 export interface LaunchConfig {
   /** Java 可执行文件路径 */

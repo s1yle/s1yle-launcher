@@ -13,7 +13,7 @@ export * from "./types/account";
 export * from "./types/launch";
 export * from "./types/download";
 export * from "./types/modloader";
-export * from "./types/instance";
+export * from "./types/game";
 export * from "./types/config";
 export * from "./types/java";
 export * from "./types/font";

@@ -17,9 +17,9 @@ import IconButton from '../IconButton';
 import { PageSection } from '../Page';
 import { useAppStore } from '@/stores/appStore';
 
-/** 实例列表项组件 Props */
-interface InstanceListItemProps {
-  instance: Game;
+/** 游戏列表项组件 Props */
+interface GameListItemProps {
+  game: Game;
   selected?: boolean;
   isFavorite?: boolean;
   onSelect?: () => void;
@@ -53,9 +53,9 @@ const getLoaderIconPath = (type: ModLoaderType): string => {
   return iconMap[type] || 'grass.png';
 };
 
-/** 实例列表项组件，显示实例图标、名称、版本信息，支持右键菜单 */
-const InstanceListItem = ({
-  instance,
+/** 游戏列表项组件，显示游戏图标、名称、版本信息，支持右键菜单 */
+const GameListItem = ({
+  game,
   selected = false,
   isFavorite = false,
   onSelect,
@@ -65,7 +65,7 @@ const InstanceListItem = ({
   onSettings,
   onFavorite,
   className,
-}: InstanceListItemProps) => {
+}: GameListItemProps) => {
   const [iconSrc, setIconSrc] = useState<string | null>(null);
   const [iconError, setIconError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -74,18 +74,18 @@ const InstanceListItem = ({
 
   useEffect(() => {
     setIconError(false);
-    if (instance.icon_path) {
-      setIconSrc(`asset://localhost/${instance.icon_path}`);
+    if (game.icon_path) {
+      setIconSrc(`asset://localhost/${game.icon_path}`);
       return;
     }
     const wecraftDir = useAppStore.getState().systemInfo?.wecraftDir;
     if (wecraftDir) {
-      const loaderIconPath = `${wecraftDir}/assets/icons/${getLoaderIconPath(instance.loader_type)}`;
+      const loaderIconPath = `${wecraftDir}/assets/icons/${getLoaderIconPath(game.loader_type)}`;
       setIconSrc(`asset://localhost/${loaderIconPath}`);
     } else {
       setIconSrc(null);
     }
-  }, [instance]);
+  }, [game]);
 
   const handleClick = () => {
     onSelect?.();
@@ -101,7 +101,7 @@ const InstanceListItem = ({
   };
 
   const contextMenuItems: ContextMenuItemData[] = [
-    { id: 'settings', label: '实例管理', icon: Settings },
+    { id: 'settings', label: '游戏管理', icon: Settings },
     { id: 'divider1', label: '', divider: true },
     { id: 'rename', label: '重命名', icon: Edit3 },
     { id: 'delete', label: '删除', icon: Trash2, danger: true },
@@ -171,7 +171,7 @@ const InstanceListItem = ({
               {iconSrc && !iconError ? (
                 <img
                   src={iconSrc}
-                  alt={instance.name}
+                  alt={game.name}
                   className="w-full h-full object-cover"
                   onError={() => setIconError(true)}
                 />
@@ -186,9 +186,9 @@ const InstanceListItem = ({
           </motion.div>
 
           <div className="flex-1 flex flex-col">
-            {/* 实例名称 */}
+            {/* 游戏名称 */}
             <motion.span className='font-light text-base/5 text-(--color-text-secondary)'>
-              {instance.name}
+              {game.name}
             </motion.span>
             <div className="flex items-center gap-2">
               {/* 版本类型 + 版本id */}
@@ -196,17 +196,17 @@ const InstanceListItem = ({
                 className="rounded text-xs bg-surface-active text-(--color-text-tertiary)"
                 style={{ whiteSpace: "pre" }}
               >
-                {inferVersionType(instance.version_id) + `\x20`}  {instance.version_id}
+                {inferVersionType(game.version_id) + `\x20`}  {game.version_id}
               </span>
 
               {/* modloader */}
-              {instance.loader_type !== ModLoaderType.Vanilla && (
+              {game.loader_type !== ModLoaderType.Vanilla && (
                 <motion.span
                   className="text-sm bg-primary-bg text-secondary"
                   whileHover={{ scale: 1.05 }}
                 >
-                  {getLoaderLabel(instance.loader_type)}
-                  {instance.loader_version && ` ${instance.loader_version}`}
+                  {getLoaderLabel(game.loader_type)}
+                  {game.loader_version && ` ${game.loader_version}`}
                 </motion.span>
               )}
             </div>
@@ -258,4 +258,4 @@ const InstanceListItem = ({
   );
 };
 
-export default InstanceListItem;
+export default GameListItem;

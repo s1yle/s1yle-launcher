@@ -3,7 +3,7 @@ use tauri::State;
 use super::manager::GameManager;
 use super::models::{Game, GameSettings};
 
-/// 获取实例的游戏设置
+/// 获取游戏的游戏设置
 #[tauri::command]
 pub fn get_game_settings(
     game_name: String,
@@ -11,12 +11,12 @@ pub fn get_game_settings(
 ) -> Result<GameSettings, String> {
     let game = game_manager
         .get_game(&game_name)
-        .ok_or_else(|| format!("实例不存在：{}", game_name))?;
+        .ok_or_else(|| format!("游戏不存在：{}", game_name))?;
 
     Ok(game.game_settings.unwrap_or_default())
 }
 
-/// 更新实例的游戏设置
+/// 更新游戏的游戏设置
 #[tauri::command]
 pub fn update_game_settings(
     game_name: String,

@@ -96,7 +96,7 @@ pub async fn get_version_detail(version_id: String) -> Result<serde_json::Value,
     fetch_version_value(&version_id).await
 }
 
-/// 下载并部署版本到目标实例（包含下载、部署、配置写入全流程）
+/// 下载并部署版本到目标游戏（包含下载、部署、配置写入全流程）
 #[tauri::command]
 pub async fn download(
     options: DownloadOptions,
@@ -127,7 +127,7 @@ let game_path = game_manager
             options.loader_version.clone(),
             None,
         )
-        .map_err(|e| format!("创建实例失败: {}", e))?
+        .map_err(|e| format!("创建游戏失败: {}", e))?
         .path;
     let game_dir = std::path::PathBuf::from(&game_path);
 
@@ -280,7 +280,7 @@ let game_path = game_manager
     }
     let game = game_manager
         .get_game(&options.game_name)
-        .ok_or_else(|| format!("实例不存在：{}", options.game_name))?;
+        .ok_or_else(|| format!("游戏不存在：{}", options.game_name))?;
 
     game_manager.save_record(&game).map_err(|e| e.to_string())?;
     app_handle
@@ -303,14 +303,14 @@ let game_path = game_manager
         version: options.version_id,
         deployed_files_count: completed,
         total_files_count: total_files,
-        message: "版本已下载到实例".to_string(),
+        message: "版本已下载到游戏".to_string(),
     })
     }
     .await;
 
     dm.unregister_cancellation(&version_id);
     if cancel_token.is_cancelled() {
-        log_info!("下载已取消，清理实例: {}", game_name);
+        log_info!("下载已取消，清理游戏: {}", game_name);
         let _ = game_manager.delete_game(&game_name, true);
         return Err("下载已取消".to_string());
     }

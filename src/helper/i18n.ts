@@ -4,7 +4,7 @@ import enUS from '../locales/en-US/translation.json';
 import zhCN from '../locales/zh-CN/translation.json';
 
 /**
- * i18next 国际化实例
+ * i18next 国际化游戏
  *
  * 初始化配置：
  * - 语言资源：zh-CN（中文）、en-US（英文）

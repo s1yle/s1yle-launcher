@@ -175,10 +175,10 @@ export interface CompatibilityCheck {
   warning: string | null;
 }
 
-/** 安装配置（实例 + 加载器） */
+/** 安装配置（游戏 + 加载器） */
 export interface InstallConfig {
-  /** 实例名称 */
-  instance_name: string;
+  /** 游戏名称 */
+  game_name: string;
   /** Minecraft 版本 */
   mc_version: string;
   /** 要安装的加载器列表 */

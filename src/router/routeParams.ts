@@ -3,9 +3,9 @@ import { createContext, useContext } from 'react';
 
 /**
  * 解析路由路径中的 :param 动态段
- * @param routePath - 路由定义的路径（如 /instance-manage/:instanceId）
+ * @param routePath - 路由定义的路径（如 /game-manage/:gameId）
  * @param actualPath - 实际访问路径
- * @returns 参数映射 { instanceId: 'xxx' }
+ * @returns 参数映射 { gameId: 'xxx' }
  */
 export const parseRouteParams = (routePath: string, actualPath: string): Record<string, string> => {
   const params: Record<string, string> = {};

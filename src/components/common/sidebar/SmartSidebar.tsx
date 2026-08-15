@@ -60,8 +60,8 @@ const SmartSidebar = ({ onMenuClick = () => {}, footer, header, ownSidebar = fal
   };
 
   const isActive = (path: string) => {
-    // 支持动态参数匹配（如 /instance-manage/:instanceId/game-settings）
-    const normalizedPath = path.replace(/:instanceId/g, '[^/]+');
+    // 支持动态参数匹配（如 /game-manage/:gameId/game-settings）
+    const normalizedPath = path.replace(/:gameId/g, '[^/]+');
     const pathRegex = new RegExp(`^${normalizedPath}$`);
     return path === location.pathname || pathRegex.test(location.pathname);
   };
@@ -77,8 +77,8 @@ const SmartSidebar = ({ onMenuClick = () => {}, footer, header, ownSidebar = fal
     let foundParent: SidebarMenuItem | undefined = undefined;
     const findInItems = (items: SidebarMenuItem[], parent?: SidebarMenuItem): SidebarMenuItem | undefined => {
       for (const item of items) {
-        // 支持动态参数匹配（如 /instance-manage/:instanceId/game-settings）
-        const normalizedItemPath = item.path?.replace(/:instanceId/g, '[^/]+');
+        // 支持动态参数匹配（如 /game-manage/:gameId/game-settings）
+        const normalizedItemPath = item.path?.replace(/:gameId/g, '[^/]+');
         const pathRegex = new RegExp(`^${normalizedItemPath}$`);
         if ((item.path === path || pathRegex.test(path))) {
           foundParent = parent;

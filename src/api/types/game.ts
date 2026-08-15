@@ -6,14 +6,14 @@ export enum IsolationMode {
   Global = 'global',
   /** 按版本隔离 */
   Version = 'version',
-  /** 按实例完全隔离 */
-  Instance = 'instance',
+  /** 按游戏完全隔离 */
+  Game = 'game',
 }
 
-/** 游戏实例设置 */
+/** 游戏设置 */
 export interface GameSettings {
-  /** 是否使用实例级设置（覆盖全局） */
-  use_instance_settings?: boolean;
+  /** 是否使用游戏级设置（覆盖全局） */
+  use_game_settings?: boolean;
   /** Java 路径 */
   java_path?: string;
   /** Java 版本 */
@@ -46,11 +46,11 @@ export interface GameSettings {
   server_port?: number;
 }
 
-/** 游戏实例信息 */
+/** 游戏信息 */
 export interface Game {
-  /** 实例 ID */
+  /** 游戏 ID */
   id: string;
-  /** 实例名称 */
+  /** 游戏名称 */
   name: string;
   /** Minecraft 版本 ID */
   version_id: string;
@@ -58,7 +58,7 @@ export interface Game {
   loader_type: ModLoaderType;
   /** 模组加载器版本 */
   loader_version: string | null;
-  /** 实例路径 */
+  /** 游戏路径 */
   path: string;
   /** 图标路径 */
   icon_path: string | null;
@@ -70,15 +70,15 @@ export interface Game {
   enabled: boolean;
   /** 版本是否损坏（扫描时计算：目录内缺失对应 jar 产物） */
   broken: boolean;
-  /** 是否空壳（扫描时计算：目录内除记录外无任何文件，未下载的"空壳"实例） */
+  /** 是否空壳（扫描时计算：目录内除记录外无任何文件，未下载的"空壳"游戏） */
   empty: boolean;
-  /** 实例级游戏设置 */
+  /** 游戏级游戏设置 */
   game_settings?: GameSettings;
 }
 
-/** 实例创建表单数据 */
-export interface InstanceFormData {
-  /** 实例名称 */
+/** 游戏创建表单数据 */
+export interface GameFormData {
+  /** 游戏名称 */
   name: string;
   /** Minecraft 版本 ID */
   version_id: string;
@@ -106,11 +106,11 @@ export interface FileCheck {
   actual_size: number | null;
 }
 
-/** 实例完整性校验报告 */
+/** 游戏完整性校验报告 */
 export interface GameValidation {
   /** 是否完整可启动（无缺失/损坏） */
   valid: boolean;
-  /** 目录是否为空壳（除 .wecraft 记录文件外无任何文件，即未下载的"空壳"实例） */
+  /** 目录是否为空壳（除 .wecraft 记录文件外无任何文件，即未下载的"空壳"游戏） */
   empty: boolean;
   game_name: string;
   version_id: string;

@@ -203,7 +203,7 @@ pub struct ModLoaderManager {
 }
 
 impl ModLoaderManager {
-    /// 创建新的 ModLoaderManager 实例（组合根注入 ctx）
+    /// 创建新的 ModLoaderManager 游戏（组合根注入 ctx）
     pub fn new(ctx: AppContext) -> Self {
         Self {
             ctx,
@@ -339,7 +339,6 @@ pub async fn build_fabric_launch_config(
     _assets_dir: String,
     _username: String,
     _uuid: String,
-    _access_token: Option<String>,
     _java_path: String,
     _memory_mb: u32,
 ) -> Result<ModLoaderInfo, String> {
@@ -486,7 +485,6 @@ pub async fn build_forge_launch_config(
     _assets_dir: String,
     _username: String,
     _uuid: String,
-    _access_token: Option<String>,
     _java_path: String,
     _memory_mb: u32,
 ) -> Result<ModLoaderInfo, String> {

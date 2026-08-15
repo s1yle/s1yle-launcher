@@ -3,7 +3,7 @@ import { parseRouteParams } from './routeParams';
 
 describe('parseRouteParams', () => {
   it('解析单动态段', () => {
-    expect(parseRouteParams('/instance-manage/:id', '/instance-manage/abc')).toEqual({ id: 'abc' });
+    expect(parseRouteParams('/game-manage/:id', '/game-manage/abc')).toEqual({ id: 'abc' });
   });
 
   it('解析多动态段', () => {
@@ -11,11 +11,11 @@ describe('parseRouteParams', () => {
   });
 
   it('无参数路由返回空对象', () => {
-    expect(parseRouteParams('/instance-list', '/instance-list')).toEqual({});
+    expect(parseRouteParams('/game-list', '/game-list')).toEqual({});
   });
 
   it('实际路径较短时缺失参数为 undefined', () => {
-    expect(parseRouteParams('/instance-manage/:id/mods', '/instance-manage/abc')).toEqual({ id: 'abc' });
+    expect(parseRouteParams('/game-manage/:id/mods', '/game-manage/abc')).toEqual({ id: 'abc' });
   });
 
   it('URL 编码值保持原样', () => {

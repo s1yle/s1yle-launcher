@@ -23,7 +23,7 @@
 //
 // TODO: The Next Phase
 //
-// 玩家身份需要使用正版/离线/第三方登录，每个玩家账户数据互相隔离(除了游戏实例)
+// 玩家身份需要使用正版/离线/第三方登录，每个玩家账户数据互相隔离(除了游戏)
 // 根据以上实现适合的账户界面初步 ui 设计
 
 import { useEffect } from 'react';
@@ -104,7 +104,7 @@ const MainLayout = () => {
 function App() {
   const initTheme = useThemeStore((s) => s.init);
   const initApp = useAppStore((s) => s.init);
-  const initInstances = useGameStore((s) => s.init);
+  const initGames = useGameStore((s) => s.init);
   const initFont = useFontStore((s) => s.init);
   const setupDownloadListeners = useDownloadStore((s) => s.setupEventListeners);
   const initDownload = useDownloadStore((s) => s.init);
@@ -114,13 +114,13 @@ function App() {
   useEffect(() => {
     initTheme();
     initApp();
-    initInstances();
+    initGames();
     initFont();
     initializeAccountStore();
     initDownload();
     useAdminStore.getState();
     invokeRustFunction("initialize_admin_system").catch(() => { });
-  }, [initTheme, initApp, initInstances, initFont, initializeAccountStore, initDownload]);
+  }, [initTheme, initApp, initGames, initFont, initializeAccountStore, initDownload]);
 
   useEffect(() => {
     const cleanup = setupDownloadListeners();

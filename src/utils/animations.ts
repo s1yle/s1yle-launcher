@@ -308,7 +308,7 @@ export const dropdown: Variants = {
 };
 
 /**
- * ## staggerContainer / staggerItem — 错峰列表容器（配合互用，如实例列表）
+ * ## staggerContainer / staggerItem — 错峰列表容器（配合互用，如游戏列表）
  */
 export const staggerContainer: Variants = {
   initial: {},

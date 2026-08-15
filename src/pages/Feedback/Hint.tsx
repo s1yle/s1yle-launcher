@@ -140,7 +140,7 @@ const Hint = () => {
             </p>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-text-secondary">
                 <li>• 账户登录和管理系统</li>
-                <li>• Minecraft实例创建和管理</li>
+                <li>• Minecraft游戏创建和管理</li>
                 <li>• 游戏版本下载和安装</li>
                 <li>• 游戏启动和日志监控</li>
                 <li>• 模组管理和配置</li>
@@ -166,8 +166,8 @@ const Hint = () => {
             <div className="mt-8 pt-8 border-t border-border-hover">
                 <h3 className="text-xl font-bold text-text-primary mb-4">版本中心功能规划</h3>
                 <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-text-secondary">
-                <li>• 创建自定义游戏实例</li>
-                <li>• 导入/导出实例配置</li>
+                <li>• 创建自定义游戏</li>
+                <li>• 导入/导出游戏配置</li>
                 <li>• 模组管理界面</li>
                 <li>• 资源包和材质包管理</li>
                 <li>• Java版本配置</li>
@@ -176,14 +176,14 @@ const Hint = () => {
             </div>
 
 
-            {/* 游戏实例功能说明 */}
+            {/* 游戏功能说明 */}
             <div className="mt-8 pt-8 border-t border-border-hover">
-                <h3 className="text-xl font-bold text-text-primary mb-4">游戏实例功能规划</h3>
+                <h3 className="text-xl font-bold text-text-primary mb-4">游戏功能规划</h3>
                 <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-text-secondary">
-                <li>• 快速启动游戏实例</li>
-                <li>• 实例状态监控</li>
+                <li>• 快速启动游戏</li>
+                <li>• 游戏状态监控</li>
                 <li>• 批量操作支持</li>
-                <li>• 实例搜索和筛选</li>
+                <li>• 游戏搜索和筛选</li>
                 <li>• 最近运行历史</li>
                 <li>• 性能统计和监控</li>
                 </ul>

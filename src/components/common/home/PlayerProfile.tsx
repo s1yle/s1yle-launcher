@@ -59,7 +59,7 @@ const PlayerProfile = ({
       {/* FIXME: 修复平面模式下，部分皮肤不显示眼睛的问题 */}
 
       {/* 用户名 */}
-      <h1 className="text-lg font-medium text-text-primary">
+      <h1 className="text-base/2 font-light text-(--color-text-primary)">
         {name}
       </h1>
     </div>

@@ -3,8 +3,8 @@
  */
 export { default as Loading } from './Loading';
 export { default as Home } from './Home';
-export { default as InstanceManage } from './Instance/InstanceManage';
-export { default as InstanceList } from './Instance/InstanceList';
+export { default as GameManage } from './Game/GameManage';
+export { default as GameList } from './Game/GameList';
 export { default as DownloadGame } from './Download/DownloadGame';
 export { default as DownloadModpack } from './Download/DownloadModpack';
 export { default as VersionDetailWithInstall } from './Download/VersionDetailWithInstall';
@@ -15,9 +15,9 @@ export { default as JavaSettings } from './Settings/JavaSettings.tsx';
 export { default as Multiplayer } from './Multiplayer';
 export { default as Feedback } from './Feedback/Feedback';
 export { default as Hint } from './Feedback/Hint'
-export { default as InstanceGameSettings } from './Instance/InstanceSettings/InstanceGameSettings';
-export { default as InstanceAutoInstall } from './Instance/InstanceSettings/InstanceAutoInstall';
-export { default as InstanceMods } from './Instance/InstanceSettings/InstanceMods';
-export { default as InstanceResourcePacks } from './Instance/InstanceSettings/InstanceResourcePacks';
-export { default as InstanceWorlds } from './Instance/InstanceSettings/InstanceWorlds';
+export { default as GameGameSettings } from './Game/GameSettings/GameGameSettings';
+export { default as GameAutoInstall } from './Game/GameSettings/GameAutoInstall';
+export { default as GameMods } from './Game/GameSettings/GameMods';
+export { default as GameResourcePacks } from './Game/GameSettings/GameResourcePacks';
+export { default as GameWorlds } from './Game/GameSettings/GameWorlds';
 export { default as VersionInstall } from './VersionInstall';

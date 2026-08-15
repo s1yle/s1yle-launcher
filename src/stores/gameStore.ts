@@ -13,7 +13,7 @@ import type { Game, GameSettings, GameValidation } from '../helper/rustInvoke';
 import { ModLoaderType } from '../helper/rustInvoke';
 
 const STORAGE_KEY_GAME = 's1yle-selected-game';
-const STORAGE_KEY_FAVORITES = 's1yle-favorite-instances';
+const STORAGE_KEY_FAVORITES = 's1yle-favorite-games';
 
 // 获取 localstorage 存储的游戏 ID
 function getSavedGameId(): string | null {
@@ -27,7 +27,7 @@ function saveGameId(id: string | null) {
   catch { /* storage not available */ }
 }
 
-// 读取收藏的实例 ID 列表
+// 读取收藏的游戏 ID 列表
 function getSavedFavorites(): string[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_FAVORITES);
@@ -37,7 +37,7 @@ function getSavedFavorites(): string[] {
   } catch { return []; }
 }
 
-// 持久化收藏的实例 ID 列表
+// 持久化收藏的游戏 ID 列表
 function saveFavorites(ids: string[]) {
   try { localStorage.setItem(STORAGE_KEY_FAVORITES, JSON.stringify(ids)); }
   catch { /* storage not available */ }
@@ -51,7 +51,7 @@ function saveFavorites(ids: string[]) {
 interface GameState {
   /** 所有游戏列表 */
   games: Game[];
-  /** 收藏的实例 ID 列表（持久化到 localStorage） */
+  /** 收藏的游戏 ID 列表（持久化到 localStorage） */
   favoriteIds: string[];
   /** 当前选中的游戏 ID（持久化到 localStorage） */
   selectedGameId: string | null;
@@ -67,18 +67,18 @@ interface GameState {
   viewMode: 'grid' | 'list';
   /** 游戏根目录（即 .minecraft 目录本身） */
   gameRoot: string;
-  /** 实例完整性校验结果（key = 游戏 id；null = 校验不可用，如版本 JSON 缺失） */
+  /** 游戏完整性校验结果（key = 游戏 id；null = 校验不可用，如版本 JSON 缺失） */
   validations: Record<string, GameValidation | null>;
-  /** 是否正在后台校验实例完整性 */
+  /** 是否正在后台校验游戏完整性 */
   validating: boolean;
 
   /** 初始化 Store（加载游戏、路径配置、恢复选中状态） */
   init: () => Promise<void>;
   /** 刷新游戏列表和根目录 */
   refresh: () => Promise<void>;
-  /** 校验全部实例完整性（后台并发执行；结果写入 validations 并同步 broken 标记） */
+  /** 校验全部游戏完整性（后台并发执行；结果写入 validations 并同步 broken 标记） */
   validateAll: () => Promise<void>;
-  /** 校验单个实例完整性（每次调用都执行，无缓存） */
+  /** 校验单个游戏完整性（每次调用都执行，无缓存） */
   checkGame: (id: string) => Promise<GameValidation | null>;
   /** 选中游戏（同时持久化到 localStorage） */
   setSelectedGame: (id: string | null) => void;
@@ -102,9 +102,9 @@ interface GameState {
   setViewMode: (mode: 'grid' | 'list') => void;
   /** 根据当前搜索条件获取过滤后的游戏列表 */
   getFilteredGames: () => Game[];
-  /** 切换实例收藏状态（持久化到 localStorage） */
+  /** 切换游戏收藏状态（持久化到 localStorage） */
   toggleFavorite: (id: string) => void;
-  /** 判断实例是否已收藏 */
+  /** 判断游戏是否已收藏 */
   isFavorite: (id: string) => boolean;
   /** 获取当前选中的游戏对象 */
   getSelectedGame: () => Game | null;
@@ -167,7 +167,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       set({ loading: false });
     }
 
-    // 主页/列表页入口：只校验当前选中的实例，避免全量 SHA1 哈希拖慢进入
+    // 主页/列表页入口：只校验当前选中的游戏，避免全量 SHA1 哈希拖慢进入
     const selected = get().selectedGameId;
     if (selected) {
       void get().checkGame(selected);
@@ -186,7 +186,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ validating: true });
     const results: Record<string, GameValidation | null> = {};
 
-    // 受限并发（2 路），避免多实例同时 SHA1 哈希造成 IO 尖峰
+    // 受限并发（2 路），避免多游戏同时 SHA1 哈希造成 IO 尖峰
     let index = 0;
     const workers = Array.from({ length: Math.min(2, targets.length) }, async () => {
       while (index < targets.length) {
@@ -236,12 +236,12 @@ export const useGameStore = create<GameState>((set, get) => ({
       // keep existing
     }
 
-    // 刷新后始终全量校验：保证空壳（无版本号）实例也能拿到 empty 标记，
-    // 不能只校验选中实例（否则空目录会继续显示并落入错误分组）
+    // 刷新后始终全量校验：保证空壳（无版本号）游戏也能拿到 empty 标记，
+    // 不能只校验选中游戏（否则空目录会继续显示并落入错误分组）
     void get().validateAll();
   },
 
-  /** 校验单个实例完整性（每次调用都执行，无缓存）；结果写入 validations 并同步 broken */
+  /** 校验单个游戏完整性（每次调用都执行，无缓存）；结果写入 validations 并同步 broken */
   checkGame: async (id: string) => {
     const game = get().games.find((g) => g.id === id);
     if (!game) return null;

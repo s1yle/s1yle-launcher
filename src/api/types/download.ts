@@ -90,7 +90,7 @@ export interface VersionDownloadManifest {
 
 /** 下载部署选项 */
 export interface DownloadOptions {
-  /** 实例名称 */
+  /** 游戏名称 */
   game_name: string;
   /** 版本 ID */
   version_id: string;
@@ -98,7 +98,7 @@ export interface DownloadOptions {
   loader_type: string;
   /** 模组加载器版本（可为 null 使用默认） */
   loader_version: string | null;
-  /** 已存在的目标实例 ID（覆盖时使用） */
+  /** 已存在的目标游戏 ID（覆盖时使用） */
   target_existing_game: string | null;
 }
 
@@ -106,9 +106,9 @@ export interface DownloadOptions {
 export interface DownloadResult {
   /** 是否成功 */
   success: boolean;
-  /** 部署后的实例 ID */
+  /** 部署后的游戏 ID */
   game_id: string;
-  /** 实例名称 */
+  /** 游戏名称 */
   game_name: string;
   /** Minecraft 版本 */
   version: string;

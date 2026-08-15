@@ -1,4 +1,4 @@
-use crate::config::{ConfigManager, StoreLoginState, SystemConfig};
+use crate::config::{ConfigManager, SystemConfig};
 use tauri::State;
 
 /// 获取全局配置
@@ -15,20 +15,4 @@ pub fn set_config_value(
     value: serde_json::Value,
 ) -> Result<(), String> {
     config_manager.set_value(&key, value)
-}
-
-#[tauri::command]
-pub fn save_login_state(
-    cm: State<'_, ConfigManager>,
-    login_state: StoreLoginState,
-) -> Result<(), String> {
-    let json_val = serde_json::to_value(login_state).map_err(|_e| "转换为json_val失败")?;
-    cm.set_value("login_state", json_val)
-}
-
-#[tauri::command]
-pub fn clear_login_state(cm: State<'_, ConfigManager>) -> Result<(), String> {
-    let json_val =
-        serde_json::to_value(StoreLoginState::default()).map_err(|_e| "转换为json_val失败")?;
-    cm.set_value("login_state", json_val)
 }

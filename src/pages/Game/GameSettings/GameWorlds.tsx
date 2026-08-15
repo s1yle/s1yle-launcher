@@ -4,31 +4,31 @@ import { useSafeNavigate } from '@/router/navigation';
 import { useGameStore } from '../../../stores/gameStore';
 import { Page, PageSection } from '@/components/common';
 
-/** 实例自动安装页面 - 模组加载器自动安装（待实现） */
-const InstanceAutoInstall: React.FC = () => {
-  const { instanceId } = useRouteParams();
+/** 游戏世界管理页面（待实现） */
+const GameWorlds: React.FC = () => {
+  const { gameId } = useRouteParams();
   const safeNavigate = useSafeNavigate();
   const getGame = useGameStore(s => s.getGame);
   const setSelectedGame = useGameStore(s => s.setSelectedGame);
 
   useEffect(() => {
-    if (instanceId) {
-      const inst = getGame(instanceId);
+    if (gameId) {
+      const inst = getGame(gameId);
       if (inst) {
-        setSelectedGame(instanceId);
+        setSelectedGame(gameId);
       } else {
-        safeNavigate('/instance-list');
+        safeNavigate('/game-list');
       }
     }
-  }, [instanceId]);
+  }, [gameId]);
 
   return (
     <Page className="flex-1 flex items-center justify-center">
       <PageSection>
-      自动安装（实例：{instanceId}）
+      世界管理（游戏：{gameId}）
       </PageSection>
     </Page>
   );
 };
 
-export default InstanceAutoInstall;
+export default GameWorlds;

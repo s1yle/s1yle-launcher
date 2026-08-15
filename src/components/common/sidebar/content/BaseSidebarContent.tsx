@@ -69,7 +69,7 @@ const BaseSidebarContent = ({
 }: BaseSidebarContentProps) => {
   const { t } = useTranslation();
   const location = useLocation();
-  const instance = useGameStore(s => s.getSelectedGame());
+  const game = useGameStore(s => s.getSelectedGame());
 
   // 初始化展开状态
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => {
@@ -207,7 +207,7 @@ const BaseSidebarContent = ({
         onMenuClick(item);
       }
     } else if (item.type === 'action' && item.action) {
-      if (item.id === 'refresh-instances') {
+      if (item.id === 'refresh-games') {
         setSpinningItems(prev => new Set(prev).add(item.id));
         setTimeout(() => {
           setSpinningItems(prev => {
@@ -291,8 +291,8 @@ const BaseSidebarContent = ({
             onNavigate={(path) => {
               if (onMenuClick) {
                 let finalPath = path;
-                if (instance && path.includes(':instanceId')) {
-                  finalPath = path.replace(':instanceId', instance.id);
+                if (game && path.includes(':gameId')) {
+                  finalPath = path.replace(':gameId', game.id);
                 }
                 const menuItem = { ...item, path: finalPath } as SidebarMenuItem;
                 onMenuClick(menuItem);
@@ -343,7 +343,7 @@ const BaseSidebarContent = ({
               whileHover={microInteractions.iconHover}
               transition={EASING.SPRING_STIFF}
             >
-              {item.id === 'refresh-instances' && spinningItems.has(item.id) ? (
+              {item.id === 'refresh-games' && spinningItems.has(item.id) ? (
                 <motion.span
                   animate={{ rotate: 360 }}
                   transition={{ duration: 1, ease: EASING.LINEAR, repeat: Infinity }}
@@ -386,7 +386,7 @@ const BaseSidebarContent = ({
               className="opacity-0 group-hover/item:opacity-100 p-1 text-[var(--color-text-tertiary)] hover:text-error rounded transition-all duration-150 flex-shrink-0 cursor-pointer"
               whileHover={microInteractions.deleteIconHover}
               whileTap={microInteractions.deleteIconTap}
-              title={t('instances.removeGameFolder', '删除游戏目录')}
+              title={t('games.removeGameFolder', '删除游戏目录')}
             >
               <Trash2 className="w-3.5 h-3.5" />
             </motion.div>

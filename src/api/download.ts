@@ -92,7 +92,7 @@ export const invokeClearCompletedTasks = async (
 };
 
 /**
- * 下载并部署完整实例（含加载器）
+ * 下载并部署完整游戏（含加载器）
  * @param options 部署选项
  * @param invokeOptions Tauri invoke 选项
  * @returns 部署结果
@@ -101,7 +101,7 @@ export const invokeDownload = async (
   options: DownloadOptions,
   invokeOptions?: InvokeOptions
 ): Promise<DownloadResult> => {
-  logger.info('下载并部署实例', options);
+  logger.info('下载并部署游戏', options);
   return await invokeRust("download", {
     options: {
       ...options,

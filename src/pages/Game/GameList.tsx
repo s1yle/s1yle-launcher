@@ -11,39 +11,40 @@ import { confirm } from '@tauri-apps/plugin-dialog';
 import { useGameStore } from '../../stores/gameStore';
 import { openFolder } from '../../helper/rustInvoke';
 import { useSafeNavigate } from '../../router/navigation';
-import { InstanceListItem, EmptyState, useNotification, Skeleton, Page, PageSection } from '../../components/common';
-import Instance from './Instance';
+import { GameListItem, EmptyState, useNotification, Skeleton, Page, PageSection } from '../../components/common';
+import GamePage from './Game';
 import BottomBar from '@/components/common/BottomBar/BottomBar';
-import type { Game } from '../../helper/rustInvoke'; import { ModLoaderType } from '../../helper/rustInvoke';
+import type { Game } from '../../helper/rustInvoke';
+import { ModLoaderType } from '../../helper/rustInvoke';
 
 type GroupKey = 'favorites' | 'mods' | 'regular' | 'uncommon' | 'broken';
 
-interface InstanceGroup {
+interface GameGroup {
   key: GroupKey;
   titleKey: string;
   icon: LucideIcon;
   items: Game[];
 }
 
-const GROUP_DEFS: Omit<InstanceGroup, 'items'>[] = [
-  { key: 'favorites', titleKey: 'instances.groupFavorites', icon: Heart },
-  { key: 'mods', titleKey: 'instances.groupMods', icon: Puzzle },
-  { key: 'regular', titleKey: 'instances.groupRegular', icon: Box },
-  { key: 'uncommon', titleKey: 'instances.groupUncommon', icon: Archive },
-  { key: 'broken', titleKey: 'instances.groupBroken', icon: AlertTriangle },
+const GROUP_DEFS: Omit<GameGroup, 'items'>[] = [
+  { key: 'favorites', titleKey: 'games.groupFavorites', icon: Heart },
+  { key: 'mods', titleKey: 'games.groupMods', icon: Puzzle },
+  { key: 'regular', titleKey: 'games.groupRegular', icon: Box },
+  { key: 'uncommon', titleKey: 'games.groupUncommon', icon: Archive },
+  { key: 'broken', titleKey: 'games.groupBroken', icon: AlertTriangle },
 ];
 
-/** 判定实例所属分组（收藏优先，损坏次之） */
-const categorizeInstance = (instance: Game, favoriteIds: string[]): GroupKey => {
-  if (favoriteIds.includes(instance.id)) return 'favorites';
-  if (instance.broken) return 'broken';
-  if (instance.loader_type !== ModLoaderType.Vanilla) return 'mods';
-  if (/^1\.\d+(\.\d+)?$/.test(instance.version_id.toLowerCase())) return 'regular';
+/** 判定游戏所属分组（收藏优先，损坏次之） */
+const categorizeGame = (game: Game, favoriteIds: string[]): GroupKey => {
+  if (favoriteIds.includes(game.id)) return 'favorites';
+  if (game.broken) return 'broken';
+  if (game.loader_type !== ModLoaderType.Vanilla) return 'mods';
+  if (/^1\.\d+(\.\d+)?$/.test(game.version_id.toLowerCase())) return 'regular';
   return 'uncommon';
 };
 
-/** 实例列表页面 - 展示所有已安装的游戏实例 */
-const InstanceList: React.FC = () => {
+/** 游戏列表页面 - 展示所有已安装的游戏 */
+const GameList: React.FC = () => {
   const { t } = useTranslation();
   const safeNavigate = useSafeNavigate();
   const selectedGameId = useGameStore(s => s.selectedGameId);
@@ -78,11 +79,11 @@ const InstanceList: React.FC = () => {
       favorites: [], mods: [], regular: [], uncommon: [], broken: [],
     };
     for (const game of filteredGames) {
-      // 空壳实例（除记录外无任何文件）直接不显示：
+      // 空壳游戏（除记录外无任何文件）直接不显示：
       // 优先用扫描阶段标记（game.empty，避免等待校验造成先显示后隐藏），
       // 校验结果 empty 作为兜底（旧数据/边界情况）
       if (game.empty || validations[game.id]?.empty) continue;
-      map[categorizeInstance(game, favoriteIds)].push(game);
+      map[categorizeGame(game, favoriteIds)].push(game);
     }
     return GROUP_DEFS
       .map((def) => ({ ...def, items: map[def.key] }))
@@ -100,13 +101,13 @@ const InstanceList: React.FC = () => {
     if (!duplicateTargetId || !duplicateName.trim()) return;
     try {
       await duplicate(duplicateTargetId, duplicateName);
-      success(t('instances.duplicateSuccess', '复制成功'), t('instances.duplicateSuccessMsg', '实例已复制为 "{{name}}"', { name: duplicateName }));
+      success(t('games.duplicateSuccess', '复制成功'), t('games.duplicateSuccessMsg', '游戏已复制为 "{{name}}"', { name: duplicateName }));
       setShowDuplicateModal(false);
       setDuplicateTargetId(null);
       setDuplicateName('');
     } catch (e) {
       const msg = e instanceof Error ? e.message : t('notification.error');
-      notifyError(t('instances.duplicateFailed', '复制失败'), msg);
+      notifyError(t('games.duplicateFailed', '复制失败'), msg);
     }
   };
 
@@ -123,7 +124,7 @@ const InstanceList: React.FC = () => {
   useEffect(() => {
     // 先等 init 完成（games 就绪）再全量校验：
     // 若并行调用，validateAll 会在 games 为空时直接返回，
-    // 造成空壳实例（如手动创建的空目录）拿不到 empty 标记而继续显示
+    // 造成空壳游戏（如手动创建的空目录）拿不到 empty 标记而继续显示
     void (async () => {
       await init();
       await validateAll();
@@ -136,17 +137,17 @@ const InstanceList: React.FC = () => {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    const confirmed = await confirm(t('instances.confirmDelete', '确定要删除实例 "{{name}}" 吗？', { name }), {
-      title: t('instances.confirmDeleteTitle', '删除实例'),
+    const confirmed = await confirm(t('games.confirmDelete', '确定要删除游戏 "{{name}}" 吗？', { name }), {
+      title: t('games.confirmDeleteTitle', '删除游戏'),
       kind: 'warning',
     });
     if (!confirmed) return;
     try {
       await remove(id);
-      success(t('notification.instanceDeleted'), t('instances.deleteSuccess', '实例 "{{name}}" 已删除', { name }));
+      success(t('notification.gameDeleted'), t('games.deleteSuccess', '游戏 "{{name}}" 已删除', { name }));
     } catch (e) {
       const msg = e instanceof Error ? e.message : t('notification.error');
-      notifyError(t('instances.deleteFailed', '删除失败'), msg);
+      notifyError(t('games.deleteFailed', '删除失败'), msg);
     }
   };
 
@@ -155,7 +156,7 @@ const InstanceList: React.FC = () => {
       await openFolder(path);
     } catch (e) {
       const msg = e instanceof Error ? e.message : t('notification.error');
-      notifyError(t('instances.openFolderFailed', '打开目录失败'), msg);
+      notifyError(t('games.openFolderFailed', '打开目录失败'), msg);
     }
   };
 
@@ -172,8 +173,8 @@ const InstanceList: React.FC = () => {
       return (
         <EmptyState
           icon="folder"
-          title={searchQuery ? t('instances.noMatch', '未找到匹配的实例') : t('instances.noInstances', '暂无实例')}
-          description={searchQuery ? t('instances.adjustSearch', '尝试调整搜索关键词') : t('instances.noInstancesDesc', '下载或创建新实例来开始游戏')}
+          title={searchQuery ? t('games.noMatch', '未找到匹配的游戏') : t('games.noGames', '暂无游戏')}
+          description={searchQuery ? t('games.adjustSearch', '尝试调整搜索关键词') : t('games.noGamesDesc', '下载或创建新游戏来开始游戏')}
         />
       );
     }
@@ -193,22 +194,22 @@ const InstanceList: React.FC = () => {
               </div>
 
               <AnimatePresence mode="popLayout">
-                {group.items.map((instance) => (
+                {group.items.map((game) => (
                   <motion.div
-                    key={instance.id}
+                    key={game.id}
                     layout
                   >
-                      <InstanceListItem
+                      <GameListItem
                         className='rounded-r-(--radius-sm)'
-                        instance={instance}
-                        selected={instance.id === selectedGameId}
-                        isFavorite={isFavorite(instance.id)}
-                        onSelect={() => handleSelect(instance.id)}
+                        game={game}
+                        selected={game.id === selectedGameId}
+                        isFavorite={isFavorite(game.id)}
+                        onSelect={() => handleSelect(game.id)}
                         onRename={() => { }}
-                        onDelete={() => handleDelete(instance.id, instance.name)}
-                        onOpenFolder={() => handleOpenFolder(instance.path)}
-                        onSettings={() => safeNavigate(`/instance-manage/${instance.id}/game-settings`)}
-                        onFavorite={() => toggleFavorite(instance.id)}
+                        onDelete={() => handleDelete(game.id, game.name)}
+                        onOpenFolder={() => handleOpenFolder(game.path)}
+                        onSettings={() => safeNavigate(`/game-manage/${game.id}/game-settings`)}
+                        onFavorite={() => toggleFavorite(game.id)}
                       />
                     </motion.div>
                 ))}
@@ -222,7 +223,7 @@ const InstanceList: React.FC = () => {
 
   return (
     <Page className="flex flex-col h-full">
-      <Instance
+      <GamePage
         refresh={refresh}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -240,7 +241,7 @@ const InstanceList: React.FC = () => {
       />
 
       <BottomBar
-        dir='instances.instanceDir'
+        dir='games.gameDir'
         cmdOpen='common.open'
         path={currentPath}
       />
@@ -248,4 +249,4 @@ const InstanceList: React.FC = () => {
   );
 };
 
-export default InstanceList;
+export default GameList;

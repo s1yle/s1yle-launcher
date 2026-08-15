@@ -27,19 +27,19 @@ import {
 } from 'lucide-react';
 import { LayoutMode, RouteConfig, SidebarGroup, SidebarType } from "./models";
 import { UserRole } from '@/stores/userRoleStore';
-import InstanceManageButton from '@/components/common/sidebar/renderer/InstanceManageButton';
-import { handleRefreshInstances } from './actionHandler';
+import GameManageButton from '@/components/common/sidebar/renderer/GameManageButton';
+import { handleRefreshGames } from './actionHandler';
 
 /** 页面组件按路由懒加载（每个路由独立 chunk） */
 const Loading = lazy(() => import('../pages/Loading'));
 const Home = lazy(() => import('../pages/Home'));
 const AccountDetail = lazy(() => import('../pages/AccountList/AccountDetail'));
-const InstanceGameSettings = lazy(() => import('../pages/Instance/InstanceSettings/InstanceGameSettings'));
-const InstanceAutoInstall = lazy(() => import('../pages/Instance/InstanceSettings/InstanceAutoInstall'));
-const InstanceMods = lazy(() => import('../pages/Instance/InstanceSettings/InstanceMods'));
-const InstanceResourcePacks = lazy(() => import('../pages/Instance/InstanceSettings/InstanceResourcePacks'));
-const InstanceWorlds = lazy(() => import('../pages/Instance/InstanceSettings/InstanceWorlds'));
-const InstanceList = lazy(() => import('../pages/Instance/InstanceList'));
+const GameGameSettings = lazy(() => import('../pages/Game/GameSettings/GameGameSettings'));
+const GameAutoInstall = lazy(() => import('../pages/Game/GameSettings/GameAutoInstall'));
+const GameMods = lazy(() => import('../pages/Game/GameSettings/GameMods'));
+const GameResourcePacks = lazy(() => import('../pages/Game/GameSettings/GameResourcePacks'));
+const GameWorlds = lazy(() => import('../pages/Game/GameSettings/GameWorlds'));
+const GameList = lazy(() => import('../pages/Game/GameList'));
 const DownloadGame = lazy(() => import('../pages/Download/DownloadGame'));
 const DownloadModpack = lazy(() => import('../pages/Download/DownloadModpack'));
 const DownloadProgress = lazy(() => import('../pages/Download/DownloadProgress'));
@@ -98,17 +98,17 @@ export const routes: RouteConfig[] = [
     },
   },
   {
-    path: '/instance-manage/:instanceId',
-    header: { type: SidebarType.SUB, title: '游戏管理', titleI18nKey: 'sidebar.instanceManage' },
+    path: '/game-manage/:gameId',
+    header: { type: SidebarType.SUB, title: '游戏管理', titleI18nKey: 'sidebar.gameManage' },
     sidebarGroup: SidebarGroup.GAME,
     autoNavigateToFirstChild: true,
     parentPath: '/',
     ownSidebar: true,
     layoutMode: LayoutMode.NATIVE_HEADER,
     menu: {
-      id: 'instance-manage',
+      id: 'game-manage',
       icon: <FolderOpen className="w-4 h-4" />,
-      customRender: InstanceManageButton,
+      customRender: GameManageButton,
       extras: [
         {
           id: 'gm-browse',
@@ -116,7 +116,7 @@ export const routes: RouteConfig[] = [
           title: '浏览',
           titleI18nKey: 'gameManage.browse',
           icon: <FolderSearch className="w-4 h-4" />,
-          path: '/instance-manage',
+          path: '/game-manage',
           group: SidebarGroup.GAME,
           children: [
             { id: 'ctx-version', type: 'action' as const, title: '版本目录', titleI18nKey: 'gameManage.browseVersionDir', icon: <FolderOpen className="w-4 h-4" />, group: SidebarGroup.GAME },
@@ -135,13 +135,13 @@ export const routes: RouteConfig[] = [
           title: '管理',
           titleI18nKey: 'gameManage.manage',
           icon: <Settings className="w-4 h-4" />,
-          path: '/instance-manage',
+          path: '/game-manage',
           group: SidebarGroup.GAME,
           children: [
             { id: 'ctx-script', type: 'action' as const, title: '生成启动脚本', titleI18nKey: 'gameManage.manageGenerateScript', icon: <FileText className="w-4 h-4" />, group: SidebarGroup.GAME },
-            { id: 'ctx-rename', type: 'action' as const, title: '重命名该实例', titleI18nKey: 'gameManage.manageRename', icon: <Edit3 className="w-4 h-4" />, group: SidebarGroup.GAME },
-            { id: 'ctx-copy', type: 'action' as const, title: '复制游戏实例', titleI18nKey: 'gameManage.manageCopy', icon: <Copy className="w-4 h-4" />, group: SidebarGroup.GAME },
-            { id: 'ctx-delete', type: 'action' as const, title: '删除该实例', titleI18nKey: 'gameManage.manageDelete', icon: <Trash2 className="w-4 h-4" />, danger: true, group: SidebarGroup.GAME },
+            { id: 'ctx-rename', type: 'action' as const, title: '重命名该游戏', titleI18nKey: 'gameManage.manageRename', icon: <Edit3 className="w-4 h-4" />, group: SidebarGroup.GAME },
+            { id: 'ctx-copy', type: 'action' as const, title: '复制游戏', titleI18nKey: 'gameManage.manageCopy', icon: <Copy className="w-4 h-4" />, group: SidebarGroup.GAME },
+            { id: 'ctx-delete', type: 'action' as const, title: '删除该游戏', titleI18nKey: 'gameManage.manageDelete', icon: <Trash2 className="w-4 h-4" />, danger: true, group: SidebarGroup.GAME },
             { id: 'ctx-export', type: 'action' as const, title: '导出整合包', titleI18nKey: 'gameManage.manageExport', icon: <FileDown className="w-4 h-4" />, group: SidebarGroup.GAME },
           ]
         }
@@ -149,11 +149,11 @@ export const routes: RouteConfig[] = [
     },
     children: [
       {
-        path: '/instance-manage/:instanceId/game-settings',
-        component: InstanceGameSettings,
+        path: '/game-manage/:gameId/game-settings',
+        component: GameGameSettings,
         header: { type: SidebarType.SECONDARY, title: '游戏设置', titleI18nKey: 'gameManage.gameSettings' },
         sidebarGroup: SidebarGroup.GAME,
-        parentPath: '/instance-list',
+        parentPath: '/game-list',
         ownSidebar: true,
         layoutMode: LayoutMode.NATIVE_HEADER,
         menu: {
@@ -162,11 +162,11 @@ export const routes: RouteConfig[] = [
         },
       },
       {
-        path: '/instance-manage/:instanceId/auto-install',
-        component: InstanceAutoInstall,
+        path: '/game-manage/:gameId/auto-install',
+        component: GameAutoInstall,
         header: { type: SidebarType.SECONDARY, title: '自动安装', titleI18nKey: 'gameManage.autoInstall' },
         sidebarGroup: SidebarGroup.GAME,
-        parentPath: '/instance-list',
+        parentPath: '/game-list',
         ownSidebar: true,
         layoutMode: LayoutMode.NATIVE_HEADER,
         menu: {
@@ -175,11 +175,11 @@ export const routes: RouteConfig[] = [
         },
       },
       {
-        path: '/instance-manage/:instanceId/mods',
-        component: InstanceMods,
+        path: '/game-manage/:gameId/mods',
+        component: GameMods,
         header: { type: SidebarType.SECONDARY, title: '模组', titleI18nKey: 'gameManage.mods' },
         sidebarGroup: SidebarGroup.GAME,
-        parentPath: '/instance-list',
+        parentPath: '/game-list',
         ownSidebar: true,
         layoutMode: LayoutMode.NATIVE_HEADER,
         menu: {
@@ -188,11 +188,11 @@ export const routes: RouteConfig[] = [
         },
       },
       {
-        path: '/instance-manage/:instanceId/resource-packs',
-        component: InstanceResourcePacks,
+        path: '/game-manage/:gameId/resource-packs',
+        component: GameResourcePacks,
         header: { type: SidebarType.SECONDARY, title: '材质包', titleI18nKey: 'gameManage.resourcePacks' },
         sidebarGroup: SidebarGroup.GAME,
-        parentPath: '/instance-list',
+        parentPath: '/game-list',
         ownSidebar: true,
         layoutMode: LayoutMode.NATIVE_HEADER,
         menu: {
@@ -201,11 +201,11 @@ export const routes: RouteConfig[] = [
         },
       },
       {
-        path: '/instance-manage/:instanceId/worlds',
-        component: InstanceWorlds,
+        path: '/game-manage/:gameId/worlds',
+        component: GameWorlds,
         header: { type: SidebarType.SECONDARY, title: '世界', titleI18nKey: 'gameManage.worlds' },
         sidebarGroup: SidebarGroup.GAME,
-        parentPath: '/instance-list',
+        parentPath: '/game-list',
         ownSidebar: true,
         layoutMode: LayoutMode.NATIVE_HEADER,
         menu: {
@@ -216,9 +216,9 @@ export const routes: RouteConfig[] = [
     ]
   },
   {
-    path: '/instance-list',
-    component: InstanceList,
-    header: { type: SidebarType.SUB, title: '游戏列表', titleI18nKey: 'sidebar.instanceList' },
+    path: '/game-list',
+    component: GameList,
+    header: { type: SidebarType.SUB, title: '游戏列表', titleI18nKey: 'sidebar.gameList' },
     sidebarGroup: SidebarGroup.GAME,
     parentPath: '/',
     autoNavigateToFirstChild: false,
@@ -233,11 +233,11 @@ export const routes: RouteConfig[] = [
       order: 0,
     },
     menu: {
-      id: 'instance-list',
+      id: 'game-list',
       icon: <List className="w-4 h-4" />,
       extras: [
         {
-          id: 'divider-instances',
+          id: 'divider-games',
           type: 'divider',
           title: '',
           titleI18nKey: '',
@@ -247,34 +247,34 @@ export const routes: RouteConfig[] = [
           id: 'install-modpack',
           type: 'action',
           title: '导入整合包',
-          titleI18nKey: 'instances.installModpack',
+          titleI18nKey: 'games.installModpack',
           icon: <Package className="w-4 h-4" />,
-          path: '/instance-list',
+          path: '/game-list',
           group: SidebarGroup.GAME
         },
         {
-          id: 'refresh-instances',
+          id: 'refresh-games',
           type: 'action',
           title: '刷新',
-          titleI18nKey: 'instances.refresh',
+          titleI18nKey: 'games.refresh',
           icon: <RefreshCw className="w-4 h-4" />,
-          path: '/instance-list',
+          path: '/game-list',
           group: SidebarGroup.GAME,
-          action: handleRefreshInstances,
+          action: handleRefreshGames,
         },
       ]
     },
     children: [
       {
-        path: '/instance-list/game-folder:default',
+        path: '/game-list/game-folder:default',
         component: DownloadGame,
-        header: { type: SidebarType.SECONDARY, title: '游戏目录', titleI18nKey: 'instances.gameFolders' },
+        header: { type: SidebarType.SECONDARY, title: '游戏目录', titleI18nKey: 'games.gameFolders' },
         sidebarGroup: SidebarGroup.GAME,
         parentPath: '/',
         ownSidebar: true,
         menu: {
           id: 'game-folders',
-          path: '/instance-list',
+          path: '/game-list',
           icon: <FolderTree className="w-4 h-4" />,
         },
       },

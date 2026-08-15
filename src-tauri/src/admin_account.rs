@@ -55,7 +55,7 @@ impl Default for AdminManager {
     }
 }
 
-/// 全局管理员管理器实例
+/// 全局管理员管理器游戏
 static ADMIN_MANAGER: OnceCell<Mutex<AdminManager>> = OnceCell::new();
 
 /// 使用 SHA-256 加盐哈希密码
