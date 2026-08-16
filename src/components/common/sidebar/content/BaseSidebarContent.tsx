@@ -49,6 +49,10 @@ export interface BaseSidebarContentProps {
   deletableItemIds?: Set<string>;
   onContextMenuAction?: (parentId: string, actionId: string) => void;
   enableClickToExpand?: boolean;
+  /** 自定义右键菜单项（按 item id）；返回 undefined 表示该 item 使用默认菜单 */
+  contextMenuFor?: (itemId: string) => ContextMenuItemData[] | undefined;
+  /** 自定义右键菜单项点击处理 */
+  onCustomContextAction?: (itemId: string, actionId: string) => void;
 }
 
 /** 基础侧边栏内容组件，渲染菜单项树并支持展开/折叠、右键菜单 */
@@ -66,6 +70,8 @@ const BaseSidebarContent = ({
   deletableItemIds,
   onContextMenuAction,
   enableClickToExpand = false,
+  contextMenuFor,
+  onCustomContextAction,
 }: BaseSidebarContentProps) => {
   const { t } = useTranslation();
   const location = useLocation();
@@ -162,6 +168,11 @@ const BaseSidebarContent = ({
 
     if (!selectedItemId) return;
 
+    if (contextMenuFor && contextMenuFor(selectedItemId)) {
+      onCustomContextAction?.(selectedItemId, id);
+      return;
+    }
+
     switch (id) {
       case 'delete':
         onItemDelete?.(selectedItemId);
@@ -182,6 +193,12 @@ const BaseSidebarContent = ({
           icon: child.icon,
           danger: child.danger,
         }));
+      }
+    }
+    if (selectedItemId && contextMenuFor) {
+      const custom = contextMenuFor(selectedItemId);
+      if (custom) {
+        return custom;
       }
     }
     return [
@@ -320,7 +337,7 @@ const BaseSidebarContent = ({
               handleItemClick(item);
             }
           }}
-          onContextMenu={canDelete ? (e) => handleContextMenu(e, item.id) : undefined}
+          onContextMenu={(canDelete || (contextMenuFor && !!contextMenuFor(item.id))) ? (e) => handleContextMenu(e, item.id) : undefined}
           className={clsx(
             'relative w-full flex items-center gap-3 py-2.5 pl-[3px] cursor-pointer',
             'transition-colors duration-200',

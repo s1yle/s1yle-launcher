@@ -193,7 +193,8 @@ const ApearanceSettings = () => {
             <Toggle
               checked={animation.enabled}
               onChange={handleAnimationSetting}
-              label='开启页面动画'
+              // TODO: 实现 description 并写 "Windows 需开启系统动画设置(窗口内的动画控件和元素)"
+              label="页面动画（需系统动画支持）"
               disabled={false}
             />
           </PageSection>

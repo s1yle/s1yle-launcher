@@ -52,7 +52,11 @@ pub fn get_memory_usage() -> (u64, u64) {
         let mut available_kb = 0u64;
 
         for line in content.lines() {
-            if let Some(value) = line.split_whitespace().nth(1).and_then(|v| v.parse::<u64>().ok()) {
+            if let Some(value) = line
+                .split_whitespace()
+                .nth(1)
+                .and_then(|v| v.parse::<u64>().ok())
+            {
                 if line.starts_with("MemTotal:") {
                     total_kb = value;
                 } else if line.starts_with("MemAvailable:") {
@@ -127,14 +131,26 @@ pub fn get_memory_usage() -> (u64, u64) {
 
     #[cfg(target_os = "windows")]
     {
-        // Windows: GlobalMemoryStatusEx 一次性拿到总内存与可用内存（单位字节）
-        use windows::Win32::System::SystemInformation::GlobalMemoryStatusEx;
+        use windows::Win32::System::SystemInformation::{GlobalMemoryStatusEx, MEMORYSTATUSEX};
 
         let mut status = MEMORYSTATUSEX::default();
-        if unsafe { GlobalMemoryStatusEx(&mut status) }.is_ok() && status.ull_total_phys > 0 {
-            let total = status.ull_total_phys / 1024 / 1024;
-            let used = status.ull_total_phys.saturating_sub(status.ull_avail_phys) / 1024 / 1024;
-            return (used, total);
+        status.dwLength = std::mem::size_of::<MEMORYSTATUSEX>() as u32;
+
+        match unsafe { GlobalMemoryStatusEx(&mut status) } {
+            Ok(()) => {
+                let total = status.ullTotalPhys / 1024 / 1024;
+                let used = status.ullTotalPhys.saturating_sub(status.ullAvailPhys) / 1024 / 1024;
+                return (used, total);
+            }
+            Err(e) => {
+                use crate::log_error;
+
+                log_error!("GlobalMemoryStatusEx 调用失败: {:?}", e);
+                log_error!("错误码: {}", e.code().0);
+                // 额外获取最后一次错误
+                let last_err = unsafe { windows::Win32::Foundation::GetLastError() };
+                log_error!("GetLastError: {:?}", last_err);
+            }
         }
         (0, 0)
     }
@@ -167,11 +183,16 @@ pub fn get_display_resolutions(app: AppHandle) -> Vec<String> {
                         // 活动模式行形如 "1920x1080     60.00*+  59.94"（行首为 WxH + 刷新率）
                         let mut parts = line.split_whitespace();
                         let Some(mode) = parts.next() else { continue };
-                        let is_resolution = mode
-                            .split_once('x')
-                            .is_some_and(|(w, h)| w.chars().all(|c| c.is_ascii_digit()) && h.chars().all(|c| c.is_ascii_digit()));
+                        let is_resolution = mode.split_once('x').is_some_and(|(w, h)| {
+                            w.chars().all(|c| c.is_ascii_digit())
+                                && h.chars().all(|c| c.is_ascii_digit())
+                        });
                         // 第二个字段必须是数字刷新率，排除显示器名称行
-                        if is_resolution && parts.next().is_some_and(|r| r.chars().next().is_some_and(|c| c.is_ascii_digit())) {
+                        if is_resolution
+                            && parts.next().is_some_and(|r| {
+                                r.chars().next().is_some_and(|c| c.is_ascii_digit())
+                            })
+                        {
                             if seen.insert(mode.to_string()) {
                                 resolutions.push(mode.to_string());
                             }
@@ -186,8 +207,10 @@ pub fn get_display_resolutions(app: AppHandle) -> Vec<String> {
 
     #[cfg(target_os = "windows")]
     {
+        use windows::Win32::Graphics::Gdi::{
+            DEVMODEW, ENUM_DISPLAY_SETTINGS_MODE, EnumDisplaySettingsW,
+        };
         use windows::core::PCWSTR;
-        use windows::Win32::Graphics::Gdi::{EnumDisplaySettingsW, DEVMODEW};
 
         let mut seen = std::collections::HashSet::new();
         let mut resolutions = Vec::new();
@@ -196,7 +219,15 @@ pub fn get_display_resolutions(app: AppHandle) -> Vec<String> {
         loop {
             let mut devmode: DEVMODEW = unsafe { std::mem::zeroed() };
             // 模式枚举到返回 false 为止（index 0 为当前模式）
-            if !unsafe { EnumDisplaySettingsW(PCWSTR::null(), index, &mut devmode) }.as_bool() {
+            if !unsafe {
+                EnumDisplaySettingsW(
+                    PCWSTR::null(),
+                    ENUM_DISPLAY_SETTINGS_MODE(index),
+                    &mut devmode,
+                )
+            }
+            .as_bool()
+            {
                 break;
             }
             let (width, height) = (devmode.dmPelsWidth, devmode.dmPelsHeight);
@@ -233,5 +264,45 @@ pub fn get_display_resolutions(app: AppHandle) -> Vec<String> {
     {
         let _ = &app;
         Vec::new()
+    }
+}
+
+#[test]
+pub fn get_win_memory() {
+    let (mem, totalMem) = get_memory_usage();
+    println!("mem: {}, totalMem: {}", mem, totalMem);
+
+    println!("---------------------------------------------");
+    #[cfg(target_os = "windows")]
+    {
+        use windows::Win32::System::SystemInformation::{GlobalMemoryStatusEx, MEMORYSTATUSEX};
+
+        let mut status = MEMORYSTATUSEX::default();
+        status.dwLength = std::mem::size_of::<MEMORYSTATUSEX>() as u32;
+        println!("status before call: {:?}", status);
+
+        // 调用并处理返回值
+        match unsafe { GlobalMemoryStatusEx(&mut status) } {
+            Ok(()) => {
+                println!("✅ 调用成功");
+                println!("status after call: {:?}", status);
+                println!("总内存: {} MB", status.ullTotalPhys / 1024 / 1024);
+                println!("可用内存: {} MB", status.ullAvailPhys / 1024 / 1024);
+                println!("百分比: {} %", status.dwMemoryLoad);
+                println!(
+                    "已提交内存限制: {} MB",
+                    status.ullTotalPageFile / 1024 / 1024
+                );
+                println!("总共虚拟: {} MB", status.ullTotalVirtual / 1024 / 1024);
+                println!("可用虚拟: {} MB", status.ullAvailVirtual / 1024 / 1024);
+            }
+            Err(e) => {
+                println!("❌ 调用失败: {:?}", e);
+                println!("错误码: {}", e.code().0);
+                // 额外获取最后一次错误
+                let last_err = unsafe { windows::Win32::Foundation::GetLastError() };
+                println!("GetLastError: {:?}", last_err);
+            }
+        }
     }
 }

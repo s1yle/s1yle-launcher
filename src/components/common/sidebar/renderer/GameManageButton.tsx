@@ -1,12 +1,15 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Gamepad2, Hammer, Zap, Package, Image, Sun } from 'lucide-react';
+import { ChevronDown, Gamepad2, Hammer, Zap, Package, Image, Sun, FolderOpen, Trash2 } from 'lucide-react';
 import { useGameStore } from '../../../../stores/gameStore';
-import { ModLoaderType, type Game } from '../../../../helper/rustInvoke';
+import { ModLoaderType, type Game, openFolder } from '../../../../helper/rustInvoke';
 import { SidebarMenuItem } from '@/router/models';
 import { Portal } from '@/components/common/Portal';
+import ContextMenu, { useContextMenu, ContextMenuItemData } from '@/components/common/ContextMenu';
+import { useNotification } from '@/components/common';
 import { useClickOutside } from '@/hooks/useClickOutside';
+import { confirm } from '@tauri-apps/plugin-dialog';
 import { Z_INDEX } from '@/utils/zIndex';
 import { DURATION, EASING, dropdown, microInteractions } from '@/utils/animations';
 
@@ -37,6 +40,9 @@ const GameManageButton: React.FC<GameManageButtonProps> = ({
   const game = useGameStore(s => s.getSelectedGame());
   const games = useGameStore(s => s.games);
   const setSelectedGame = useGameStore(s => s.setSelectedGame);
+  const remove = useGameStore(s => s.remove);
+  const { success, error: notifyError } = useNotification();
+  const { contextMenuState, showContextMenu, hideContextMenu } = useContextMenu();
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useClickOutside<HTMLDivElement>(
@@ -91,6 +97,45 @@ const GameManageButton: React.FC<GameManageButtonProps> = ({
     setShowDropdown(false);
   };
 
+  const handleContextMenuAction = async (id: string) => {
+    if (id === 'openFolder') {
+      if (!game) return;
+      try {
+        await openFolder(game.path);
+      } catch (e) {
+        notifyError(
+          t('games.openFolderFailed', '打开目录失败'),
+          e instanceof Error ? e.message : String(e),
+        );
+      }
+      return;
+    }
+
+    if (id === 'delete') {
+      if (!game) return;
+      const confirmed = await confirm(
+        t('games.confirmDelete', '确定要删除游戏 "{{name}}" 吗？', { name: game.name }),
+        { title: t('games.confirmDeleteTitle', '删除游戏'), kind: 'warning' },
+      );
+      if (!confirmed) return;
+      try {
+        await remove(game.id);
+        success(t('notification.gameDeleted', '游戏已删除'));
+      } catch (e) {
+        notifyError(
+          t('games.deleteFailed', '删除失败'),
+          e instanceof Error ? e.message : String(e),
+        );
+      }
+    }
+  };
+
+  const contextMenuItems: ContextMenuItemData[] = [
+    { id: 'openFolder', label: t('game.openFolder', '打开文件夹'), icon: FolderOpen },
+    { id: 'divider', label: '', divider: true },
+    { id: 'delete', label: t('common.delete', '删除'), icon: Trash2, danger: true },
+  ];
+
   // 无游戏时的显示
   if (!game) {
     return (
@@ -127,6 +172,7 @@ const GameManageButton: React.FC<GameManageButtonProps> = ({
             : 'bg-[var(--color-surface)] border-[var(--color-border)] hover:bg-[var(--color-surface-hover)]'
         }`}
         onClick={handleMainClick}
+        onContextMenu={showContextMenu}
         whileHover={microInteractions.secondaryButtonHover}
         whileTap={microInteractions.secondaryButtonTap}
       >
@@ -230,6 +276,14 @@ const GameManageButton: React.FC<GameManageButtonProps> = ({
           </AnimatePresence>
         </Portal>
       )}
+
+      <ContextMenu
+        items={contextMenuItems}
+        position={contextMenuState.position}
+        visible={contextMenuState.visible}
+        onClose={hideContextMenu}
+        onItemClick={handleContextMenuAction}
+      />
     </div>
   );
 };

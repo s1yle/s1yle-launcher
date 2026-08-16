@@ -71,11 +71,18 @@ impl DownloadProgressTracker {
         self.emit(false);
     }
 
-    /// 一个文件完成（无论实际下载还是已存在跳过），计入字节与文件数并立即上报
+    /// 一个文件完成（已存在跳过，字节未计入），计入字节与文件数并立即上报
     pub fn add_file(&self, path: &str, size: u64) {
         *self.current_file.lock().unwrap() = path.to_string();
         self.files_done.fetch_add(1, Ordering::Relaxed);
         self.bytes_done.fetch_add(size, Ordering::Relaxed);
+        self.emit(true);
+    }
+
+    /// 一个文件完成（实际下载完成，字节已由 add_bytes 逐块计入），仅计入文件数并立即上报
+    pub fn mark_file_done(&self, path: &str) {
+        *self.current_file.lock().unwrap() = path.to_string();
+        self.files_done.fetch_add(1, Ordering::Relaxed);
         self.emit(true);
     }
 
@@ -720,7 +727,11 @@ impl DownloadManager {
                         token.as_ref(),
                     )
                     .await?;
-                tracker.add_file(&path, size);
+                if downloaded {
+                    tracker.mark_file_done(&path);
+                } else {
+                    tracker.add_file(&path, size);
+                }
                 Ok::<(usize, bool), String>((idx, downloaded))
             });
         }

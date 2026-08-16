@@ -146,9 +146,13 @@ let game_path = game_manager
     let total_assets = manifest.assets.len();
     let total_natives = manifest.natives.len();
     let has_client_jar = manifest.client_jar.is_some();
+    let has_log_config = manifest.log_config.is_some();
     let mut completed = 0usize;
-    let total_files =
-        total_libraries + total_assets + total_natives + if has_client_jar { 1 } else { 0 };
+    let total_files = total_libraries
+        + total_assets
+        + total_natives
+        + if has_client_jar { 1 } else { 0 }
+        + if has_log_config { 1 } else { 0 };
 
     let total_bytes: u64 = manifest
         .libraries
@@ -157,7 +161,8 @@ let game_path = game_manager
         .chain(manifest.natives.iter())
         .map(|f| f.size)
         .sum::<u64>()
-        + manifest.client_jar.as_ref().map_or(0, |f| f.size);
+        + manifest.client_jar.as_ref().map_or(0, |f| f.size)
+        + manifest.log_config.as_ref().map_or(0, |f| f.size);
 
     let tracker = Arc::new(DownloadProgressTracker::new(
         app_handle.clone(),
@@ -174,17 +179,45 @@ let game_path = game_manager
         has_client_jar
     );
 
-    // ====== Phase 1-3: 下载库文件 / 资源文件 / 原生库（全局共享目录，路径一律来自 app_context） ======
+    // ====== Phase 1: 下载客户端 jar（平放：{game_dir}/{version_id}.jar） ======
+    if let Some(ref client_jar) = manifest.client_jar {
+        tracker.set_phase("downloading_client");
+        let dest_path = app_context.version_jar_in_dir(&game_dir, &options.version_id);
+        if let Some(parent) = dest_path.parent() {
+            std::fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {}", e))?;
+        }
+
+        let bytes_cb: ByteProgressCb = {
+            let tracker = tracker.clone();
+            Some(Arc::new(move |n| tracker.add_bytes(n)))
+        };
+        let downloaded = dm
+            .download_file_if_needed(
+                &client_jar.url,
+                &dest_path,
+                client_jar.sha1.as_deref(),
+                Some(client_jar.size),
+                &bytes_cb,
+                Some(&cancel_token),
+            )
+            .await?;
+
+        if downloaded {
+            log_info!("已下载客户端 jar: {}", dest_path.display());
+            tracker.mark_file_done(&client_jar.path);
+        } else {
+            log_info!("客户端 jar 已存在（校验通过）: {}", dest_path.display());
+            tracker.add_file(&client_jar.path, client_jar.size);
+        }
+        completed += 1;
+    }
+
+    // ====== Phase 2: 下载依赖库 + 原生库（全局共享目录，路径一律来自 app_context） ======
     for (files, dest_base, phase) in [
         (
             &manifest.libraries,
             app_context.libraries_dir(),
             "downloading_libraries",
-        ),
-        (
-            &manifest.assets,
-            app_context.assets_dir(),
-            "downloading_assets",
         ),
         (
             &manifest.natives,
@@ -227,40 +260,18 @@ let game_path = game_manager
         );
     }
 
-    // ====== Phase 4: 下载客户端 jar（平放：{game_dir}/{version_id}.jar） ======
-    if let Some(ref client_jar) = manifest.client_jar {
-        tracker.set_phase("downloading_client");
-        let dest_path = app_context.version_jar_in_dir(&game_dir, &options.version_id);
-        if let Some(parent) = dest_path.parent() {
-            std::fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {}", e))?;
-        }
+    // ====== Phase 3: 下载资源文件（全局共享目录） ======
+    dm.download_group_with_progress(
+        &manifest.assets,
+        &app_context.assets_dir(),
+        "downloading_assets",
+        &tracker,
+        &mut completed,
+        Some(&cancel_token),
+    )
+    .await?;
 
-        let bytes_cb: ByteProgressCb = {
-            let tracker = tracker.clone();
-            Some(Arc::new(move |n| tracker.add_bytes(n)))
-        };
-        let downloaded = dm
-            .download_file_if_needed(
-                &client_jar.url,
-                &dest_path,
-                client_jar.sha1.as_deref(),
-                Some(client_jar.size),
-                &bytes_cb,
-                Some(&cancel_token),
-            )
-            .await?;
-
-        if downloaded {
-            log_info!("已下载客户端 jar: {}", dest_path.display());
-        } else {
-            log_info!("客户端 jar 已存在（校验通过）: {}", dest_path.display());
-        }
-
-        tracker.add_file(&client_jar.path, client_jar.size);
-        completed += 1;
-    }
-
-    // ====== Phase 5: 资源索引（{root}/assets/indexes/{id}.json，全局共享） ======
+    // ====== Phase 4: 资源索引（{root}/assets/indexes/{id}.json，全局共享） ======
     if let Some(ref index) = manifest.asset_index {
         tracker.set_phase("downloading_index");
         let dest = app_context.assets_dir().join(&index.path);
@@ -278,6 +289,41 @@ let game_path = game_manager
         .await?;
         log_info!("已下载资源索引: {}", index.path);
     }
+
+    // ====== Phase 4.5: log4j 日志配置（{root}/assets/log_configs/{id}，全局共享） ======
+    if let Some(ref log_config) = manifest.log_config {
+        tracker.set_phase("downloading_log_config");
+        let dest = app_context.assets_dir().join(&log_config.path);
+        if let Some(parent) = dest.parent() {
+            fs::create_dir_all(parent).map_err(|e| format!("创建日志配置目录失败: {}", e))?;
+        }
+        dm.download_file_if_needed(
+            &log_config.url,
+            &dest,
+            log_config.sha1.as_deref(),
+            Some(log_config.size),
+            &None,
+            Some(&cancel_token),
+        )
+        .await?;
+        log_info!("已下载 log4j 配置: {}", log_config.path);
+        tracker.add_file(&log_config.path, log_config.size);
+        completed += 1;
+    }
+
+    // ====== Phase 5: 校验文件完整性 ======
+    tracker.set_phase("validating");
+    match crate::game::validator::validate_game_integrity(
+        app_context.inner(),
+        game_manager.inner(),
+        &options.game_name,
+        false,
+    ) {
+        Ok(v) if v.valid => log_info!("✅ 文件完整性校验通过: 检查 {} 项", v.checked),
+        Ok(v) => log_info!("⚠️ 文件完整性校验未通过: 缺失 {} 项, 损坏 {} 项", v.missing, v.corrupt),
+        Err(e) => log_info!("⚠️ 完整性校验执行失败（忽略）: {}", e),
+    }
+
     let game = game_manager
         .get_game(&options.game_name)
         .ok_or_else(|| format!("游戏不存在：{}", options.game_name))?;

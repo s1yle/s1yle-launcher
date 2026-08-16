@@ -264,6 +264,19 @@ pub async fn parse_version_json(
         }
     }
 
+    let mut log_config = None;
+    if let Some(file) = version_json["logging"]["client"]["file"].as_object() {
+        if let Some(id) = file["id"].as_str() {
+            log_config = Some(FileDownload {
+                url: file["url"].as_str().unwrap_or("").to_string(),
+                sha1: file["sha1"].as_str().map(String::from),
+                size: file["size"].as_u64().unwrap_or(0),
+                path: format!("log_configs/{}", id),
+                ..Default::default()
+            });
+        }
+    }
+
     Ok(VersionJsonManifest {
         version_id,
         client_jar,
@@ -271,6 +284,7 @@ pub async fn parse_version_json(
         assets,
         natives,
         asset_index,
+        log_config,
     })
 }
 

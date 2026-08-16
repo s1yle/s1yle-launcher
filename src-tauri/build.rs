@@ -47,6 +47,7 @@ fn main() {
             "front_get_launch_status_by_key",
             "front_get_launch_config",
             "front_update_launch_config",
+            "front_get_game_log",
             "get_version_manifest",
             "get_version_detail",
             "get_version_download_manifest",

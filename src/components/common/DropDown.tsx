@@ -35,6 +35,7 @@ export interface DropDownProps {
   showSearch?: boolean;
   /** 搜索框占位文本 */
   searchPlaceholder?: string;
+  openZIndex?: number;
 }
 
 /** 下拉选择组件，支持受控/非受控模式、搜索过滤和 Portal 浮动定位 */
@@ -52,6 +53,7 @@ const DropDown = ({
   buttonHeight = 'h-auto',
   showSearch = false,
   searchPlaceholder = '搜索...',
+  openZIndex = Z_INDEX.DROPDOWN,
 }: DropDownProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -190,7 +192,7 @@ const DropDown = ({
             anchorTo={buttonRef}
             floatingRef={dropdownRef}
             placement="bottom-start"
-            zIndex={Z_INDEX.DROPDOWN}
+            zIndex={openZIndex}
           >
             <AnimatePresence>
               <motion.div

@@ -21,10 +21,10 @@
 // 系统主题感知：自动适配浅色 / 深色模式，支持prefers-color-scheme
 // 实现《用户协议》
 //
-// TODO: The Next Phase
+// TODO: scrollIntoView 平滑滚动
+// TODO: 实现 Toggle 组件的 description
 //
 // 玩家身份需要使用正版/离线/第三方登录，每个玩家账户数据互相隔离(除了游戏)
-// 根据以上实现适合的账户界面初步 ui 设计
 
 import { useEffect } from 'react';
 import { BrowserRouter as Router, useLocation } from 'react-router-dom';

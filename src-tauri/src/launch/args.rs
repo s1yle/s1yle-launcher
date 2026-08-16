@@ -433,8 +433,8 @@ pub(super) fn build_launch_args(
     jvm_args.push(format!("-Xmx{}M", config.memory_mb));
 
     // log4j 配置
-    if let Some(logging_path) = merged["logging"]["client"]["file"]["path"].as_str() {
-        let log_config = assets_dir.join(logging_path);
+    if let Some(logging_id) = merged["logging"]["client"]["file"]["id"].as_str() {
+        let log_config = assets_dir.join("log_configs").join(logging_id);
         if log_config.exists() {
             jvm_args.push(format!(
                 "-Dlog4j.configurationFile={}",

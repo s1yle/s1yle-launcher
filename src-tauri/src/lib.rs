@@ -189,10 +189,13 @@ fn open_url(url: String) -> Result<String, String> {
     Ok(url)
 }
 
-/// 使用系统文件管理器打开指定文件夹
+/// 使用系统文件管理器打开指定文件夹（目录不存在时先创建，保证浏览子目录可用）
 #[tauri::command]
 fn open_folder(path: String) -> Result<String, String> {
     log_info!("打开文件夹: {}", path);
+    if let Err(e) = std::fs::create_dir_all(&path) {
+        log_info!("创建目录失败（忽略并继续打开）: {}", e);
+    }
     tauri_plugin_opener::open_path(&path, None::<&str>)
         .map_err(|e| format!("打开文件夹失败: {}", e))?;
     Ok(path)

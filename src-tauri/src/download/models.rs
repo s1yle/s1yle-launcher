@@ -120,6 +120,9 @@ pub struct VersionJsonManifest {
     pub natives: Vec<FileDownload>,
     /// 资源索引文件
     pub asset_index: Option<FileDownload>,
+    /// log4j 日志配置文件
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub log_config: Option<FileDownload>,
 }
 
 /// 库信息（来自版本 JSON）

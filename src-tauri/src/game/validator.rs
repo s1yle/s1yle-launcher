@@ -220,6 +220,23 @@ pub fn validate_game_integrity(
         );
     }
 
+    // 3.5 log4j 日志配置（{root}/assets/log_configs/{id}）
+    if let Some(ref lc) = manifest.log_config {
+        check_file(
+            "log_config",
+            &lc.path,
+            &ctx.assets_dir().join(&lc.path),
+            lc.sha1.as_deref(),
+            lc.size,
+            true,
+            &mut checked,
+            &mut ok,
+            &mut missing,
+            &mut corrupt,
+            &mut failed,
+        );
+    }
+
     // 4. 资源文件（{root}/assets/objects/...，deep 时追加 SHA1）
     for asset in &manifest.assets {
         check_file(
@@ -428,6 +445,19 @@ fn parse_local_manifest(
         ..Default::default()
     });
 
+    let mut log_config = None;
+    if let Some(file) = version_json["logging"]["client"]["file"].as_object() {
+        if let Some(id) = file["id"].as_str() {
+            log_config = Some(FileDownload {
+                url: String::new(),
+                sha1: file["sha1"].as_str().map(String::from),
+                size: file["size"].as_u64().unwrap_or(0),
+                path: format!("log_configs/{}", id),
+                ..Default::default()
+            });
+        }
+    }
+
     Ok(VersionJsonManifest {
         version_id,
         client_jar,
@@ -435,6 +465,7 @@ fn parse_local_manifest(
         assets,
         natives,
         asset_index,
+        log_config,
     })
 }
 

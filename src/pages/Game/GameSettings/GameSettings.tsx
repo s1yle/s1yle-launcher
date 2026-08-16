@@ -20,11 +20,14 @@ const GameGameSettings = () => {
   const games = useGameStore(s => s.games);
   const { success, error: notifyError } = useNotification();
 
-  const [settings, setSettings] = useState<GameSettings>({});
-  // 全局游戏设置（未启用独立设置时，界面展示/编辑的就是它，对所有游戏生效）
+  // 全局游戏设置（独立设置关闭时展示/编辑的就是它，对所有游戏生效）
   const [globalSettings, setGlobalSettings] = useState<GameSettings>({});
-  // 游戏独立设置原始值（加载时拉取；切换开关时作为恢复基线）
-  const gameSettingsRef = useRef<GameSettings>({});
+  // 游戏独立设置（仅对当前游戏生效；第一次打开时由全局复制而来，之后保留不再覆盖）
+  const [gameSettings, setGameSettings] = useState<GameSettings>({});
+  // 是否启用游戏独立设置
+  const [useGameSettings, setUseGameSettings] = useState(false);
+  // 独立设置是否已初始化（第一次打开时从全局复制，之后保留）
+  const independentInitializedRef = useRef(false);
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [javaPaths, setJavaPaths] = useState<JavaInstallation[]>([]);
   const [systemMemory, setSystemMemory] = useState(0);
@@ -38,6 +41,9 @@ const GameGameSettings = () => {
   const lastSavedSettings = useRef<string>('');
 
   const game = gameId ? getGame(gameId) : null;
+
+  // 当前展示/编辑的设置：独立设置开启时编辑游戏独立值，关闭时编辑全局值
+  const settings: GameSettings = useGameSettings ? gameSettings : globalSettings;
 
   // 分辨率选项：真实显示器模式 + 常用预设兜底（去重，保持顺序）
   // 注意：useMemo 必须与其它 hooks 一起置于提前 return 之前
@@ -77,25 +83,22 @@ const GameGameSettings = () => {
     const loadSettings = async () => {
       try {
         setSettingsLoading(true);
-        const [loadedSettings, global] = await Promise.all([
+        const [loaded, global] = await Promise.all([
           getGameSettings(game.name),
           getGlobalGameSettings(),
         ]);
-        console.log('[GameSettings] Loaded settings:', loadedSettings);
-        console.log('[GameSettings] Global settings:', global);
         setGlobalSettings(global);
-        gameSettingsRef.current = loadedSettings;
+        setGameSettings(loaded);
+        setUseGameSettings(loaded.use_game_settings || false);
+        // 磁盘上已启用过独立设置 → 视为已初始化，后续打开不再从全局覆盖
+        independentInitializedRef.current = loaded.use_game_settings || false;
 
-        // 未启用独立设置 → 界面展示/编辑全局设置；启用 → 展示/编辑游戏独立设置
-        const merged = loadedSettings.use_game_settings
-          ? { ...loadedSettings }
-          : { ...global, use_game_settings: false };
-
-        setSettings(merged);
-        lastSavedSettings.current = JSON.stringify(merged);
+        // 当前展示的设置（独立 or 全局）
+        const active = loaded.use_game_settings ? loaded : global;
+        lastSavedSettings.current = JSON.stringify(active);
         isInitialLoad.current = true;
         // 开关状态与持久化配置同步（无 min/max 即自动分配中）
-        setAutoMemory(!merged.min_memory && !merged.max_memory);
+        setAutoMemory(!active.min_memory && !active.max_memory);
 
         // 扫描常见的 Java 安装路径
         const commonJavaPaths = await scanCommonJavaPaths();
@@ -137,26 +140,27 @@ const GameGameSettings = () => {
     };
   }, []);
 
-  // 保存设置（防抖）- 仅在用户修改后保存
+  // 保存设置（防抖）- 仅在用户修改后保存当前激活的设置
   useEffect(() => {
-    if (!game || settingsLoading || isInitialLoad.current) {
+    if (!game || settingsLoading) return;
+    if (isInitialLoad.current) {
       isInitialLoad.current = false;
       return;
     }
 
-    const currentSettingsStr = JSON.stringify(settings);
+    // 仅保存当前激活的设置（独立 or 全局）
+    const active = useGameSettings ? gameSettings : globalSettings;
+    const currentSettingsStr = JSON.stringify(active);
     if (currentSettingsStr === lastSavedSettings.current) {
       return;
     }
 
     const timer = setTimeout(async () => {
       try {
-        console.log('[GameSettings] Saving settings:', settings);
-        // 启用独立设置 → 保存到当前游戏；未启用 → 保存到全局设置
-        if (settings.use_game_settings) {
-          await updateGameSettings(game.name, settings);
+        if (useGameSettings) {
+          await updateGameSettings(game.name, { ...active, use_game_settings: true });
         } else {
-          await updateGlobalGameSettings(settings);
+          await updateGlobalGameSettings(active);
         }
         lastSavedSettings.current = currentSettingsStr;
         success(t('settings.saved', '设置已保存'));
@@ -167,7 +171,7 @@ const GameGameSettings = () => {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [game?.id, settings, settingsLoading]);
+  }, [game?.id, gameSettings, globalSettings, useGameSettings, settingsLoading]);
 
   // 显示加载状态
   if (storeLoading || settingsLoading) {
@@ -202,27 +206,36 @@ const GameGameSettings = () => {
     key: K,
     value: GameSettings[K]
   ) => {
-    console.log('[GameSettings] Update setting:', key, value);
-    setSettings(prev => ({ ...prev, [key]: value }));
+    // 编辑当前激活的设置：独立设置开启时改游戏独立值，否则改全局值
+    if (useGameSettings) {
+      setGameSettings(prev => ({ ...prev, [key]: value }));
+    } else {
+      setGlobalSettings(prev => ({ ...prev, [key]: value }));
+    }
   };
 
   // 切换“使用游戏独立设置”
-  // - 启用：以全局设置（或此前已保存的独立设置）为基线赋给当前游戏并立即落盘
-  // - 关闭：仅写回开关（保留已保存的独立值，再次启用时恢复）；界面上回到全局设置
+  // - 第一次打开：以当前全局设置为基线覆盖游戏独立值
+  // - 关闭：保留游戏独立值（不清理），仅切回全局
+  // - 后续打开：沿用上次保留的独立值，不再从全局覆盖
   const handleUseGameSettingsChange = async (checked: boolean) => {
     try {
       if (checked) {
-        const base = gameSettingsRef.current.use_game_settings
-          ? { ...gameSettingsRef.current }
-          : { ...globalSettings };
-        const next = { ...base, use_game_settings: true };
-        gameSettingsRef.current = next;
-        setSettings(next);
+        let next: GameSettings;
+        if (!independentInitializedRef.current) {
+          next = { ...globalSettings, use_game_settings: true };
+          independentInitializedRef.current = true;
+        } else {
+          next = { ...gameSettings, use_game_settings: true };
+        }
+        setGameSettings(next);
+        setUseGameSettings(true);
         lastSavedSettings.current = JSON.stringify(next);
         await updateGameSettings(game.name, next);
       } else {
-        setSettings({ ...globalSettings, use_game_settings: false });
-        await updateGameSettings(game.name, { use_game_settings: false });
+        setUseGameSettings(false);
+        lastSavedSettings.current = JSON.stringify(globalSettings);
+        await updateGameSettings(game.name, { ...gameSettings, use_game_settings: false });
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -276,7 +289,7 @@ const GameGameSettings = () => {
     { id: 'auto', label: t('settings.java.auto', '自动选择合适的 Java') },
     ...javaPaths.map(java => ({
       id: java.path,
-      label: `${java.version} (${java.vendor}${java.is_jdk ? ', JDK' : ''})`,
+      label: `${java.version} (${java.vendor}${java.is_jdk ? ', JDK' : ''}, ${java.is_64bit ? '64位' : '32位'})`,
     })),
     ...(settings.java_path && !javaPaths.some(j => j.path === settings.java_path)
       ? [{ id: settings.java_path, label: settings.java_path }]
@@ -300,7 +313,7 @@ const GameGameSettings = () => {
         updateSetting('java_path', path);
         const versionMatch = path.match(/java[-_]?(\d+)/i);
         const version = versionMatch ? `Java ${versionMatch[1]}` : 'Unknown';
-        setJavaPaths(prev => [...prev, { path, version, vendor: '手动添加', is_jdk: true }]);
+        setJavaPaths(prev => [...prev, { path, version, vendor: '手动添加', is_jdk: true, major_version: versionMatch ? parseInt(versionMatch[1], 10) : 0, is_64bit: true }]);
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -318,13 +331,10 @@ const GameGameSettings = () => {
           <Toggle
             label={t('settings.useGameSettings', '使用游戏独立设置')}
             bgHidden
-            checked={settings.use_game_settings || false}
+            checked={useGameSettings}
             onChange={handleUseGameSettingsChange}
             disabled={settingsLoading}
           />
-          <p className="text-xs text-text-tertiary px-4 pb-2">
-            {t('settings.useGameSettingsDesc', '未启用时，修改将应用于所有游戏（全局设置）；启用后，以下设置将仅应用于当前游戏')}
-          </p>
 
           {/* 基础设置 */}
           <SettingsPanel.Item
@@ -335,7 +345,7 @@ const GameGameSettings = () => {
             {/* Java 配置 */}
             <SettingsPanel.Sub
               label={t('settings.java.title', 'Java 配置')}
-              disabled={!settings.use_game_settings}
+              disabled={!useGameSettings}
             >
 
               {/* Java 路径选择 */}
@@ -365,7 +375,7 @@ const GameGameSettings = () => {
             <SettingsPanel.Sub
               label='游戏内存'
               gap='10px'
-              disabled={!settings.use_game_settings}
+              disabled={!useGameSettings}
             >
 
               {/* 自动分配开关 */}
@@ -429,7 +439,7 @@ const GameGameSettings = () => {
             {/* 窗口配置 */}
             <SettingsPanel.Sub
               label={t('settings.window.title', '窗口配置')}
-              disabled={!settings.use_game_settings}
+              disabled={!useGameSettings}
               gap='6px'
             >
               <SettingsPanel.Row

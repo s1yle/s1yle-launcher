@@ -122,7 +122,6 @@ export const microInteractions = {
   itemTap: { scale: 0.97 },
   menuItemHover: { scale: 1.02 },
   menuItemTap: { scale: 0.98 },
-  contextMenuHover: { x: 2 },
 } as const;
 
 /**
@@ -297,19 +296,33 @@ export const toast: Variants = {
   },
 };
 
-/** 下拉面板：下滑 + 缩放淡入 */
-export const dropdown: Variants = {
-  initial: { opacity: 0, y: -10, scale: 0.98 },
+/** 右键菜单 */
+export const contextMenu: Variants = {
+  initial: { opacity: 0, y: -20},
   animate: {
     opacity: 1,
     y: 0,
-    scale: 1,
-    transition: { duration: DURATION.DROPDOWN, ease: EASING.OUT_FLUENT },
+    transition: EASING.SPRING_BOUNCY,
   },
   exit: {
     opacity: 0,
     y: -8,
-    scale: 0.98,
+    transition: { duration: DURATION.DROPDOWN, ease: EASING.IN_OUT_FLUENT },
+  },
+};
+
+
+/** 下拉面板：下滑 + 缩放淡入 */
+export const dropdown: Variants = {
+  initial: { opacity: 0, y: -20},
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: EASING.SPRING_BOUNCY,
+  },
+  exit: {
+    opacity: 0,
+    y: -8,
     transition: { duration: DURATION.DROPDOWN, ease: EASING.IN_OUT_FLUENT },
   },
 };

@@ -92,7 +92,7 @@ src-tauri/src/
 | 实例管理 | `/instance-manage/:id` /game-settings /auto-install /mods /resource-packs /worlds |
 | 实例列表 | `/instance-list` /instance-list/game-folder:default |
 | 下载 | `/download` /game /modpack /game/:versionId |
-| 设置 | `/settings` /java /appearance |
+| 设置 | `/settings` /game /appearance |
 | 服主后台 | `/admin/servers` /analytics /upload |
 | 其它 | `/hint` |
 
@@ -119,7 +119,6 @@ src-tauri/src/
 | `avatarStore` | `src/stores/avatarStore.ts` | 头像渲染模式 |
 | `backgroundStore` | `src/stores/backgroundStore.ts` | 背景配置 |
 | `fontStore` | `src/stores/fontStore.ts` | 字体管理 |
-| `javaStore` | `src/stores/javaStore.ts` | Java 安装 |
 | `lastVisitedStore` | `src/stores/lastVisitedStore.ts` | 子路由记忆 |
 | `loadingStore` | `src/stores/loadingStore.ts` | 全局加载 |
 | `loginStore` | `src/stores/loginStore.ts` | 登录状态 |

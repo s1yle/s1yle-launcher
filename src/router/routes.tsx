@@ -16,7 +16,6 @@ import {
   Map,
   FolderSearch,
   Edit3,
-  Copy,
   Trash2,
   FileDown,
   UserPlus,
@@ -24,6 +23,7 @@ import {
   BarChart3,
   Home as HomeIcon,
   Upload,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { LayoutMode, RouteConfig, SidebarGroup, SidebarType } from "./models";
 import { UserRole } from '@/stores/userRoleStore';
@@ -34,7 +34,7 @@ import { handleRefreshGames } from './actionHandler';
 const Loading = lazy(() => import('../pages/Loading'));
 const Home = lazy(() => import('../pages/Home'));
 const AccountDetail = lazy(() => import('../pages/AccountList/AccountDetail'));
-const GameGameSettings = lazy(() => import('../pages/Game/GameSettings/GameGameSettings'));
+const GameGameSettings = lazy(() => import('../pages/Game/GameSettings/GameSettings.tsx'));
 const GameAutoInstall = lazy(() => import('../pages/Game/GameSettings/GameAutoInstall'));
 const GameMods = lazy(() => import('../pages/Game/GameSettings/GameMods'));
 const GameResourcePacks = lazy(() => import('../pages/Game/GameSettings/GameResourcePacks'));
@@ -45,8 +45,8 @@ const DownloadModpack = lazy(() => import('../pages/Download/DownloadModpack'));
 const DownloadProgress = lazy(() => import('../pages/Download/DownloadProgress'));
 const VersionDetailWithInstall = lazy(() => import('../pages/Download/VersionDetailWithInstall'));
 const Hint = lazy(() => import('../pages/Feedback/Hint'));
-const JavaSettings = lazy(() => import('../pages/Settings/JavaSettings.tsx'));
 const AppearanceSettings = lazy(() => import('../pages/Settings/AppearanceSettings'));
+const GlobalGameSettings = lazy(() => import('../pages/Settings/GlobalGameSettings'));
 const AdminServers = lazy(() => import('../pages/admin/AdminServers'));
 const AdminAnalytics = lazy(() => import('../pages/admin/AdminAnalytics'));
 const AdminUpload = lazy(() => import('../pages/admin/AdminUpload'));
@@ -140,7 +140,6 @@ export const routes: RouteConfig[] = [
           children: [
             { id: 'ctx-script', type: 'action' as const, title: '生成启动脚本', titleI18nKey: 'gameManage.manageGenerateScript', icon: <FileText className="w-4 h-4" />, group: SidebarGroup.GAME },
             { id: 'ctx-rename', type: 'action' as const, title: '重命名该游戏', titleI18nKey: 'gameManage.manageRename', icon: <Edit3 className="w-4 h-4" />, group: SidebarGroup.GAME },
-            { id: 'ctx-copy', type: 'action' as const, title: '复制游戏', titleI18nKey: 'gameManage.manageCopy', icon: <Copy className="w-4 h-4" />, group: SidebarGroup.GAME },
             { id: 'ctx-delete', type: 'action' as const, title: '删除该游戏', titleI18nKey: 'gameManage.manageDelete', icon: <Trash2 className="w-4 h-4" />, danger: true, group: SidebarGroup.GAME },
             { id: 'ctx-export', type: 'action' as const, title: '导出整合包', titleI18nKey: 'gameManage.manageExport', icon: <FileDown className="w-4 h-4" />, group: SidebarGroup.GAME },
           ]
@@ -349,15 +348,15 @@ export const routes: RouteConfig[] = [
     },
     children: [
       {
-        path: '/settings/java',
-        component: JavaSettings,
-        header: { type: SidebarType.SUB, title: 'Java 管理', titleI18nKey: 'sidebar.javaSettings' },
+        path: '/settings/game',
+        component: GlobalGameSettings,
+        header: { type: SidebarType.SUB, title: '全局游戏设置', titleI18nKey: 'gameSettings.title' },
         sidebarGroup: SidebarGroup.COMMON,
         parentPath: '/',
         ownSidebar: true,
         menu: {
-          id: 'settings-java',
-          icon: <PackageOpen className="w-4 h-4" />,
+          id: 'settings-game',
+          icon: <SlidersHorizontal className="w-4 h-4" />,
         },
       },
       {

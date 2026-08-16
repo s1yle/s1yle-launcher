@@ -11,11 +11,11 @@ export { default as VersionDetailWithInstall } from './Download/VersionDetailWit
 export { default as DownloadProgress } from './Download/DownloadProgress';
 export { default as AccountDetail } from './AccountList/AccountDetail';
 export { default as AppearanceSettings } from './Settings/AppearanceSettings';
-export { default as JavaSettings } from './Settings/JavaSettings.tsx';
+export { default as GlobalGameSettings } from './Settings/GlobalGameSettings';
 export { default as Multiplayer } from './Multiplayer';
 export { default as Feedback } from './Feedback/Feedback';
 export { default as Hint } from './Feedback/Hint'
-export { default as GameGameSettings } from './Game/GameSettings/GameGameSettings';
+export { default as GameGameSettings } from './Game/GameSettings/GameSettings.tsx';
 export { default as GameAutoInstall } from './Game/GameSettings/GameAutoInstall';
 export { default as GameMods } from './Game/GameSettings/GameMods';
 export { default as GameResourcePacks } from './Game/GameSettings/GameResourcePacks';

@@ -194,7 +194,7 @@ const LaunchingOverlay = ({ gameId, game, accountInfo, onExit }: LaunchingOverla
                   </div>
                 </div>
               )}
-              <GameLogViewer gameId={gameId} />
+              <GameLogViewer gameId={gameId} live />
               <button
                 onClick={() => openFolder(game.path)}
                 className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer"

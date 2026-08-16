@@ -81,24 +81,27 @@ pub use linux::process_has_visible_window;
 
 #[cfg(windows)]
 mod windows_impl {
-    use windows::Win32::UI::WindowsAndMessaging::{
-        EnumWindows, GetWindowThreadProcessId, IsWindowVisible, HWND,
+    use windows::Win32::{
+        Foundation::{HWND, LPARAM},
+        UI::WindowsAndMessaging::{EnumWindows, GetWindowThreadProcessId, IsWindowVisible},
     };
 
-    unsafe extern "system" fn enum_proc(hwnd: HWND, lparam: isize) -> windows::core::BOOL {
-        let target_pid = lparam as u32;
+    unsafe extern "system" fn enum_proc(hwnd: HWND, lparam: LPARAM) -> windows::core::BOOL {
+        let target_pid = lparam.0 as u32; // 转换为 u32
         let mut window_pid: u32 = 0;
-        let _ = GetWindowThreadProcessId(hwnd, Some(&mut window_pid));
-        if window_pid == target_pid && IsWindowVisible(hwnd).as_bool() {
+        let _ = !unsafe {
+            GetWindowThreadProcessId(hwnd, Some(&mut window_pid))
+        }; 
+        if window_pid == target_pid && !unsafe{ IsWindowVisible(hwnd).as_bool() } {
             windows::core::BOOL(0) // 找到目标窗口，停止枚举
         } else {
             windows::core::BOOL(1) // 继续枚举
         }
     }
 
-    pub fn process_has_visible_window(pid: u32) -> bool {
+    pub fn process_has_visible_window(pid: LPARAM) -> bool {
         // 回调返回 FALSE 停止枚举时 EnumWindows 返回 FALSE，即视为命中
-        let found = !unsafe { EnumWindows(Some(enum_proc), pid as isize).as_bool() };
+        let found = !unsafe { EnumWindows(Some(enum_proc), pid).is_err() };
         found
     }
 }

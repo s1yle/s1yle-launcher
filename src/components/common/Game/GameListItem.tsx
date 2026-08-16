@@ -156,7 +156,9 @@ const GameListItem = ({
             setIsHovered(false);
           }}
           onClick={handleClick}
-          onContextMenu={showContextMenu}
+          onContextMenu={(e) => {
+            showContextMenu(e);
+          }}
         >
 
           {/* 图标 */}

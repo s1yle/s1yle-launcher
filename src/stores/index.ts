@@ -20,10 +20,6 @@ export { useFontStore, fontScaleConfig } from './fontStore';
 export type { FontStoreProps, FontStoreState, FontScale } from './fontStore';
 /** 游戏管理 Store — 提供 useGameStore hook */
 export { useGameStore } from './gameStore';
-/** Java 安装管理 Store — 提供 useJavaStore hook */
-export { useJavaStore } from './javaStore';
-/** Java Store 的类型定义 */
-export type { JavaStoreProrps, JavaStoreState } from './javaStore';
 /** 子路由记忆 Store — 提供 useLastVisitedStore hook */
 export { useLastVisitedStore } from './lastVisitedStore';
 /** 布局 Store（侧边栏宽度/折叠）+ 布局动画常量 — 提供 useLayoutStore hook */

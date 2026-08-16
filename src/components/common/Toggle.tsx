@@ -15,7 +15,8 @@ export interface ToggleProps {
   disabled?: boolean;
   id?: string;
   hoverable?: boolean;
-  bgHidden?: boolean
+  bgHidden?: boolean;
+  className?: string;
 }
 
 /**
@@ -42,6 +43,7 @@ const Toggle = ({
   id,
   hoverable = true,
   bgHidden = true,
+  className = "",
 }: ToggleProps) => {
 
   // Settings Panel上下文
@@ -58,6 +60,7 @@ const Toggle = ({
           'inline-flex items-center justify-between gap-2',
           `w-full ${isInsideItem ? 'px-2' : 'px-4'} py-2 ${hoverable && 'hover:bg-(--color-surface-hover)'} `,
           disabled && 'opacity-50 cursor-not-allowed',
+          `${className}`
         )}
       >
 

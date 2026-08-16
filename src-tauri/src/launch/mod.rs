@@ -5,6 +5,7 @@
 
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
+use windows::Win32::Foundation::LPARAM;
 use core::convert::{From, Into};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -452,7 +453,7 @@ async fn run_launch_pipeline(
                         .version_jar_in_dir(&game_dir, &config.version)
                         .to_path_buf(),
                     "library" | "native" => ctx.libraries_dir().join(&file.path),
-                    "index" | "asset" => ctx.assets_dir().join(&file.path),
+                    "index" | "asset" | "log_config" => ctx.assets_dir().join(&file.path),
                     _ => continue,
                 };
 
@@ -595,7 +596,7 @@ async fn wait_for_game_window(game_id: &str) {
         }
 
         // 2. 检测游戏窗口是否出现
-        if crate::launch::window::process_has_visible_window(pid) {
+        if crate::launch::window::process_has_visible_window(LPARAM(pid as isize)) {
             if let Ok(mut manager) = lock_manager() {
                 if let Some(game) = manager.processes.get_mut(game_id) {
                     game.status = LaunchStatus::Running;
@@ -664,6 +665,9 @@ async fn build_download_list(
         for asset in &manifest.assets {
             all.push(("asset".to_string(), asset.clone()));
         }
+        if let Some(lc) = &manifest.log_config {
+            all.push(("log_config".to_string(), lc.clone()));
+        }
         return Ok(all);
     }
 
@@ -697,6 +701,12 @@ async fn build_download_list(
                     .iter()
                     .find(|a| a.path == check.path)
                     .map(|a| ("asset".to_string(), a.clone()));
+            }
+            "log_config" => {
+                found = manifest
+                    .log_config
+                    .as_ref()
+                    .map(|l| ("log_config".to_string(), l.clone()));
             }
             _ => {}
         }

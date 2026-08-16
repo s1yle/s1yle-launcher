@@ -8,4 +8,8 @@ export interface JavaInstallation {
   vendor: string,
   /** 是否为 JDK（而非 JRE） */
   is_jdk: boolean,
+  /** 主版本号（8 / 11 / 17 / 21 ...） */
+  major_version: number,
+  /** 是否为 64 位 */
+  is_64bit: boolean,
 }

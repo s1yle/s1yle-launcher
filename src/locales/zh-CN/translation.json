@@ -182,7 +182,14 @@
       "downloading_assets": "下载资源文件",
       "downloading_natives": "下载原生库",
       "downloading_client": "下载客户端核心",
-      "downloading_index": "下载资源索引"
+      "downloading_index": "下载资源索引",
+      "downloading_log_config": "下载日志配置",
+      "validating": "校验文件完整性"
+    },
+    "steps": {
+      "libraries": "依赖库",
+      "assets": "资源",
+      "validating": "校验文件完整性"
     },
     "install": {
       "title": "安装新游戏",

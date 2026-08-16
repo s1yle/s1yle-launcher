@@ -98,19 +98,31 @@ fn parse_level(line: &str) -> LogLevel {
     }
 }
 
-/// 单路管道读取线程：逐行解析入队，读到 EOF（进程退出）后自然结束
+/// 单路管道读取线程：逐行解析入队，读到 EOF（进程退出）后自然结束。
+/// 使用 read_until + 有损 UTF-8 转换，避免非 UTF-8 字节（如中文 Windows 的 GBK
+/// 控制台输出）触发 `BufRead::lines` 的 InvalidData 而提前中断导致整段日志丢失。
 fn read_loop<R: std::io::Read + Send + 'static>(reader: R, game_id: String) {
-    let buf = BufReader::new(reader);
-    for line in buf.lines() {
-        let Ok(line) = line else { break };
-        if let Ok(mut store) = store().inner.lock() {
-            store
-                .entry(game_id.clone())
-                .or_insert_with(|| LogBuffer::new(MAX_LINES))
-                .push(LogLine {
-                    level: parse_level(&line),
-                    text: line,
-                });
+    let mut buf = BufReader::new(reader);
+    let mut bytes: Vec<u8> = Vec::new();
+    loop {
+        bytes.clear();
+        match buf.read_until(b'\n', &mut bytes) {
+            Ok(0) => break,
+            Ok(_) => {
+                let line = String::from_utf8_lossy(&bytes)
+                    .trim_end_matches(['\r', '\n'])
+                    .to_string();
+                if let Ok(mut store) = store().inner.lock() {
+                    store
+                        .entry(game_id.clone())
+                        .or_insert_with(|| LogBuffer::new(MAX_LINES))
+                        .push(LogLine {
+                            level: parse_level(&line),
+                            text: line,
+                        });
+                }
+            }
+            Err(_) => break,
         }
     }
 }

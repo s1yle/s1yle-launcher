@@ -1,12 +1,15 @@
-import { useEffect, useState } from 'react';
+// FIXME: 有崩溃但是没有正确显示崩溃的log，需要修复一下
+
+import { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Gamepad2, Loader2, Square, ChevronUp } from 'lucide-react';
+import { Loader2, Square, ChevronUp, Settings } from 'lucide-react';
 import { getCurrentAccount, getGame, getLaunchGames, stopGame, type AccountInfo } from '@/helper/rustInvoke';
 import { AccountType, Game, LaunchStatus, type LaunchGameInfo } from '@/api';
 import { DURATION, EASING } from '@/utils/animations';
 import { Z_INDEX } from '@/utils/zIndex';
 import LaunchingOverlay from './LaunchingOverlay';
 import { useLoadingAction } from '@/hooks';
+import ContextMenu, { ContextMenuItemData, useContextMenu } from '../ContextMenu';
 
 /** 游戏轮询间隔（ms） */
 const POLL_INTERVAL = 2000;
@@ -19,6 +22,10 @@ const STATUS_META: Record<LaunchStatus, { text: string; dot: string }> = {
   [LaunchStatus.Stopped]: { text: '已停止', dot: 'bg-[var(--color-text-tertiary)]' },
 };
 
+const contextMenuItems: ContextMenuItemData[] = [
+  { id: 'status', label: '游戏状态', icon: Settings },
+];
+
 /** 运行游戏小卡片：左下角展示已启动的游戏，点击放大查看详情 */
 const RunningGamesCard = () => {
   const [games, setGames] = useState<LaunchGameInfo[]>([]);
@@ -26,7 +33,34 @@ const RunningGamesCard = () => {
   const [stoppingId, setStoppingId] = useState<string | null>(null);
   const [shownSession, setShownSession] = useState<{ gameId: string } | null>(null);
   const [shownGame, setShownGame] = useState<Game | null>(null);
+  const [contextMenuInst, setContextMenuInst] = useState<LaunchGameInfo | null>(null);
   const [accountInfo, setAccountInfo] = useState<AccountInfo | null>(null);
+
+  const { contextMenuState, showContextMenu, hideContextMenu } = useContextMenu();
+
+  const openLaunchingLayer = async (inst: LaunchGameInfo) => {
+    try {
+      const gameName = inst.game_dir.split(/[\\/]/).pop() || inst.game_dir;
+      const game = await getGame(gameName);
+      if (game) {
+        setShownGame(game);
+        setShownSession({ gameId: inst.game_id });
+      }
+    } catch {
+      // 获取游戏详情失败，忽略点击
+    }
+  };
+
+  const handleContextMenu = useCallback((e: React.MouseEvent, inst: LaunchGameInfo) => {
+    setContextMenuInst(inst);
+    showContextMenu(e);
+  }, [showContextMenu]);
+
+  const handleContextMenuAction = (id: string) => {
+    if (id === 'status' && contextMenuInst) {
+      void openLaunchingLayer(contextMenuInst);
+    }
+  };
 
   const loadProfile = useLoadingAction({
     key: 'home:profile',
@@ -46,6 +80,8 @@ const RunningGamesCard = () => {
   const refresh = async () => {
     try {
       const list = await getLaunchGames();
+      console.warn(list);
+
       setGames(
         list.filter(
           (i) => i.status !== LaunchStatus.Idle && i.status !== LaunchStatus.Stopped
@@ -94,19 +130,9 @@ const RunningGamesCard = () => {
     setStoppingId(null);
   };
 
-  const handleGameClick = async (gameId: string) => {
+  const handleGameClick = (gameId: string) => {
     const inst = games.find((i) => i.game_id === gameId);
-    if (!inst) return;
-    try {
-      const gameName = inst.game_dir.split(/[\\/]/).pop() || inst.game_dir;
-      const game = await getGame(gameName);
-      if (game) {
-        setShownGame(game);
-        setShownSession({ gameId });
-      }
-    } catch {
-      // 获取游戏详情失败，忽略点击
-    }
+    if (inst) void openLaunchingLayer(inst);
   };
 
   const activeCount = games.filter(
@@ -124,12 +150,11 @@ const RunningGamesCard = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.96 }}
             transition={{ duration: DURATION.FAST, ease: EASING.OUT_FLUENT }}
-            className="w-80 rounded-2xl border border-[var(--color-context-border)] bg-[var(--color-context-bg)] shadow-2xl backdrop-blur-xl overflow-hidden"
+            className="w-80 rounded-(--radius-sm) border border-[var(--color-context-border)] bg-[var(--color-context-bg)] shadow-2xl backdrop-blur-xl overflow-hidden"
           >
             {/* 头部 */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-context-border)]">
               <div className="flex items-center gap-2">
-                <Gamepad2 className="w-4 h-4 text-[var(--color-text-secondary)]" />
                 <span className="text-sm font-medium text-[var(--color-text-primary)]">
                   运行中的游戏
                 </span>
@@ -150,43 +175,54 @@ const RunningGamesCard = () => {
                 return (
                   <div
                     key={inst.game_id}
-                    className="rounded-xl bg-(--color-surface) hover:bg-(--color-surface-hover)
+                    className="rounded-(--radius-sm) bg-(--color-surface) hover:bg-(--color-surface-hover)
                       cursor-pointer
                       border border-[var(--color-context-border)] px-3 py-2.5"
                     onClick={() => handleGameClick(inst.game_id)}
+                    onContextMenu={e => {
+                      handleContextMenu(e, inst);
+                    }}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
+
                         <span className={`w-2 h-2 rounded-full shrink-0 ${meta.dot}`} />
                         <span className="text-sm text-[var(--color-text-primary)] truncate">
                           {inst.version}
                         </span>
                       </div>
-                      <span className="text-xs text-[var(--color-text-tertiary)] shrink-0">
+
+                      {/* 游戏状态文本 */}
+                      <span className="text-xs font-light text-[var(--color-text-tertiary)] shrink-0 pr-2.5">
                         {meta.text}
                       </span>
+
                     </div>
                     <div className="mt-1 flex items-center justify-between gap-2">
                       <div className="text-xs text-[var(--color-text-tertiary)] truncate">
                         {inst.username}
                         {inst.pid != null && ` · PID ${inst.pid}`}
                       </div>
-                      {(inst.status === LaunchStatus.Running ||
-                        inst.status === LaunchStatus.Launching) && (
-                          <button
-                            onClick={() => handleStop(inst.game_id)}
-                            disabled={stoppingId === inst.game_id}
-                            className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-[var(--color-error)] hover:bg-[var(--color-error)]/10 transition-colors disabled:opacity-50 cursor-pointer shrink-0"
-                          >
-                            {stoppingId === inst.game_id ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <Square className="w-3 h-3" />
-                            )}
-                            停止
-                          </button>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStop(inst.game_id);
+                        }}
+                        disabled={stoppingId === inst.game_id}
+                        className="flex items-center gap-1 px-2 py-1 rounded-(--radius-sm) text-xs 
+                          text-[var(--color-error)] hover:bg-[var(--color-error)]/10 transition-colors 
+                          disabled:opacity-50 cursor-pointer shrink-0 font-light"
+                      >
+                        {stoppingId === inst.game_id ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Square className="w-3 h-3" />
                         )}
+                        停止
+                      </button>
                     </div>
+
                     {inst.last_error && (
                       <div className="mt-1.5 text-xs text-[var(--color-error)] truncate">
                         {inst.last_error}
@@ -222,6 +258,16 @@ const RunningGamesCard = () => {
             </span>
           </motion.button>
         )}
+
+
+        <ContextMenu
+          items={contextMenuItems}
+          position={contextMenuState.position}
+          visible={contextMenuState.visible}
+          onClose={hideContextMenu}
+          onItemClick={handleContextMenuAction}
+          openZIndex={1000}
+        />
       </AnimatePresence>
     </div>
   );

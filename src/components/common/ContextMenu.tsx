@@ -4,8 +4,10 @@ import { LucideIcon } from 'lucide-react';
 import { Portal } from '@/components/common/Portal';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { Z_INDEX } from '@/utils/zIndex';
-import { dropdown, microInteractions } from '../../utils/animations';
+import { dropdown, microInteractions, transitions } from '../../utils/animations';
 import { renderIcon } from '../../utils/iconRenderer';
+import { Page, PageSection } from './Page';
+import { useAnimation } from '@/hooks';
 
 /** 右键菜单项数据 */
 export interface ContextMenuItemData {
@@ -25,6 +27,7 @@ export interface ContextMenuProps {
   onClose: () => void;
   onItemClick: (id: string) => void;
   className?: string;
+  openZIndex?: number;
 }
 
 /** 右键菜单组件，基于 Portal 浮动定位，支持动画和点击外部关闭 */
@@ -35,10 +38,12 @@ const ContextMenu = ({
   onClose,
   onItemClick,
   className = '',
+  openZIndex = Z_INDEX.DROPDOWN,
 }: ContextMenuProps) => {
   const menuRef = useRef<HTMLDivElement>(null);
 
   useClickOutside(() => onClose(), visible, [menuRef]);
+  const animation = useAnimation();
 
   const handleItemClick = useCallback((id: string, disabled?: boolean) => {
     if (disabled) return;
@@ -53,16 +58,16 @@ const ContextMenu = ({
       originX={position.x}
       originY={position.y}
       collisionBoundary={{ bottom: 10, right: 10 }}
-      zIndex={Z_INDEX.DROPDOWN}
+      zIndex={openZIndex}
     >
       <AnimatePresence>
         <motion.div
           ref={menuRef}
           key="context-menu"
           variants={dropdown}
-          initial="initial"
-          animate="animate"
-          exit="exit"
+          initial={animation.enabled && "initial"}
+          animate={animation.enabled && "animate"}
+          exit={animation.enabled ? "exit" : ""}
           className={`py-1 min-w-[140px] ${className}`}
           style={{
             backgroundColor: 'var(--color-surface-solid)',
@@ -72,34 +77,46 @@ const ContextMenu = ({
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          {items.map((item, index) => {
-            if (item.divider) {
-              return <div key={`divider-${index}`} className="my-1 border-t" style={{ borderColor: 'var(--color-border)' }} />;
-            }
+          <Page>
+            {items.map((item, index) => {
+              if (item.divider) {
+                return <div key={`divider-${index}`} className="my-1 border-t" style={{ borderColor: 'var(--color-border)' }} />;
+              }
 
-            return (
-              <motion.button
-                key={item.id}
-                onClick={() => handleItemClick(item.id, item.disabled)}
-                disabled={item.disabled}
-                className={`w-full px-3 py-1.5 text-left text-sm flex items-center gap-2 transition-colors ${
-                  item.disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                } ${
-                  item.danger
-                    ? 'hover:bg-[var(--color-error-10)]'
-                    : 'hover:bg-[var(--color-primary-10)]'
-                }`}
-                style={{
-                  color: item.danger ? 'var(--color-error)' : 'var(--color-text-secondary)',
-                  backgroundColor: 'transparent',
-                }}
-                whileHover={microInteractions.contextMenuHover}
-              >
-                {item.icon && renderIcon(item.icon)}
-                <span>{item.label}</span>
-              </motion.button>
-            );
-          })}
+              return (
+                <PageSection>
+                  <motion.button
+                    key={item.id}
+                    onClick={() => handleItemClick(item.id, item.disabled)}
+                    disabled={item.disabled}
+                    className={`w-full px-3 py-1.5 text-left text-sm flex items-center gap-2 transition-colors ${item.disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                      } ${item.danger
+                        ? 'hover:bg-(--color-error-10)'
+                        : 'hover:bg-(--color-primary-10)'
+                      }`}
+                    style={{
+                      color: item.danger ? 'var(--color-error)' : 'var(--color-text-secondary)',
+                      backgroundColor: 'transparent',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!item.disabled) {
+                        e.currentTarget.style.backgroundColor = item.danger
+                          ? 'var(--color-error-10)'
+                          : 'var(--color-primary-10)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }}
+                    transition={transitions.fast}
+                  >
+                    {item.icon && renderIcon(item.icon)}
+                    <span>{item.label}</span>
+                  </motion.button>
+                </PageSection>
+              );
+            })}
+          </Page>
         </motion.div>
       </AnimatePresence>
     </Portal>

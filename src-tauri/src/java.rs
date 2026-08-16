@@ -1,34 +1,19 @@
 use serde::Serialize;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 
-// 新增文件 src-tauri/src/java.rs
-//
-//          #[derive(Serialize, Clone, Debug)]
-//          pub struct JavaInstallation {
-//              pub path: String,          // java 可执行文件绝对路径
-//              pub version: String,       // 完整版本号 "17.0.1"
-//              pub vendor: String,        // "OpenJDK" / "Oracle" / etc
-//          }
-//
-//          // Tauri 命令 1: 扫描系统 Java 安装
-//          #[tauri::command]
-//          pub async fn scan_java_installations() -> Result<Vec<JavaInstallation>, String>
-//
-//          // Tauri 命令 2: 获取指定 Java 路径的版本信息
-//          #[tauri::command]
-//          pub async fn get_java_version(path: String) -> Result<JavaInstallation, String>
-//
-// ┌──────────────────────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-// │平台                                      │扫描来源                                                                                                                                   │
-// ├──────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-// │通用                                      │PATH 中的 java/java.exe、JAVA_HOME 环境变量                                                                                                │
-// ├──────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-// │Linux                                     │/usr/lib/jvm/*/bin/java、/usr/lib/java/*/bin/java、/usr/java/*/bin/java、alternatives --list                                               |
-// ├──────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-// │macOS                                     │/Library/Java/JavaVirtualMachines/*/Contents/Home/bin/java、/usr/libexec/java_home                                                         │
-// ├──────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-// │Windows                                   │注册表 HKLM\SOFTWARE\JavaSoft\*、Program Files\Java\*、Program Files (x86)\Java\*                                                          │
-// └──────────────────────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+use crate::app_context::AppContext;
+use crate::config::ConfigManager;
+use tauri::State;
+
+// 扫描策略（对齐 PCL 四层搜索源）：
+// 1. 缓存：读取 .wecraft.json 的 java_cache 节，缓存仍有效则直接返回
+// 2. 注册表：HKLM\SOFTWARE\JavaSoft（64 位）与 WOW6432Node（32 位）下的
+//    Java Runtime Environment / JDK / Java Development Kit 版本子键 JavaHome
+// 3. 环境变量：JAVA_HOME / JDK_HOME / JRE_HOME 与 PATH（进程环境 + 系统/用户注册表兜底），
+//    PATH 条目既按 bin 目录也按 JDK/JRE 根目录探测
+// 4. 预设目录递归：Program Files(x86)\Java、{game_root}\runtime、启动器 runtime、游戏实例目录
+// 候选路径统一经 java -version 校验，解析主版本号与 64 位标记，按 Java Home 目录去重。
 
 /// Java 安装信息结构体
 #[derive(Serialize, Clone, Debug)]
@@ -41,10 +26,39 @@ pub struct JavaInstallation {
     pub vendor: String,
     /// 是否为 JDK（而非 JRE）
     pub is_jdk: bool,
+    /// 主版本号（8 / 11 / 17 / 21 ...）
+    pub major_version: u32,
+    /// 是否为 64 位
+    pub is_64bit: bool,
+}
+
+/// java -version 解析结果（内部使用）
+#[derive(Default, Clone)]
+struct JavaVersionInfo {
+    version: String,
+    vendor: String,
+    major_version: u32,
+    is_64bit: bool,
+}
+
+/// 从完整版本号解析主版本号（Java 8 报告 "1.8.0_xxx" → 8）
+fn parse_major_version(version: &str) -> u32 {
+    if let Some(rest) = version.strip_prefix("1.") {
+        rest.split('.')
+            .next()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0)
+    } else {
+        version
+            .split('.')
+            .next()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0)
+    }
 }
 
 /// 从 java -version 输出中解析版本信息
-fn parse_java_version_output(stderr: &str) -> (String, String) {
+fn parse_java_version_output(stderr: &str) -> JavaVersionInfo {
     use regex::Regex;
 
     let version_reg = Regex::new(r#"version "(\d+(?:\.\d+)+(?:_\d+)?)""#).ok();
@@ -59,42 +73,64 @@ fn parse_java_version_output(stderr: &str) -> (String, String) {
         .map(|m| m.as_str().to_string())
         .unwrap_or_else(|| "Unknown".to_string());
 
-    (version, vendor)
+    JavaVersionInfo {
+        major_version: parse_major_version(&version),
+        is_64bit: stderr.contains("64-Bit"),
+        version,
+        vendor,
+    }
 }
 
 /// 检测指定路径是否为 JDK
 #[cfg(target_os = "windows")]
-fn is_jdk_at_path(java_home: &PathBuf) -> bool {
+fn is_jdk_at_path(java_home: &Path) -> bool {
     java_home.join("bin").join("javac.exe").exists()
 }
 
 #[cfg(not(target_os = "windows"))]
-fn is_jdk_at_path(java_home: &PathBuf) -> bool {
+fn is_jdk_at_path(java_home: &Path) -> bool {
     java_home.join("bin").join("javac").exists()
 }
 
-/// 获取 java 可执行文件名
-#[cfg(target_os = "windows")]
-const _JAVA_EXECUTABLE: &str = "java.exe";
+/// 校验候选 java 可执行文件：存在 + java -version 可运行，返回封装后的安装信息
+fn probe_java(java_path: &Path) -> Option<JavaInstallation> {
+    if !java_path.exists() {
+        return None;
+    }
 
-#[cfg(not(target_os = "windows"))]
-const _JAVA_EXECUTABLE: &str = "java";
+    let output = Command::new(java_path).arg("-version").output().ok()?;
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let info = parse_java_version_output(&stderr);
+
+    let java_home = java_path.parent()?.parent()?;
+    let is_jdk = is_jdk_at_path(java_home);
+
+    Some(JavaInstallation {
+        path: java_path.to_path_buf(),
+        version: info.version,
+        vendor: info.vendor,
+        is_jdk,
+        major_version: info.major_version,
+        is_64bit: info.is_64bit,
+    })
+}
 
 // =============================================================================
 // Linux 平台实现
 // =============================================================================
 
 #[cfg(target_os = "linux")]
-fn scan_java_impl() -> Result<Vec<JavaInstallation>, String> {
+fn scan_java_impl(_ctx: &AppContext) -> Result<Vec<JavaInstallation>, String> {
+    use std::collections::HashSet;
     use std::fs;
     use std::fs::symlink_metadata;
-    use std::process::Command;
 
     const USR_LIB_JVM: &str = "/usr/lib/jvm/";
     const USR_LIB_JAVA: &str = "/usr/lib/java/";
     const USR_JAVA: &str = "/usr/java";
 
     let mut javas: Vec<JavaInstallation> = Vec::new();
+    let mut seen: HashSet<PathBuf> = HashSet::new();
     let linux_java_paths = [USR_LIB_JVM, USR_LIB_JAVA, USR_JAVA];
 
     for path in linux_java_paths {
@@ -106,33 +142,23 @@ fn scan_java_impl() -> Result<Vec<JavaInstallation>, String> {
                     Err(_) => continue,
                 };
 
-                // 跳过符号链接
                 if metadata.is_symlink() {
                     continue;
                 }
 
-                let bin_path = entry_path.join("bin");
-                let is_jdk = bin_path.join("javac").is_file();
-                let java_exe = bin_path.join("java");
-
+                let java_exe = entry_path.join("bin").join("java");
                 if !java_exe.is_file() {
                     continue;
                 }
 
-                let output = match Command::new(&java_exe).arg("-version").output() {
-                    Ok(out) => out,
-                    Err(_) => continue,
-                };
+                let home = entry_path.canonicalize().unwrap_or(entry_path);
+                if !seen.insert(home) {
+                    continue;
+                }
 
-                let stderr = String::from_utf8_lossy(&output.stderr);
-                let (version, vendor) = parse_java_version_output(&stderr);
-
-                javas.push(JavaInstallation {
-                    path: java_exe,
-                    version,
-                    vendor,
-                    is_jdk,
-                });
+                if let Some(info) = probe_java(&java_exe) {
+                    javas.push(info);
+                }
             }
         }
     }
@@ -149,191 +175,275 @@ fn scan_java_impl() -> Result<Vec<JavaInstallation>, String> {
 // =============================================================================
 
 #[cfg(target_os = "windows")]
-fn scan_java_impl() -> Result<Vec<JavaInstallation>, String> {
-    use std::collections::HashSet;
-    use std::fs;
-    use std::process::Command;
-    use windows::{
-        Win32::Foundation::ERROR_SUCCESS,
-        Win32::System::Registry::{
-            HKEY_LOCAL_MACHINE, KEY_READ, RegCloseKey, RegEnumKeyExW, RegOpenKeyExW,
-            RegQueryValueExW,
-        },
-        core::PCWSTR,
-    };
+fn reg_open(hkey: windows::Win32::System::Registry::HKEY, subkey: &str) -> Option<windows::Win32::System::Registry::HKEY> {
+    use windows::Win32::System::Registry::{RegOpenKeyExW, KEY_READ};
+    use windows::core::PCWSTR;
 
-    let mut javas: Vec<JavaInstallation> = Vec::new();
-    let mut seen_paths: HashSet<PathBuf> = HashSet::new();
-
-    // 辅助闭包：获取 Java 信息并添加到列表
-    let mut add_java = |java_path: PathBuf| {
-        if !java_path.exists() || seen_paths.contains(&java_path) {
-            return;
-        }
-
-        let output = match Command::new(&java_path).arg("-version").output() {
-            Ok(out) => out,
-            Err(_) => return,
-        };
-
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        let (version, vendor) = parse_java_version_output(&stderr);
-
-        let java_home = java_path
-            .parent()
-            .and_then(|p| p.parent())
-            .unwrap_or(&java_path)
-            .to_path_buf();
-        let is_jdk = is_jdk_at_path(&java_home);
-
-        seen_paths.insert(java_path.clone());
-        javas.push(JavaInstallation {
-            path: java_path,
-            version,
-            vendor,
-            is_jdk,
-        });
-    };
-
-    // 1. 从注册表 HKLM\SOFTWARE\JavaSoft 读取
-    let registry_path: Vec<u16> = "SOFTWARE\\JavaSoft"
-        .encode_utf16()
-        .chain(std::iter::once(0))
-        .collect();
-
-    let mut hkey = std::mem::MaybeUninit::uninit();
+    let path: Vec<u16> = subkey.encode_utf16().chain(std::iter::once(0)).collect();
+    let mut out = std::mem::MaybeUninit::uninit();
     let result = unsafe {
         RegOpenKeyExW(
-            HKEY_LOCAL_MACHINE,
-            PCWSTR::from_raw(registry_path.as_ptr()),
+            hkey,
+            PCWSTR::from_raw(path.as_ptr()),
             Some(0u32),
             KEY_READ,
-            hkey.as_mut_ptr(),
+            out.as_mut_ptr(),
         )
     };
+    if result.is_ok() {
+        Some(unsafe { out.assume_init() })
+    } else {
+        None
+    }
+}
 
-    if result == ERROR_SUCCESS {
-        let hkey = unsafe { hkey.assume_init() };
-        let mut index: u32 = 0;
+#[cfg(target_os = "windows")]
+fn reg_read_string(hkey: windows::Win32::System::Registry::HKEY, value_name: &str) -> Option<String> {
+    use windows::Win32::System::Registry::RegQueryValueExW;
+    use windows::core::PCWSTR;
 
-        loop {
-            let mut key_name = [0u16; 256];
-            let mut cb_name: u32 = key_name.len() as u32;
+    let value: Vec<u16> = value_name.encode_utf16().chain(std::iter::once(0)).collect();
 
-            let result = unsafe {
-                RegEnumKeyExW(
-                    hkey,
-                    index,
-                    Some(windows::core::PWSTR::from_raw(key_name.as_mut_ptr())),
-                    &mut cb_name,
-                    None,
-                    None,
-                    None,
-                    None,
-                )
-            };
-
-            if result != ERROR_SUCCESS {
-                break;
-            }
-
-            let subkey_name = String::from_utf16_lossy(&key_name[..cb_name as usize]);
-
-            // 尝试读取子键的 JavaHome 值
-            let java_home_path: Vec<u16> =
-                format!("SOFTWARE\\JavaSoft\\{}\\CurrentVersion", subkey_name)
-                    .encode_utf16()
-                    .chain(std::iter::once(0))
-                    .collect();
-
-            let mut sub_hkey = std::mem::MaybeUninit::uninit();
-            let sub_result = unsafe {
-                RegOpenKeyExW(
-                    HKEY_LOCAL_MACHINE,
-                    PCWSTR::from_raw(java_home_path.as_ptr()),
-                    Some(0u32),
-                    KEY_READ,
-                    sub_hkey.as_mut_ptr(),
-                )
-            };
-
-            if sub_result == ERROR_SUCCESS {
-                let sub_hkey = unsafe { sub_hkey.assume_init() };
-                let mut data = [0u8; 512];
-                let mut cb_data: u32 = data.len() as u32;
-                let value_name: Vec<u16> = "JavaHome"
-                    .encode_utf16()
-                    .chain(std::iter::once(0))
-                    .collect();
-
-                let query_result = unsafe {
-                    RegQueryValueExW(
-                        sub_hkey,
-                        PCWSTR::from_raw(value_name.as_ptr()),
-                        None,
-                        None,
-                        Some(data.as_mut_ptr()),
-                        Some(&mut cb_data),
-                    )
-                };
-
-                if query_result == ERROR_SUCCESS {
-                    // 解析 UTF-16 字符串
-                    let java_home = String::from_utf16_lossy(
-                        &data[..cb_data as usize]
-                            .chunks(2)
-                            .map(|chunk| {
-                                if chunk.len() == 2 {
-                                    u16::from_le_bytes([chunk[0], chunk[1]])
-                                } else {
-                                    0
-                                }
-                            })
-                            .take_while(|&c| c != 0)
-                            .collect::<Vec<_>>(),
-                    );
-
-                    let java_exe = PathBuf::from(&java_home).join("bin").join("java.exe");
-                    add_java(java_exe);
-                }
-
-                let _ = unsafe { RegCloseKey(sub_hkey) };
-            }
-
-            index += 1;
-        }
-
-        let _ = unsafe { RegCloseKey(hkey) };
+    // 先查询所需缓冲区字节数（UTF-16，含结尾空字符）；PATH 等环境变量可能超过 1KB，需动态分配
+    let mut cb_data: u32 = 0;
+    let result = unsafe {
+        RegQueryValueExW(
+            hkey,
+            PCWSTR::from_raw(value.as_ptr()),
+            None,
+            None,
+            None,
+            Some(&mut cb_data),
+        )
+    };
+    if result.is_err() {
+        return None;
     }
 
-    // 2. 扫描 Program Files\Java 目录
+    let mut data: Vec<u16> = vec![0u16; (cb_data as usize / 2).max(1) + 1];
+    let mut actual: u32 = cb_data;
+    let result = unsafe {
+        RegQueryValueExW(
+            hkey,
+            PCWSTR::from_raw(value.as_ptr()),
+            None,
+            None,
+            Some(data.as_mut_ptr() as *mut u8),
+            Some(&mut actual),
+        )
+    };
+    if result.is_err() {
+        return None;
+    }
+
+    let len = (actual as usize / 2).min(data.len());
+    Some(
+        data[..len]
+            .iter()
+            .take_while(|&&c| c != 0)
+            .map(|&c| char::from_u32(c as u32).unwrap_or('\u{FFFD}'))
+            .collect(),
+    )
+}
+
+/// 读取环境变量值：进程环境 + 系统/用户注册表兜底。
+///
+/// 进程启动后用户在「系统属性 → 环境变量」中新增/修改的 PATH、JAVA_HOME 等
+/// 不会反映到已运行进程的环境快照里，因此额外读取注册表（HKLM 系统变量、
+/// HKCU 用户变量）。注册表值名不区分大小写，同一来源的值去重后合并返回。
+#[cfg(target_os = "windows")]
+fn collect_env_var_values(name: &str) -> Vec<String> {
+    use windows::Win32::System::Registry::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, RegCloseKey};
+
+    let mut values = Vec::new();
+    if let Ok(v) = std::env::var(name) {
+        values.push(v);
+    }
+
+    for (hkey, subkey) in [
+        (
+            HKEY_LOCAL_MACHINE,
+            "SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment",
+        ),
+        (HKEY_CURRENT_USER, "Environment"),
+    ] {
+        if let Some(k) = reg_open(hkey, subkey) {
+            if let Some(v) = reg_read_string(k, name) {
+                if !v.is_empty() && !values.contains(&v) {
+                    values.push(v);
+                }
+            }
+            let _ = unsafe { RegCloseKey(k) };
+        }
+    }
+
+    values
+}
+
+#[cfg(target_os = "windows")]
+fn reg_enum_subkeys(hkey: windows::Win32::System::Registry::HKEY) -> Vec<String> {
+    use windows::Win32::System::Registry::RegEnumKeyExW;
+    use windows::core::PWSTR;
+
+    let mut names = Vec::new();
+    let mut index: u32 = 0;
+    loop {
+        let mut name = [0u16; 256];
+        let mut cb_name: u32 = name.len() as u32;
+        let result = unsafe {
+            RegEnumKeyExW(
+                hkey,
+                index,
+                Some(PWSTR::from_raw(name.as_mut_ptr())),
+                &mut cb_name,
+                None,
+                None,
+                None,
+                None,
+            )
+        };
+        if result.is_err() {
+            break;
+        }
+        names.push(String::from_utf16_lossy(&name[..cb_name as usize]));
+        index += 1;
+    }
+    names
+}
+
+/// 遍历注册表（64 位 + WOW6432Node 32 位视图），返回 JavaHome 列表
+#[cfg(target_os = "windows")]
+fn scan_registry_java_homes() -> Vec<PathBuf> {
+    use windows::Win32::System::Registry::{RegCloseKey, HKEY_LOCAL_MACHINE};
+
+    let mut homes = Vec::new();
+    let bases = ["SOFTWARE\\JavaSoft", "SOFTWARE\\WOW6432Node\\JavaSoft"];
+
+    for base in bases {
+        let Some(base_key) = reg_open(HKEY_LOCAL_MACHINE, base) else {
+            continue;
+        };
+
+        if let Some(h) = reg_read_string(base_key, "JavaHome") {
+            homes.push(PathBuf::from(h));
+        }
+
+        for sub in ["Java Runtime Environment", "JDK", "Java Development Kit"] {
+            let Some(env_key) = reg_open(base_key, sub) else {
+                continue;
+            };
+            for version_key in reg_enum_subkeys(env_key) {
+                let Some(vk) = reg_open(env_key, &version_key) else {
+                    continue;
+                };
+                if let Some(h) = reg_read_string(vk, "JavaHome") {
+                    homes.push(PathBuf::from(h));
+                }
+                let _ = unsafe { RegCloseKey(vk) };
+            }
+            let _ = unsafe { RegCloseKey(env_key) };
+        }
+        let _ = unsafe { RegCloseKey(base_key) };
+    }
+
+    homes
+}
+
+/// 递归向下查找 bin/java.exe / bin/javaw.exe（depth 限制深度，命中即返回）
+#[cfg(target_os = "windows")]
+fn scan_dir_recursive(dir: &Path, depth: u32, out: &mut Vec<PathBuf>) {
+    use std::fs;
+
+    if depth == 0 {
+        return;
+    }
+
+    let bin = dir.join("bin");
+    for name in ["java.exe", "javaw.exe"] {
+        let exe = bin.join(name);
+        if exe.is_file() {
+            out.push(exe);
+            return;
+        }
+    }
+
+    if let Ok(entries) = fs::read_dir(dir) {
+        for entry in entries.filter_map(|e| e.ok()) {
+            let p = entry.path();
+            if p.is_dir() {
+                scan_dir_recursive(&p, depth - 1, out);
+            }
+        }
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn scan_java_impl(ctx: &AppContext) -> Result<Vec<JavaInstallation>, String> {
+    use std::collections::HashSet;
+    use std::fs;
+
+    let mut javas: Vec<JavaInstallation> = Vec::new();
+    let mut seen_homes: HashSet<PathBuf> = HashSet::new();
+
+    let mut add_java = |java_path: PathBuf| {
+        let home = java_path
+            .parent()
+            .and_then(|p| p.parent())
+            .map(|p| p.canonicalize().unwrap_or_else(|_| p.to_path_buf()))
+            .unwrap_or_else(|| java_path.clone());
+        if !seen_homes.insert(home) {
+            return;
+        }
+        if let Some(info) = probe_java(&java_path) {
+            javas.push(info);
+        }
+    };
+
+    // 1. 注册表（64 位 + WOW6432Node 32 位视图）
+    for home in scan_registry_java_homes() {
+        add_java(home.join("bin").join("java.exe"));
+    }
+
+    // 2. 环境变量（进程环境 + 系统/用户注册表）
+    //    HOME 类：JAVA_HOME / JDK_HOME / JRE_HOME → {home}\bin\java.exe
+    //    PATH 类：每个条目可能是 bin 目录，也可能是 JDK/JRE 根目录，两者都探测
+    for home_var in ["JAVA_HOME", "JDK_HOME", "JRE_HOME"] {
+        for value in collect_env_var_values(home_var) {
+            add_java(PathBuf::from(&value).join("bin").join("java.exe"));
+        }
+    }
+    for value in collect_env_var_values("PATH") {
+        for entry in std::env::split_paths(&value) {
+            add_java(entry.join("java.exe"));
+            add_java(entry.join("bin").join("java.exe"));
+        }
+    }
+
+    // 3. 预设目录递归扫描（兜底：绿色版 / 便携版 / 整合包内置 Java）
     let program_files =
         std::env::var("ProgramFiles").unwrap_or_else(|_| "C:\\Program Files".to_string());
     let program_files_x86 = std::env::var("ProgramFiles(x86)")
         .unwrap_or_else(|_| "C:\\Program Files (x86)".to_string());
 
-    for pf in [program_files, program_files_x86] {
-        let java_dir = PathBuf::from(pf).join("Java");
-        if let Ok(entries) = fs::read_dir(&java_dir) {
-            for entry in entries.filter_map(|e| e.ok()) {
-                let java_exe = entry.path().join("bin").join("java.exe");
-                add_java(java_exe);
+    let mut candidates: Vec<PathBuf> = Vec::new();
+    for pf in [&program_files, &program_files_x86] {
+        scan_dir_recursive(&PathBuf::from(pf).join("Java"), 4, &mut candidates);
+    }
+    scan_dir_recursive(&ctx.game_root().join("runtime"), 4, &mut candidates);
+    scan_dir_recursive(&ctx.launcher_work_dir().join("runtime"), 4, &mut candidates);
+
+    if let Ok(entries) = fs::read_dir(ctx.versions_dir()) {
+        for entry in entries.filter_map(|e| e.ok()) {
+            if !entry.path().is_dir() {
+                continue;
             }
+            scan_dir_recursive(&entry.path().join("runtime"), 4, &mut candidates);
+            scan_dir_recursive(&entry.path(), 2, &mut candidates);
         }
     }
 
-    // 3. 检查 JAVA_HOME 环境变量
-    if let Ok(java_home) = std::env::var("JAVA_HOME") {
-        let java_exe = PathBuf::from(&java_home).join("bin").join("java.exe");
-        add_java(java_exe);
-    }
-
-    // 4. 检查 PATH 中的 java.exe
-    if let Ok(path_var) = std::env::var("PATH") {
-        for path in std::env::split_paths(&path_var) {
-            let java_exe = path.join("java.exe");
-            add_java(java_exe);
-        }
+    for c in candidates {
+        add_java(c);
     }
 
     if javas.is_empty() {
@@ -347,43 +457,46 @@ fn scan_java_impl() -> Result<Vec<JavaInstallation>, String> {
 // Tauri 命令
 // =============================================================================
 
-/// 扫描系统上所有可用的 Java 安装
+/// 扫描系统上所有可用的 Java 安装（缓存优先，缓存失效才全量扫描）
 #[tauri::command]
-pub fn scan_java_installations() -> Result<Vec<JavaInstallation>, String> {
-    scan_java_impl()
+pub fn scan_java_installations(
+    ctx: State<'_, AppContext>,
+    config: State<'_, ConfigManager>,
+) -> Result<Vec<JavaInstallation>, String> {
+    // 1. 缓存优先：上一轮扫描成功的路径仍有效则直接返回
+    let cache: Vec<PathBuf> = config.read_section("java_cache").unwrap_or_default();
+    if !cache.is_empty() {
+        let mut cached = Vec::new();
+        for p in &cache {
+            if let Some(info) = probe_java(p) {
+                cached.push(info);
+            }
+        }
+        if !cached.is_empty() {
+            return Ok(cached);
+        }
+    }
+
+    // 2. 全量扫描
+    let javas = scan_java_impl(&ctx)?;
+
+    // 3. 写回缓存
+    if !javas.is_empty() {
+        let paths: Vec<PathBuf> = javas.iter().map(|j| j.path.clone()).collect();
+        let _ = config.write_section("java_cache", &paths);
+    }
+
+    Ok(javas)
 }
 
 /// 获取指定 Java 路径的版本信息
 #[tauri::command]
 pub async fn get_java_version(path: String) -> Result<JavaInstallation, String> {
-    use std::process::Command;
-
     let java_path = PathBuf::from(&path);
     if !java_path.exists() {
         return Err(format!("路径不存在: {}", path));
     }
-
-    let output = Command::new(&java_path)
-        .arg("-version")
-        .output()
-        .map_err(|e| format!("执行 java -version 失败: {}", e))?;
-
-    let stderr = String::from_utf8_lossy(&output.stderr);
-    let (version, vendor) = parse_java_version_output(&stderr);
-
-    let java_home = java_path
-        .parent()
-        .and_then(|p| p.parent())
-        .unwrap_or(&java_path)
-        .to_path_buf();
-    let is_jdk = is_jdk_at_path(&java_home);
-
-    Ok(JavaInstallation {
-        path: java_path,
-        version,
-        vendor,
-        is_jdk,
-    })
+    probe_java(&java_path).ok_or_else(|| format!("执行 java -version 失败: {}", path))
 }
 
 /// 选择 Java 可执行文件（系统文件选择器）
@@ -419,20 +532,38 @@ mod tests {
                 OpenJDK Runtime Environment (Build 17.0.1+12)
                 OpenJDK 64-Bit Server VM (Build 17.0.1+12, mixed mode)"#;
 
-        let (version, vendor) = parse_java_version_output(sample);
-        assert_eq!(version, "17.0.1");
-        assert_eq!(vendor, "Build 17.0.1+12");
+        let info = parse_java_version_output(sample);
+        assert_eq!(info.version, "17.0.1");
+        assert_eq!(info.vendor, "Build 17.0.1+12");
+        assert_eq!(info.major_version, 17);
+        assert!(info.is_64bit);
+    }
+
+    #[test]
+    fn test_parse_java8_and_32bit() {
+        let sample = r#"java version "1.8.0_372"
+                Java(TM) SE Runtime Environment (build 1.8.0_372-b07)
+                Java HotSpot(TM) Client VM (build 25.372-b07, mixed mode)"#;
+
+        let info = parse_java_version_output(sample);
+        assert_eq!(info.version, "1.8.0_372");
+        assert_eq!(info.major_version, 8);
+        assert!(!info.is_64bit);
     }
 
     #[test]
     fn test_scan_java() {
-        match scan_java_impl() {
+        match scan_java_impl(&AppContext::new(
+            std::env::temp_dir(),
+            std::env::temp_dir().join("minecraft"),
+        )) {
             Ok(javas) => {
                 println!("Java 安装数量: {}", javas.len());
                 for java in javas {
                     println!(
-                        "  - path: {:?}, version: {}, vendor: {}, is_jdk: {}",
-                        java.path, java.version, java.vendor, java.is_jdk
+                        "  - path: {:?}, version: {}, vendor: {}, is_jdk: {}, major: {}, 64bit: {}",
+                        java.path, java.version, java.vendor, java.is_jdk, java.major_version,
+                        java.is_64bit
                     );
                 }
             }

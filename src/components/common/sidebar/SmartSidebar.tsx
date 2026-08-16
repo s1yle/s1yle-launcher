@@ -5,11 +5,12 @@ import { getSidebarGroups, routes, sidebarMenuItems, SidebarMenuItem, findRouteB
 import BaseSidebarLayout from './layouts/BaseSidebarLayout';
 import { logger } from '../../../helper/logger';
 import { openUrl } from '../../../helper/rustInvoke';
-import { BaseSidebarContent, useNotification, SkinAvatar } from '@/components/common';
+import { BaseSidebarContent, useNotification, SkinAvatar, type ContextMenuItemData } from '@/components/common';
 import { useAuthStore } from '@/stores/authStore';
 import { useNavStore } from '@/stores/navStore';
 import { useAccountSelectionStore } from '@/stores/accountSelectionStore';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, UserCheck, Trash2 } from 'lucide-react';
+import { confirm } from '@tauri-apps/plugin-dialog';
 import { DURATION, EASING } from '@/utils/animations';
 import { useContextMenuAction } from '../../../router/contextMenuConfigs';
 
@@ -119,6 +120,7 @@ const SmartSidebar = ({ onMenuClick = () => {}, footer, header, ownSidebar = fal
   // 账户页面：使用动态账户列表作为侧边栏
   const isAccountPage = location.pathname === '/account';
   const storeAccounts = useAuthStore(s => s.accounts);
+  const currentAccountUuid = useAuthStore(s => s.currentAccount?.uuid);
   const selectedAccountUuid = useAccountSelectionStore(s => s.selectedUuid);
   if (isAccountPage) {
     const accountItems: SidebarMenuItem[] = storeAccounts.map(acc => ({
@@ -168,6 +170,50 @@ const SmartSidebar = ({ onMenuClick = () => {}, footer, header, ownSidebar = fal
     // };
   }
 
+  // 账户侧边栏按钮的右键菜单项
+  const contextMenuFor = (itemId: string): ContextMenuItemData[] | undefined => {
+    if (!isAccountPage || !itemId.startsWith('account-')) return undefined;
+    const uuid = itemId.slice('account-'.length);
+    const isCurrent = currentAccountUuid === uuid;
+    return [
+      { id: 'setCurrent', label: t('account.setCurrent', '设为当前账户'), icon: UserCheck, disabled: isCurrent },
+      { id: 'divider', label: '', divider: true },
+      { id: 'delete', label: t('common.delete', '删除账户'), icon: Trash2, danger: true },
+    ];
+  };
+
+  // 账户侧边栏按钮右键菜单动作处理
+  const handleCustomContextAction = async (itemId: string, actionId: string) => {
+    if (!itemId.startsWith('account-')) return;
+    const uuid = itemId.slice('account-'.length);
+
+    if (actionId === 'setCurrent') {
+      useAccountSelectionStore.getState().selectAccount(uuid);
+      try {
+        await useAuthStore.getState().setCurrentAccount(uuid);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : '设置当前账户失败';
+        notifyError(t('notification.error'), msg);
+      }
+      return;
+    }
+
+    if (actionId === 'delete') {
+      const confirmed = await confirm(
+        t('account.deleteConfirm', '确定要删除此账号吗？'),
+        { title: t('account.title', '账号管理'), kind: 'warning' },
+      );
+      if (!confirmed) return;
+      try {
+        await useAuthStore.getState().deleteAccount(uuid);
+        success(t('notification.accountDeleted', '账号已删除'));
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : '删除账户失败';
+        notifyError(t('notification.error'), msg);
+      }
+    }
+  };
+
   const sidebarVariants = {
     initial: { opacity: 0.8, x: -16 },
     animate: {
@@ -215,6 +261,8 @@ const SmartSidebar = ({ onMenuClick = () => {}, footer, header, ownSidebar = fal
                 groupTitle={currentMenuItem?.title || parentMenuItem?.title || ''}
                 groupTitleI18nKey={currentMenuItem?.titleI18nKey || parentMenuItem?.titleI18nKey}
                 onContextMenuAction={handleContextMenuAction}
+                contextMenuFor={isAccountPage ? contextMenuFor : undefined}
+                onCustomContextAction={isAccountPage ? handleCustomContextAction : undefined}
               >
               </BaseSidebarContent>
             </motion.div>

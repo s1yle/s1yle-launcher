@@ -182,7 +182,14 @@
       "downloading_assets": "Downloading assets",
       "downloading_natives": "Downloading natives",
       "downloading_client": "Downloading client jar",
-      "downloading_index": "Downloading asset index"
+      "downloading_index": "Downloading asset index",
+      "downloading_log_config": "Downloading log config",
+      "validating": "Validating files"
+    },
+    "steps": {
+      "libraries": "Libraries",
+      "assets": "Assets",
+      "validating": "Validate integrity"
     },
     "install": {
       "title": "Install New Game",
