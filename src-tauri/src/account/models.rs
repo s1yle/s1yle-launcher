@@ -13,7 +13,7 @@ pub use crate::types::AccountType;
 pub struct StoreLoginState {
     /// 是否已登录
     pub is_logged_in: bool,
-    /// 登录类型（none/offline/microsoft/admin）
+    /// 登录类型（none/offline/microsoft/third-party）
     pub logged_in_type: AccountType,
     /// 登录时间
     pub login_time: String,
@@ -74,10 +74,6 @@ impl Account {
                     Uuid::from_u128(0x00000000000000000000000000000000);
                 let input = format!("OfflinePlayer:{}", name);
                 Uuid::new_v3(&MC_OFFLINE_NAMESPACE, input.as_bytes()).to_string()
-            }
-            AccountType::Admin => {
-                // 服主账户无uuid
-                Uuid::nil().to_string()
             }
             AccountType::None => Uuid::nil().to_string(),
         };

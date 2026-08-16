@@ -12,10 +12,11 @@ import { useGameStore } from '../../stores/gameStore';
 import { openFolder } from '../../helper/rustInvoke';
 import { useSafeNavigate } from '../../router/navigation';
 import { GameListItem, EmptyState, useNotification, Skeleton, Page, PageSection } from '../../components/common';
-import GamePage from './Game';
+import { getErrorMessage } from '../../utils/errorUtils';
 import BottomBar from '@/components/common/BottomBar/BottomBar';
 import type { Game } from '../../helper/rustInvoke';
 import { ModLoaderType } from '../../helper/rustInvoke';
+import GamePage from './GamePage';
 
 type GroupKey = 'favorites' | 'mods' | 'regular' | 'uncommon' | 'broken';
 
@@ -54,7 +55,6 @@ const GameList: React.FC = () => {
     error,
     gameRoot,
     searchQuery,
-    init,
     refresh,
     remove,
     duplicate,
@@ -65,7 +65,6 @@ const GameList: React.FC = () => {
     toggleFavorite,
     isFavorite,
     validations,
-    validateAll,
   } = useGameStore();
 
   const { success, error: notifyError } = useNotification();
@@ -106,7 +105,7 @@ const GameList: React.FC = () => {
       setDuplicateTargetId(null);
       setDuplicateName('');
     } catch (e) {
-      const msg = e instanceof Error ? e.message : t('notification.error');
+      const msg = getErrorMessage(e);
       notifyError(t('games.duplicateFailed', '复制失败'), msg);
     }
   };
@@ -120,16 +119,6 @@ const GameList: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
-
-  useEffect(() => {
-    // 先等 init 完成（games 就绪）再全量校验：
-    // 若并行调用，validateAll 会在 games 为空时直接返回，
-    // 造成空壳游戏（如手动创建的空目录）拿不到 empty 标记而继续显示
-    void (async () => {
-      await init();
-      await validateAll();
-    })();
-  }, [init, validateAll]);
 
   const handleSelect = (id: string) => {
     setSelectedGame(id);
@@ -146,7 +135,7 @@ const GameList: React.FC = () => {
       await remove(id);
       success(t('notification.gameDeleted'), t('games.deleteSuccess', '游戏 "{{name}}" 已删除', { name }));
     } catch (e) {
-      const msg = e instanceof Error ? e.message : t('notification.error');
+      const msg = getErrorMessage(e);
       notifyError(t('games.deleteFailed', '删除失败'), msg);
     }
   };
@@ -155,7 +144,7 @@ const GameList: React.FC = () => {
     try {
       await openFolder(path);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : t('notification.error');
+      const msg = getErrorMessage(e);
       notifyError(t('games.openFolderFailed', '打开目录失败'), msg);
     }
   };

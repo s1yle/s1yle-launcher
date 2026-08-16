@@ -59,6 +59,3 @@ export const invokeRust = async (
     options ? { ...args } : args
   );
 };
-
-/** {@link invokeRust} 的别名 */
-export const invokeRustFunction = invokeRust;

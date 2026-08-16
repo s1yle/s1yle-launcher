@@ -1,10 +1,10 @@
 import { forwardRef } from 'react';
 import { motion, HTMLMotionProps } from 'framer-motion';
 import { LucideIcon } from 'lucide-react';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { cn } from '@/utils/cn';
 
-const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(inputs));
+
+
 
 /** 图标按钮组件 Props */
 export interface IconButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'> {

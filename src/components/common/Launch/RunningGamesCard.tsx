@@ -1,14 +1,14 @@
 // FIXME: 有崩溃但是没有正确显示崩溃的log，需要修复一下
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2, Square, ChevronUp, Settings } from 'lucide-react';
-import { getCurrentAccount, getGame, getLaunchGames, stopGame, type AccountInfo } from '@/helper/rustInvoke';
-import { AccountType, Game, LaunchStatus, type LaunchGameInfo } from '@/api';
+import { getGame, getLaunchGames, stopGame } from '@/helper/rustInvoke';
+import { LaunchStatus, type LaunchGameInfo } from '@/api';
 import { DURATION, EASING } from '@/utils/animations';
 import { Z_INDEX } from '@/utils/zIndex';
-import LaunchingOverlay from './LaunchingOverlay';
-import { useLoadingAction } from '@/hooks';
+import { useLaunchStore } from '@/stores/launchStore';
+import { usePolling } from '@/hooks/usePolling';
 import ContextMenu, { ContextMenuItemData, useContextMenu } from '../ContextMenu';
 
 /** 游戏轮询间隔（ms） */
@@ -31,10 +31,7 @@ const RunningGamesCard = () => {
   const [games, setGames] = useState<LaunchGameInfo[]>([]);
   const [expanded, setExpanded] = useState(false);
   const [stoppingId, setStoppingId] = useState<string | null>(null);
-  const [shownSession, setShownSession] = useState<{ gameId: string } | null>(null);
-  const [shownGame, setShownGame] = useState<Game | null>(null);
   const [contextMenuInst, setContextMenuInst] = useState<LaunchGameInfo | null>(null);
-  const [accountInfo, setAccountInfo] = useState<AccountInfo | null>(null);
 
   const { contextMenuState, showContextMenu, hideContextMenu } = useContextMenu();
 
@@ -43,8 +40,7 @@ const RunningGamesCard = () => {
       const gameName = inst.game_dir.split(/[\\/]/).pop() || inst.game_dir;
       const game = await getGame(gameName);
       if (game) {
-        setShownGame(game);
-        setShownSession({ gameId: inst.game_id });
+        useLaunchStore.getState().openOverlay({ gameId: inst.game_id, game });
       }
     } catch {
       // 获取游戏详情失败，忽略点击
@@ -62,26 +58,10 @@ const RunningGamesCard = () => {
     }
   };
 
-  const loadProfile = useLoadingAction({
-    key: 'home:profile',
-    action: async () => {
-      try {
-        const currentAccount: AccountInfo | null = await getCurrentAccount();
-        if (currentAccount) {
-          setAccountInfo(currentAccount);
-        }
-      } catch (error) {
-        console.error('加载账户信息失败:', error);
-      }
-    },
-  });
-
   // 启动中：隐藏主页内容，渲染启动覆盖层
   const refresh = async () => {
     try {
       const list = await getLaunchGames();
-      console.warn(list);
-
       setGames(
         list.filter(
           (i) => i.status !== LaunchStatus.Idle && i.status !== LaunchStatus.Stopped
@@ -92,30 +72,7 @@ const RunningGamesCard = () => {
     }
   };
 
-  useEffect(() => {
-    loadProfile();
-    refresh();
-    const timer = setInterval(refresh, POLL_INTERVAL);
-    return () => clearInterval(timer);
-  }, []);
-
-  // 展示覆盖层：需要游戏详情（Game）与游戏 ID 都就绪
-  if (shownSession && shownGame) {
-    return (
-      <LaunchingOverlay
-        gameId={shownSession.gameId}
-        game={shownGame}
-        accountInfo={accountInfo ?? {
-          name: 'Steve',
-          uuid: '',
-          account_type: AccountType.Offline,
-          create_time: '',
-          last_login_time: null,
-        }}
-        onExit={() => setShownSession(null)}
-      />
-    );
-  }
+  usePolling(refresh, { interval: POLL_INTERVAL });
 
   if (games.length === 0) return null;
 

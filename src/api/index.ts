@@ -7,7 +7,7 @@
  * @module
  */
 
-export { invokeRust, invokeRustFunction } from "./client";
+export { invokeRust } from "./client";
 
 export * from "./types/account";
 export * from "./types/launch";
@@ -19,7 +19,6 @@ export * from "./types/java";
 export * from "./types/font";
 
 export * from "./account";
-export * from "./admin";
 export * from "./launch";
 export * from "./download";
 export * from "./modloader";
@@ -28,4 +27,5 @@ export * from "./window";
 export * from "./config";
 export * from "./java";
 export * from "./font";
+export * from "./system";
 export * from "./skin";

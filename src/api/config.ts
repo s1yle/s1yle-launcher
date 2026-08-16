@@ -1,33 +1,18 @@
 import { InvokeOptions } from "@tauri-apps/api/core";
 import { invokeRust } from "./client";
 import { logger } from "@/helper/logger";
-import type { AppConfig, StoreLoginState } from "./types/config";
+import type { StoreLoginState } from "./types/config";
 
 /**
- * 获取全局应用配置
+ * 获取登录状态（启动时用于判断是否展示登录门禁）
  * @param options Tauri invoke 选项
- * @returns 全局配置对象
+ * @returns 登录状态
  */
-export const invokeGetConfig = async (
+export const invokeGetLoginState = async (
   options?: InvokeOptions
-): Promise<AppConfig> => {
-  logger.info('获取全局配置');
-  return await invokeRust("get_config", {}, options);
-};
-
-/**
- * 设置单个配置值（增量更新，推荐使用）
- * @param key 配置键（点号分隔路径）
- * @param value 配置值
- * @param options Tauri invoke 选项
- */
-export const invokeSetConfigValue = async <T>(
-  key: string,
-  value: T,
-  options?: InvokeOptions
-): Promise<void> => {
-  logger.info('设置配置值', { key, value });
-  return await invokeRust("set_config_value", { key, value }, options);
+): Promise<StoreLoginState> => {
+  logger.info('获取登录状态');
+  return await invokeRust("get_login_state", {}, options);
 };
 
 /**

@@ -21,7 +21,7 @@ export interface GameProps {
 }
 
 /** 游戏列表布局组件 - 封装搜索、筛选和复制弹窗 */
-const Game: React.FC<GameProps> = ({
+const GamePage: React.FC<GameProps> = ({
     renderContent,
     showDuplicateModal,
     duplicateName,
@@ -81,4 +81,4 @@ const Game: React.FC<GameProps> = ({
 
 }
 
-export default Game;
+export default GamePage;

@@ -3,6 +3,7 @@ import { FolderOpen } from "lucide-react";
 import  { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useNotification } from "..";
+import { getErrorMessage } from "@/utils/errorUtils";
 
 /** 底部状态栏组件 Props */
 export interface BottomBarProps {
@@ -30,7 +31,7 @@ const BottomBar = ({
         try {
             await openFolder(path);
         } catch (e) {
-            (t('notification.error'), e instanceof Error ? e.message : t('notification.error'));
+            notifyError(t('notification.error'), getErrorMessage(e));
         }
     }, [path, notifyError, t]);
 

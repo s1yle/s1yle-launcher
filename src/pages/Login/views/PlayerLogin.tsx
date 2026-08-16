@@ -3,6 +3,7 @@ import { LogIn, Pencil, Trash2, Pin, PinOff } from "lucide-react";
 import { UserPlus } from "lucide-react";
 import ContextMenu, { ContextMenuItemData } from "@/components/common/ContextMenu"
 import { useNotification } from "@/components/common/NotificationProvider";
+import { getErrorMessage } from "@/utils/errorUtils";
 import { AccountCard } from "../components/AccountCard";
 
 /** PlayerLogin 组件的 Props */
@@ -79,7 +80,7 @@ export function PlayerLogin({ accounts, onLogin, onDeleteAccount, onNavigate }: 
         return next;
       });
     } catch (e) {
-      notifyError("登录失败", e instanceof Error ? e.message : "未知错误");
+      notifyError("登录失败", getErrorMessage(e));
       setLoggingIn(false);
     }
   }, [selectedUuid, onLogin, notifyError]);
@@ -136,7 +137,7 @@ export function PlayerLogin({ accounts, onLogin, onDeleteAccount, onNavigate }: 
           });
           notifySuccess("删除成功", "账户已移除");
         } catch (e) {
-          notifyError("删除失败", e instanceof Error ? e.message : "未知错误");
+          notifyError("删除失败", getErrorMessage(e));
         }
         break;
       case "pin":

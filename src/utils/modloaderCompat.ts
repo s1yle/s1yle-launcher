@@ -1,18 +1,24 @@
+/** 愚人节版本 ID 集合（单一事实源） */
+export const APRIL_FOOL_IDS = new Set([
+  '2.0',
+  '15w14a',
+  '1.RV-Pre1',
+  '3D Shareware v1.34',
+  '20w14infinite',
+  '20w14∞',
+  '22w13a_or_b',
+  '23w13a_or_b',
+  '24w14a_or_b',
+  '24w14potato',
+  '25w14craftmine',
+]);
+
 /**
  * 判断是否为愚人节版本
  * @param versionId - 版本 ID
  * @returns 是否为愚人节版本
  */
-export const isAprilFoolVersion = (versionId: string): boolean => {
-  const aprilFoolIds = [
-    '20w14infinite',
-    '22w13a_or_b',
-    '23w13a_or_b',
-    '24w14a_or_b',
-    '25w14craftmine',
-  ];
-  return aprilFoolIds.includes(versionId);
-};
+export const isAprilFoolVersion = (versionId: string): boolean => APRIL_FOOL_IDS.has(versionId);
 
 /**
  * 获取 Minecraft Wiki 页面 URL
@@ -20,14 +26,6 @@ export const isAprilFoolVersion = (versionId: string): boolean => {
  * @returns Wiki URL
  */
 export const getWikiUrl = (versionId: string): string => {
-  const isAprilFool = isAprilFoolVersion(versionId);
-  if (isAprilFool) {
-    return `https://minecraft.wiki/w/Java_Edition_${versionId}`;
-  }
-  const isSnapshot = versionId.includes('w') || versionId.includes('-pre') || versionId.includes('-rc');
-  if (isSnapshot) {
-    return `https://minecraft.wiki/w/Java_Edition_${versionId}`;
-  }
   return `https://minecraft.wiki/w/Java_Edition_${versionId}`;
 };
 

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronLeft, Loader2, UserPlus } from "lucide-react";
 import { IconButton } from "@/components/common";
 import { useNotification } from "@/components/common/NotificationProvider";
+import { getErrorMessage } from "@/utils/errorUtils";
 import {  AccountType } from "@/api";
 
 /** PlayerAdd 组件的 Props */
@@ -24,7 +25,7 @@ export function PlayerAdd({ onAdd, onBack }: PlayerAddProps) {
       await onAdd(name.trim(), type);
       onBack();
     } catch (e) {
-      notifyError("添加失败", e instanceof Error ? e.message : "未知错误");
+      notifyError("添加失败", getErrorMessage(e));
     } finally {
       setAdding(false);
     }
@@ -79,8 +80,8 @@ export function PlayerAdd({ onAdd, onBack }: PlayerAddProps) {
             </button>
           </div>
           {type === "microsoft" && (
-            <div className="p-2.5 rounded-lg bg-amber-500/10 border 
-                  border-amber-500/30 text-amber-400 text-xs mt-1"
+            <div className="p-2.5 rounded-lg bg-[var(--color-warning)]/10 border 
+                  border-[var(--color-warning)]/30 text-warning text-xs mt-1"
             >
               微软账户需要完整的 OAuth 流程，当前为占位实现
             </div>

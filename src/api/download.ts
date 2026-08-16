@@ -1,7 +1,7 @@
 import {  InvokeOptions } from "@tauri-apps/api/core";
 import { invokeRust } from "./client";
 import { logger } from "@/helper/logger";
-import type { VersionManifest, VersionDownloadManifest, DownloadTask, DownloadOptions, DownloadResult } from "./types/download";
+import type { VersionManifest, DownloadTask, DownloadOptions, DownloadResult } from "./types/download";
 
 /**
  * 获取 Minecraft 版本清单
@@ -13,34 +13,6 @@ export const invokeGetVersionManifest = async (
 ): Promise<VersionManifest> => {
   logger.info('获取游戏版本列表');
   return await invokeRust("get_version_manifest", {}, options);
-};
-
-/**
- * 获取版本详情
- * @param versionId 版本 ID
- * @param options Tauri invoke 选项
- * @returns 版本详细数据
- */
-export const invokeGetVersionDetail = async (
-  versionId: string,
-  options?: InvokeOptions
-): Promise<any> => {
-  logger.info('获取版本详情', { versionId });
-  return await invokeRust("get_version_detail", { versionId }, options);
-};
-
-/**
- * 获取版本下载清单（包含所有需要下载的文件索引）
- * @param versionId 版本 ID
- * @param options Tauri invoke 选项
- * @returns 版本下载清单
- */
-export const invokeGetVersionDownloadManifest = async (
-  versionId: string,
-  options?: InvokeOptions
-): Promise<VersionDownloadManifest> => {
-  logger.info('获取版本下载清单', { versionId });
-  return await invokeRust("get_version_download_manifest", { versionId }, options);
 };
 
 /**

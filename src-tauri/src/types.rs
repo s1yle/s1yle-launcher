@@ -15,7 +15,4 @@ pub enum AccountType {
     /// 第三方账户
     #[serde(rename = "third-party")]
     ThirdParty,
-    /// 服主账户
-    #[serde(rename = "admin")]
-    Admin,
 }

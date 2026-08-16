@@ -26,8 +26,8 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
     if (this.state.error) {
       return (
         <div className="h-full w-full flex flex-col items-center justify-center gap-3 p-6 text-center">
-          <div className="text-red-400 font-semibold">页面发生错误</div>
-          <div className="text-red-400 font-semibold">请联系管理员，并提供相关报错信息或日志</div>
+          <div className="text-error font-semibold">页面发生错误</div>
+          <div className="text-error font-semibold">请联系管理员，并提供相关报错信息或日志</div>
           <div className="text-sm opacity-60 max-w-md break-all">{this.state.error.message}</div>
           <button
             className="px-3 py-1 rounded border opacity-80 hover:opacity-100"

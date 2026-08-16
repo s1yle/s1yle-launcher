@@ -57,17 +57,6 @@ export const invokeUpdateGlobalGameSettings = async (
 };
 
 /**
- * 获取系统可用内存
- * @param options Tauri invoke 选项
- * @returns 系统总内存（MB）
- */
-export const invokeGetSystemMemory = async (
-  options?: InvokeOptions
-): Promise<number> => {
-  return invokeRust('get_system_memory', {}, options);
-};
-
-/**
  * 获取系统内存使用情况
  * @param options Tauri invoke 选项
  * @returns [已使用内存（MB）, 总内存（MB）]
@@ -228,18 +217,4 @@ export const invokeGetGameRoot = async (
 ): Promise<string> => {
   logger.info('获取游戏根目录');
   return await invokeRust("get_game_root", {}, options);
-};
-
-/**
- * 切换游戏根目录（校验 + 持久化 + 运行时生效）
- * @param path 新的游戏根目录
- * @param options Tauri invoke 选项
- * @returns 生效后的游戏根目录
- */
-export const invokeSetGameRoot = async (
-  path: string,
-  options?: InvokeOptions
-): Promise<string> => {
-  logger.info('切换游戏根目录', { path });
-  return await invokeRust("set_game_root", { path }, options);
 };

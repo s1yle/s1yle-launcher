@@ -1,6 +1,6 @@
 import { motion, type TargetAndTransition, type Transition, type Variants } from 'framer-motion';
 import { createContext, useContext, useRef, type ReactNode } from 'react';
-import { DURATION, EASING, pageContainer, pageSection } from '@/utils/animations';
+import { DURATION, pageContainer, pageSection } from '@/utils/animations';
 import { useAnimation } from '@/hooks/useAnimation';
 
 /**
@@ -93,57 +93,6 @@ export function PageSection({ children, className }: PageSectionProps) {
       className={className}
     >
       {children}
-    </motion.div>
-  );
-}
-
-/** 页面标题 Props */
-export interface PageTitleProps {
-  children: ReactNode;
-  className?: string;
-  as?: 'h1' | 'h2' | 'h3' | 'h4' | 'div';
-}
-
-/**
- * 页面标题组件，使用水平偏移（TranslateX）入场动画，按 Page 派发序号错峰。
- */
-export function PageTitle({ children, className, as = 'h1' }: PageTitleProps) {
-  const ctx = useContext(StaggerContext);
-  const index = ctx?.register() ?? 0;
-  const enabled = ctx?.enabled ?? true;
-  const delay = ctx ? staggerDelay(index) : 0;
-  const Tag = as;
-
-  return (
-    <motion.div
-      initial={enabled ? { opacity: 0, x: 16 } : false}
-      animate={
-        enabled
-          ? {
-              opacity: 1,
-              x: 0,
-              transition: {
-                opacity: { duration: DURATION.ELEMENT_ENTER, ease: EASING.OUT_FLUENT, delay },
-                x: { ...EASING.SPRING_ENTER, delay },
-              },
-            }
-          : false
-      }
-      exit={
-        enabled
-          ? {
-              opacity: 0,
-              x: -12,
-              transition: {
-                opacity: { duration: DURATION.ELEMENT_EXIT, ease: EASING.IN_OUT_FLUENT },
-                x: { duration: DURATION.ELEMENT_EXIT, ease: EASING.IN_OUT_FLUENT },
-              },
-            }
-          : undefined
-      }
-      className={className}
-    >
-      <Tag>{children}</Tag>
     </motion.div>
   );
 }

@@ -1,21 +1,8 @@
 import { InvokeOptions } from "@tauri-apps/api/core";
 import { invokeRust } from "./client";
 import { logger } from "@/helper/logger";
-import type { WindowPosition } from "./types/config";
 
 export type WindowType = "Main" | "Login" | "Loading";
-
-/** 统一创建窗口 */
-export const invokeCreateWindow = async (windowType: WindowType): Promise<void> => {
-  logger.info('创建窗口', { windowType });
-  await invokeRust("create_window", { windowType });
-};
-
-/** 关闭指定标签的窗口 */
-export const invokeCloseWindow = async (label: string): Promise<void> => {
-  logger.info('关闭窗口', { label });
-  await invokeRust("close_window", { label });
-};
 
 /**
  * 关闭指定窗口并打开另一个窗口
@@ -26,39 +13,6 @@ export const invokeCloseWindow = async (label: string): Promise<void> => {
 export const invokeSwitchWindow = async (closeLabel: string, openType: WindowType): Promise<void> => {
   logger.info('切换窗口', { closeLabel, openType });
   await invokeRust("switch_window", { closeLabel, openType });
-};
-
-/**
- * 保存窗口位置和尺寸（向后兼容，默认保存到 main）
- * @param x 窗口 X 坐标
- * @param y 窗口 Y 坐标
- * @param width 窗口宽度
- * @param height 窗口高度
- * @param maximized 是否最大化
- * @param options Tauri invoke 选项
- */
-export const invokeSaveWindowPosition = async (
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  maximized: boolean,
-  options?: InvokeOptions
-): Promise<void> => {
-  logger.info('保存窗口位置', { x, y, width, height, maximized });
-  await invokeRust("save_window_position", { x, y, width, height, maximized }, options);
-};
-
-/**
- * 加载已保存的窗口位置（向后兼容，默认加载 main）
- * @param options Tauri invoke 选项
- * @returns 窗口位置信息，不存在返回 null
- */
-export const invokeLoadWindowPosition = async (
-  options?: InvokeOptions
-): Promise<WindowPosition | null> => {
-  logger.info('加载窗口位置');
-  return await invokeRust("load_window_position", {}, options);
 };
 
 /**
@@ -82,20 +36,6 @@ export const invokeSaveWindowPositionByLabel = async (
 ): Promise<void> => {
   logger.info('保存窗口位置', { label, x, y, width, height, maximized });
   await invokeRust("save_window_position_by_label", { label, x, y, width, height, maximized }, options);
-};
-
-/**
- * 加载指定窗口的位置
- * @param label 窗口标签
- * @param options Tauri invoke 选项
- * @returns 窗口位置信息，不存在返回 null
- */
-export const invokeLoadWindowPositionByLabel = async (
-  label: string,
-  options?: InvokeOptions
-): Promise<WindowPosition | null> => {
-  logger.info('加载窗口位置', { label });
-  return await invokeRust("load_window_position_by_label", { label }, options);
 };
 
 /**

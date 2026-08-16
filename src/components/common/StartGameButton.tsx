@@ -1,37 +1,25 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
-import { launchGame, getCurrentAccount, getGameSettings, getGlobalGameSettings } from '../../helper/rustInvoke';
+import { launchGame, getGameSettings, getGlobalGameSettings } from '../../helper/rustInvoke';
 import { useGameStore } from '../../stores/gameStore';
-import type { AccountInfo } from '../../helper/rustInvoke';
+import { useAuthStore } from '../../stores/authStore';
+import { useLaunchStore } from '../../stores/launchStore';
 import { useNotification } from './NotificationProvider';
 import { fadeInUp } from '@/utils/animations';
+import { getErrorMessage } from '../../utils/errorUtils';
 
 /** 启动游戏按钮组件 Props */
 export interface StartGameButtonProps {
-  /** 启动成功后回调（参数为游戏会话 ID） */
-  onLaunched?: (gameId: string) => void;
   className?: string;
 }
 
-const ActionButton = ({ onLaunched, className }: StartGameButtonProps) => {
+const ActionButton = ({ className }: StartGameButtonProps) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [currentAccount, setCurrentAccount] = useState<AccountInfo | null>(null);
   const { error } = useNotification();
 
   const selectedGame = useGameStore(s => s.getSelectedGame());
-
-  useEffect(() => {
-    const loadAccount = async () => {
-      try {
-        const account = await getCurrentAccount();
-        setCurrentAccount(account);
-      } catch (e) {
-        console.error('获取账户失败:', e);
-      }
-    };
-    loadAccount();
-  }, []);
+  const currentAccount = useAuthStore(s => s.currentAccount);
 
   const handleLaunch = async () => {
     if (isLoading) return;
@@ -71,9 +59,9 @@ const ActionButton = ({ onLaunched, className }: StartGameButtonProps) => {
         resolution_height: settings.height,
       });
 
-      onLaunched?.(gameId);
+      useLaunchStore.getState().openOverlay({ gameId, game: selectedGame });
     } catch (e) {
-      error('启动失败', e instanceof Error ? e.message : '未知错误');
+      error('启动失败', getErrorMessage(e));
     } finally {
       setIsLoading(false);
     }

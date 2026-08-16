@@ -19,16 +19,18 @@ import {
   Trash2,
   FileDown,
   UserPlus,
-  Server,
-  BarChart3,
   Home as HomeIcon,
-  Upload,
   SlidersHorizontal,
 } from 'lucide-react';
 import { LayoutMode, RouteConfig, SidebarGroup, SidebarType } from "./models";
 import { UserRole } from '@/stores/userRoleStore';
 import GameManageButton from '@/components/common/sidebar/renderer/GameManageButton';
 import { handleRefreshGames } from './actionHandler';
+import { useGameStore } from '@/stores/gameStore';
+import { useAuthStore } from '@/stores/authStore';
+import { useDownloadStore } from '@/stores/downloadStore';
+import { refreshAll } from '@/stores/refreshStore';
+import { getGameSettings, getGlobalGameSettings } from '@/helper/rustInvoke';
 
 /** 页面组件按路由懒加载（每个路由独立 chunk） */
 const Loading = lazy(() => import('../pages/Loading'));
@@ -47,9 +49,6 @@ const VersionDetailWithInstall = lazy(() => import('../pages/Download/VersionDet
 const Hint = lazy(() => import('../pages/Feedback/Hint'));
 const AppearanceSettings = lazy(() => import('../pages/Settings/AppearanceSettings'));
 const GlobalGameSettings = lazy(() => import('../pages/Settings/GlobalGameSettings'));
-const AdminServers = lazy(() => import('../pages/admin/AdminServers'));
-const AdminAnalytics = lazy(() => import('../pages/admin/AdminAnalytics'));
-const AdminUpload = lazy(() => import('../pages/admin/AdminUpload'));
 
 /** 完整路由配置列表（唯一事实源，侧边栏菜单与灵动岛导航由此派生） */
 export const routes: RouteConfig[] = [
@@ -64,6 +63,9 @@ export const routes: RouteConfig[] = [
     {
     path: '/',
     component: Home,
+    loader: async () => {
+      await useGameStore.getState().init();
+    },
     header: { type: SidebarType.MAIN, title: 'WeCraft! Launcher', titleI18nKey: 'header.title' },
     sidebarGroup: SidebarGroup.NONE,
     needsScrollbar: false,
@@ -72,7 +74,7 @@ export const routes: RouteConfig[] = [
       label: '主页',
       labelI18nKey: 'nav.main',
       icon: HomeIcon,
-      roles: [UserRole.PLAYER, UserRole.ADMIN],
+      roles: [UserRole.PLAYER],
       group: SidebarGroup.NONE,
       order: 0,
     },
@@ -80,6 +82,11 @@ export const routes: RouteConfig[] = [
   {
     path: '/account',
     component: AccountDetail,
+    loader: async () => {
+      const store = useAuthStore.getState();
+      if (store.accounts.length > 0) return;
+      await store.loadAccounts();
+    },
     header: { type: SidebarType.SUB, title: '账户列表', titleI18nKey: 'sidebar.accountList' },
     sidebarGroup: SidebarGroup.ACCOUNT,
     parentPath: '/',
@@ -150,6 +157,15 @@ export const routes: RouteConfig[] = [
       {
         path: '/game-manage/:gameId/game-settings',
         component: GameGameSettings,
+        loader: async (params) => {
+          const game = useGameStore.getState().getGame(params.gameId ?? '');
+          if (!game) return { loaded: {}, global: {} };
+          const [loaded, global] = await Promise.all([
+            getGameSettings(game.name),
+            getGlobalGameSettings(),
+          ]);
+          return { loaded, global };
+        },
         header: { type: SidebarType.SECONDARY, title: '游戏设置', titleI18nKey: 'gameManage.gameSettings' },
         sidebarGroup: SidebarGroup.GAME,
         parentPath: '/game-list',
@@ -217,6 +233,10 @@ export const routes: RouteConfig[] = [
   {
     path: '/game-list',
     component: GameList,
+    loader: async () => {
+      await useGameStore.getState().init();
+      void useGameStore.getState().validateAll();
+    },
     header: { type: SidebarType.SUB, title: '游戏列表', titleI18nKey: 'sidebar.gameList' },
     sidebarGroup: SidebarGroup.GAME,
     parentPath: '/',
@@ -227,7 +247,7 @@ export const routes: RouteConfig[] = [
       label: '游戏',
       labelI18nKey: 'nav.games',
       icon: Gamepad2,
-      roles: [UserRole.PLAYER, UserRole.ADMIN],
+      roles: [UserRole.PLAYER],
       group: SidebarGroup.GAME,
       order: 0,
     },
@@ -267,6 +287,11 @@ export const routes: RouteConfig[] = [
       {
         path: '/game-list/game-folder:default',
         component: DownloadGame,
+        loader: async () => {
+          const store = useDownloadStore.getState();
+          if (store.manifest) return;
+          await store.loadManifest();
+        },
         header: { type: SidebarType.SECONDARY, title: '游戏目录', titleI18nKey: 'games.gameFolders' },
         sidebarGroup: SidebarGroup.GAME,
         parentPath: '/',
@@ -282,6 +307,11 @@ export const routes: RouteConfig[] = [
   {
     path: '/download',
     component: DownloadGame,
+    loader: async () => {
+      const store = useDownloadStore.getState();
+      if (store.manifest) return;
+      await store.loadManifest();
+    },
     header: { type: SidebarType.SUB, title: '下载', titleI18nKey: 'sidebar.download' },
     sidebarGroup: SidebarGroup.GAME,
     parentPath: '/',
@@ -304,6 +334,11 @@ export const routes: RouteConfig[] = [
       {
         path: '/download/game',
         component: DownloadGame,
+        loader: async () => {
+          const store = useDownloadStore.getState();
+          if (store.manifest) return;
+          await store.loadManifest();
+        },
         header: { type: SidebarType.SECONDARY, title: '游戏', titleI18nKey: 'sidebar.downloadGame' },
         sidebarGroup: SidebarGroup.GAME,
         parentPath: '/',
@@ -339,7 +374,7 @@ export const routes: RouteConfig[] = [
       label: '设置',
       labelI18nKey: 'nav.settings',
       icon: Settings,
-      roles: [UserRole.PLAYER, UserRole.ADMIN],
+      roles: [UserRole.PLAYER],
       group: SidebarGroup.COMMON,
     },
     menu: {
@@ -350,6 +385,7 @@ export const routes: RouteConfig[] = [
       {
         path: '/settings/game',
         component: GlobalGameSettings,
+        loader: () => getGlobalGameSettings(),
         header: { type: SidebarType.SUB, title: '全局游戏设置', titleI18nKey: 'gameSettings.title' },
         sidebarGroup: SidebarGroup.COMMON,
         parentPath: '/',
@@ -384,56 +420,6 @@ export const routes: RouteConfig[] = [
       icon: <FileText className="w-4 h-4" />,
     },
   },
-  // 服主管理页面
-  {
-    path: '/admin/servers',
-    component: AdminServers,
-    header: { type: SidebarType.SUB, title: '服务器管理', titleI18nKey: 'admin.servers' },
-    sidebarGroup: SidebarGroup.COMMON,
-    parentPath: '/',
-    nav: {
-      id: 'servers',
-      label: '服务器管理',
-      labelI18nKey: 'nav.serverManage',
-      icon: Server,
-      roles: [UserRole.ADMIN],
-      group: SidebarGroup.GAME,
-      order: 1,
-    },
-  },
-  {
-    path: '/admin/analytics',
-    component: AdminAnalytics,
-    header: { type: SidebarType.SUB, title: '数据看板', titleI18nKey: 'admin.analytics' },
-    sidebarGroup: SidebarGroup.COMMON,
-    parentPath: '/',
-    nav: {
-      id: 'analytics',
-      label: '数据分析',
-      labelI18nKey: 'nav.analytics',
-      icon: BarChart3,
-      roles: [UserRole.ADMIN],
-      group: SidebarGroup.GAME,
-      order: 2,
-      badge: 0,
-    },
-  },
-  {
-    path: '/admin/upload',
-    component: AdminUpload,
-    header: { type: SidebarType.SUB, title: '配置上传', titleI18nKey: 'admin.upload' },
-    sidebarGroup: SidebarGroup.COMMON,
-    parentPath: '/',
-    nav: {
-      id: 'upload-config',
-      label: '配置上传',
-      labelI18nKey: 'nav.uploadConfig',
-      icon: Upload,
-      roles: [UserRole.ADMIN],
-      group: SidebarGroup.GAME,
-      order: 3,
-    },
-  },
   {
     path: '/download/game/:versionId',
     component: VersionDetailWithInstall,
@@ -444,6 +430,7 @@ export const routes: RouteConfig[] = [
   {
     path: '/download/progress',
     component: DownloadProgress,
+    loader: refreshAll,
     header: { type: SidebarType.SECONDARY, title: '下载进度', titleI18nKey: 'download.progressTitle' },
     layoutMode: LayoutMode.FULLSCREEN,
     parentPath: '/download',

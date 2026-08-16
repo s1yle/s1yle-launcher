@@ -23,9 +23,9 @@ export function AccountCard({ account, isSelected, isMarked, isPinned, onClick, 
         ${isSelected
           ? "border-[var(--color-primary)]/60 bg-[var(--color-primary)]/8 -translate-y-1 shadow-lg"
           : isMarked
-            ? "border-amber-500/60 bg-amber-500/8 -translate-y-1 shadow-lg"
+            ? "border-[var(--color-warning)]/60 bg-[var(--color-warning)]/8 -translate-y-1 shadow-lg"
             : isPinned
-              ? "border-cyan-500/40 bg-cyan-500/5 -translate-y-1 shadow-lg"
+              ? "border-[var(--color-info)]/40 bg-[var(--color-info)]/5 -translate-y-1 shadow-lg"
               : "border-transparent hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-primary)]/5"
         }
       `}
@@ -34,9 +34,9 @@ export function AccountCard({ account, isSelected, isMarked, isPinned, onClick, 
         ${isSelected
           ? "ring-[var(--color-primary)]/50"
           : isMarked
-            ? "ring-amber-500/50"
+            ? "ring-[var(--color-warning)]/50"
             : isPinned
-              ? "ring-cyan-500/40"
+              ? "ring-[var(--color-info)]/40"
               : "ring-[var(--color-border)]/50 group-hover:ring-[var(--color-primary)]/30"
         }
       `}>

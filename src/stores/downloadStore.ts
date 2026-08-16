@@ -7,17 +7,12 @@ import {
   cancelVersionDownload,
   clearCompletedTasks,
   scanGames,
-  getFabricVersions,
-  getFabricVersionDetail,
-  buildFabricLaunchConfig,
 } from '../helper/rustInvoke';
 import { useGameStore } from './gameStore';
+import { getErrorMessage } from '@/utils/errorUtils';
 import type {
   VersionManifest,
   DownloadTask,
-  ModLoaderVersionList,
-  FabricVersionDetail,
-  ModLoaderInfo,
 } from '../helper/rustInvoke';
 
 /**
@@ -121,12 +116,6 @@ interface DownloadState {
   isVersionDownloading: (versionId: string) => boolean;
   /** 获取指定版本的下载进度 */
   getVersionProgress: (versionId: string) => number;
-  /** 获取指定 MC 版本的 Fabric 加载器版本列表 */
-  getFabricVersions: (mcVersion: string) => Promise<ModLoaderVersionList>;
-  /** 获取指定 Fabric 加载器的详细信息 */
-  getFabricVersionDetail: (mcVersion: string, loaderVersion: string) => Promise<FabricVersionDetail>;
-  /** 构建 Fabric 启动配置 */
-  buildFabricLaunchConfig: (mcVersion: string, loaderVersion: string, gameDir: string, assetsDir: string, username: string, uuid: string, accessToken?: string, javaPath?: string, memoryMb?: number) => Promise<ModLoaderInfo>;
   /** 开始追踪版本的下载进度 */
   startDownloadProgress: (versionId: string) => void;
   /** 更新版本的下载进度（字节级 + 步骤信息） */
@@ -187,7 +176,7 @@ export const useDownloadStore = create<DownloadState>((set, get) => ({
       saveManifestToCache(manifest);
       set({ manifest });
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'Failed to load version manifest';
+      const message = getErrorMessage(e);
       set({ error: message });
       throw new Error(message);
     } finally {
@@ -253,18 +242,6 @@ export const useDownloadStore = create<DownloadState>((set, get) => ({
       await get().loadDownloadTasks();
     } catch {
     }
-  },
-
-  getFabricVersions: async (mcVersion: string) => {
-    return getFabricVersions(mcVersion);
-  },
-
-  getFabricVersionDetail: async (mcVersion: string, loaderVersion: string) => {
-    return getFabricVersionDetail(mcVersion, loaderVersion);
-  },
-
-  buildFabricLaunchConfig: async (mcVersion: string, loaderVersion: string, gameDir: string, assetsDir: string, username: string, uuid: string, accessToken?: string, javaPath?: string, memoryMb?: number) => {
-    return buildFabricLaunchConfig(mcVersion, loaderVersion, gameDir, assetsDir, username, uuid, accessToken, javaPath, memoryMb);
   },
 
   startDownloadProgress: (versionId: string) => {

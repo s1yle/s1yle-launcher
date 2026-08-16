@@ -1,7 +1,5 @@
 /** 认证 Store（账户 + 登录会话）— 提供 useAuthStore hook */
 export { useAuthStore } from './authStore';
-/** 管理员认证 Store — 提供 useAdminStore hook */
-export { useAdminStore } from './adminStore';
 /** 全局应用状态 Store — 提供 useAppStore hook */
 export { useAppStore } from './appStore';
 /** 头像渲染模式 Store — 提供 useAvatarStore hook */
@@ -10,8 +8,6 @@ export { useAvatarStore } from './avatarStore';
 export type { AvatarMode } from './avatarStore';
 /** 背景配置 Store — 提供 useBackgroundStore hook */
 export { useBackgroundStore } from './backgroundStore';
-/** 全局配置 Store — 提供 useConfigStore hook */
-export { useConfigStore } from './configStore';
 /** 下载管理 Store — 提供 useDownloadStore hook */
 export { useDownloadStore } from './downloadStore';
 /** 字体管理 Store + 缩放配置 — 提供 useFontStore hook 和 fontScaleConfig */
@@ -24,10 +20,14 @@ export { useGameStore } from './gameStore';
 export { useLastVisitedStore } from './lastVisitedStore';
 /** 布局 Store（侧边栏宽度/折叠）+ 布局动画常量 — 提供 useLayoutStore hook */
 export { useLayoutStore, LAYOUT_DEBOUNCE_DURATION, SIDEBAR_TRANSITION_DURATION } from './layoutStore';
+/** 启动覆盖层 Store — 提供 useLaunchStore hook */
+export { useLaunchStore } from './launchStore';
+/** 启动覆盖层状态类型 */
+export type { LaunchOverlayState } from './launchStore';
 /** 全局加载状态 Store — 提供 useLoadingStore hook */
 export { useLoadingStore } from './loadingStore';
 /** 加载状态相关的类型定义 */
-export type { LoadingVariant, SpinnerStyle, SkeletonStyle, LoadingStatus, LoadingEntry } from './loadingStore';
+export type { LoadingStatus, LoadingEntry, LoadingConfig } from './loadingStore';
 /** 导航状态 Store — 提供 useNavStore hook */
 export { useNavStore } from './navStore';
 /** 导航相关的类型定义 */

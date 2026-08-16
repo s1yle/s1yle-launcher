@@ -1,15 +1,19 @@
-/** 游戏版本信息 */
+/** 游戏版本信息（对应 Rust download/models.rs GameVersion，camelCase 序列化） */
 export interface GameVersion {
   /** 版本 ID */
   id: string;
-  /** 版本名称 */
-  name: string;
-  /** 版本类型（release / snapshot / old_beta 等） */
-  type_: string;
-  /** 发布时间 */
-  release_time: string;
+  /** 版本类型：release / snapshot / old_beta / old_alpha（Rust 端 serde rename 为 "type"） */
+  type: string;
   /** 版本清单 URL */
   url: string;
+  /** 更新时间（ISO 8601） */
+  time: string;
+  /** 发布时间（ISO 8601） */
+  releaseTime: string;
+  /** 版本 JSON 的 SHA1（仅 v2 清单） */
+  sha1: string | null;
+  /** 合规等级（0/1，仅 v2 清单） */
+  complianceLevel: number | null;
 }
 
 /** 最新版本号 */

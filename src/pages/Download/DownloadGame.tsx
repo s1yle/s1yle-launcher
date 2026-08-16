@@ -12,6 +12,7 @@ import { VersionCategory, filterVersionsByCategory, countVersionsByCategory } fr
 import BottomBar from '@/components/common/BottomBar/BottomBar';
 import { useShallow } from 'zustand/shallow';
 import { DURATION, EASING } from '@/utils/animations';
+import { getErrorMessage } from '../../utils/errorUtils';
 
 const ITEM_HEIGHT = 72;
 
@@ -25,14 +26,12 @@ const DownloadGame: React.FC = () => {
     installedVersions,
     completedVersions,
     loading,
-    error,
   } = useDownloadStore(
     useShallow(s => ({
       manifest: s.manifest,
       installedVersions: s.installedVersions,
       completedVersions: s.completedVersions,
       loading: s.loading,
-      error: s.error,
     }))
   );
 
@@ -45,18 +44,7 @@ const DownloadGame: React.FC = () => {
 
   const [filter, setFilter] = useState<VersionCategory>('release');
   const [searchQuery, setSearchQuery] = useState('');
-  const [manifestLoading, setManifestLoading] = useState(true);
   const initializedRef = useRef(false);
-
-  const fetchManifest = useCallback(async () => {
-    setManifestLoading(true);
-    try {
-      await loadManifest();
-    } catch {
-    } finally {
-      setManifestLoading(false);
-    }
-  }, [loadManifest]);
 
   const filterOptions = useMemo(() => {
     const counts = countVersionsByCategory(manifest?.versions || []);
@@ -83,10 +71,6 @@ const DownloadGame: React.FC = () => {
     getGameRoot().then(setGamesPath).catch(e => {
       console.error('[DownloadGame] 加载游戏目录失败:', e);
     });
-
-    if (!manifest) {
-      fetchManifest();
-    }
   }, []);
 
   const versionsToShow = useMemo(() => {
@@ -95,10 +79,7 @@ const DownloadGame: React.FC = () => {
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      versions = versions.filter(v =>
-        v.id.toLowerCase().includes(query) ||
-        (v.name && v.name.toLowerCase().includes(query))
-      );
+      versions = versions.filter(v => v.id.toLowerCase().includes(query));
     }
 
     return versions;
@@ -122,9 +103,6 @@ const DownloadGame: React.FC = () => {
     openUrl(getWikiUrl(versionId));
   }, []);
 
-  const notifyErrorRef = useRef(notifyError);
-  notifyErrorRef.current = notifyError;
-
   // 30 秒内不报错：期间持续加载动画；超时仍未获取到 manifest 才提示错误
   const [manifestFailed, setManifestFailed] = useState(false);
 
@@ -137,18 +115,12 @@ const DownloadGame: React.FC = () => {
     return () => window.clearTimeout(timer);
   }, [manifest]);
 
-  useEffect(() => {
-    if (manifestFailed && error) {
-      notifyErrorRef.current(t('notification.error'), error);
-    }
-  }, [manifestFailed, t]);
-
   const handleOpenDownloadFolder = useCallback(async () => {
     if (!gamesPath) return;
     try {
       await openFolder(gamesPath);
     } catch (e) {
-      notifyError(t('notification.error'), e instanceof Error ? e.message : t('notification.error'));
+      notifyError(t('notification.error'), getErrorMessage(e));
     }
   }, [gamesPath, notifyError, t]);
 
@@ -161,8 +133,8 @@ const DownloadGame: React.FC = () => {
   ), [installedSet, completedSet, handleVersionClick, handleWikiClick]);
 
   const handleRetry = useCallback(() => {
-    fetchManifest();
-  }, [fetchManifest]);
+    void loadManifest();
+  }, [loadManifest]);
 
   return (
     <Page className="flex flex-col justify-center h-full min-h-0">
@@ -204,7 +176,7 @@ const DownloadGame: React.FC = () => {
           </PageSection>
 
           {!manifest ? (
-            manifestLoading || loading || !manifestFailed ? (
+            loading || !manifestFailed ? (
               <div className="flex-1 min-h-0 px-4">
                 <Skeleton.List count={12} />
               </div>

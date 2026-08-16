@@ -1,17 +1,6 @@
 import { create } from 'zustand';
-import { invokeRustFunction } from '../helper/rustInvoke';
-
-/**
- * 系统信息
- */
-interface SystemInfo {
-  /** 操作系统名称 */
-  os: string;
-  /** CPU 架构 */
-  arch: string;
-  /** 启动器数据目录（.wecraft），用于访问全局兜底图标 */
-  wecraftDir: string;
-}
+import { getSystemInfo, greet, type SystemInfo } from '../helper/rustInvoke';
+import { getErrorMessage } from '@/utils/errorUtils';
 
 /**
  * 全局应用状态 Store 的内部接口
@@ -52,22 +41,22 @@ export const useAppStore = create<AppState>((set) => ({
   init: async () => {
     set({ loading: true, error: null });
     try {
-      const info = await invokeRustFunction('get_system_info');
+      const info = await getSystemInfo();
       set({ systemInfo: info, initialized: true });
     } catch (e) {
-      set({ error: e instanceof Error ? e.message : 'Failed to init' });
+      set({ error: getErrorMessage(e) });
     } finally {
       set({ loading: false });
     }
   },
 
   testGreet: async (name: string) => {
-    return invokeRustFunction('greet', { name });
+    return greet(name);
   },
 
   refreshSystemInfo: async () => {
     try {
-      const info = await invokeRustFunction('get_system_info');
+      const info = await getSystemInfo();
       set({ systemInfo: info });
     } catch {
       // silently fail

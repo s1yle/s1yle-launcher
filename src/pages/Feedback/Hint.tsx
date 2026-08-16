@@ -1,48 +1,37 @@
 import { useState, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
-import { invoke } from '@tauri-apps/api/core';
-
-// 系统信息接口
-interface SystemInfo {
-  os: string;
-  arch: string;
-}
+import { greet, getSystemInfo, type SystemInfo } from '../../helper/rustInvoke';
+import { getErrorMessage } from '../../utils/errorUtils';
 
 /** 启动器说明页面 - 前后端通信测试和功能预览 */
 const Hint = () => {
 
     const [greeting, setGreeting] = useState<string>('');
     const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
-    const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
+    const [testing, setTesting] = useState(false);
 
-    // 测试后端通信
+    // 挂载时自动执行一次后端通信测试
+    useEffect(() => {
+        void testBackendCommunication();
+    }, []);
+
+    // 调用 greet / get_system_info 验证后端通信（挂载时与按钮重测共用）
     const testBackendCommunication = async () => {
+        setTesting(true);
         try {
-        setLoading(true);
-        setError('');
-
-        // 调用greet命令
-        const greetResult = await invoke<string>('greet', { name: '开发者' });
-        setGreeting(greetResult);
-
-        // 调用get_system_info命令
-        const systemInfoResult = await invoke<SystemInfo>('get_system_info');
-        setSystemInfo(systemInfoResult);
-        } catch (err) {
-        console.error('通信失败:', err);
-        setError(`后端通信失败: ${err instanceof Error ? err.message : String(err)}`);
-        setGreeting('');
-        setSystemInfo(null);
+            const greetResult = await greet('开发者');
+            const systemInfoResult = await getSystemInfo();
+            setGreeting(greetResult);
+            setSystemInfo(systemInfoResult);
+            setError('');
+        } catch (e) {
+            setError(`后端通信失败: ${getErrorMessage(e)}`);
+            setGreeting('');
+            setSystemInfo(null);
         } finally {
-        setLoading(false);
+            setTesting(false);
         }
     };
-
-    // 组件加载时测试通信
-    useEffect(() => {
-        testBackendCommunication();
-    }, []);
 
     return (
         <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] p-8">
@@ -57,13 +46,6 @@ const Hint = () => {
             <div className="bg-surface backdrop-blur-sm rounded-xl p-6 border border-border-hover">
             <h2 className="text-2xl font-bold text-text-primary mb-4">前后端通信测试</h2>
             
-            {loading && (
-                <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-8 h-8 animate-spin text-text-primary" />
-                <span className="ml-3 text-text-primary">正在与Rust后端通信...</span>
-                </div>
-            )}
-
             {error && (
                 <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 mb-4">
                 <p className="text-red-300 font-medium">错误: {error}</p>
@@ -71,7 +53,7 @@ const Hint = () => {
                 </div>
             )}
 
-            {!loading && !error && (
+            {!error && (
                 <div className="space-y-4">
                 {/* 问候语结果 */}
                 <div className="bg-primary-bg border border-indigo-500/30 rounded-lg p-4">
@@ -98,10 +80,10 @@ const Hint = () => {
             <div className="mt-6 flex justify-center">
                 <button
                 onClick={testBackendCommunication}
-                disabled={loading}
-                className="px-6 py-3 bg-primary hover:bg-primary-hover text-text-primary font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={testing}
+                className="px-6 py-3 bg-primary hover:bg-primary-hover text-text-primary font-medium rounded-lg transition-colors disabled:opacity-50"
                 >
-                {loading ? '测试中...' : '重新测试通信'}
+                {testing ? '测试中...' : '重新测试通信'}
                 </button>
             </div>
             </div>

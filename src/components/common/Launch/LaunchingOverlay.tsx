@@ -3,6 +3,7 @@ import { Loader2, Gamepad2, Square, RotateCcw, Info, Lightbulb, Cpu, MemoryStick
 import { getLaunchStatusByKey, stopGame, openFolder, getGameSettings, getGlobalGameSettings } from '@/helper/rustInvoke';
 import { AccountInfo, LaunchStatus, type Game, type GameSettings, type LaunchStatusInfo } from '@/api';
 import { useAppStore } from '@/stores/appStore';
+import { usePolling } from '@/hooks/usePolling';
 import { ProgressBar, GameLogViewer, Page, PageSection } from '@/components/common';
 import { LAUNCH_HINTS } from '@/utils/launchHints';
 import { Z_INDEX } from '@/utils/zIndex';
@@ -14,8 +15,8 @@ export interface LaunchingOverlayProps {
   gameId: string;
   /** 启动的游戏 */
   game: Game;
-  /** 启动账户名 */
-  accountInfo: AccountInfo;
+  /** 启动账户（可能尚未加载，展示时回退到 Steve） */
+  accountInfo: AccountInfo | null;
   /** 返回主页 */
   onExit: () => void;
 }
@@ -56,13 +57,10 @@ const LaunchingOverlay = ({ gameId, game, accountInfo, onExit }: LaunchingOverla
   }, [game.name]);
 
   // 随机轮换小贴士
-  useEffect(() => {
-    const timer = setInterval(() => {
-      let next = LAUNCH_HINTS[Math.floor(Math.random() * LAUNCH_HINTS.length)];
-      setHint(prev => (next === prev ? LAUNCH_HINTS[(LAUNCH_HINTS.indexOf(prev) + 1) % LAUNCH_HINTS.length] : next));
-    }, 6000);
-    return () => clearInterval(timer);
-  }, []);
+  usePolling(() => {
+    let next = LAUNCH_HINTS[Math.floor(Math.random() * LAUNCH_HINTS.length)];
+    setHint(prev => (next === prev ? LAUNCH_HINTS[(LAUNCH_HINTS.indexOf(prev) + 1) % LAUNCH_HINTS.length] : next));
+  }, { interval: 6000 });
 
   // 轮询游戏真实状态与进度
   useEffect(() => {

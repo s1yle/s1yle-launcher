@@ -137,6 +137,7 @@ fn main() {
             "get_global_game_settings",
             "update_global_game_settings",
             "validate_game",
+            "get_login_state",
         ]),
     ))
     .unwrap();

@@ -1,55 +1,31 @@
 // TODO: 测试一下如果登录了已经登录了的正版账户，会怎么样？
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { UserPlus, Trash2, LogIn, Star, Crown, Link2, LogOut, ExternalLink, Copy, X, Loader2 } from "lucide-react";
+import { UserPlus, Trash2, LogIn, Star, ExternalLink, Copy, X, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
-import { useAdminStore } from "@/stores/adminStore";
 import { useAccountSelectionStore } from "@/stores/accountSelectionStore";
-import { useLoadingAction } from "@/hooks/useLoadingAction";
-import { LoadingSurface, SkinAvatar, ConfirmPopup, useNotification, Page, PageSection, SettingsPanel, EmptyState } from "@/components/common";
+import { useDeviceCodeLogin } from "@/hooks/useDeviceCodeLogin";
+import { SkinAvatar, ConfirmPopup, useNotification, Page, PageSection, SettingsPanel, EmptyState } from "@/components/common";
 import Popup from "@/components/Popup";
 import { logger } from "@/helper/logger";
-import { AccountType, cancelDeviceCode, DeviceCodeResponse, pollAndCompleteLogin, startDeviceCode } from "@/api";
-import type { LoginProgressEvent } from "@/api/types/account";
-import { listen } from "@tauri-apps/api/event";
+import { AccountType, startDeviceCode, type DeviceCodeResponse } from "@/api";
 import { openUrl } from "@/helper/rustInvoke";
 import { Selector } from "@/components/common/Selector";
+import { getErrorMessage } from "@/utils/errorUtils";
 
 const AccountDetail = () => {
   const { selectedUuid, selectAccount, clearSelection, showAddPopup, closeAddPopup, openAddPopup } = useAccountSelectionStore();
   const {
     accounts,
     currentAccount,
-    loadAccounts,
     deleteAccount,
     addAccount,
   } = useAuthStore();
-  const {
-    session: adminSession,
-    isLoggedIn: adminLoggedIn,
-    logout: adminLogout,
-    bindPlayer,
-    unbindPlayer,
-  } = useAdminStore();
-
   const { error: notifyError } = useNotification();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [addName, setAddName] = useState("");
   const [addType, setAddType] = useState<AccountType>(AccountType.Offline);
   const [adding, setAdding] = useState(false);
-
-  const loadAccountsAction = useLoadingAction({
-    key: "account:list",
-    action: async () => {
-      await loadAccounts();
-    },
-  });
-
-  useEffect(() => {
-    if (accounts.length === 0) {
-      loadAccountsAction();
-    }
-  }, [accounts.length, loadAccountsAction]);
 
   // 无选中时自动选中 currentAccount 或第一个账户
   useEffect(() => {
@@ -63,7 +39,6 @@ const AccountDetail = () => {
     : currentAccount;
 
   const isCurrent = account?.uuid === currentAccount?.uuid;
-  const isBound = account ? adminSession?.bound_player_uuids.includes(account.uuid) : false;
 
   const handleAddAccount = async () => {
     if (!addName.trim()) return;
@@ -73,7 +48,7 @@ const AccountDetail = () => {
       closeAddPopup();
       setAddName("");
     } catch (e) {
-      notifyError("添加失败", e instanceof Error ? e.message : "未知错误");
+      notifyError("添加失败", getErrorMessage(e));
     } finally {
       setAdding(false);
     }
@@ -87,24 +62,6 @@ const AccountDetail = () => {
       setShowDeleteConfirm(false);
     } catch (e) {
       logger.error("删除账户失败", e);
-    }
-  };
-
-  const handleBind = async () => {
-    if (!adminSession || !account) return;
-    try {
-      await bindPlayer(account.uuid);
-    } catch (e) {
-      logger.error("绑定失败", e);
-    }
-  };
-
-  const handleUnbind = async () => {
-    if (!adminSession || !account) return;
-    try {
-      await unbindPlayer(account.uuid);
-    } catch (e) {
-      logger.error("解绑失败", e);
     }
   };
 
@@ -122,7 +79,7 @@ const AccountDetail = () => {
     switch (type) {
       case "microsoft": return "Microsoft 账户";
       case "offline": return "离线账户";
-      case "thrid-party": return "第三方账户";
+      case "third-party": return "第三方账户";
       default: return type;
     }
   };
@@ -151,8 +108,7 @@ const AccountDetail = () => {
 
   return (
     <Page className="p-6 max-w-2xl mx-auto">
-      <LoadingSurface loadingKey="account:list" skeleton="card" skeletonCount={1}>
-        <PageSection>
+      <PageSection>
           {/* 账户信息 */}
           <SettingsPanel label="账户信息">
             <SettingsPanel.Item noPadding>
@@ -187,65 +143,6 @@ const AccountDetail = () => {
         </PageSection>
 
         <PageSection>
-          {/* 服主关联 */}
-          <SettingsPanel label="服主关联">
-            {!adminLoggedIn ? (
-              <SettingsPanel.Item>
-                <SettingsPanel.Row
-                  label="服主账号"
-                  description="点击灵动岛切换服主身份"
-                >
-                  <span className="text-xs text-text-secondary">未关联服主账号</span>
-                </SettingsPanel.Row>
-              </SettingsPanel.Item>
-            ) : isBound ? (
-              <SettingsPanel.Item>
-                <SettingsPanel.Row label="绑定状态">
-                  <span className="text-xs text-text-primary">
-                    已绑定至 <span className="text-purple-400">{adminSession?.email}</span>
-                  </span>
-                  <button
-                    onClick={handleUnbind}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors"
-                  >
-                    <Link2 className="w-3.5 h-3.5" />
-                    解绑
-                  </button>
-                </SettingsPanel.Row>
-              </SettingsPanel.Item>
-            ) : (
-              <SettingsPanel.Item>
-                <SettingsPanel.Row label="绑定状态">
-                  <span className="text-xs text-text-secondary">此玩家尚未绑定</span>
-                  <button
-                    onClick={handleBind}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-500/10 text-purple-400 text-xs font-medium hover:bg-purple-500/20 transition-colors"
-                  >
-                    <Crown className="w-3.5 h-3.5" />
-                    绑定到服主
-                  </button>
-                </SettingsPanel.Row>
-              </SettingsPanel.Item>
-            )}
-
-            {adminLoggedIn && (
-              <SettingsPanel.Item>
-                <SettingsPanel.Row label="管理员">
-                  <span className="text-xs text-text-secondary">{adminSession?.email}</span>
-                  <button
-                    onClick={() => adminLogout()}
-                    className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                    退出
-                  </button>
-                </SettingsPanel.Row>
-              </SettingsPanel.Item>
-            )}
-          </SettingsPanel>
-        </PageSection>
-
-        <PageSection>
           {/* 操作 */}
           <SettingsPanel label="操作">
             <SettingsPanel.Item>
@@ -276,7 +173,6 @@ const AccountDetail = () => {
           onCancel={() => setShowDeleteConfirm(false)}
           onClose={() => setShowDeleteConfirm(false)}
         />
-      </LoadingSurface>
 
       {/* 添加弹窗 */}
       <AddAccountPopup
@@ -307,98 +203,16 @@ interface AddAccountPopupProps {
 const AddAccountPopup = ({
   isOpen, onClose, addName, setAddName, addType, setAddType, adding, onConfirm,
 }: AddAccountPopupProps) => {
-  const { error: notifyError, success: notifySuccess } = useNotification();
-  const [codePhase, setCodePhase] = useState(false);
-  const [code, setCode] = useState<DeviceCodeResponse>();
-  const [loginPhase, setLoginPhase] = useState<"polling" | "completing">("polling");
-  const [progressMsg, setProgressMsg] = useState("正在等待用户授权...");
-  const pollingRef = useRef(false);
-  const onCloseRef = useRef(onClose);
-  const notifyErrorRef = useRef(notifyError);
-  const notifySuccessRef = useRef(notifySuccess);
-  onCloseRef.current = onClose;
-  notifyErrorRef.current = notifyError;
-  notifySuccessRef.current = notifySuccess;
-
-  const cancelPolling = useCallback(() => {
-    if (pollingRef.current) {
-      pollingRef.current = false;
-      cancelDeviceCode().catch((e) => logger.error("取消登录流程失败", e));
-    }
-  }, []);
+  const { codePhase, loginPhase, progressMsg, showCode, cancel, reset } = useDeviceCodeLogin(onClose);
 
   useEffect(() => {
-    cancelPolling();
-    setCodePhase(false);
-    setCode(undefined);
-    setLoginPhase("polling");
-  }, [isOpen, addType, cancelPolling]);
-
-  useEffect(() => {
-    return () => {
-      cancelPolling();
-    };
-  }, [cancelPolling]);
-
-  useEffect(() => {
-    let unlisten: (() => void) | undefined;
-    let active = true;
-    listen<LoginProgressEvent>("login-progress", (e) => {
-      if (!active) return;
-      const { step, message } = e.payload;
-      if (step === "authorized") {
-        setLoginPhase("completing");
-      }
-      setProgressMsg(message);
-    }).then((fn) => {
-      if (active) unlisten = fn;
-      else fn();
-    });
-    return () => {
-      active = false;
-      unlisten?.();
-    };
-  }, []);
+    reset();
+  }, [isOpen, addType, reset]);
 
   const handleClose = useCallback(() => {
-    cancelPolling();
+    cancel();
     onClose();
-  }, [cancelPolling, onClose]);
-
-  const handleCodeSuccess = useCallback((deviceCode: DeviceCodeResponse) => {
-    setCode(deviceCode);
-  }, []);
-
-  useEffect(() => {
-    if (!code) return;
-    if (pollingRef.current) return;
-    let active = true;
-    pollingRef.current = true;
-    setLoginPhase("polling");
-    setProgressMsg("正在等待用户授权...");
-
-    pollAndCompleteLogin()
-      .then((info) => {
-        if (!active) return;
-        logger.info("Microsoft 账户添加成功", info);
-        notifySuccessRef.current("登录成功", `Microsoft 账户 ${info.name} 已添加`);
-        useAuthStore.getState().loadAccounts();
-        onCloseRef.current();
-      })
-      .catch((e) => {
-        if (!active) return;
-        logger.error("登录流程失败", e);
-        pollingRef.current = false;
-        setLoginPhase("polling");
-        setCodePhase(false);
-        setCode(undefined);
-        notifyErrorRef.current("登录失败", e instanceof Error ? e.message : "未知错误");
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [code]);
+  }, [cancel, onClose]);
 
   return (
     <Popup isOpen={isOpen} onClose={handleClose} contentClassName="flex items-center justify-center" title="添加账户">
@@ -427,7 +241,7 @@ const AddAccountPopup = ({
               <AddOffline addName={addName} setAddName={setAddName} adding={adding} onConfirm={onConfirm} />
             )}
             {addType === AccountType.Microsoft && (
-              <AddMicrosoft onClose={handleClose} onCodePhase={setCodePhase} onCodeSuccess={handleCodeSuccess} codePhase={codePhase} />
+              <AddMicrosoft onClose={handleClose} onCodeSuccess={showCode} codePhase={codePhase} />
             )}
             {addType === AccountType.ThirdParty && (
               <AddThirdparty addName={addName} setAddName={setAddName} adding={adding} onConfirm={onConfirm} />
@@ -497,12 +311,11 @@ const AddOffline = ({ addName, setAddName, adding, onConfirm }: AddOfflineProps)
 
 interface AddMicrosoftProps {
   onClose: () => void;
-  onCodePhase: (v: boolean) => void;
   onCodeSuccess: (v: DeviceCodeResponse) => void;
   codePhase: boolean;
 }
 
-const AddMicrosoft = ({ onClose, onCodePhase, onCodeSuccess, codePhase }: AddMicrosoftProps) => {
+const AddMicrosoft = ({ onClose, onCodeSuccess, codePhase }: AddMicrosoftProps) => {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const { error: notifyError, success: notifySuccess } = useNotification();
@@ -523,14 +336,10 @@ const AddMicrosoft = ({ onClose, onCodePhase, onCodeSuccess, codePhase }: AddMic
       await navigator.clipboard.writeText(result.userCode);
       if (!mountedRef.current) return;
       openUrl(result.url);
-      onCodePhase(true);
-
-      if (onCodeSuccess) {
-        onCodeSuccess(result);
-      }
+      onCodeSuccess(result);
     } catch (e) {
       if (!mountedRef.current) return;
-      notifyError("获取设备码失败", e instanceof Error ? e.message : "未知错误");
+      notifyError("获取设备码失败", getErrorMessage(e));
     } finally {
       setLoading(false);
     }

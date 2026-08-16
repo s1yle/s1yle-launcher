@@ -2,7 +2,7 @@ import { AnimatePresence, motion, } from "framer-motion"
 import React, { useCallback } from "react"
 import { useTranslation } from "react-i18next";
 import { FolderOpen } from "lucide-react";
-import Toggle from "../Toggle";
+import Toggle, { type ToggleProps } from "../Toggle";
 import { SettingsPanelCheckSwitchProps, SettingsPanelDisabledContext, SettingsPanelDropDownProps, SettingsPanelInputProps, SettingsPanelItemContext, SettingsPanelItemProps, SettingsPanelProps, SubSettingsPanelItemProps } from "./models";
 import Spinner from "../Loading/Spinner";
 import Overlay from "../Loading/Overlay";
@@ -408,7 +408,7 @@ const SettingRow = ({
 export const SettingsPanel = Object.assign(SettingsPanelRoot, {
   Item: SettingsPanelItem,
   Sub: SubSettingsPanelItem,
-  Toggle: Toggle,
+  Toggle: (props: ToggleProps) => <Toggle {...props} variant="item" />,
   DropDown: SettingsPanelDropDown,
   Input: SettingsPanelInput,
   CheckSwitch: SettingsPanelCheckSwitch,

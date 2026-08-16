@@ -1,11 +1,11 @@
-import { useContext } from 'react';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+
+import { cn } from '@/utils/cn';
+
 import { AnimatePresence, motion } from 'framer-motion';
 import { EASING } from '@/utils/animations';
-import { SettingsPanelItemContext } from './SettingsPanel/models';
 
-const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(inputs));
+
+
 
 /** 开关组件 Props */
 export interface ToggleProps {
@@ -16,6 +16,8 @@ export interface ToggleProps {
   id?: string;
   hoverable?: boolean;
   bgHidden?: boolean;
+  /** 样式变体：card=独立卡片样式（默认），item=设置面板条目内的内联样式 */
+  variant?: 'card' | 'item';
   className?: string;
 }
 
@@ -43,11 +45,11 @@ const Toggle = ({
   id,
   hoverable = true,
   bgHidden = true,
+  variant = 'card',
   className = "",
 }: ToggleProps) => {
 
-  // Settings Panel上下文
-  const { isInsideItem } = useContext(SettingsPanelItemContext)
+  const isInsideItem = variant === 'item';
 
   return (
     <AnimatePresence>

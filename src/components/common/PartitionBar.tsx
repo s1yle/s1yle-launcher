@@ -1,7 +1,7 @@
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { cn } from '@/utils/cn';
 
-const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(inputs));
+
+
 
 /** 分区条单个分区配置 */
 export interface PartitionBarPart {

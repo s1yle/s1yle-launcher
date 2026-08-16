@@ -1,33 +1,26 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuthStore } from "@/stores/authStore";
-import { RoleSelector } from "./components/RoleSelector";
 import { ViewContainer } from "./components/ViewContainer";
 import { PlayerLogin } from "./views/PlayerLogin";
 import { PlayerAdd } from "./views/PlayerAdd";
-import { AdminLogin } from "./views/AdminLogin";
-import { AdminRegister } from "./views/AdminRegister";
 import Header from "@/components/Header";
 import { NotificationProvider } from "@/components/common/NotificationProvider";
 import { useWindowPosition } from "@/hooks";
 import { useThemeStore } from "@/stores";
 
-export type LoginView = "player-login" | "player-add" | "admin-login" | "admin-register";
+export type LoginView = "player-login" | "player-add";
 
 const VIEW_STACK: Record<LoginView, LoginView | null> = {
   "player-login": null,
   "player-add": "player-login",
-  "admin-login": "player-login",
-  "admin-register": "admin-login",
 };
 
 const LoginGateInner = () => {
   const [view, setView] = useState<LoginView>("player-login");
-  const [role, setRole] = useState<"player" | "admin">("player");
   const accounts = useAuthStore((s) => s.accounts);
   const addAccount = useAuthStore((s) => s.addAccount);
   const deleteAccount = useAuthStore((s) => s.deleteAccount);
   const loginAsPlayer = useAuthStore((s) => s.loginAsPlayer);
-  const loginAsAdmin = useAuthStore((s) => s.loginAsAdmin);
   const initTheme = useThemeStore((s) => s.init);
 
   useWindowPosition();
@@ -62,10 +55,6 @@ const LoginGateInner = () => {
     await loginAsPlayer(uuid);
   }, [loginAsPlayer]);
 
-  const handleAdminAuth = useCallback(async (email: string, password: string, isRegister: boolean) => {
-    return await loginAsAdmin(email, password, isRegister);
-  }, [loginAsAdmin]);
-
   const navigateTo = useCallback((target: LoginView) => {
     setView(target);
   }, []);
@@ -74,15 +63,6 @@ const LoginGateInner = () => {
     const prev = VIEW_STACK[view];
     if (prev) setView(prev);
   }, [view]);
-
-  const selectRole = useCallback((r: "player" | "admin") => {
-    setRole(r);
-    if (r === "player") {
-      setView(accounts.length > 0 ? "player-login" : "player-add");
-    } else {
-      setView("admin-login");
-    }
-  }, [accounts.length]);
 
   const handleDeleteAccount = useCallback(async (uuid: string) => {
     await deleteAccount(uuid);
@@ -102,11 +82,6 @@ const LoginGateInner = () => {
       >
         <div className="flex flex-col items-center gap-4 py-4 px-6 w-full max-w-md">
 
-          <div className="absolute top-5">
-
-            <RoleSelector selected={role} onSelect={selectRole} className="absolute top-5" />
-          </div>
-
           <ViewContainer view={view}>
             {view === "player-login" && (
               <PlayerLogin
@@ -119,18 +94,6 @@ const LoginGateInner = () => {
             {view === "player-add" && (
               <PlayerAdd
                 onAdd={addAccount}
-                onBack={goBack}
-              />
-            )}
-            {view === "admin-login" && (
-              <AdminLogin
-                onLogin={(email, password) => handleAdminAuth(email, password, false)}
-                onNavigate={() => navigateTo("admin-register")}
-              />
-            )}
-            {view === "admin-register" && (
-              <AdminRegister
-                onRegister={(email, password) => handleAdminAuth(email, password, true)}
                 onBack={goBack}
               />
             )}

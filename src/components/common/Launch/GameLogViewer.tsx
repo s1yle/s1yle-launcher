@@ -34,16 +34,16 @@ const LEVEL_STYLE: Record<GameLogLevel, string> = {
 /** 游戏日志查看器：增量轮询捕获日志，支持等级/关键词过滤、复制与自动滚底 */
 const GameLogViewer = ({ gameId, live = false, pollInterval = 1500 }: GameLogViewerProps) => {
   const [lines, setLines] = useState<GameLogLine[]>([]);
-  const [offset, setOffset] = useState(0);
   const [keyword, setKeyword] = useState('');
   const [levelFilter, setLevelFilter] = useState<GameLogLevel | 'all'>('all');
   const [collapsed, setCollapsed] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
   const boxRef = useRef<HTMLDivElement>(null);
+  const offsetRef = useRef(0);
 
   useEffect(() => {
     setLines([]);
-    setOffset(0);
+    offsetRef.current = 0;
   }, [gameId]);
 
   useEffect(() => {
@@ -61,22 +61,22 @@ const GameLogViewer = ({ gameId, live = false, pollInterval = 1500 }: GameLogVie
               : [...prev, ...result.lines];
             return merged.length > 5000 ? merged.slice(merged.length - 5000) : merged;
           });
-          setOffset(result.offset);
+          offsetRef.current = result.offset;
         }
       } catch {
         // 忽略拉取错误，下轮重试
       }
     };
 
-    fetchBatch(0);
+    fetchBatch(offsetRef.current);
 
     if (!live) return () => { cancelled = true; };
-    const timer = setInterval(() => fetchBatch(offset), pollInterval);
+    const timer = setInterval(() => fetchBatch(offsetRef.current), pollInterval);
     return () => {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [gameId, live, pollInterval, offset]);
+  }, [gameId, live, pollInterval]);
 
   useEffect(() => {
     if (autoScroll && boxRef.current) {
@@ -169,7 +169,7 @@ const GameLogViewer = ({ gameId, live = false, pollInterval = 1500 }: GameLogVie
             </div>
           ) : (
             filtered.map((line, i) => (
-              <div key={`${offset}-${i}`} className={`whitespace-pre-wrap break-all ${LEVEL_STYLE[line.level]}`}>
+              <div key={i} className={`whitespace-pre-wrap break-all ${LEVEL_STYLE[line.level]}`}>
                 {line.text}
               </div>
             ))

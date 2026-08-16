@@ -1,25 +1,17 @@
-import { Crown, User } from 'lucide-react';
-import { UserRole } from '@/stores/userRoleStore';
+import { User } from 'lucide-react';
 import { SkinAvatar } from '../SkinAvatar';
 import { useAuthStore } from '@/stores/authStore';
 import { useAvatarStore } from '@/stores/avatarStore';
 
 
-interface PlayerProfileProps {
-  name: string;
-  role?: UserRole;
-}
-
 /**
  * 玩家资料卡片组件。
  * 显示玩家头像（支持平面/等距模式）、角色徽章和用户名。
  */
-const PlayerProfile = ({
-  name,
-  role = UserRole.PLAYER
-}: PlayerProfileProps) => {
+const PlayerProfile = () => {
   const avatarMode = useAvatarStore((s) => s.mode);
   const currentAccount = useAuthStore((s) => s.currentAccount);
+  const name = currentAccount?.name ?? 'Steve';
 
   return (
     <div className="flex flex-col items-center gap-1">
@@ -27,7 +19,7 @@ const PlayerProfile = ({
       <div className="relative">
         <div className={`
           overflow-hidden
-          ${role === UserRole.ADMIN ? 'skip_border-purple-500/30' : 'skip_border-blue-500/30'}
+          skip_border-blue-500/30
           bg-bg-tertiary
         `}>
           <SkinAvatar
@@ -43,13 +35,9 @@ const PlayerProfile = ({
         <div className={`
           absolute -top-1 -right-1 w-5 h-5 rounded-full
           flex items-center justify-center
-          ${role === UserRole.ADMIN ? 'bg-yellow-500' : 'bg-blue-500'}
+          bg-blue-500
         `}>
-          {role === UserRole.ADMIN ? (
-            <Crown className="w-2.5 h-2.5 text-white" />
-          ) : (
-            <User className="w-2.5 h-2.5 text-white" />
-          )}
+          <User className="w-2.5 h-2.5 text-white" />
         </div>
       </div>
 

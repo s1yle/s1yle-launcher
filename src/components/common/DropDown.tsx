@@ -1,20 +1,15 @@
-import clsx from "clsx";
+import { cn } from "@/utils/cn";
 import { AnimatePresence, motion, MotionStyle } from "framer-motion";
 import { ChevronDown, Search } from "lucide-react";
 import { useCallback, useRef, useState, useMemo, useEffect } from "react"
-import { twMerge } from "tailwind-merge";
+
 import { useClickOutside } from "@/hooks/useClickOutside";
 import { Portal } from "./Portal";
 import { Z_INDEX } from "@/utils/zIndex";
 import { dropdown } from "@/utils/animations";
+import type { DropDownOption } from "@/utils/dropdownOption";
 
-const cn = (...inputs: (string | boolean | MotionStyle | undefined)[]) => twMerge(clsx(inputs));
-
-/** 下拉选项 */
-export interface DropDownOption {
-  id: string;
-  label: string;
-}
+export type { DropDownOption };
 
 /** 下拉组件 Props */
 export interface DropDownProps {

@@ -1,83 +1,45 @@
-import { useEffect, useState } from 'react';
-import { Crown, Mail } from 'lucide-react';
 import ActionButton from '../components/common/StartGameButton';
 import PlayerProfile from '../components/common/home/PlayerProfile';
-import { LaunchingOverlay, RunningGamesCard, LoadingSurface, Page, PageSection } from '@/components/common';
+import { LaunchingOverlay, RunningGamesCard, Skeleton, Page, PageSection } from '@/components/common';
 import { useGameStore } from '../stores/gameStore';
-import { useAdminStore } from '../stores/adminStore';
-import { useUserRoleStore, UserRole } from '../stores/userRoleStore';
-import { getCurrentAccount, type AccountInfo } from '../helper/rustInvoke';
-import { useLoadingAction } from '@/hooks/useLoadingAction';
+import { useAuthStore } from '../stores/authStore';
+import { useLaunchStore } from '../stores/launchStore';
 
 /** 主页 - 显示玩家档案和快捷启动按钮 */
 const Home = () => {
-  const game_init = useGameStore(s => s.init);
   const selectedGame = useGameStore(s => s.getSelectedGame());
   const gameReports = useGameStore(s => s.validations);
-  const { currentRole } = useUserRoleStore();
-  const adminSession = useAdminStore((s) => s.session);
 
   // 空壳游戏（目录内除记录外无任何文件）前端不显示启动入口
   const isShellEmpty = selectedGame && gameReports[selectedGame.id]?.empty;
 
-  const [curAccountInfo, setCurAccountInfo] = useState<AccountInfo | null>(null);
-  const [launchSession, setLaunchSession] = useState<{ gameId: string } | null>(null);
-
-  const loadProfile = useLoadingAction({
-    key: 'home:profile',
-    action: async () => {
-      try {
-        const currentAccount: AccountInfo | null = await getCurrentAccount();
-        if (currentAccount?.name) {
-          setCurAccountInfo(currentAccount);
-        }
-      } catch (error) {
-        console.error('加载账户信息失败:', error);
-      }
-    },
-  });
-
-  useEffect(() => {
-    game_init();
-    loadProfile();
-  }, [game_init, loadProfile]);
+  const currentAccount = useAuthStore(s => s.currentAccount);
+  const accountLoading = useAuthStore(s => s.loading);
+  const overlay = useLaunchStore(s => s.overlay);
+  const closeOverlay = useLaunchStore(s => s.closeOverlay);
 
   return (
     <Page className="flex flex-col items-center justify-center min-h-[calc(100vh-120px)] p-0">
       <PageSection className="max-w-4xl w-full space-y-8">
-        {currentRole === UserRole.ADMIN ? (
-          <div className="flex flex-col items-center gap-4 py-12">
-            <div className="w-20 h-20 rounded-full bg-purple-500/20 flex items-center justify-center">
-              <Crown className="w-10 h-10 text-purple-400" />
-            </div>
-            <h1 className="text-lg font-medium text-text-primary">服主</h1>
-            <div className="flex items-center gap-2 text-sm text-text-secondary">
-              <Mail className="w-4 h-4" />
-              <span>{adminSession?.email ?? '未绑定邮箱'}</span>
-            </div>
-          </div>
+        {accountLoading ? (
+          <Skeleton.Profile />
         ) : (
-          <LoadingSurface loadingKey="home:profile" skeleton="profile">
-            <PlayerProfile
-              name={curAccountInfo?.name ? curAccountInfo.name : "Steve"}
-              role={currentRole}
-            />
-          </LoadingSurface>
+          <PlayerProfile />
         )}
       </PageSection>
 
-      {currentRole !== UserRole.ADMIN && !isShellEmpty && (
-        <ActionButton onLaunched={(gameId) => setLaunchSession({ gameId })} />
+      {!isShellEmpty && (
+        <ActionButton />
       )}
 
-      {currentRole !== UserRole.ADMIN && <RunningGamesCard />}
+      <RunningGamesCard />
 
-      {launchSession && selectedGame && curAccountInfo && (
+      {overlay && (
         <LaunchingOverlay
-          game={selectedGame}
-          gameId={launchSession.gameId}
-          accountInfo={curAccountInfo}
-          onExit={() => setLaunchSession(null)}
+          game={overlay.game}
+          gameId={overlay.gameId}
+          accountInfo={currentAccount}
+          onExit={closeOverlay}
         />
       )}
     </Page>

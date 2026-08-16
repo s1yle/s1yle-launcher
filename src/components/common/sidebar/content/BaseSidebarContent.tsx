@@ -10,7 +10,7 @@ import ContextMenu, { ContextMenuItemData, useContextMenu } from '../../ContextM
 import clsx from 'clsx';
 import { DURATION, EASING, microInteractions, transitions, sidebarStaggerContainer, SIDEBAR_STAGGER_DELAY, SIDEBAR_STAGGER_STEP } from '../../../../utils/animations';
 import { Animated } from '../../Animated';
-import { renderIcon } from '../../../../utils/iconRenderer';
+
 
 /** 侧边栏菜单项入场动画（显式序号错峰，不依赖变体编排） */
 const sidebarItemAnimation = (index: number) => ({
@@ -365,7 +365,7 @@ const BaseSidebarContent = ({
                   animate={{ rotate: 360 }}
                   transition={{ duration: 1, ease: EASING.LINEAR, repeat: Infinity }}
                 >
-                  {renderIcon(item.icon, '', 'lg')}
+                  {item.icon}
                 </motion.span>
               ) : (
                 item.icon

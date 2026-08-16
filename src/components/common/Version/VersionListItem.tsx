@@ -5,10 +5,10 @@ import { formatDate } from '../../../utils/format';
 import StatusBadge from '../Badge/VersionBadge';
 import { ExternalLink, Package } from 'lucide-react';
 import { listItem, transitions } from '../../../utils/animations';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { cn } from '@/utils/cn';
 
-const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(inputs));
+
+
 
 /** 版本列表项组件 Props */
 export interface VersionListItemProps {
@@ -56,10 +56,10 @@ const VersionListItem = ({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h3 className="text-text-primary font-medium text-sm truncate">{version.id}</h3>
-            <StatusBadge type={version.type_} />
+            <StatusBadge type={version.type} />
           </div>
           <p className="text-text-tertiary text-xs mt-0.5">
-            {formatDate(version.release_time)}
+            {formatDate(version.releaseTime)}
           </p>
         </div>
 

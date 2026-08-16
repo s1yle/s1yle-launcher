@@ -1,9 +1,8 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Crown, User, Home, ChevronDown,  FileQuestionMark, AlertTriangle, LogOut } from 'lucide-react';
+import { User, Home, ChevronDown,  FileQuestionMark, AlertTriangle, LogOut } from 'lucide-react';
 import { useUserRoleStore, UserRole } from '@/stores/userRoleStore';
-import { useAdminStore } from '@/stores/adminStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useNavStore } from '@/stores/navStore';
 import { useNotification, ConfirmPopup } from '@/components/common';
@@ -12,13 +11,14 @@ import { NavItem, SidebarGroup } from '@/router/models';
 import { autoJumpToFirstChild, findRouteByPath, routes } from '@/router/config';
 import { useSafeNavigate } from '@/router/navigation';
 import { DURATION, EASING, dropdown, microInteractions, modalOpen } from '@/utils/animations';
+import { getErrorMessage } from '@/utils/errorUtils';
 
 /** 灵动岛导航组件 Props */
 export interface DynamicIslandProps {
   onMenuClick?: (path: string) => void;
 }
 
-const AVAILABLE_ROLES: UserRole[] = [UserRole.PLAYER, UserRole.ADMIN];
+const AVAILABLE_ROLES: UserRole[] = [UserRole.PLAYER, UserRole.CREATOR];
 const TIMEOUT_IDLE = 30000;
 
 const ROLE_CONFIG: Record<UserRole, { icon: typeof User; label: string; color: string }> = {
@@ -26,11 +26,6 @@ const ROLE_CONFIG: Record<UserRole, { icon: typeof User; label: string; color: s
     icon: User,
     label: '玩家',
     color: 'text-blue-400'
-  },
-  [UserRole.ADMIN]: {
-    icon: Crown,
-    label: '服主',
-    color: 'text-purple-400'
   },
   [UserRole.CREATOR]: {
     icon: User,
@@ -150,7 +145,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
     if (hasMultipleRoles) {
       setShowRoleMenu(!showRoleMenu);
     } else {
-      handleRoleSwitch(currentRole === UserRole.PLAYER ? UserRole.ADMIN : UserRole.PLAYER);
+      handleRoleSwitch(currentRole === UserRole.PLAYER ? UserRole.CREATOR : UserRole.PLAYER);
     }
   };
 
@@ -158,15 +153,6 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
     if (role === currentRole || isTransitioning) return;
 
     // 角色切换校验
-    if (role === UserRole.ADMIN) {
-      const { isLoggedIn } = useAdminStore.getState();
-      if (!isLoggedIn) {
-        setShowRoleGuide(true);
-        setShowRoleMenu(false);
-        return;
-      }
-    }
-
     if (role === UserRole.PLAYER) {
       const { accounts } = useAuthStore.getState();
       if (accounts.length === 0) {
@@ -201,7 +187,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
     label: '主页',
     icon: Home,
     path: '/',
-    roles: [UserRole.PLAYER, UserRole.ADMIN],
+    roles: [UserRole.PLAYER],
     group: SidebarGroup.NONE,
   };
 
@@ -209,7 +195,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
     try {
       await logout();
     } catch (e) {
-      const msg = e instanceof Error ? e.message : '退出登录失败';
+      const msg = getErrorMessage(e);
       notifyError('退出登录失败', msg);
     }
   };
@@ -604,12 +590,10 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
               </div>
               <div className="flex-1">
                 <h4 className="text-sm font-semibold text-[var(--color-text-primary)] mb-1">
-                  {currentRole === UserRole.ADMIN ? '需要玩家账户' : '需要服主账号'}
+                  需要玩家账户
                 </h4>
                 <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
-                  {currentRole === UserRole.ADMIN
-                    ? '当前没有玩家账户。请先在账户管理中添加玩家账户，再切换到玩家身份。'
-                    : '当前没有已登录的服主账号。请先在账户管理页面注册或登录服主账号。'}
+                  当前没有玩家账户。请先在账户管理中添加玩家账户，再切换到玩家身份。
                 </p>
                 <div className="flex gap-2 mt-3">
                   <button

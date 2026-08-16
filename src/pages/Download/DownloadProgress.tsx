@@ -1,8 +1,7 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, X, Loader2 } from 'lucide-react';
 import { useDownloadStore } from '../../stores/downloadStore';
-import { refreshAll } from '../../stores/refreshStore';
 import { EmptyState, Page, PageSection, ProgressBar, ProgressBarProps, SettingsPanel } from '../../components/common';
 
 /** 字节数格式化（KB/MB） */
@@ -54,10 +53,6 @@ const DownloadProgress: React.FC = () => {
   const downloadingVersions = useDownloadStore((s) => s.downloadingVersions);
   const completedVersions = useDownloadStore((s) => s.completedVersions);
   const cancelVersionDownloadAction = useDownloadStore((s) => s.cancelVersionDownloadAction);
-
-  useEffect(() => {
-    void refreshAll();
-  }, []);
 
   const activeList = useMemo(() => {
     return Array.from(downloadingVersions.values()).filter((v) => v.status !== 'error');

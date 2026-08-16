@@ -1,14 +1,18 @@
-import { useCallback, useRef } from 'react';
-import { useLoadingStore, type LoadingVariant } from '@/stores/loadingStore';
+import { useCallback, useEffect, useRef } from 'react';
+import { useLoadingStore } from '@/stores/loadingStore';
+import { getErrorMessage } from '@/utils/errorUtils';
+import { usePageLoadingKey } from './pageLoadingKey';
 
 /**
  * useLoadingAction 的配置选项
  * @template T - 异步操作的返回值类型
  */
 export interface UseLoadingActionOptions<T = void> {
-  key: string;
+  /** 加载 key；缺省取当前页面实例的 key（页面级加载约定，由路由层注入） */
+  key?: string;
   action?: () => Promise<T>;
-  variant?: LoadingVariant;
+  /** 挂载时自动执行一次（页面级加载约定用法） */
+  auto?: boolean;
   message?: string;
   blocking?: boolean;
   onSuccess?: (result: T) => void;
@@ -32,6 +36,7 @@ export function useLoadingAction<T = void>(
     : optionsOrKey;
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inFlightRef = useRef(false);
   const actionRef = useRef(action ?? opts.action);
   const onSuccessRef = useRef(opts.onSuccess);
   const onErrorRef = useRef(opts.onError);
@@ -40,23 +45,32 @@ export function useLoadingAction<T = void>(
   onSuccessRef.current = opts.onSuccess;
   onErrorRef.current = opts.onError;
 
-  const { key, variant, blocking, message, minDurationMs } = opts;
+  const { key, blocking, message, minDurationMs, auto } = opts;
+  const resolvedKey = key ?? usePageLoadingKey();
 
-  return useCallback(async () => {
+  const run = useCallback(async () => {
     const store = useLoadingStore.getState();
     const minDuration = minDurationMs ?? store.config.minDurationMs;
 
-    store.register(key, {
-      variant: variant ?? store.config.variant,
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+
+    console.warn("注册前：", store);
+    
+    store.register(resolvedKey, {
       blocking: blocking ?? false,
       message,
     });
+
+    console.warn("注册后：", store);
 
     const startTime = Date.now();
 
     try {
       const fn = actionRef.current;
       const result = fn ? await fn() : undefined;
+
+      onSuccessRef.current?.(result as T);
 
       const elapsed = Date.now() - startTime;
       const remaining = minDuration - elapsed;
@@ -67,14 +81,21 @@ export function useLoadingAction<T = void>(
         });
       }
 
-      store.done(key);
-      onSuccessRef.current?.(result as T);
+      store.done(resolvedKey);
       return result;
     } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : String(e);
-      store.done(key, errorMsg);
+      const errorMsg = getErrorMessage(e);
       onErrorRef.current?.(errorMsg);
+      store.done(resolvedKey, errorMsg);
       return undefined;
+    } finally {
+      inFlightRef.current = false;
     }
-  }, [key, variant, blocking, message, minDurationMs]);
+  }, [resolvedKey, blocking, message, minDurationMs]);
+
+  useEffect(() => {
+    if (auto) run();
+  }, [auto, run]);
+
+  return run;
 }

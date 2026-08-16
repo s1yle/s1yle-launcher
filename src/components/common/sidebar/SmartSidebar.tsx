@@ -13,6 +13,7 @@ import { UserPlus, UserCheck, Trash2 } from 'lucide-react';
 import { confirm } from '@tauri-apps/plugin-dialog';
 import { DURATION, EASING } from '@/utils/animations';
 import { useContextMenuAction } from '../../../router/contextMenuConfigs';
+import { getErrorMessage } from '@/utils/errorUtils';
 
 /** 智能侧边栏组件 Props */
 export interface SmartSidebarProps {
@@ -132,7 +133,7 @@ const SmartSidebar = ({ onMenuClick = () => {}, footer, header, ownSidebar = fal
       action: () => {
         useAccountSelectionStore.getState().selectAccount(acc.uuid);
         useAuthStore.getState().setCurrentAccount(acc.uuid).catch((e) => {
-          const msg = e instanceof Error ? e.message : '设置当前账户失败';
+          const msg = getErrorMessage(e);
           notifyError(t('notification.error'), msg);
         });
       },
@@ -192,7 +193,7 @@ const SmartSidebar = ({ onMenuClick = () => {}, footer, header, ownSidebar = fal
       try {
         await useAuthStore.getState().setCurrentAccount(uuid);
       } catch (e) {
-        const msg = e instanceof Error ? e.message : '设置当前账户失败';
+        const msg = getErrorMessage(e);
         notifyError(t('notification.error'), msg);
       }
       return;
@@ -208,7 +209,7 @@ const SmartSidebar = ({ onMenuClick = () => {}, footer, header, ownSidebar = fal
         await useAuthStore.getState().deleteAccount(uuid);
         success(t('notification.accountDeleted', '账号已删除'));
       } catch (e) {
-        const msg = e instanceof Error ? e.message : '删除账户失败';
+        const msg = getErrorMessage(e);
         notifyError(t('notification.error'), msg);
       }
     }

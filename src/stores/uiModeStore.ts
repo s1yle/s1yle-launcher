@@ -12,28 +12,11 @@ export enum UIMode {
 /**
  * ## AnimationConfig — 动画控制配置
  *
- * 提供分维度动画开关，支持按类型独立控制。
- * 由 `useAnimation()` hook 统一消费，默认全部开启。
+ * 提供全局动画开关，由 `useAnimation()` hook 统一消费。
  */
 export interface AnimationConfig {
   /** 全局动画总开关 */
   enabled: boolean;
-  /** 侧边栏滑入/滑出动画 */
-  sidebarEnabled: boolean;
-  /** 微交互（hover/tap 缩放） */
-  microEnabled: boolean;
-  /** 加载动画变体 */
-  loadingVariant: 'spinner' | 'progress' | 'skeleton' | 'topbar';
-  /** 旋转器样式 */
-  spinnerStyle: 'ring' | 'dots' | 'pulse' | 'bars';
-  /** 骨架屏样式 */
-  skeletonStyle: 'shimmer' | 'pulse' | 'static';
-  /** 是否启用全局顶部进度条 */
-  globalTopbar: boolean;
-  /** 最小加载显示时长（毫秒） */
-  minDurationMs: number;
-  /** 加载超时时间（秒） */
-  timeoutSec: number;
 }
 
 /**
@@ -70,14 +53,6 @@ export const useUIModeStore = create<UIModeState>()(
       mode: UIMode.ISLAND,
       animation: {
         enabled: true,
-        sidebarEnabled: true,
-        microEnabled: true,
-        loadingVariant: 'spinner',
-        spinnerStyle: 'ring',
-        skeletonStyle: 'shimmer',
-        globalTopbar: true,
-        minDurationMs: 300,
-        timeoutSec: 30,
       },
 
       setMode: (mode) => {

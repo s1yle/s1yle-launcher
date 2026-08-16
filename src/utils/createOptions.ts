@@ -1,5 +1,5 @@
 // src/utils/createOptions.ts
-import { DropDownOption } from "@/components/common/DropDown";
+import type { DropDownOption } from "@/utils/dropdownOption";
 
 
 /**

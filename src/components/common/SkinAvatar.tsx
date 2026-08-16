@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { invokeGetSkinHead, invokeRenderIsometricAvatar, invokeGetSkinModel, getCanonicalSkinUuid, ensureCanonicalSkinUuids } from '@/api/skin';
+import { getErrorMessage } from '@/utils/errorUtils';
 
 /** 皮肤头像组件 Props */
 export interface SkinAvatarProps {
@@ -75,7 +76,7 @@ export const SkinAvatar = ({
 
       setUrl(result);
     } catch (e) {
-      setError(e instanceof Error ? e.message : '获取头像失败');
+      setError(getErrorMessage(e));
     } finally {
       setLoading(false);
     }

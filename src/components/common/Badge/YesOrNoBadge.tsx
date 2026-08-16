@@ -1,7 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { BadgePosition } from "./models";
 import {  Check, X } from "lucide-react";
-import { useDebugComponentStack } from "../ContextStack/ContextStack";
 
 /** 是/否 徽标组件 Props */
 export interface YesOrNoBadgeProps {
@@ -31,8 +30,6 @@ const YesOrNoBadge = ({
     zIndex = 30,
     size = 18
 }: YesOrNoBadgeProps) => {
-
-    useDebugComponentStack("TEST");
 
     const classes =
     `

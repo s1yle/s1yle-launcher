@@ -1,18 +1,11 @@
 import { type CSSProperties } from 'react';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-import { useLoadingStore } from '@/stores/loadingStore';
+import { cn } from '@/utils/cn';
 
-const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(inputs));
+
 
 function useSkeleton(extra?: string): string {
-  const style = useLoadingStore((s) => s.config.skeletonStyle);
-  const anim = style === 'pulse' ? 'animate-pulse'
-    : style === 'shimmer' ? 'skeleton-shimmer'
-    : '';
-  const bg = style === 'shimmer'
-    ? ''
-    : 'bg-[var(--color-surface-tertiary)]';
+  const anim = 'skeleton-shimmer';
+  const bg = '';
   return cn('rounded', bg, anim, extra);
 }
 

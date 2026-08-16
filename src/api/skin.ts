@@ -18,25 +18,6 @@ export interface SkinAvatarOptions {
 }
 
 /**
- * 渲染 3D 皮肤头像
- * @param options 渲染选项
- * @param opts Tauri invoke 选项
- * @returns 头像图片的 Object URL
- */
-export const invokeRenderAvatar = async (
-  options: SkinAvatarOptions,
-  opts?: InvokeOptions
-): Promise<string> => {
-  logger.info('渲染皮肤头像', options);
-  const result: number[] = await invokeRust("render_avatar", {
-    uuid: options.uuid,
-    size: options.size ?? 128,
-    showHat: options.showHat ?? true,
-  }, opts);
-  return pngBytesToUrl(result);
-};
-
-/**
  * 获取平面皮肤头像（2D 正面）
  * @param options 渲染选项
  * @param opts Tauri invoke 选项
@@ -71,22 +52,6 @@ export const invokeRenderIsometricAvatar = async (
     size: options.size ?? 256,
     showHat: options.showHat ?? true,
   }, opts);
-  return pngBytesToUrl(result);
-};
-
-/**
- * 获取玩家披风图片
- * @param uuid 玩家 UUID
- * @param opts Tauri invoke 选项
- * @returns 披风图片的 Object URL，无披风返回 null
- */
-export const invokeGetSkinCape = async (
-  uuid: string,
-  opts?: InvokeOptions
-): Promise<string | null> => {
-  logger.info('获取披风', { uuid });
-  const result: number[] | null = await invokeRust("get_skin_cape", { uuid }, opts);
-  if (!result) return null;
   return pngBytesToUrl(result);
 };
 
@@ -136,20 +101,6 @@ export const invokeGetUuidByUsername = async (
 ): Promise<MinecraftUserProfile> => {
   logger.info('通过名称获取UUID', { username });
   return await invokeRust("get_uuid_by_username", { username }, opts);
-};
-
-/**
- * 批量通过玩家名称获取 UUID
- * @param usernames 玩家名称数组
- * @param opts Tauri invoke 选项
- * @returns 玩家资料列表
- */
-export const invokeGetUuidsByUsernames = async (
-  usernames: string[],
-  opts?: InvokeOptions
-): Promise<MinecraftUserProfile[]> => {
-  logger.info('批量获取UUID', { count: usernames.length });
-  return await invokeRust("get_uuids_by_usernames", { usernames }, opts);
 };
 
 let canonicalUuids: { steve: string; alex: string } | null = null;

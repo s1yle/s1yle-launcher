@@ -1,13 +1,11 @@
 import { ModLoaderType } from "./modloader";
 
-/** 隔离模式 */
+/** 隔离模式（对应 Rust game/models.rs IsolationMode，仅 global/isolated 两值） */
 export enum IsolationMode {
   /** 全局共享 */
   Global = 'global',
   /** 按版本隔离 */
-  Version = 'version',
-  /** 按游戏完全隔离 */
-  Game = 'game',
+  Isolated = 'isolated',
 }
 
 /** 游戏设置 */

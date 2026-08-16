@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type { TFunction } from 'i18next';
 import { useGameStore } from '@/stores/gameStore';
+import { getErrorMessage } from '@/utils/errorUtils';
 import { openFolder } from '@/helper/rustInvoke';
 
 interface NotificationApi {
@@ -39,7 +40,7 @@ const browseDirHandler = (subdir: string) => (_actionId: string, t: TFunction, n
   openFolder(dir).catch((e) => {
     notify.error(
       t('games.openFolderFailed', '打开目录失败'),
-      e instanceof Error ? e.message : String(e),
+      getErrorMessage(e),
     );
   });
 };

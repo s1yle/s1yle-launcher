@@ -1,7 +1,7 @@
 import { InvokeArgs, InvokeOptions } from "@tauri-apps/api/core";
 import { invokeRust } from "./client";
 import { logger } from "@/helper/logger";
-import type { AccountInfo, DeviceCodeResponse, LoginStatus } from "./types/account";
+import type { AccountInfo, DeviceCodeResponse } from "./types/account";
 
 /**
  * 添加玩家账户（microsoft / offline）
@@ -146,16 +146,4 @@ export const pollAndCompleteLogin = async (
 ): Promise<AccountInfo> => {
   logger.info('准备调用 poll_and_complete_login');
   return await invokeRust("poll_and_complete_login", {}, options) as AccountInfo;
-};
-
-/**
- * 查询当前 Microsoft 登录流程状态
- * @param options Tauri invoke 选项
- * @returns 登录流程状态：idle | polling | completing | done | cancelled
- */
-export const getLoginStatus = async (
-  options?: InvokeOptions
-): Promise<LoginStatus> => {
-  logger.info('准备调用 get_login_status');
-  return await invokeRust("get_login_status", {}, options) as LoginStatus;
 };

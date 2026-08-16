@@ -45,9 +45,7 @@ import { GlobalLoadingBar } from './components/common';
 import './helper/i18n';
 import { AppShell, resolveShell } from './layout';
 import { useAuthStore } from './stores/authStore';
-import { useAdminStore } from './stores/adminStore';
 import { useFontStore } from './stores';
-import { invokeRustFunction } from './api/client';
 import { useSafeNavigate } from './router/navigation';
 
 const MainLayout = () => {
@@ -118,8 +116,6 @@ function App() {
     initFont();
     initializeAccountStore();
     initDownload();
-    useAdminStore.getState();
-    invokeRustFunction("initialize_admin_system").catch(() => { });
   }, [initTheme, initApp, initGames, initFont, initializeAccountStore, initDownload]);
 
   useEffect(() => {

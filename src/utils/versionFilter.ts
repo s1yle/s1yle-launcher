@@ -1,4 +1,5 @@
 import { GameVersion } from '../helper/rustInvoke';
+import { APRIL_FOOL_IDS } from './modloaderCompat';
 
 /**
  * 版本分类类型
@@ -10,29 +11,15 @@ import { GameVersion } from '../helper/rustInvoke';
  */
 export type VersionCategory = 'all' | 'release' | 'snapshot' | 'april' | 'old';
 
-const APRIL_FOOL_IDS = new Set([
-  '2.0',
-  '15w14a',
-  '1.RV-Pre1',
-  '3D Shareware v1.34',
-  '20w14infinite',
-  '20w14∞',
-  '22w13a_or_b',
-  '23w13a_or_b',
-  '24w14a_or_b',
-  '24w14potato',
-  '25w14craftmine',
-]);
-
 /**
  * 对游戏版本进行分类
  * @param version - 游戏版本信息
  * @returns 分类结果
  */
 export const categorizeVersion = (version: GameVersion): VersionCategory => {
-  const { id, type_ } = version;
+  const { id, type } = version;
 
-  switch (type_) {
+  switch (type) {
     case 'release':
       return 'release';
 
@@ -133,10 +120,7 @@ export const searchVersions = (
 
   const lowerQuery = query.toLowerCase().trim();
 
-  return versions.filter(v =>
-    v.id.toLowerCase().includes(lowerQuery) ||
-    (v.name && v.name.toLowerCase().includes(lowerQuery))
-  );
+  return versions.filter(v => v.id.toLowerCase().includes(lowerQuery));
 };
 
 /**
@@ -148,7 +132,7 @@ export const debugVersionTypes = (versions: GameVersion[]): void => {
   const categoryCounts = new Map<string, number>();
 
   for (const v of versions) {
-    const rawType = v.type_ || '(empty)';
+    const rawType = v.type || '(empty)';
     typeCounts.set(rawType, (typeCounts.get(rawType) || 0) + 1);
 
     const category = categorizeVersion(v);

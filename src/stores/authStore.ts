@@ -9,16 +9,14 @@ import {
   invokeAddPlayerAccount,
   invokeAccInit,
 } from '@/api/account';
-import { invokeGetConfig } from '@/api/config';
+import { invokeGetLoginState } from '@/api/config';
 import { saveLoginState, clearLoginState, switchWindow } from '@/helper';
-import { useAdminStore } from './adminStore';
 import { useUserRoleStore, UserRole } from './userRoleStore';
 import { create } from 'zustand';
 
 const DEFAULT_LOGIN_STATE: StoreLoginState = {
   is_logged_in: false,
   logged_in_type: 'none',
-  current_acc_uuid: null,
   login_time: '',
 };
 
@@ -41,7 +39,6 @@ interface AuthState {
   deleteAccount: (uuid: string) => Promise<void>;
   refreshLoginState: () => Promise<void>;
   loginAsPlayer: (uuid: string) => Promise<void>;
-  loginAsAdmin: (email: string, password: string, isRegister: boolean) => Promise<boolean>;
   logout: () => Promise<void>;
 }
 
@@ -57,15 +54,15 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     set({ loading: true });
     try {
       await invokeAccInit();
-      const [accounts, current, config] = await Promise.all([
+      const [accounts, current, loginState] = await Promise.all([
         invokeGetAccountList(),
         invokeGetCurrentAccount(),
-        invokeGetConfig(),
+        invokeGetLoginState(),
       ]);
       set({
         accounts,
         currentAccount: current,
-        loginState: config.login_state ?? { ...DEFAULT_LOGIN_STATE },
+        loginState,
         initialized: true,
         loading: false,
       });
@@ -87,8 +84,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   },
   refreshLoginState: async () => {
     try {
-      const config = await invokeGetConfig();
-      set({ loginState: config.login_state ?? { ...DEFAULT_LOGIN_STATE } });
+      const loginState = await invokeGetLoginState();
+      set({ loginState });
     } catch {
       // 静默失败，保持上次状态
     }
@@ -124,7 +121,6 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     await saveLoginState({
       is_logged_in: true,
       logged_in_type: account.account_type,
-      current_acc_uuid: uuid,
       login_time: new Date().toISOString(),
     });
 
@@ -132,30 +128,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     await switchWindow("login", "Main");
   },
 
-  loginAsAdmin: async (email: string, password: string, isRegister: boolean) => {
-    const adminStore = useAdminStore.getState();
-    const ok = isRegister
-      ? await adminStore.register(email, password)
-      : await adminStore.login(email, password);
-
-    if (!ok) return false;
-
-    useUserRoleStore.getState().switchRole(UserRole.ADMIN, false);
-
-    await saveLoginState({
-      is_logged_in: true,
-      logged_in_type: AccountType.Admin,
-      current_acc_uuid: null,
-      login_time: new Date().toISOString(),
-    });
-
-    await get().refreshLoginState();
-    await switchWindow("login", "Main");
-    return true;
-  },
 
   logout: async () => {
-    useAdminStore.getState().logout();
     await clearLoginState();
     await get().refreshLoginState();
     await switchWindow("main", "Login");

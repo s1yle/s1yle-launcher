@@ -37,6 +37,7 @@ pub fn add_player_account(name: String, account_type: String) -> Result<String, 
             return Err("微软账户请通过设备码登录流程添加".to_string());
         }
         "offline" => AccountType::Offline,
+        "third-party" => AccountType::ThirdParty,
         _ => return Err(format!("不支持的账户类型: {}", account_type)),
     };
 

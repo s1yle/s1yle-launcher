@@ -4,8 +4,8 @@ import { LucideIcon } from 'lucide-react';
 import { Portal } from '@/components/common/Portal';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { Z_INDEX } from '@/utils/zIndex';
-import { dropdown, microInteractions, transitions } from '../../utils/animations';
-import { renderIcon } from '../../utils/iconRenderer';
+import { dropdown, transitions } from '../../utils/animations';
+
 import { Page, PageSection } from './Page';
 import { useAnimation } from '@/hooks';
 
@@ -89,8 +89,10 @@ const ContextMenu = ({
                     key={item.id}
                     onClick={() => handleItemClick(item.id, item.disabled)}
                     disabled={item.disabled}
-                    className={`w-full px-3 py-1.5 text-left text-sm flex items-center gap-2 transition-colors ${item.disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                      } ${item.danger
+                    className={`w-full px-3 py-1.5 text-left text-sm 
+                      flex items-center gap-2 transition-colors 
+                      ${item.disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} 
+                      ${item.danger
                         ? 'hover:bg-(--color-error-10)'
                         : 'hover:bg-(--color-primary-10)'
                       }`}
@@ -110,7 +112,7 @@ const ContextMenu = ({
                     }}
                     transition={transitions.fast}
                   >
-                    {item.icon && renderIcon(item.icon)}
+                    {item.icon && (typeof item.icon === 'function' ? <item.icon className="w-4 h-4" /> : item.icon)}
                     <span>{item.label}</span>
                   </motion.button>
                 </PageSection>

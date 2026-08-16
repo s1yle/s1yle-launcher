@@ -9,6 +9,10 @@ import { useNavStore } from "../stores/navStore";
 import { usePageLifecycleStore } from "../stores/pageLifecycleStore";
 import { safeNavigate } from "../router/navigation";
 import { logger } from "../helper/logger";
+import { LoadingSurface } from "./common";
+import { PageLoadingKeyContext } from "../hooks/pageLoadingKey";
+import { RouteDataContext } from "../router/routeData";
+import { useLoadingStore } from "../stores/loadingStore";
 
 /** 退出层硬超时：超过该时长无论动画是否完成都强制移除旧页面（framer-motion + React 19 下退出动画可能不完成） */
 const EXIT_FALLBACK_MS = 800;
@@ -25,13 +29,13 @@ interface RouteLayer {
   isExiting: boolean;
   /** 挂载时捕获的变体（退出期间不随全局方向变化而改变） */
   variant: Variants;
+  /** 路由 loader 是否已完成（无 loader 时恒为 true） */
+  ready: boolean;
+  /** loader 是否已启动（幂等标记，防重复执行） */
+  loaderDone: boolean;
+  /** 路由 loader 的返回数据（经 RouteDataContext 注入页面） */
+  data?: unknown;
 }
-
-const PageFallback = () => (
-  <div className="h-full w-full flex items-center justify-center opacity-50 text-sm">
-    Loading…
-  </div>
-);
 
 const MissingComponentPanel = ({ path }: { path: string }) => (
   <div className="h-full flex items-center justify-center bg-red-950/40 text-red-300 text-sm p-6 text-center">
@@ -116,12 +120,15 @@ const RouterRenderer = ({
         params: parseRouteParams(route.path, currentPathname),
         isExiting: false,
         variant: computeRouteVariant(enabled),
+        ready: !route.loader,
+        loaderDone: !route.loader,
       },
     ];
   });
 
-  /** 移除指定退出层（幂等，供动画完成回调与硬超时共用） */
+  /** 移除指定退出层（幂等，供动画完成回调与硬超时共用），同时清理该层对应的页面加载条目 */
   const removeLayer = useCallback((entryId: number) => {
+    useLoadingStore.getState().unregister(`page:${entryId}`);
     setLayers((prev) => prev.filter((layer) => layer.entryId !== entryId));
   }, []);
 
@@ -177,11 +184,37 @@ const RouterRenderer = ({
           params: parseRouteParams(route.path, currentPathname),
           isExiting: false,
           variant: computeRouteVariant(enabled),
+          ready: !route.loader,
+          loaderDone: !route.loader,
         },
       ];
     });
     setMountedPath(currentPathname);
   }, [currentPathname, route, Component, enabled, setMountedPath]);
+
+  /** 路由 loader 预加载：新层创建后启动 loader，完成后置 ready（以 loaderDone 幂等防重复） */
+  useEffect(() => {
+    for (const layer of layers) {
+      if (layer.loaderDone) continue;
+      setLayers((prev) => prev.map((l) =>
+        l.entryId === layer.entryId ? { ...l, loaderDone: true } : l
+      ));
+      const layerRoute = findRouteByPath(layer.path, routes);
+      const loader = layerRoute?.loader;
+      if (!loader) continue;
+      loader(layer.params)
+        .then((data) => {
+          setLayers((prev) => prev.map((l) =>
+            l.entryId === layer.entryId ? { ...l, ready: true, data } : l
+          ));
+        })
+        .catch(() => {
+          setLayers((prev) => prev.map((l) =>
+            l.entryId === layer.entryId ? { ...l, ready: true, data: undefined } : l
+          ));
+        });
+    }
+  }, [layers]);
 
   if (!route || !Component) {
     console.error(`[RouterRenderer] 路由 "${currentPathname}" 未挂载 component，且无子路由可跳转`);
@@ -223,12 +256,14 @@ const RouterRenderer = ({
             style={{ transform: `translateX(${fromX})` }}
           >
             {sidebar && <div style={sidebarStyle}>{sidebar}</div>}
-            <div className="flex-1 overflow-y-auto">
-              <RouteParamsContext.Provider value={fromParams}>
-                <Suspense fallback={<PageFallback />}>
-                  <FromComponent />
-                </Suspense>
-              </RouteParamsContext.Provider>
+            <div className="flex-1 overflow-y-auto relative">
+              <PageLoadingKeyContext.Provider value="page:preview:from">
+                <RouteParamsContext.Provider value={fromParams}>
+                  <Suspense fallback={<LoadingSurface />}>
+                    <FromComponent />
+                  </Suspense>
+                </RouteParamsContext.Provider>
+              </PageLoadingKeyContext.Provider>
             </div>
           </div>
         )}
@@ -238,12 +273,14 @@ const RouterRenderer = ({
             style={{ transform: `translateX(${toX})` }}
           >
             {sidebar && <div style={sidebarStyle}>{sidebar}</div>}
-            <div className="flex-1 overflow-y-auto">
-              <RouteParamsContext.Provider value={toParams}>
-                <Suspense fallback={<PageFallback />}>
-                  <ToComponent />
-                </Suspense>
-              </RouteParamsContext.Provider>
+            <div className="flex-1 overflow-y-auto relative">
+              <PageLoadingKeyContext.Provider value="page:preview:to">
+                <RouteParamsContext.Provider value={toParams}>
+                  <Suspense fallback={<LoadingSurface />}>
+                    <ToComponent />
+                  </Suspense>
+                </RouteParamsContext.Provider>
+              </PageLoadingKeyContext.Provider>
             </div>
           </div>
         )}
@@ -267,11 +304,15 @@ const RouterRenderer = ({
           {layer.isExiting && <ExitRemover entryId={layer.entryId} onRemove={removeLayer} />}
           <div style={sidebarStyle}>{sidebar}</div>
           <div className="flex-1 overflow-y-auto overflow-x-hidden relative">
-            <RouteParamsContext.Provider value={layer.params}>
-              <Suspense fallback={<PageFallback />}>
-                <layer.component />
-              </Suspense>
-            </RouteParamsContext.Provider>
+            <PageLoadingKeyContext.Provider value={`page:${layer.entryId}`}>
+              <RouteParamsContext.Provider value={layer.params}>
+                <RouteDataContext.Provider value={layer.data}>
+                  <Suspense fallback={<LoadingSurface />}>
+                    {layer.ready ? <layer.component /> : <LoadingSurface />}
+                  </Suspense>
+                </RouteDataContext.Provider>
+              </RouteParamsContext.Provider>
+            </PageLoadingKeyContext.Provider>
           </div>
         </motion.div>
       ))}

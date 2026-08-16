@@ -78,7 +78,7 @@ const GameListItem = ({
       setIconSrc(`asset://localhost/${game.icon_path}`);
       return;
     }
-    const wecraftDir = useAppStore.getState().systemInfo?.wecraftDir;
+    const wecraftDir = useAppStore.getState().systemInfo?.wecraft_dir;
     if (wecraftDir) {
       const loaderIconPath = `${wecraftDir}/assets/icons/${getLoaderIconPath(game.loader_type)}`;
       setIconSrc(`asset://localhost/${loaderIconPath}`);

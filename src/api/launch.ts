@@ -43,33 +43,6 @@ export const invokeStopGame = async (
 };
 
 /**
- * 获取聚合启动状态（任一游戏会话运行中即 Running）
- * @param options Tauri invoke 选项
- * @returns 当前启动状态
- */
-export const invokeGetLaunchStatus = async (
-  options?: InvokeOptions
-): Promise<LaunchStatus> => {
-  try {
-    const result = await invokeRust("front_get_launch_status", {}, options);
-    switch (result) {
-      case "Idle":
-      case "Launching":
-      case "Running":
-      case "Crashed":
-      case "Stopped":
-        return result as LaunchStatus;
-      default:
-        logger.warn(`未知的启动状态: ${result}，返回Idle`);
-        return LaunchStatus.Idle;
-    }
-  } catch (e) {
-    logger.error('获取启动状态失败:', e);
-    return LaunchStatus.Idle;
-  }
-};
-
-/**
  * 获取指定游戏会话的启动状态与真实进度
  * @param gameId 游戏会话唯一 ID
  * @param options Tauri invoke 选项
@@ -108,38 +81,6 @@ export const invokeGetLaunchGames = async (
   logger.info('获取全部启动游戏会话');
   const result = await invokeRust("front_get_launch_games", {}, options);
   return Array.isArray(result) ? result as LaunchGameInfo[] : [];
-};
-
-/**
- * 获取当前启动配置
- * @param options Tauri invoke 选项
- * @returns 启动配置
- */
-export const invokeGetLaunchConfig = async (
-  options?: InvokeOptions
-): Promise<LaunchConfig> => {
-  const result = await invokeRust("front_get_launch_config", {}, options);
-  if (typeof result !== 'object' || result === null) {
-    throw new Error("无效的启动配置格式");
-  }
-  return result as LaunchConfig;
-};
-
-/**
- * 更新启动配置
- * @param config 新的启动配置
- * @param options Tauri invoke 选项
- * @returns 操作结果字符串
- */
-export const invokeUpdateLaunchConfig = async (
-  config: LaunchConfig,
-  options?: InvokeOptions
-): Promise<string> => {
-  if (!config.java_path || !config.version || !config.username) {
-    throw new Error("Java路径、版本和用户名不能为空");
-  }
-  logger.info('更新启动配置', { config });
-  return await invokeRust("front_update_launch_config", { config }, options);
 };
 
 /**

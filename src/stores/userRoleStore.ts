@@ -5,8 +5,6 @@ import { persist } from 'zustand/middleware';
 export enum UserRole {
   /** 玩家角色 */
   PLAYER = 'player',
-  /** 管理员/服主角色 */
-  ADMIN = 'admin',
   /** 创作者角色 */
   CREATOR = 'creator'
 }
@@ -24,8 +22,6 @@ interface UserRoleState {
 
   /** 切换到指定角色（支持带导航的过渡动画） */
   switchRole: (role: UserRole, shouldNavigate?: boolean) => void;
-  /** 在 PLAYER 和 ADMIN 之间快速切换 */
-  toggleRole: () => void;
   /** 设置过渡状态 */
   setTransitioning: (value: boolean) => void;
 }
@@ -33,14 +29,13 @@ interface UserRoleState {
 // 角色专属页面路径前缀
 const ROLE_SPECIFIC_PATHS: Record<UserRole, string[]> = {
   [UserRole.PLAYER]: [],
-  [UserRole.ADMIN]: ['/admin'],
   [UserRole.CREATOR]: []
 };
 
 /**
  * 用户角色 Store
  *
- * 支持 player / admin / creator 三种角色切换。
+ * 支持 player / creator 两种角色切换。
  * 切换时带有过渡动画，支持角色专属页面自动导航。
  * 持久化存储到 localStorage。
  */
@@ -81,12 +76,6 @@ export const useUserRoleStore = create<UserRoleState>()(
 
           set({ currentRole: role, isTransitioning: false });
         }
-      },
-
-      toggleRole: () => {
-        const { currentRole } = get();
-        const newRole = currentRole === UserRole.PLAYER ? UserRole.ADMIN : UserRole.PLAYER;
-        get().switchRole(newRole);
       },
 
       setTransitioning: (value) => set({ isTransitioning: value }),

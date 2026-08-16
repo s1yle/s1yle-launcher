@@ -29,7 +29,7 @@ impl ConfigManager {
             .map(|guard| guard.clone())
     }
 
-    /// 保存配置到磁盘（合并写入，不影响 accounts/admin_accounts 节）
+    /// 保存配置到磁盘（合并写入，不影响 accounts 节）
     pub fn save(&self) -> Result<(), String> {
         let config = self.get_config()?;
         self.write_section("app", &config)?;

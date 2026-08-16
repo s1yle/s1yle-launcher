@@ -127,6 +127,8 @@ export interface RouteConfig {
   path: string;
   /** 直接挂载的页面组件（父级路由可省略，自动跳转首个子路由） */
   component?: ComponentType;
+  /** 路由级数据预加载器：页面组件挂载前执行，结果经 RouteDataContext 注入（useRouteData 读取） */
+  loader?: (params: Record<string, string>) => Promise<unknown>;
   header: HeaderConfig;
   position?: RoutePosition;
   layoutMode?: LayoutMode;

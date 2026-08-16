@@ -1,11 +1,5 @@
 import { create } from 'zustand';
 
-/** 加载变体类型：旋转器 / 进度条 / 骨架屏 / 顶部条 */
-export type LoadingVariant = 'spinner' | 'progress' | 'skeleton' | 'topbar';
-/** 旋转器样式：环 / 点 / 脉冲 / 条 */
-export type SpinnerStyle = 'ring' | 'dots' | 'pulse' | 'bars';
-/** 骨架屏样式：闪烁 / 脉冲 / 静态 */
-export type SkeletonStyle = 'shimmer' | 'pulse' | 'static';
 /** 加载状态：空闲 / 加载中 / 成功 / 出错 */
 export type LoadingStatus = 'idle' | 'loading' | 'success' | 'error';
 
@@ -25,10 +19,6 @@ export interface LoadingEntry {
   finishedAt?: number;
   /** 错误信息 */
   error?: string;
-  /** 加载变体类型 */
-  variant: LoadingVariant;
-  /** 骨架屏布局模板 */
-  skeleton?: 'list' | 'card' | 'profile' | 'form' | 'text';
   /** 是否阻塞用户交互 */
   blocking: boolean;
 }
@@ -37,18 +27,10 @@ export interface LoadingEntry {
  * 全局加载配置
  */
 export interface LoadingConfig {
-  /** 默认加载变体 */
-  variant: LoadingVariant;
-  /** 默认旋转器样式 */
-  spinnerStyle: SpinnerStyle;
-  /** 默认骨架屏样式 */
-  skeletonStyle: SkeletonStyle;
   /** 是否启用全局顶部进度条 */
   globalTopbar: boolean;
   /** 最小显示时长（毫秒），避免闪烁 */
   minDurationMs: number;
-  /** 超时时间（秒） */
-  timeoutSec: number;
 }
 
 /**
@@ -74,18 +56,14 @@ export interface LoadingState {
 }
 
 const defaultConfig: LoadingConfig = {
-  variant: 'spinner',
-  spinnerStyle: 'ring',
-  skeletonStyle: 'shimmer',
   globalTopbar: true,
-  minDurationMs: 300,
-  timeoutSec: 30,
+  minDurationMs: 0,
 };
 
 /**
  * 全局加载状态 Store
  *
- * 提供多条目加载追踪系统，支持 spinner / progress / skeleton / topbar 四种变体。
+ * 提供多条目加载追踪系统。
  * 加载条目通过唯一 key 注册/更新/完成/销毁。
  */
 export const useLoadingStore = create<LoadingState>()(
@@ -99,9 +77,7 @@ export const useLoadingStore = create<LoadingState>()(
           ...state.entries,
           [key]: {
             status: 'loading',
-            variant: opts?.variant ?? state.entries[key]?.variant ?? 'spinner',
             blocking: opts?.blocking ?? state.entries[key]?.blocking ?? false,
-            skeleton: opts?.skeleton,
             message: opts?.message ?? state.entries[key]?.message,
             progress: opts?.progress,
             startedAt: Date.now(),

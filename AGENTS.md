@@ -17,7 +17,7 @@
 
 Minecraft 启动器，Tauri 2 + React 19。
 
-**核心特性**: 版本管理 · 多账户 · 模组加载器 · SHA1 校验 · i18n · 主题系统 · 实例管理 · 灵动岛导航 · 双角色系统 · 服主后台
+**核心特性**: 版本管理 · 多账户 · 模组加载器 · SHA1 校验 · i18n · 主题系统 · 实例管理 · 灵动岛导航 · 双角色系统
 
 **代码代替文档**: API 层和路由表已支持自动生成，运行 `pnpm docs:gen` 更新：
 - 自动生成 API 文档 → `docs/api/auto/`
@@ -47,16 +47,14 @@ Minecraft 启动器，Tauri 2 + React 19。
 src/
 ├── api/              # 统一 API 层 → pnpm docs:gen:api
 │   ├── client.ts     # IPC 中间件链（日志 + 错误转换）
-│   ├── auth.ts       # JWT 令牌管理
 │   └── *.ts          # 按功能模块拆分
 ├── components/
 │   └── common/       # 通用组件（见 docs/api/auto）
 ├── pages/            # 页面组件
 │   ├── Home.tsx, Login/, Settings/
-│   ├── AccountList/, Instance/, Download/
-│   └── admin/        # 服主后台
+│   └── AccountList/, Instance/, Download/
 ├── stores/           # Zustand 状态（19 个 store）
-├── config/           # 统一配置管理器
+├── config/           # 配置类型（types.ts + windowStrategy.ts）
 ├── router/           # 路由系统（routes.tsx 为唯一事实源）→ pnpm docs:gen:routes
 │   ├── routes.tsx    # 路由定义（含 menu/nav 元数据，侧边栏与灵动岛由此派生）
 │   ├── config.tsx    # 路由工具
@@ -66,12 +64,11 @@ src/
 ├── utils/            # 工具函数
 ├── locales/          # i18n（en-US, zh-CN）
 ├── layout/           # 布局壳体（shell 推导 + AppShell/AppHeader/AppSidebar/AppMain）
-└── server/           # 服务端 SDK（OpenAPI 生成）
 
 src-tauri/src/
 ├── lib.rs            # ~60+ 命令注册
 ├── account.rs, launch.rs, window.rs, modloader.rs
-├── admin_account.rs, background.rs, logging.rs
+├── background.rs, logging.rs
 ├── font.rs, java.rs, render.rs
 ├── paths.rs, types.rs, system.rs
 ├── config/           # 配置模块
@@ -83,7 +80,7 @@ src-tauri/src/
 
 ## 4. 路由
 
-自动生成 → [`docs/generated/routes.md`](docs/generated/routes.md)（共 21 条路由）
+自动生成 → [`docs/generated/routes.md`](docs/generated/routes.md)（共 18 条路由）
 
 | 分组 | 路径 |
 |------|------|
@@ -93,7 +90,6 @@ src-tauri/src/
 | 实例列表 | `/instance-list` /instance-list/game-folder:default |
 | 下载 | `/download` /game /modpack /game/:versionId |
 | 设置 | `/settings` /game /appearance |
-| 服主后台 | `/admin/servers` /analytics /upload |
 | 其它 | `/hint` |
 
 ---
@@ -104,17 +100,15 @@ src-tauri/src/
 
 | Store | 文件 | 用途 |
 |-------|------|------|
-| `userRoleStore` | `src/stores/userRoleStore.ts` | 用户角色（player/admin/creator） |
+| `userRoleStore` | `src/stores/userRoleStore.ts` | 用户角色（player/creator） |
 | `uiModeStore` | `src/stores/uiModeStore.ts` | UI 模式（灵动岛/经典） |
 | `themeStore` | `src/stores/themeStore.ts` | 主题（预设/强调色） |
 | `navStore` | `src/stores/navStore.ts` | 导航状态（路径、历史） |
 | `layoutStore` | `src/stores/layoutStore.ts` | 布局（侧边栏宽度/折叠） |
 | `appStore` | `src/stores/appStore.ts` | 全局状态（系统信息） |
-| `configStore` | `src/stores/configStore.ts` | 配置状态 |
 | `instanceStore` | `src/stores/instanceStore.ts` | 实例 CRUD |
 | `downloadStore` | `src/stores/downloadStore.ts` | 下载管理 |
 | `accountStore` | `src/stores/accountStore.ts` | 账户管理 |
-| `adminStore` | `src/stores/adminStore.ts` | 管理员会话 |
 | `refRegistryStore` | `src/stores/refRegistryStore.ts` | DOM 元素注册表 |
 | `avatarStore` | `src/stores/avatarStore.ts` | 头像渲染模式 |
 | `backgroundStore` | `src/stores/backgroundStore.ts` | 背景配置 |
@@ -129,12 +123,11 @@ src-tauri/src/
 
 三层存储: localStorage(L1) → 配置文件(L2) → 加密存储(L3)
 
-**统一入口**: `src/config/index.ts`
+**统一入口**: `src/api/config.ts`（经 IPC 调用 Rust `get_config` / `set_config_value` 命令）
 
 ```typescript
-import { config } from '@/config';
-await config.getConfig('theme.mode');
-await config.setConfigValue('theme.accentColor', 'blue');
+import { invokeGetConfig, invokeSetConfigValue } from '@/api/config';
+await invokeSetConfigValue('theme.accentColor', 'blue');
 ```
 
 ---
@@ -160,7 +153,6 @@ import { getConfig, updateConfig, launchInstance } from '@/helper/rustInvoke';
 | **下载** | `get_version_manifest`, `download`, `get_version_detail`, `cancel_download` | `getVersionManifest()`, `download()` 等 |
 | **模组加载器** | `get_fabric_versions`, `get_forge_versions`, `get_installed_mod_loaders` 等 | `getFabricVersions()`, `getInstalledModLoaders()` 等 |
 | **账户** | `add_player_account`, `get_account_list`, `delete_account` 等 | `invokeAddPlayerAccount()`, `getAccountList()` 等 |
-| **管理员** | `register_admin`, `login_admin`, `bind_player_to_admin` 等 | `apiRegisterAdmin()`, `apiLoginAdmin()` 等 |
 | **启动** | `tauri_launch_instance`, `tauri_stop_instance`, `tauri_get_launch_status` | `launchInstance()`, `stopInstance()` 等 |
 | **窗口** | `save_window_position`, `load_window_position`, `close_window` | `saveWindowPosition()` 等 |
 | **系统** | `open_folder`, `open_url`, `get_system_info`, `log_frontend` | `openFolder()`, `openUrl()` 等 |
@@ -205,9 +197,8 @@ import { getConfig, updateConfig, launchInstance } from '@/helper/rustInvoke';
 悬浮式胶囊导航（顶部居中），毛玻璃背景，支持窗口拖曳 + 角色切换 180° 旋转动画。
 
 ### 双角色系统
-- 类型: `player` | `admin` | `creator`
+- 类型: `player` | `creator`
 - 切换: ≤2 角色直接点击，>2 角色下拉菜单
-- 从 admin 页面切回时自动跳转到主页
 
 ### 布局模式
 布局由 `src/layout/shell.ts` 的 `resolveShell(uiMode, route)` 统一推导（`src/layout/AppShell.tsx` 编排）:

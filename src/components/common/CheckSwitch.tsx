@@ -1,10 +1,10 @@
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { cn } from '@/utils/cn';
+
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { EASING } from '@/utils/animations';
 
-const cn = (...inputs: (string | boolean | undefined | null)[]) => twMerge(clsx(inputs));
+
 
 /** 带勾选标记的开关按钮组件 Props */
 export interface CheckSwitchProps {

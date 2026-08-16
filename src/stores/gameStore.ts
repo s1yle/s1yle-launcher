@@ -11,6 +11,7 @@ import {
 } from '../helper/rustInvoke';
 import type { Game, GameSettings, GameValidation } from '../helper/rustInvoke';
 import { ModLoaderType } from '../helper/rustInvoke';
+import { getErrorMessage } from '@/utils/errorUtils';
 
 const STORAGE_KEY_GAME = 's1yle-selected-game';
 const STORAGE_KEY_FAVORITES = 's1yle-favorite-games';
@@ -162,7 +163,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       console.log('[gameStore.init] 初始化完成');
     } catch (e) {
       console.error('[gameStore.init] 初始化失败:', e);
-      set({ error: e instanceof Error ? e.message : 'Failed to load games' });
+      set({ error: getErrorMessage(e) });
     } finally {
       set({ loading: false });
     }
@@ -299,7 +300,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       set({ selectedGameId: game.id });
       saveGameId(game.id);
     } catch (e) {
-      set({ error: e instanceof Error ? e.message : 'Failed to create game' });
+      set({ error: getErrorMessage(e) });
       throw e;
     }
   },
@@ -327,7 +328,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         }
       }
     } catch (e) {
-      set({ error: e instanceof Error ? e.message : 'Failed to delete game' });
+      set({ error: getErrorMessage(e) });
       throw e;
     }
   },
@@ -352,7 +353,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       set({ selectedGameId: game.id });
       saveGameId(game.id);
     } catch (e) {
-      set({ error: e instanceof Error ? e.message : 'Failed to duplicate game' });
+      set({ error: getErrorMessage(e) });
       throw e;
     }
   },
@@ -364,7 +365,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       await renameGame(game?.name ?? id, newName);
       await get().refresh();
     } catch (e) {
-      set({ error: e instanceof Error ? e.message : 'Failed to rename game' });
+      set({ error: getErrorMessage(e) });
       throw e;
     }
   },

@@ -12,6 +12,7 @@ import { useClickOutside } from '@/hooks/useClickOutside';
 import { confirm } from '@tauri-apps/plugin-dialog';
 import { Z_INDEX } from '@/utils/zIndex';
 import { DURATION, EASING, dropdown, microInteractions } from '@/utils/animations';
+import { getErrorMessage } from '@/utils/errorUtils';
 
 interface GameManageButtonProps {
   item: SidebarMenuItem;
@@ -105,7 +106,7 @@ const GameManageButton: React.FC<GameManageButtonProps> = ({
       } catch (e) {
         notifyError(
           t('games.openFolderFailed', '打开目录失败'),
-          e instanceof Error ? e.message : String(e),
+          getErrorMessage(e),
         );
       }
       return;
@@ -124,7 +125,7 @@ const GameManageButton: React.FC<GameManageButtonProps> = ({
       } catch (e) {
         notifyError(
           t('games.deleteFailed', '删除失败'),
-          e instanceof Error ? e.message : String(e),
+          getErrorMessage(e),
         );
       }
     }

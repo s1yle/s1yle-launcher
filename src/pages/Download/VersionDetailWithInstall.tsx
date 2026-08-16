@@ -4,6 +4,7 @@ import { useRouteParams } from '@/router/routeParams';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Page, PageSection } from '@/components/common';
+import { getErrorMessage } from '@/utils/errorUtils';
 import {
   Box,
   Check,
@@ -113,7 +114,7 @@ const VersionDetailWithInstall: React.FC = () => {
         setLoaderState(prev => ({ ...prev, [expanded]: { loading: false, error: null, versions } }));
       })
       .catch(e => {
-        setLoaderState(prev => ({ ...prev, [expanded]: { loading: false, error: e instanceof Error ? e.message : String(e), versions: [] } }));
+        setLoaderState(prev => ({ ...prev, [expanded]: { loading: false, error: getErrorMessage(e), versions: [] } }));
       });
   }, [expanded, versionId]);
 
@@ -158,7 +159,7 @@ const VersionDetailWithInstall: React.FC = () => {
       });
       await refreshAll();
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = getErrorMessage(e);
       errorDownloadProgress(versionId, msg);
       setStarting(false);
       notifyError(t('download.install.downloadFailed'), msg);
@@ -257,7 +258,6 @@ const VersionDetailWithInstall: React.FC = () => {
                               {state.loading ? (
                                 <div className="flex items-center gap-2 py-3 text-sm text-[var(--color-text-tertiary)]">
                                   <Loader2 className="w-4 h-4 animate-spin" />
-                                  {t('common.loading')}
                                 </div>
                               ) : state.error ? (
                                 <div className="flex items-center gap-2 py-3 text-sm text-[var(--color-error)]">

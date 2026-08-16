@@ -175,6 +175,7 @@
     "allow-update-game-settings",
     "allow-validate-game",
     "allow-get-global-game-settings",
-    "allow-update-global-game-settings"
+    "allow-update-global-game-settings",
+    "allow-get-login-state"
   ]
 }

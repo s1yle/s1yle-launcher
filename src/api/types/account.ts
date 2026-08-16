@@ -7,9 +7,7 @@ export enum AccountType {
   /** 离线（盗版）账户 */
   Offline = "offline",
   /** 第三方账户 */
-  ThirdParty = "thrid-party",
-  /** 服主账户 */
-  Admin = "admin",
+  ThirdParty = "third-party",
 }
 
 /** 账户基本信息 */

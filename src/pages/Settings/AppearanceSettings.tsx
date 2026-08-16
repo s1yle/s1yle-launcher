@@ -1,38 +1,19 @@
 import { UIMode, useUIModeStore } from '../../stores/uiModeStore';
 import TerminalThemePreview from '../../components/common/TerminalThemePreview';
-import { Toggle, LoadingSurface, Reveal, Page, PageSection } from '../../components/common';
+import { Toggle, Reveal, Page, PageSection } from '../../components/common';
 import { SettingsPanel } from '@/components/common/SettingsPanel/SettingPanel';
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import DropDown from '@/components/common/DropDown';
 import { fontScaleConfig } from '@/stores/fontStore';
 import { useBackgroundStore } from '@/stores/backgroundStore';
-import { invoke, convertFileSrc } from '@tauri-apps/api/core';
+import { convertFileSrc } from '@tauri-apps/api/core';
 import type { BackgroundType } from '@/config/types';
 import { Slider } from '@/components/common/Slider';
 import { useLoadingStore } from '@/stores/loadingStore';
 import useFontStore from '@/stores/fontStore';
 import { SystemFont } from '@/api';
+import { selectBackgroundImage } from '@/helper/rustInvoke';
 import { useAvatarStore } from '@/stores/avatarStore';
-
-const LOADING_VARIANT_OPTIONS = [
-  { id: 'spinner', label: '旋转动画' },
-  { id: 'progress', label: '进度条' },
-  { id: 'skeleton', label: '骨架屏' },
-  { id: 'topbar', label: '顶部进度条' },
-];
-
-const SPINNER_STYLE_OPTIONS = [
-  { id: 'ring', label: '圆环' },
-  { id: 'dots', label: '三点' },
-  { id: 'pulse', label: '脉冲' },
-  { id: 'bars', label: '柱状' },
-];
-
-const SKELETON_STYLE_OPTIONS = [
-  { id: 'shimmer', label: '流光' },
-  { id: 'pulse', label: '脉冲' },
-  { id: 'static', label: '静态' },
-];
 
 const BACKGROUND_TYPE_OPTIONS = [
   { id: 'none', label: '无' },
@@ -57,8 +38,9 @@ const GRADIENT_PRESETS = [
 ];
 
 /** 外观设置页面 - 布局模式、字体、加载动画、主题、背景 */
-const ApearanceSettings = () => {
+const AppearanceSettings = () => {
   const { mode: uiMode, setMode: setUIMode, animation, setAnimation } = useUIModeStore();
+  const loadingConfig = useLoadingStore((s) => s.config);
   const [isCompat, setIsCompat] = useState(true)
 
   // 字体store
@@ -84,26 +66,7 @@ const ApearanceSettings = () => {
     setFontScale(value);
   }
 
-  const handleLoadingVariantSelect = (option: { id: string; label: string }) => {
-    const val = option.id as 'spinner' | 'progress' | 'skeleton' | 'topbar';
-    setAnimation({ loadingVariant: val });
-    useLoadingStore.getState().setConfig({ variant: val });
-  }
-
-  const handleSpinnerStyleSelect = (option: { id: string; label: string }) => {
-    const val = option.id as 'ring' | 'dots' | 'pulse' | 'bars';
-    setAnimation({ spinnerStyle: val });
-    useLoadingStore.getState().setConfig({ spinnerStyle: val });
-  }
-
-  const handleSkeletonStyleSelect = (option: { id: string; label: string }) => {
-    const val = option.id as 'shimmer' | 'pulse' | 'static';
-    setAnimation({ skeletonStyle: val });
-    useLoadingStore.getState().setConfig({ skeletonStyle: val });
-  }
-
   const handleGlobalTopbarChange = (val: boolean) => {
-    setAnimation({ globalTopbar: val });
     useLoadingStore.getState().setConfig({ globalTopbar: val });
   }
 
@@ -127,27 +90,6 @@ const ApearanceSettings = () => {
     setFont(font);
   }
 
-  const [demoActive, setDemoActive] = useState<string | null>(null);
-  const demoRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const triggerDemo = useCallback((variant: string) => {
-    if (demoRef.current) clearTimeout(demoRef.current);
-    const store = useLoadingStore.getState();
-    store.unregister('demo:loading');
-    store.register('demo:loading', { variant: variant as any, message: '' });
-    setDemoActive(variant);
-    demoRef.current = setTimeout(() => {
-      store.done('demo:loading');
-      setDemoActive(null);
-    }, 2000);
-  }, []);
-
-  const stopDemo = useCallback(() => {
-    if (demoRef.current) clearTimeout(demoRef.current);
-    useLoadingStore.getState().done('demo:loading');
-    setDemoActive(null);
-  }, []);
-
   const handleTypeSelect = (option: { id: string; label: string }) => {
     setBackground({ type: option.id as BackgroundType });
   }
@@ -162,7 +104,7 @@ const ApearanceSettings = () => {
 
   const handleSelectImage = async () => {
     try {
-      const selected = await invoke<string | null>('select_background_image');
+      const selected = await selectBackgroundImage();
       if (selected) {
         const assetUrl = convertFileSrc(selected);
         setBackground({ imagePath: assetUrl });
@@ -242,80 +184,11 @@ const ApearanceSettings = () => {
 
       <PageSection>
         <SettingsPanel label="加载动画">
-          <SettingsPanel.Item>
-            <SettingsPanel.DropDown
-              label="动画类型"
-              options={LOADING_VARIANT_OPTIONS}
-              value={LOADING_VARIANT_OPTIONS.find((o) => o.id === animation.loadingVariant)}
-              onSelect={handleLoadingVariantSelect}
-            />
-          </SettingsPanel.Item>
-
-          {animation.loadingVariant === 'spinner' && (
-            <SettingsPanel.Item>
-              <SettingsPanel.DropDown
-                label="Spinner 风格"
-                options={SPINNER_STYLE_OPTIONS}
-                value={SPINNER_STYLE_OPTIONS.find((o) => o.id === animation.spinnerStyle)}
-                onSelect={handleSpinnerStyleSelect}
-              />
-            </SettingsPanel.Item>
-          )}
-
-          {animation.loadingVariant === 'skeleton' && (
-            <SettingsPanel.Item>
-              <SettingsPanel.DropDown
-                label="骨架屏风格"
-                options={SKELETON_STYLE_OPTIONS}
-                value={SKELETON_STYLE_OPTIONS.find((o) => o.id === animation.skeletonStyle)}
-                onSelect={handleSkeletonStyleSelect}
-              />
-            </SettingsPanel.Item>
-          )}
-
           <Toggle
-            checked={animation.globalTopbar}
+            checked={loadingConfig.globalTopbar}
             onChange={handleGlobalTopbarChange}
             label="全局顶部进度条"
           />
-
-          <SettingsPanel.Item noPadding>
-            <div className="border-t border-[var(--color-border)] px-3 py-3">
-              <span className="text-sm font-medium text-[var(--color-text-primary)] block mb-2">
-                加载动画演示
-              </span>
-              <div className="flex gap-2 mb-2">
-                {LOADING_VARIANT_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.id}
-                    onClick={() => triggerDemo(opt.id)}
-                    className="px-3 py-1 text-xs rounded-md border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] transition-colors"
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-                <button
-                  onClick={stopDemo}
-                  className="px-3 py-1 text-xs rounded-md border border-red-500/50 text-red-400 hover:bg-red-500/10 transition-colors"
-                >
-                  停止
-                </button>
-              </div>
-              <div className="rounded-md border border-[var(--color-border)] min-h-[80px] overflow-hidden bg-[var(--color-bg-secondary)]">
-                {demoActive ? (
-                  <LoadingSurface loadingKey="demo:loading" skeleton="list" skeletonCount={3}>
-                    <div className="p-6 text-center text-sm text-[var(--color-text-tertiary)]">
-                      真实内容区域
-                    </div>
-                  </LoadingSurface>
-                ) : (
-                  <div className="flex items-center justify-center h-20 text-xs text-[var(--color-text-disabled)]">
-                    点击上方按钮触发加载演示
-                  </div>
-                )}
-              </div>
-            </div>
-          </SettingsPanel.Item>
         </SettingsPanel>
       </PageSection>
 
@@ -498,4 +371,4 @@ const ApearanceSettings = () => {
   );
 };
 
-export default ApearanceSettings;
+export default AppearanceSettings;
