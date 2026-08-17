@@ -3,6 +3,11 @@ export { default as ProgressBar } from './Loading/ProgressBar';
 /** 进度条 Props / 状态类型 */
 export type { ProgressBarProps, ProgressStatus } from './Loading/ProgressBar';
 
+/** 品牌 Logo 组件 */
+export { default as BrandLogo } from './BrandLogo';
+/** 品牌 Logo Props */
+export type { BrandLogoProps } from './BrandLogo';
+
 /** 版本徽标组件 */
 export { default as VersionBadge } from './Badge/VersionBadge';
 /** 版本徽标 Props */

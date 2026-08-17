@@ -313,6 +313,15 @@ pub fn run() {
 
             APP_HANDLE.set(app.handle().clone()).ok();
 
+            // asset 协议 scope 是静态配置，无法表达可变的 launchdir；
+            // 启动时把真实的 .wecraft 数据目录动态加入（{work_dir}/.wecraft/**）
+            if let Err(e) = app
+                .asset_protocol_scope()
+                .allow_directory(app.state::<AppContext>().wecraft_data_dir(), true)
+            {
+                log_error!("asset scope 注册失败: {}", e);
+            }
+
             let duration = start.elapsed();
             log_info!("APP_HANDLE.set 耗时: {:?}", duration);
 

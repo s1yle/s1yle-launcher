@@ -6,7 +6,7 @@ use crate::{
 use tauri::{
     Manager, State, WebviewWindowBuilder,
     utils::config::WindowEffectsConfig,
-    webview::PageLoadPayload,
+    webview::{Color, PageLoadPayload},
     window::EffectState,
 };
 
@@ -46,13 +46,6 @@ pub fn apply_window_config<'a>(
     builder: WebviewWindowBuilder<'a, tauri::Wry, tauri::AppHandle>,
     window_type: WindowType,
 ) -> Result<WebviewWindowBuilder<'a, tauri::Wry, tauri::AppHandle>, String> {
-    let effect = WindowEffectsConfig {
-        effects: vec![],
-        state: Some(EffectState::Active),
-        color: None,
-        radius: Some(50.0),
-    };
-
     let cm = APP_HANDLE
         .get()
         .ok_or("APP_HANDLE 获取失败")?
@@ -61,14 +54,20 @@ pub fn apply_window_config<'a>(
     let mut builder = builder
         .title(window_type.title())
         .visible(false)
-        .effects(effect)
-        .resizable(true)
         .transparent(true)
         .decorations(false);
 
     builder = match window_type {
         WindowType::Main => {
+            let effect = WindowEffectsConfig {
+                effects: vec![],
+                state: Some(EffectState::Active),
+                color: None,
+                radius: Some(12.0),
+            };
             builder = builder
+                .effects(effect)
+                .resizable(true)
                 .inner_size(1200.0, 800.0)
                 .min_inner_size(800.0, 600.0);
 
@@ -83,7 +82,15 @@ pub fn apply_window_config<'a>(
             builder
         }
         WindowType::Login => {
+            let effect = WindowEffectsConfig {
+                effects: vec![],
+                state: Some(EffectState::Active),
+                color: None,
+                radius: Some(12.0),
+            };
             builder = builder
+                .effects(effect)
+                .resizable(false)
                 .inner_size(480.0, 640.0)
                 .min_inner_size(480.0, 640.0)
                 .max_inner_size(480.0, 640.0);
@@ -99,11 +106,23 @@ pub fn apply_window_config<'a>(
             builder
         }
         WindowType::Loading => {
+            let effect = WindowEffectsConfig {
+                effects: vec![],
+                state: Some(EffectState::Inactive),
+                color: None,
+                radius: None,
+            };
             builder = builder
-                .inner_size(400.0, 320.0)
-                .min_inner_size(400.0, 320.0)
+                .effects(effect)
+                .background_color(Color(0, 0, 0, 0))
+                .drag_and_drop(false)
+                .resizable(false)
+                .inner_size(250.0, 250.0)
+                .min_inner_size(250.0, 250.0)
+                .max_inner_size(250.0, 250.0)
                 .fullscreen(false)
                 .maximizable(false)
+                .shadow(false)
                 .center();
 
             if let Ok(main_pos) = load_window_position_by_label("loading".to_string(), cm) {
@@ -135,7 +154,10 @@ where
     let builder = WebviewWindowBuilder::new(app, label, url);
 
     let window = apply_window_config(builder, window_type)?
-        .on_page_load(on_page_loaded)
+        .on_page_load(move |window, payload| {
+            // 1. 先执行外部传入的回调
+            on_page_loaded(window.clone(), payload);
+        })
         .build()
         .map_err(|e| format!("创建窗口失败 ({}): {}", label, e))?;
 

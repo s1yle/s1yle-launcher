@@ -6,65 +6,14 @@ use super::manager::GameManager;
 use super::models::Game;
 use crate::app_context::AppContext;
 use crate::config::ConfigManager;
-use crate::log_info;
-use crate::log_warn;
 use crate::modloader::ModLoaderType;
-
-/// 兜底加载器图标文件名（写入 {work_dir}/.wecraft/assets/icons/，全局一份）
-const LOADER_ICON_NAMES: [&str; 5] = [
-    "vanilla.png",
-    "fabric.png",
-    "forge.png",
-    "neoforge.png",
-    "grass.png",
-];
-
-/// 兜底图标内容（打包的应用图标，按加载器名落盘后可由用户替换）
-const FALLBACK_ICON: &[u8] = include_bytes!("../../icons/32x32.png");
-
-/// 准备全局兜底图标：
-/// 1. 将启动器数据目录递归加入 asset 协议 scope，使前端 asset://localhost/ 可访问兜底图标
-/// 2. 缺失时写入兜底加载器图标（{work_dir}/.wecraft/assets/icons/{loader}.png，仅一次）
-/// 3. 清理游戏目录内的遗留 .smcl 目录（旧版本按游戏落盘图标），保持游戏目录纯净
-fn prepare_game_icons(app: &AppHandle, dir: &Path, ctx: &AppContext) {
-    let stale = dir.join(".smcl");
-    if stale.exists() {
-        if std::fs::remove_dir_all(&stale).is_ok() {
-            log_info!("已清理游戏遗留图标目录: {}", stale.display());
-        }
-    }
-
-    let icon_dir = ctx.wecraft_icons_dir();
-    if let Err(e) = std::fs::create_dir_all(&icon_dir) {
-        log_warn!("创建全局图标目录失败 {}: {}", icon_dir.display(), e);
-        return;
-    }
-    for name in LOADER_ICON_NAMES {
-        let dest = icon_dir.join(name);
-        if !dest.exists() {
-            if let Err(e) = std::fs::write(&dest, FALLBACK_ICON) {
-                log_warn!("写入全局图标失败 {}: {}", dest.display(), e);
-            }
-        }
-    }
-    let _ = app.asset_protocol_scope().allow_directory(dir, true);
-    let _ = app
-        .asset_protocol_scope()
-        .allow_directory(ctx.wecraft_data_dir(), true);
-}
 
 /// 扫描所有已安装的游戏（同时准备全局兜底图标：asset scope 授权 + 兜底图标落盘）
 #[tauri::command]
 pub fn scan_games(
-    app: AppHandle,
-    app_context: State<'_, AppContext>,
     game_manager: State<'_, GameManager>,
 ) -> Result<Vec<Game>, String> {
-    let games = game_manager.scan_games()?;
-    for game in &games {
-        prepare_game_icons(&app, Path::new(&game.path), app_context.inner());
-    }
-    Ok(games)
+    game_manager.scan_games()
 }
 
 /// 获取指定名称的游戏信息

@@ -262,7 +262,7 @@ fn init_inner(log_dir: PathBuf, min_level: LogLevel) {
 
 /// 初始化日志系统（在应用启动时调用）
 pub fn init_logging(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    let log_dir = app.path().app_data_dir()?.join("logs");
+    let log_dir = app.state::<crate::app_context::AppContext>().launcher_logs_dir();
     fs::create_dir_all(&log_dir)?;
 
     init_inner(log_dir, LogLevel::Info);

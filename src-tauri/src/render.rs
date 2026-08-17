@@ -271,22 +271,14 @@ async fn fetch_skin_by_uuid(uuid: &str) -> Result<MinecraftProfile, String> {
 
 /// 获取皮肤缓存目录
 fn get_skin_cache_dir(app: &AppHandle) -> Result<std::path::PathBuf, String> {
-    let dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| format!("获取数据目录失败: {}", e))?
-        .join("skins");
+    let dir = app.state::<crate::app_context::AppContext>().wecraft_skins_dir();
     std::fs::create_dir_all(&dir).map_err(|e| format!("创建缓存目录失败: {}", e))?;
     Ok(dir)
 }
 
 /// 获取头像缓存目录
 fn get_avatar_cache_dir(app: &AppHandle) -> Result<std::path::PathBuf, String> {
-    let dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| format!("获取数据目录失败: {}", e))?
-        .join("avatars");
+    let dir = app.state::<crate::app_context::AppContext>().wecraft_avatars_dir();
     std::fs::create_dir_all(&dir).map_err(|e| format!("创建缓存目录失败: {}", e))?;
     Ok(dir)
 }

@@ -105,8 +105,9 @@ const AppearanceSettings = () => {
   const handleSelectImage = async () => {
     try {
       const selected = await selectBackgroundImage();
+
       if (selected) {
-        const assetUrl = convertFileSrc(selected);
+        const assetUrl = `${convertFileSrc(selected)}?v=${Date.now()}`;
         setBackground({ imagePath: assetUrl });
       }
     } catch {
@@ -280,11 +281,11 @@ const AppearanceSettings = () => {
                 </div>
                 {/* OPTIMIZE: 提取为通用缩略图组件 */}
                 {config.imagePath && (
-                  <div className="w-full h-80 rounded-md overflow-hidden border border-[var(--color-border)] bg-[var(--color-bg-secondary)]">
+                  <div className="w-full max-w-64 min-w-40 rounded-md overflow-hidden border border-[var(--color-border)] bg-[var(--color-bg-secondary)]">
                     <img
                       src={config.imagePath}
                       alt="背景预览"
-                      className="w-full h-full object-fill"
+                      className="w-full h-auto max-h-40 min-h-24 object-cover"
                     />
                   </div>
                 )}

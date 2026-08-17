@@ -50,3 +50,6 @@ src-tauri/gen
 src/server/client
 src/server/core
 src/server/*.gen.ts
+
+src-tauri/icons
+src-tauri/icons/*

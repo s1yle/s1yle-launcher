@@ -85,12 +85,14 @@ impl AppContext {
 
     /// 特定版本的 JSON 文件（平放）：{game_dir}/{version_id}.json
     pub fn version_json_path(&self, version_id: &str) -> PathBuf {
-        self.game_dir(version_id).join(format!("{}.json", version_id))
+        self.game_dir(version_id)
+            .join(format!("{}.json", version_id))
     }
 
     /// 特定版本的 jar 文件（平放）：{game_dir}/{version_id}.jar
     pub fn version_jar_path(&self, version_id: &str) -> PathBuf {
-        self.game_dir(version_id).join(format!("{}.jar", version_id))
+        self.game_dir(version_id)
+            .join(format!("{}.jar", version_id))
     }
 
     /// 任意游戏目录下的版本 json：{game_dir}/{version_id}.json
@@ -125,14 +127,28 @@ impl AppContext {
         self.launcher_work_dir.join(".wecraft")
     }
 
+    pub fn wecraft_assets_dir(&self) -> PathBuf {
+        self.wecraft_data_dir().join("assets")
+    }
+
+    /// 皮肤缓存目录：{work_dir}/.wecraft/assets/skins
+    pub fn wecraft_skins_dir(&self) -> PathBuf {
+        self.wecraft_assets_dir().join("skins")
+    }
+
+    /// 头像缓存目录：{work_dir}/.wecraft/assets/avatars
+    pub fn wecraft_avatars_dir(&self) -> PathBuf {
+        self.wecraft_assets_dir().join("avatars")
+    }
+
+    /// 背景缓存目录：{work_dir}/.wecraft/assets/backgrounds
+    pub fn wecraft_bg_dir(&self) -> PathBuf {
+        self.wecraft_assets_dir().join("backgrounds")
+    }
+
     /// 配置文件：{work_dir}/.wecraft/.wecraft.json
     pub fn launcher_config_path(&self) -> PathBuf {
         self.wecraft_data_dir().join(".wecraft.json")
-    }
-
-    /// 全局兜底图标目录：{work_dir}/.wecraft/assets/icons
-    pub fn wecraft_icons_dir(&self) -> PathBuf {
-        self.wecraft_data_dir().join("assets").join("icons")
     }
 
     /// 日志目录：{work_dir}/logs
@@ -142,10 +158,7 @@ impl AppContext {
 
     /// 确保基础目录存在（幂等）
     pub fn ensure_dirs(&self) -> Result<(), String> {
-        for dir in [
-            &self.game_root(),
-            &self.wecraft_data_dir(),
-        ] {
+        for dir in [&self.game_root(), &self.wecraft_data_dir()] {
             std::fs::create_dir_all(dir)
                 .map_err(|e| format!("创建目录失败 {}: {}", dir.display(), e))?;
         }
@@ -168,10 +181,7 @@ mod tests {
     fn path_hierarchy_is_consistent() {
         let c = ctx();
         assert_eq!(c.game_root(), PathBuf::from("/tmp/game-root/"));
-        assert_eq!(
-            c.versions_dir(),
-            PathBuf::from("/tmp/game-root/versions")
-        );
+        assert_eq!(c.versions_dir(), PathBuf::from("/tmp/game-root/versions"));
         assert_eq!(
             c.game_dir("my-game"),
             PathBuf::from("/tmp/game-root/versions/my-game")
@@ -189,10 +199,6 @@ mod tests {
         assert_eq!(
             c.launcher_logs_dir(),
             PathBuf::from("/tmp/launcher-work/logs")
-        );
-        assert_eq!(
-            c.wecraft_icons_dir(),
-            PathBuf::from("/tmp/launcher-work/.wecraft/assets/icons")
         );
     }
 

@@ -9,6 +9,8 @@ import { DURATION, EASING } from '@/utils/animations';
 import { Z_INDEX } from '@/utils/zIndex';
 import { useLaunchStore } from '@/stores/launchStore';
 import { usePolling } from '@/hooks/usePolling';
+import { UIMode, useUIModeStore } from '@/stores/uiModeStore';
+import useLayoutStore, { SIDEBAR_TRANSITION_DURATION } from '@/stores/layoutStore';
 import ContextMenu, { ContextMenuItemData, useContextMenu } from '../ContextMenu';
 
 /** 游戏轮询间隔（ms） */
@@ -32,6 +34,12 @@ const RunningGamesCard = () => {
   const [expanded, setExpanded] = useState(false);
   const [stoppingId, setStoppingId] = useState<string | null>(null);
   const [contextMenuInst, setContextMenuInst] = useState<LaunchGameInfo | null>(null);
+
+  const uiMode = useUIModeStore((s) => s.mode);
+  const sidebarWidth = useLayoutStore((s) => s.sidebarWidth);
+  const isSidebarCollapsed = useLayoutStore((s) => s.isSidebarCollapsed);
+  const leftOffset =
+    uiMode === UIMode.CLASSIC && !isSidebarCollapsed ? sidebarWidth + 32 : 32;
 
   const { contextMenuState, showContextMenu, hideContextMenu } = useContextMenu();
 
@@ -98,7 +106,14 @@ const RunningGamesCard = () => {
   const first = games[0];
 
   return (
-    <div className="fixed left-8 bottom-8 flex flex-col items-end" style={{ zIndex: Z_INDEX.POPUP }}>
+    <div
+      className="fixed bottom-8 flex flex-col items-end"
+      style={{
+        zIndex: Z_INDEX.POPUP,
+        left: leftOffset,
+        transition: `left ${SIDEBAR_TRANSITION_DURATION}s ease-in-out`,
+      }}
+    >
       <AnimatePresence mode="wait">
         {expanded ? (
           <motion.div
