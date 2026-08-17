@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Home, ChevronDown,  FileQuestionMark, AlertTriangle, LogOut } from 'lucide-react';
+import { User, ChevronDown,  FileQuestionMark, AlertTriangle, LogOut } from 'lucide-react';
 import { useUserRoleStore, UserRole } from '@/stores/userRoleStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useNavStore } from '@/stores/navStore';
@@ -12,6 +12,8 @@ import { autoJumpToFirstChild, findRouteByPath, routes } from '@/router/config';
 import { useSafeNavigate } from '@/router/navigation';
 import { DURATION, EASING, dropdown, microInteractions, modalOpen } from '@/utils/animations';
 import { getErrorMessage } from '@/utils/errorUtils';
+import BlockIcon from '@/components/common/BlockIcon';
+import { UI_BLOCK_ICONS } from '@/utils/iconFactory';
 
 /** 灵动岛导航组件 Props */
 export interface DynamicIslandProps {
@@ -185,7 +187,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
   const homeItem: NavItem = {
     id: 'home',
     label: '主页',
-    icon: Home,
+    icon: () => <BlockIcon src={UI_BLOCK_ICONS.home} />,
     path: '/',
     roles: [UserRole.PLAYER],
     group: SidebarGroup.NONE,
@@ -382,7 +384,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
           bg-[var(--color-surface)]/90
           border border-[var(--color-border)]/50
           rounded-full shadow-xl shadow-black/20
-          select-none overflow-hidden
+          select-none overflow-hidden py-0.5
           transition-all duration-500 ease-out
           ${isExpanded ? 'gap-2 px-6' : ''}
         `}
@@ -690,7 +692,7 @@ export const DynamicItem = ({ isMainMenu, handleItemClick, homeItem, isActive, i
         whileHover={microInteractions.buttonHover}
         whileTap={microInteractions.buttonTap}
         className={`
-            relative flex items-center gap-2 px-2 py-1 rounded-full
+            relative flex items-center gap-0.5 px-2 py-0.5 rounded-full
             text-sm font-medium transition-all duration-300 cursor-pointer z-10
             ${isActive
             ? 'text-[var(--color-primary)] shadow-md'
@@ -701,7 +703,7 @@ export const DynamicItem = ({ isMainMenu, handleItemClick, homeItem, isActive, i
         data-tauri-drag-region="false"
       >
         {isMainMenu
-          ? (<Home className="w-4 h-4 flex-shrink-0" />)
+          ? (<BlockIcon src={UI_BLOCK_ICONS.home} className="flex-shrink-0" w={6} h={6} />)
           : (<item.icon className="w-4 h-4 flex-shrink-0" />)
         }
 

@@ -399,7 +399,9 @@ export const useGameStore = create<GameState>((set, get) => ({
         (i) => i.name.toLowerCase().includes(q) || i.version_id.toLowerCase().includes(q),
       );
     }
-
+    
+    console.warn("游戏：",filtered);
+    
     return filtered;
   },
 

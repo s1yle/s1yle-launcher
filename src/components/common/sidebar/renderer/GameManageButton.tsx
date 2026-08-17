@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Gamepad2, Hammer, Zap, Package, Image, Sun, FolderOpen, Trash2 } from 'lucide-react';
+import { ChevronDown, Gamepad2, FolderOpen, Trash2 } from 'lucide-react';
 import { useGameStore } from '../../../../stores/gameStore';
 import { ModLoaderType, type Game, openFolder } from '../../../../helper/rustInvoke';
 import { SidebarMenuItem } from '@/router/models';
@@ -13,6 +13,8 @@ import { confirm } from '@tauri-apps/plugin-dialog';
 import { Z_INDEX } from '@/utils/zIndex';
 import { DURATION, EASING, dropdown, microInteractions } from '@/utils/animations';
 import { getErrorMessage } from '@/utils/errorUtils';
+import BlockIcon from '@/components/common/BlockIcon';
+import { getLoaderBlockIcon } from '@/utils/iconFactory';
 
 interface GameManageButtonProps {
   item: SidebarMenuItem;
@@ -22,13 +24,17 @@ interface GameManageButtonProps {
   onNavigate?: (path: string) => void;
 }
 
+const makeLoaderIcon = (type: ModLoaderType) => ({ className }: { className?: string }) => (
+  <BlockIcon src={getLoaderBlockIcon(type)} className={className} />
+);
+
 const LOADER_ICONS: Record<ModLoaderType, React.ComponentType<{ className?: string }>> = {
-  [ModLoaderType.Vanilla]: Gamepad2,
-  [ModLoaderType.Forge]: Hammer,
-  [ModLoaderType.NeoForge]: Image,
-  [ModLoaderType.Fabric]: Zap,
-  [ModLoaderType.Quilt]: Package,
-  [ModLoaderType.OptiFine]: Sun,
+  [ModLoaderType.Vanilla]: makeLoaderIcon(ModLoaderType.Vanilla),
+  [ModLoaderType.Forge]: makeLoaderIcon(ModLoaderType.Forge),
+  [ModLoaderType.NeoForge]: makeLoaderIcon(ModLoaderType.NeoForge),
+  [ModLoaderType.Fabric]: makeLoaderIcon(ModLoaderType.Fabric),
+  [ModLoaderType.Quilt]: makeLoaderIcon(ModLoaderType.Quilt),
+  [ModLoaderType.OptiFine]: makeLoaderIcon(ModLoaderType.OptiFine),
 };
 
 /** 游戏管理按钮组件（侧边栏自定义渲染） */

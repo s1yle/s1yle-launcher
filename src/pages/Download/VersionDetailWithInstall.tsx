@@ -10,14 +10,11 @@ import {
   Check,
   ChevronDown,
   Download,
-  Flame,
-  Gamepad2,
-  Hexagon,
   Loader2,
   RefreshCw,
-  Sun,
-  Zap,
 } from 'lucide-react';
+import BlockIcon from '@/components/common/BlockIcon';
+import { BLOCK_ICONS, getLoaderBlockIcon } from '@/utils/iconFactory';
 import {
   download,
   getFabricVersions,
@@ -40,12 +37,16 @@ interface LoaderEntry {
   icon: React.ComponentType<{ className?: string }>;
 }
 
+const loaderIcon = (type: ModLoaderType) => (props: { className?: string }) => (
+  <BlockIcon src={getLoaderBlockIcon(type)} {...props} />
+);
+
 const LOADER_LIST: LoaderEntry[] = [
-  { key: 'vanilla', type: null, icon: Gamepad2 },
-  { key: 'forge', type: ModLoaderType.Forge, icon: Flame },
-  { key: 'neoforge', type: ModLoaderType.NeoForge, icon: Hexagon },
-  { key: 'fabric', type: ModLoaderType.Fabric, icon: Zap },
-  { key: 'optifine', type: ModLoaderType.OptiFine, icon: Sun },
+  { key: 'vanilla', type: null, icon: (props: { className?: string }) => <BlockIcon src={BLOCK_ICONS.grassBlock} {...props} /> },
+  { key: 'forge', type: ModLoaderType.Forge, icon: loaderIcon(ModLoaderType.Forge) },
+  { key: 'neoforge', type: ModLoaderType.NeoForge, icon: loaderIcon(ModLoaderType.NeoForge) },
+  { key: 'fabric', type: ModLoaderType.Fabric, icon: loaderIcon(ModLoaderType.Fabric) },
+  { key: 'optifine', type: ModLoaderType.OptiFine, icon: loaderIcon(ModLoaderType.OptiFine) },
 ];
 
 const fetchLoaderVersions = async (

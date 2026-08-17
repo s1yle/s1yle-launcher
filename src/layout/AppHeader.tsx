@@ -1,4 +1,4 @@
-import { DynamicIsland, FloatingControls } from '@/components/common';
+import { BrandLogo, DynamicIsland, FloatingControls } from '@/components/common';
 import Header from '@/components/Header';
 import { RouteConfig } from '@/router/models';
 import { HeaderKind } from './shell';
@@ -21,6 +21,7 @@ const NativeHeader = ({ route }: { route: RouteConfig }) => (
 /** 灵动岛顶部栏 - 悬浮窗口控制 + 胶囊导航 + 顶部拖曳区 */
 const IslandHeader = ({ handleMenuClick }: { handleMenuClick: (path: string) => void }) => (
   <>
+    <BrandLogo className='absolute left-5 top-4' width={45}/>
     <FloatingControls />
     <DynamicIsland onMenuClick={handleMenuClick} />
 

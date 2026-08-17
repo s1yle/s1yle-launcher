@@ -73,6 +73,7 @@ const GameList: React.FC = () => {
 
   const filteredGames = getFilteredGames();
 
+  // 游戏分组
   const groupedGames = useMemo(() => {
     const map: Record<GroupKey, Game[]> = {
       favorites: [], mods: [], regular: [], uncommon: [], broken: [],
@@ -93,7 +94,6 @@ const GameList: React.FC = () => {
   const [duplicateName, setDuplicateName] = useState('');
 
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
-
 
   // 处理复制成功
   const handleConfirmDuplicate = async () => {

@@ -8,6 +8,11 @@ export { default as BrandLogo } from './BrandLogo';
 /** 品牌 Logo Props */
 export type { BrandLogoProps } from './BrandLogo';
 
+/** MC 方块图标组件 */
+export { default as BlockIcon } from './BlockIcon';
+/** MC 方块图标 Props */
+export type { BlockIconProps } from './BlockIcon';
+
 /** 版本徽标组件 */
 export { default as VersionBadge } from './Badge/VersionBadge';
 /** 版本徽标 Props */

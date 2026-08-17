@@ -1,4 +1,3 @@
-import { type LucideIcon } from "lucide-react";
 import { ComponentType, ReactNode } from "react";
 import { UserRole } from "@/stores/userRoleStore";
 
@@ -83,7 +82,7 @@ export interface NavItem {
   id: string;
   label: string;
   labelI18nKey?: string;
-  icon: LucideIcon;
+  icon: ComponentType<{ className?: string }>;
   path: string;
   roles: UserRole[];
   /** 导航分组 */
@@ -99,7 +98,7 @@ export interface RouteNavMeta {
   id: string;
   label: string;
   labelI18nKey?: string;
-  icon: LucideIcon;
+  icon: ComponentType<{ className?: string }>;
   roles: UserRole[];
   /** 导航分组，默认取路由 sidebarGroup */
   group?: SidebarGroup;

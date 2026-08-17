@@ -15,7 +15,8 @@ import { transitions } from "@/utils/animations"
 import { inferVersionType } from "@/utils/format"
 import IconButton from '../IconButton';
 import { PageSection } from '../Page';
-import { useAppStore } from '@/stores/appStore';
+import { getLoaderBlockIcon } from '@/utils/iconFactory';
+import BlockIcon from '../BlockIcon';
 
 /** 游戏列表项组件 Props */
 interface GameListItemProps {
@@ -43,16 +44,6 @@ const getLoaderLabel = (type: ModLoaderType): string => {
   return labels[type] || type.toString();
 };
 
-const getLoaderIconPath = (type: ModLoaderType): string => {
-  const iconMap: Record<string, string> = {
-    [ModLoaderType.Vanilla]: 'vanilla.png',
-    [ModLoaderType.Fabric]: 'fabric.png',
-    [ModLoaderType.Forge]: 'forge.png',
-    [ModLoaderType.NeoForge]: 'neoforge.png',
-  };
-  return iconMap[type] || 'grass.png';
-};
-
 /** 游戏列表项组件，显示游戏图标、名称、版本信息，支持右键菜单 */
 const GameListItem = ({
   game,
@@ -78,13 +69,7 @@ const GameListItem = ({
       setIconSrc(`asset://localhost/${game.icon_path}`);
       return;
     }
-    const wecraftDir = useAppStore.getState().systemInfo?.wecraft_dir;
-    if (wecraftDir) {
-      const loaderIconPath = `${wecraftDir}/assets/icons/${getLoaderIconPath(game.loader_type)}`;
-      setIconSrc(`asset://localhost/${loaderIconPath}`);
-    } else {
-      setIconSrc(null);
-    }
+    setIconSrc(getLoaderBlockIcon(game.loader_type));
   }, [game]);
 
   const handleClick = () => {
@@ -167,15 +152,14 @@ const GameListItem = ({
             whileHover={{ scale: 1.1, rotate: 5 }}
             transition={transitions.spring}
           >
-            <div className="w-10 h-10 rounded-lg overflow-hidden 
+            <div className="w-10 h-10 overflow-hidden 
               bg-primary-bg flex items-center justify-center"
             >
               {iconSrc && !iconError ? (
-                <img
+                <BlockIcon
                   src={iconSrc}
                   alt={game.name}
-                  className="w-full h-full object-cover"
-                  onError={() => setIconError(true)}
+                  className="object-cover"
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br 
@@ -204,9 +188,14 @@ const GameListItem = ({
               {/* modloader */}
               {game.loader_type !== ModLoaderType.Vanilla && (
                 <motion.span
-                  className="text-sm bg-primary-bg text-secondary"
+                  className="text-sm bg-primary-bg text-secondary flex items-center gap-1"
                   whileHover={{ scale: 1.05 }}
                 >
+                  <BlockIcon
+                    src={getLoaderBlockIcon(game.loader_type)}
+                    w={3}
+                    h={3}
+                  />
                   {getLoaderLabel(game.loader_type)}
                   {game.loader_version && ` ${game.loader_version}`}
                 </motion.span>

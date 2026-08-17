@@ -19,6 +19,14 @@ export interface ContextMenuItemData {
   divider?: boolean;
 }
 
+/** 渲染菜单项图标：React 元素直接渲染，组件引用（含 forwardRef 的 lucide 图标）以组件方式渲染 */
+const renderItemIcon = (icon: ContextMenuItemData['icon']) => {
+  if (!icon) return null;
+  if (React.isValidElement(icon)) return icon;
+  const IconComp = icon as unknown as React.ElementType;
+  return <IconComp className="w-4 h-4" />;
+};
+
 /** 右键菜单组件 Props */
 export interface ContextMenuProps {
   items: ContextMenuItemData[];
@@ -112,7 +120,7 @@ const ContextMenu = ({
                     }}
                     transition={transitions.fast}
                   >
-                    {item.icon && (typeof item.icon === 'function' ? <item.icon className="w-4 h-4" /> : item.icon)}
+                    {renderItemIcon(item.icon)}
                     <span>{item.label}</span>
                   </motion.button>
                 </PageSection>

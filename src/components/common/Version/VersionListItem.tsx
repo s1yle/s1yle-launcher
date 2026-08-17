@@ -3,9 +3,11 @@ import { motion } from 'framer-motion';
 import { GameVersion } from '../../../helper/rustInvoke';
 import { formatDate } from '../../../utils/format';
 import StatusBadge from '../Badge/VersionBadge';
-import { ExternalLink, Package } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import { listItem, transitions } from '../../../utils/animations';
 import { cn } from '@/utils/cn';
+import BlockIcon from '../BlockIcon';
+import { getVersionTypeBlockIcon } from '@/utils/iconFactory';
 
 
 
@@ -47,10 +49,13 @@ const VersionListItem = ({
         onMouseLeave={() => setIsHovered(false)}
       >
         <motion.div
-          className="w-9 h-9 bg-primary-bg rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm"
+          className="w-9 h-9 flex items-center justify-center flex-shrink-0 overflow-hidden"
           transition={transitions.spring}
         >
-          <Package className="w-4 h-4 text-primary" />
+          <BlockIcon
+            src={getVersionTypeBlockIcon(version.type)}
+            className="w-5 h-5 object-cover"
+          />
         </motion.div>
 
         <div className="flex-1 min-w-0">

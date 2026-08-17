@@ -1,11 +1,8 @@
 import { lazy } from "react";
 import {
-  User,
   Settings,
   FileText,
   FolderOpen,
-  List,
-  Download,
   Gamepad2,
   Package,
   FolderTree,
@@ -19,18 +16,23 @@ import {
   Trash2,
   FileDown,
   UserPlus,
-  Home as HomeIcon,
   SlidersHorizontal,
 } from 'lucide-react';
 import { LayoutMode, RouteConfig, SidebarGroup, SidebarType } from "./models";
 import { UserRole } from '@/stores/userRoleStore';
 import GameManageButton from '@/components/common/sidebar/renderer/GameManageButton';
+import BlockIcon from '@/components/common/BlockIcon';
+import { UI_BLOCK_ICONS } from '@/utils/iconFactory';
 import { handleRefreshGames } from './actionHandler';
 import { useGameStore } from '@/stores/gameStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useDownloadStore } from '@/stores/downloadStore';
 import { refreshAll } from '@/stores/refreshStore';
 import { getGameSettings, getGlobalGameSettings } from '@/helper/rustInvoke';
+
+const blockNavIcon = (src: string) => (props: { className?: string }) => (
+  <BlockIcon src={src} {...props} w={6} h={6} />
+);
 
 /** 页面组件按路由懒加载（每个路由独立 chunk） */
 const Loading = lazy(() => import('../pages/Loading'));
@@ -46,7 +48,6 @@ const DownloadGame = lazy(() => import('../pages/Download/DownloadGame'));
 const DownloadModpack = lazy(() => import('../pages/Download/DownloadModpack'));
 const DownloadProgress = lazy(() => import('../pages/Download/DownloadProgress'));
 const VersionDetailWithInstall = lazy(() => import('../pages/Download/VersionDetailWithInstall'));
-const Hint = lazy(() => import('../pages/Feedback/Hint'));
 const AppearanceSettings = lazy(() => import('../pages/Settings/AppearanceSettings'));
 const GlobalGameSettings = lazy(() => import('../pages/Settings/GlobalGameSettings'));
 
@@ -60,7 +61,7 @@ export const routes: RouteConfig[] = [
     needsScrollbar: false,
     layoutMode: LayoutMode.FULLSCREEN,
   },
-    {
+  {
     path: '/',
     component: Home,
     loader: async () => {
@@ -73,7 +74,7 @@ export const routes: RouteConfig[] = [
       id: 'main',
       label: '主页',
       labelI18nKey: 'nav.main',
-      icon: HomeIcon,
+      icon: blockNavIcon(UI_BLOCK_ICONS.home),
       roles: [UserRole.PLAYER],
       group: SidebarGroup.NONE,
       order: 0,
@@ -95,13 +96,13 @@ export const routes: RouteConfig[] = [
       id: 'account',
       label: '账户',
       labelI18nKey: 'nav.account',
-      icon: User,
+      icon: blockNavIcon(UI_BLOCK_ICONS.account),
       roles: [UserRole.PLAYER],
       group: SidebarGroup.ACCOUNT,
     },
     menu: {
       id: 'account-list',
-      icon: <User className="w-4 h-4" />,
+      icon: <BlockIcon src={UI_BLOCK_ICONS.account} />,
     },
   },
   {
@@ -225,7 +226,7 @@ export const routes: RouteConfig[] = [
         layoutMode: LayoutMode.NATIVE_HEADER,
         menu: {
           id: 'gm-worlds',
-          icon: <Map className="w-4 h-4" />,
+          icon: <BlockIcon src={UI_BLOCK_ICONS.world} />,
         },
       },
     ]
@@ -246,14 +247,14 @@ export const routes: RouteConfig[] = [
       id: 'games',
       label: '游戏',
       labelI18nKey: 'nav.games',
-      icon: Gamepad2,
+      icon: blockNavIcon(UI_BLOCK_ICONS.game),
       roles: [UserRole.PLAYER],
       group: SidebarGroup.GAME,
       order: 0,
     },
     menu: {
       id: 'game-list',
-      icon: <List className="w-4 h-4" />,
+      icon: <BlockIcon src={UI_BLOCK_ICONS.game} />,
       extras: [
         {
           id: 'divider-games',
@@ -321,14 +322,14 @@ export const routes: RouteConfig[] = [
       id: 'download',
       label: '下载',
       labelI18nKey: 'nav.download',
-      icon: Download,
+      icon: blockNavIcon(UI_BLOCK_ICONS.download),
       roles: [UserRole.PLAYER],
       group: SidebarGroup.GAME,
       order: 4,
     },
     menu: {
       id: 'download',
-      icon: <Download className="w-4 h-4" />,
+      icon: <BlockIcon src={UI_BLOCK_ICONS.download} />,
     },
     children: [
       {
@@ -373,13 +374,13 @@ export const routes: RouteConfig[] = [
       id: 'settings',
       label: '设置',
       labelI18nKey: 'nav.settings',
-      icon: Settings,
+      icon: blockNavIcon(UI_BLOCK_ICONS.settings),
       roles: [UserRole.PLAYER],
       group: SidebarGroup.COMMON,
     },
     menu: {
       id: 'settings',
-      icon: <Settings className="w-4 h-4" />,
+      icon: <BlockIcon src={UI_BLOCK_ICONS.settings} />,
     },
     children: [
       {
@@ -392,7 +393,7 @@ export const routes: RouteConfig[] = [
         ownSidebar: true,
         menu: {
           id: 'settings-game',
-          icon: <SlidersHorizontal className="w-4 h-4" />,
+          icon: <SlidersHorizontal className="w-5 h-4" />,
         },
       },
       {
@@ -408,17 +409,6 @@ export const routes: RouteConfig[] = [
         },
       }
     ]
-  },
-  {
-    path: '/hint',
-    component: Hint,
-    header: { type: SidebarType.SUB, title: '启动器说明', titleI18nKey: 'sidebar.hint' },
-    sidebarGroup: SidebarGroup.COMMON,
-    parentPath: '/',
-    menu: {
-      id: 'hint',
-      icon: <FileText className="w-4 h-4" />,
-    },
   },
   {
     path: '/download/game/:versionId',

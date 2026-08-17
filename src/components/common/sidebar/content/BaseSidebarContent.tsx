@@ -339,7 +339,7 @@ const BaseSidebarContent = ({
           }}
           onContextMenu={(canDelete || (contextMenuFor && !!contextMenuFor(item.id))) ? (e) => handleContextMenu(e, item.id) : undefined}
           className={clsx(
-            'relative w-full flex items-center gap-3 py-2.5 pl-[3px] cursor-pointer',
+            'relative w-full flex items-center py-2 gap-3 pl-[3px] cursor-pointer',
             'transition-colors duration-200',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--color-bg-secondary)]',
             {
