@@ -57,7 +57,7 @@
     "publisher": "wecraft",
     "longDescription": "A modern, high-performance, open-source Minecraft launcher built with Tauri 2, React 19 and Rust.",
     "shortDescription": "Open-source Minecraft launcher",
-    "homepage": "https://github.com/s1yle/s1yle-launcher",
+    "homepage": "https://github.com/s1yle/WeCraft-Launcher",
     "category": "Game",
     "copyright": "Copyright © 2026 s1yle. Licensed under GPL-3.0.",
     "icon": [
