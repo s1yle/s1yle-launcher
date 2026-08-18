@@ -400,8 +400,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       );
     }
     
-    console.warn("游戏：",filtered);
-    
     return filtered;
   },
 

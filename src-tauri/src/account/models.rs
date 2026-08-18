@@ -119,3 +119,53 @@ impl Default for AccountManager {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn offline_account_uuid_is_deterministic() {
+        let a = Account::new("Steve".into(), AccountType::Offline, None, None);
+        let b = Account::new("Steve".into(), AccountType::Offline, None, None);
+        assert_eq!(a.info.uuid, b.info.uuid, "同名离线账户 UUID 必须一致");
+    }
+
+    #[test]
+    fn offline_account_uuid_differs_by_name() {
+        let a = Account::new("Steve".into(), AccountType::Offline, None, None);
+        let b = Account::new("Alex".into(), AccountType::Offline, None, None);
+        assert_ne!(a.info.uuid, b.info.uuid, "不同离线账户 UUID 必须不同");
+    }
+
+    #[test]
+    fn offline_account_uuid_is_v3() {
+        let a = Account::new("Steve".into(), AccountType::Offline, None, None);
+        let uuid = Uuid::parse_str(&a.info.uuid).expect("UUID 应可解析");
+        assert_eq!(uuid.get_version_num(), 3, "离线账户应使用 UUID v3");
+        assert_eq!(uuid.get_variant(), uuid::Variant::RFC4122);
+    }
+
+    #[test]
+    fn microsoft_account_uuid_is_random_v4() {
+        let a = Account::new("Player".into(), AccountType::Microsoft, Some("t".into()), None);
+        let b = Account::new("Player".into(), AccountType::Microsoft, Some("t".into()), None);
+        assert_ne!(a.info.uuid, b.info.uuid, "微软账户 UUID 应为随机 v4");
+        let uuid = Uuid::parse_str(&a.info.uuid).expect("UUID 应可解析");
+        assert_eq!(uuid.get_version_num(), 4);
+    }
+
+    #[test]
+    fn none_account_gets_nil_uuid() {
+        let a = Account::new("".into(), AccountType::None, None, None);
+        assert_eq!(a.info.uuid, Uuid::nil().to_string());
+    }
+
+    #[test]
+    fn update_last_login_sets_timestamp() {
+        let mut a = Account::new("Steve".into(), AccountType::Offline, None, None);
+        assert!(a.info.last_login_time.is_none());
+        a.update_last_login();
+        assert!(a.info.last_login_time.is_some());
+    }
+}

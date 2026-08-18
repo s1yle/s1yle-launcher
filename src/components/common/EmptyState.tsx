@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
-import { Inbox, Download, FolderOpen, Search, AlertTriangle, CheckCircle } from 'lucide-react';
+import BlockIcon from './BlockIcon';
 import { DURATION, EASING, fadeInUp, microInteractions } from '../../utils/animations';
+import { BLOCK_ICONS } from '@/utils/iconFactory';
 
 /** 空状态占位组件 Props */
 export interface EmptyStateProps {
@@ -14,7 +15,16 @@ export interface EmptyStateProps {
   className?: string;
 }
 
-/** 空状态占位组件，显示图标、标题、描述和可选的按钮操作 */
+const ICON_SRC: Record<NonNullable<EmptyStateProps['icon']>, string> = {
+  default: BLOCK_ICONS.grassBlock,
+  download: BLOCK_ICONS.goldBlock,
+  folder: BLOCK_ICONS.furnace,
+  search: BLOCK_ICONS.redstoneTorch,
+  error: BLOCK_ICONS.commandBlock,
+  success: BLOCK_ICONS.glowstone,
+};
+
+/** 空状态占位组件，显示方块图标、标题、描述和可选的按钮操作 */
 const EmptyState = ({
   icon = 'default',
   title,
@@ -22,15 +32,6 @@ const EmptyState = ({
   action,
   className = '',
 }: EmptyStateProps) => {
-  const icons = {
-    default: <Inbox className="w-16 h-16 text-text-tertiary" strokeWidth={1.5} />,
-    download: <Download className="w-16 h-16 text-text-tertiary" strokeWidth={1.5} />,
-    folder: <FolderOpen className="w-16 h-16 text-text-tertiary" strokeWidth={1.5} />,
-    search: <Search className="w-16 h-16 text-text-tertiary" strokeWidth={1.5} />,
-    error: <AlertTriangle className="w-16 h-16 text-red-400" strokeWidth={1.5} />,
-    success: <CheckCircle className="w-16 h-16 text-green-400" strokeWidth={1.5} />,
-  };
-
   return (
     <motion.div
       className={`flex flex-col items-center justify-center py-12 px-4 text-center ${className}`}
@@ -39,20 +40,9 @@ const EmptyState = ({
       animate="animate"
       exit="exit"
     >
-      <motion.div
-        className="mb-4 opacity-50"
-        animate={{
-          y: [0, -10, 0],
-          opacity: [0.5, 0.7, 0.5]
-        }}
-        transition={{
-          duration: DURATION.SLOW * 10,
-          repeat: Infinity,
-          ease: EASING.IN_OUT_FLUENT
-        }}
-      >
-        {icons[icon]}
-      </motion.div>
+      <div className="mb-4 opacity-50">
+        <BlockIcon src={ICON_SRC[icon]} w={16} h={16} alt={icon} />
+      </div>
       <motion.h3
         className="text-lg font-medium text-text-secondary mb-2"
         initial={{ opacity: 0, y: 10 }}

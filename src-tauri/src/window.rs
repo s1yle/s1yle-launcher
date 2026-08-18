@@ -115,7 +115,6 @@ pub fn apply_window_config<'a>(
             builder = builder
                 .effects(effect)
                 .background_color(Color(0, 0, 0, 0))
-                .drag_and_drop(false)
                 .resizable(false)
                 .inner_size(250.0, 250.0)
                 .min_inner_size(250.0, 250.0)

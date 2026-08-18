@@ -850,3 +850,44 @@ pub fn extract_jar(
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tokio_util::sync::CancellationToken;
+
+    #[test]
+    fn is_rate_limited_detects_http_429() {
+        assert!(DownloadManager::is_rate_limited("HTTP 429 Too Many Requests"));
+        assert!(DownloadManager::is_rate_limited("429"));
+        assert!(!DownloadManager::is_rate_limited("HTTP 404 Not Found"));
+        assert!(!DownloadManager::is_rate_limited("timeout"));
+    }
+
+    #[tokio::test]
+    async fn wait_for_rate_limit_caps_at_max() {
+        let mut waits = 10;
+        // 达到上限直接返回 false，不进入睡眠
+        assert!(!DownloadManager::wait_for_rate_limit(&mut waits).await);
+        assert_eq!(waits, 10, "达到上限后计数不再增加");
+    }
+
+    #[test]
+    fn check_cancelled_no_token_ok() {
+        assert!(DownloadManager::check_cancelled(None).is_ok());
+    }
+
+    #[test]
+    fn check_cancelled_active_token_ok() {
+        let token = CancellationToken::new();
+        assert!(DownloadManager::check_cancelled(Some(&token)).is_ok());
+    }
+
+    #[test]
+    fn check_cancelled_cancelled_token_err() {
+        let token = CancellationToken::new();
+        token.cancel();
+        let err = DownloadManager::check_cancelled(Some(&token)).unwrap_err();
+        assert!(err.contains("取消"));
+    }
+}

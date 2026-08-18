@@ -1,7 +1,7 @@
 {
   "name": "wecraft-launcher",
   "private": true,
-  "version": "0.1.0-alpha.5",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "predev": "npx tsx scripts/generate-commands-contract.ts && pnpm run logo:gen",
@@ -21,6 +21,7 @@
     "version:prerelease": "node scripts/bump-version.js prerelease",
     "version:beta": "node scripts/bump-version.js prerelease beta",
     "version:rc": "node scripts/bump-version.js prerelease rc",
+    "version:release": "node scripts/bump-version.js release",
     "version:reset": "node scripts/bump-version.js reset alpha",
     "version:check": "node scripts/bump-version.js --dry-run",
     "generate-api": "bash scripts/generate-api.sh",

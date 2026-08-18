@@ -9,6 +9,7 @@ import './styles/themes/accents.css';
 import './styles/themes/light.css';
 import './styles/themes/terminal.css';
 import './styles/animations.css';
+import './styles/accessibility.css';
 import { Window } from "@tauri-apps/api/window";
 
 // Global event handlers (both windows)

@@ -327,6 +327,23 @@ export const dropdown: Variants = {
   },
 };
 
+/** 下拉面板（从原点展开）：基于 transform-origin 的缩放淡入 */
+export const dropdownFromOrigin: Variants = {
+  initial: { opacity: 0, scale: 0.9, y: -8 },
+  animate: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: EASING.SPRING_BOUNCY,
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.9,
+    y: -8,
+    transition: { duration: DURATION.DROPDOWN, ease: EASING.IN_OUT_FLUENT },
+  },
+};
+
 /**
  * ## staggerContainer / staggerItem — 错峰列表容器（配合互用，如游戏列表）
  */

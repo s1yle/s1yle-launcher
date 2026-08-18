@@ -16,14 +16,14 @@
  * 特点：专业、干净、开发者最熟悉的配色
  */
 .theme-github {
-  /* 背景色系 - 深邃但不压抑 */
-  --color-bg-primary: #0d1117;
-  --color-bg-secondary: #161b22;
-  --color-bg-tertiary: #0d1117;
+  /* 背景色系 - 深邃但不压抑（已调亮） */
+  --color-bg-primary: #151c24;
+  --color-bg-secondary: #1d242e;
+  --color-bg-tertiary: #151c24;
 
   /* 表面层 - 微妙的层次感 */
   --color-surface: rgba(255, 255, 255, 0.03);
-  --color-surface-solid: #161b22;
+  --color-surface-solid: #1d242e;
   --color-surface-hover: rgba(255, 255, 255, 0.06);
   --color-surface-active: rgba(255, 255, 255, 0.09);
   /* 输入框背景 */
@@ -85,7 +85,7 @@
   /* 其他 */
   --color-overlay: rgba(13, 17, 23, 0.72);
   --color-backdrop-blur: 12px;
-  --color-context-bg: #1c2128;
+  --color-context-bg: #1d242e;
   --color-context-border: rgba(240, 246, 252, 0.1);
   --color-context-hover: rgba(255, 255, 255, 0.06);
   --color-progress-track: rgba(255, 255, 255, 0.08);
@@ -101,14 +101,14 @@
  * 特点：温暖舒适，长时间编程不累眼
  */
 .theme-onedark {
-  /* 背景色系 - 温暖深灰 */
-  --color-bg-primary: #282c34;
-  --color-bg-secondary: #21252b;
-  --color-bg-tertiary: #282c34;
+  /* 背景色系 - 温暖深灰（已调亮） */
+  --color-bg-primary: #323742;
+  --color-bg-secondary: #282d36;
+  --color-bg-tertiary: #323742;
 
   /* 表面层 */
   --color-surface: rgba(255, 255, 255, 0.04);
-  --color-surface-solid: #21252b;
+  --color-surface-solid: #282d36;
   --color-surface-hover: rgba(255, 255, 255, 0.07);
   --color-surface-active: rgba(255, 255, 255, 0.10);
 
@@ -168,7 +168,7 @@
   /* 其他 */
   --color-overlay: rgba(40, 44, 52, 0.75);
   --color-backdrop-blur: 12px;
-  --color-context-bg: #282c34;
+  --color-context-bg: #323742;
   --color-context-border: rgba(255, 255, 255, 0.08);
   --color-context-hover: rgba(255, 255, 255, 0.06);
   --color-progress-track: rgba(255, 255, 255, 0.08);
@@ -184,14 +184,14 @@
  * 特点：冷色调、极简、高级感、适合专注工作
  */
 .theme-nord {
-  /* 背景色系 - 北极夜空 */
-  --color-bg-primary: #2e3440;
-  --color-bg-secondary: #3b4252;
-  --color-bg-tertiary: #2e3440;
+  /* 背景色系 - 北极夜空（已调亮） */
+  --color-bg-primary: #39404f;
+  --color-bg-secondary: #47505f;
+  --color-bg-tertiary: #39404f;
 
   /* 表面层 - 冰雪质感 */
   --color-surface: rgba(255, 255, 255, 0.03);
-  --color-surface-solid: #3b4252;
+  --color-surface-solid: #47505f;
   --color-surface-hover: rgba(255, 255, 255, 0.06);
   --color-surface-active: rgba(255, 255, 255, 0.09);
 
@@ -251,7 +251,7 @@
   /* 其他 */
   --color-overlay: rgba(46, 52, 64, 0.78);
   --color-backdrop-blur: 14px;
-  --color-context-bg: #3b4252;
+  --color-context-bg: #47505f;
   --color-context-border: rgba(216, 222, 233, 0.08);
   --color-context-hover: rgba(255, 255, 255, 0.05);
   --color-progress-track: rgba(255, 255, 255, 0.08);

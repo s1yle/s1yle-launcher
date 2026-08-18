@@ -319,6 +319,7 @@ const SettingsPanelDropDown = ({
   displayNumber,
   showSearch,
   searchPlaceholder,
+  animateFromOrigin,
   disabled = false,
 }: SettingsPanelDropDownProps) => {
   return (
@@ -349,6 +350,7 @@ const SettingsPanelDropDown = ({
           buttonWidth="w-xs"
           showSearch={showSearch}
           searchPlaceholder={searchPlaceholder}
+          animateFromOrigin={animateFromOrigin}
         />
       </motion.div>
     </AnimatePresence>
@@ -403,7 +405,6 @@ const SettingRow = ({
   );
 };
 
-// TODO: 为后续可能需要用到的组件（如Toggle）实现条目包装器
 /** 设置面板复合组件（含 Root / Item / Sub / Toggle / DropDown / Input / CheckSwitch） */
 export const SettingsPanel = Object.assign(SettingsPanelRoot, {
   Item: SettingsPanelItem,

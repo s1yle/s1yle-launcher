@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import readline from 'readline';
 
 
@@ -160,6 +160,13 @@ function bumpVersion(current, type, preReleaseStage = 'alpha') {
       newVersion.preReleaseNumber = 1; // 从 1 开始，不是 0
       break;
 
+    case 'release':
+      // 发布正式版：清除预发布后缀，保留主/次/补丁号
+      // 例：0.1.0-alpha.5 → 0.1.0
+      newVersion.preRelease = null;
+      newVersion.preReleaseNumber = 0;
+      break;
+
     default:
       throw new Error(`未知的升级类型: ${type}`);
   }
@@ -280,7 +287,7 @@ async function main() {
       if (currentVersionStr === newVersionStr) {
         console.warn(`⚠️  警告: 版本号没有变化，仍为 ${currentVersionStr}`);
       } else {
-        // reset 可能导致版本号降低（如从 0.2.0 重置到 0.1.0-alpha.1），需要确认
+        // reset 可能导致版本号降低（如从 0.2.0.0 重置到 0.1.0.1），需要确认
         const comparison = compareSemVer(currentVersionStr, newVersionStr);
         if (comparison > 0) {
           console.warn(`⚠️  注意: 版本号将从 ${currentVersionStr} 降低到 ${newVersionStr}`);
@@ -372,4 +379,8 @@ async function main() {
 // 导出函数供测试使用
 export { parseVersion, formatVersion, bumpVersion, compareSemVer, validateVersionBump };
 
-main();
+// 仅在作为主模块直接执行时运行（避免被其它脚本 import 时的副作用）
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isMain) {
+  main();
+}

@@ -3,9 +3,8 @@ import { Loader2, Gamepad2, Square, RotateCcw, Info, Lightbulb, Cpu, MemoryStick
 import { getLaunchStatusByKey, stopGame, openFolder, getGameSettings, getGlobalGameSettings } from '@/helper/rustInvoke';
 import { AccountInfo, LaunchStatus, type Game, type GameSettings, type LaunchStatusInfo } from '@/api';
 import { useAppStore } from '@/stores/appStore';
-import { usePolling } from '@/hooks/usePolling';
+import { useLaunchHints } from '@/hooks/useLaunchHints';
 import { ProgressBar, GameLogViewer, Page, PageSection } from '@/components/common';
-import { LAUNCH_HINTS } from '@/utils/launchHints';
 import { Z_INDEX } from '@/utils/zIndex';
 import pkg from '../../../../package.json';
 
@@ -29,7 +28,7 @@ const LaunchingOverlay = ({ gameId, game, accountInfo, onExit }: LaunchingOverla
   const [phase, setPhase] = useState<'launching' | 'running' | 'crashed'>('launching');
   const [info, setInfo] = useState<LaunchStatusInfo | null>(null);
   const [stopping, setStopping] = useState(false);
-  const [hint, setHint] = useState(() => LAUNCH_HINTS[Math.floor(Math.random() * LAUNCH_HINTS.length)]);
+  const { hint } = useLaunchHints(6000);
   // 实际生效的设置（未启用独立设置时为全局设置）；加载完成前回退到 store 快照
   const [effectiveSettings, setEffectiveSettings] = useState<GameSettings>(() => game.game_settings ?? {});
 
@@ -55,12 +54,6 @@ const LaunchingOverlay = ({ gameId, game, accountInfo, onExit }: LaunchingOverla
       cancelled = true;
     };
   }, [game.name]);
-
-  // 随机轮换小贴士
-  usePolling(() => {
-    let next = LAUNCH_HINTS[Math.floor(Math.random() * LAUNCH_HINTS.length)];
-    setHint(prev => (next === prev ? LAUNCH_HINTS[(LAUNCH_HINTS.indexOf(prev) + 1) % LAUNCH_HINTS.length] : next));
-  }, { interval: 6000 });
 
   // 轮询游戏真实状态与进度
   useEffect(() => {

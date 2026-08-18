@@ -18,9 +18,10 @@ strip = true # Ensures debug symbols are removed.
 
 [package]
 name = "WeCraft-Launcher"
-version = "0.1.0-alpha.5"
-description = "做一个有特色的mc 启动器"
+version = "0.1.0"
+description = "一个现代、高性能、开源 Minecraft 启动器"
 authors = ["s1yle"]
+license = "GPL-3.0-only"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

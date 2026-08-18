@@ -1,28 +1,19 @@
 // OPTIMIZE: 使用 renderIcon 管理所有lucide-icon
 // 并且可以构建组件缓存池，实现懒加载, 减少频繁创建 ReactElement 产生的性能开销
 //
-// TODO: 特殊人群适配
-// - 光敏用户保护
-// - 禁用自动播放闪烁动画（频率≥3Hz 且持续≥5 秒）
-// - 提供 “光敏模式”：纯黑背景 + 无动画 + 高对比度文本
+// TODO: 特殊人群适配（部分已完成：光敏模式 / 高对比度 / prefers-contrast /
+//       inverted-colors / forced-colors / 文本缩放200%）
+// - 禁用自动播放闪烁动画（频率≥3Hz 且持续≥5 秒）—— 自动播放动画监控
 // - 禁止深色模式 + 反转组合：会导致亮度激增，引发头痛 / 癫痫
-// - 低视力用户适配
-// - 支持文本缩放（最大至 200%）
-// - 提供高对比度模式（独立于系统反转）
 // - 避免使用细线条（<1px）和低对比度图标
-// - 系统级辅助功能适配
-// - 支持inverted-colors媒体查询，检测系统反转时禁用应用深色模式
-// - 支持prefers-contrast: more，提供额外高对比度样式
-// - 支持forced-colors，适配 Windows 高对比度模式
-// - 支持读屏模式
+// - 支持读屏模式（全站 ARIA 审计）
 //
 // TODO: 杂项
 // 在现有架构基础实现主题选择模式，支持跟随系统 + 浅色 + 深色模式
 // 系统主题感知：自动适配浅色 / 深色模式，支持prefers-color-scheme
 // 实现《用户协议》
 //
-// TODO: scrollIntoView 平滑滚动
-// TODO: 实现 Toggle 组件的 description
+// TODO: 一个综合的关于页面, 其中包括项目介绍、贡献者名单、反馈方式、联系方式等
 //
 // 玩家身份需要使用正版/离线/第三方登录，每个玩家账户数据互相隔离(除了游戏)
 
@@ -32,6 +23,7 @@ import { routes, findRouteByPath } from './router/config';
 import { useNavStore } from './stores/navStore';
 import { useLastVisitedStore } from './stores/lastVisitedStore';
 import { useThemeStore } from './stores/themeStore';
+import { useAccessibilityStore } from './stores/accessibilityStore';
 import { useAppStore } from './stores/appStore';
 import { useGameStore } from './stores/gameStore';
 import { useDownloadStore } from './stores/downloadStore';
@@ -101,6 +93,7 @@ const MainLayout = () => {
 /** 应用根组件 - 初始化各系统、渲染主布局 */
 function App() {
   const initTheme = useThemeStore((s) => s.init);
+  const initAccessibility = useAccessibilityStore((s) => s.init);
   const initApp = useAppStore((s) => s.init);
   const initGames = useGameStore((s) => s.init);
   const initFont = useFontStore((s) => s.init);
@@ -111,12 +104,13 @@ function App() {
 
   useEffect(() => {
     initTheme();
+    initAccessibility();
     initApp();
     initGames();
     initFont();
     initializeAccountStore();
     initDownload();
-  }, [initTheme, initApp, initGames, initFont, initializeAccountStore, initDownload]);
+  }, [initTheme, initAccessibility, initApp, initGames, initFont, initializeAccountStore, initDownload]);
 
   useEffect(() => {
     const cleanup = setupDownloadListeners();

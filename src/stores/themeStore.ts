@@ -98,7 +98,7 @@ export const themePresets: ThemePreset[] = [
     description: '深色背景，Indigo 强调色',
     descriptionI18nKey: 'theme.preset.darkDesc',
     accentColor: AccentColor.BLUE,
-    previewColors: { bg: '#2c577e', surface: 'rgba(255,255,255,0.05)', accent: '#6366f1', text: '#1d3a54' },
+    previewColors: { bg: '#3a6a92', surface: 'rgba(255,255,255,0.05)', accent: '#6366f1', text: '#1d3a54' },
   },
   {
     id: 'light-grey',
@@ -107,7 +107,7 @@ export const themePresets: ThemePreset[] = [
     description: '明亮背景，Indigo 强调色',
     descriptionI18nKey: 'theme.preset.lightDesc',
     accentColor: AccentColor.INDIGO,
-    previewColors: { bg: '#aebfd1', surface: 'rgba(0,0,0,0.03)', accent: '#6366f1', text: '#1a1a1a' },
+    previewColors: { bg: '#c2d1e0', surface: 'rgba(0,0,0,0.03)', accent: '#6366f1', text: '#1a1a1a' },
   },
   // 新增3套现代极简终端主题
   {
@@ -117,7 +117,7 @@ export const themePresets: ThemePreset[] = [
     description: 'GitHub深夜风格，专业干净的开发者配色',
     descriptionI18nKey: 'theme.preset.githubDesc',
     accentColor: AccentColor.GITHUB,
-    previewColors: { bg: '#0d1117', surface: '#161b22', accent: '#58a6ff', text: '#c9d1d9' },
+    previewColors: { bg: '#151c24', surface: '#161b22', accent: '#58a6ff', text: '#c9d1d9' },
   },
   {
     id: 'onedark',
@@ -126,7 +126,7 @@ export const themePresets: ThemePreset[] = [
     description: '经典IDE风格，温暖舒适的编程配色',
     descriptionI18nKey: 'theme.preset.onedarkDesc',
     accentColor: AccentColor.ONEDARK,
-    previewColors: { bg: '#282c34', surface: '#21252b', accent: '#61afef', text: '#abb2bf' },
+    previewColors: { bg: '#323742', surface: '#21252b', accent: '#61afef', text: '#abb2bf' },
   },
   {
     id: 'nord',
@@ -135,7 +135,7 @@ export const themePresets: ThemePreset[] = [
     description: '北极光极简风，冷色调高级感配色',
     descriptionI18nKey: 'theme.preset.nordDesc',
     accentColor: AccentColor.NORD,
-    previewColors: { bg: '#2e3440', surface: '#3b4252', accent: '#88c0d0', text: '#eceff4' },
+    previewColors: { bg: '#39404f', surface: '#3b4252', accent: '#88c0d0', text: '#eceff4' },
   },
 ];
 

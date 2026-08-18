@@ -64,6 +64,14 @@ html[data-font-scale="1.5"] {
   --font-scale: 1.5;
 }
 
+html[data-font-scale="1.75"] {
+  --font-scale: 1.75;
+}
+
+html[data-font-scale="2"] {
+  --font-scale: 2;
+}
+
 /* 应用缩放系数到所有字体大小变量 */
 :root {
   --text-xs: calc(var(--font-size-xs) * var(--font-scale));

@@ -1,13 +1,13 @@
 /* 静海 青灰 */
 .theme-light-grey {
-  /* 背景系统 - 提高饱和度，保留原明度，更鲜活不发灰 */
-  --color-bg-primary: #aebfd1;    /* 主背景：饱和度+18%，蓝色更明显 */
-  --color-bg-secondary: #98adc5;  /* 卡片背景：饱和度+15%，层次感不变 */
-  --color-bg-tertiary: #b9c9db;   /* 按钮背景：饱和度+16%，点击反馈更清晰 */
+  /* 背景系统 - 提高饱和度，保留原明度，更鲜活不发灰（已调亮） */
+  --color-bg-primary: #c2d1e0;    /* 主背景：明亮青灰 */
+  --color-bg-secondary: #adc0d6;  /* 卡片背景：层次感不变 */  
+  --color-bg-tertiary: #cedae8;   /* 按钮背景：点击反馈更清晰 */
 
   /* 表面系统 - 微调透明度，适配更饱和的背景 */
   --color-surface: rgba(0, 0, 0, 0.035);
-  --color-surface-solid: #b9c9db;
+  --color-surface-solid: #cedae8;
   --color-surface-hover: rgba(0, 0, 0, 0.055);
   --color-surface-active: rgba(0, 0, 0, 0.075);
   /* 输入框背景 */
@@ -62,7 +62,7 @@
   /* 特效系统 - 保持不变 */
   --color-overlay: rgba(0, 0, 0, 0.35);
   --color-backdrop-blur: var(--blur-value, 16px);
-  --color-context-bg: rgba(197, 211, 227, 0.95);
+  --color-context-bg: rgba(203, 216, 232, 0.95);
   --color-context-border: rgba(0, 0, 0, 0.10);
   --color-context-hover: rgba(0, 0, 0, 0.05);
   --color-progress-track: rgba(0, 0, 0, 0.10);

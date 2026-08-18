@@ -263,6 +263,18 @@ runTest('reset 升级', () => {
   strictEqual(formatVersion(result), '0.1.0-alpha.1');
 });
 
+runTest('release 升级（清除预发布后缀，保留补丁号）', () => {
+  const current = { major: 0, minor: 1, patch: 0, preRelease: 'alpha', preReleaseNumber: 5 };
+  const result = bumpVersion(current, 'release');
+  strictEqual(formatVersion(result), '0.1.0');
+});
+
+runTest('release 从稳定版不变', () => {
+  const current = { major: 0, minor: 1, patch: 0, preRelease: null, preReleaseNumber: 0 };
+  const result = bumpVersion(current, 'release');
+  strictEqual(formatVersion(result), '0.1.0');
+});
+
 // ============================================================================
 // 5. validateVersionBump 测试
 // ============================================================================

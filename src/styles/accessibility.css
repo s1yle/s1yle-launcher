@@ -1,0 +1,116 @@
+/* ===================================
+   无障碍辅助样式
+   Accessibility Styles
+   
+   设计理念:
+   - 响应系统级辅助功能媒体查询
+   - 提供独立的光敏/高对比度模式（class 驱动）
+   - 光敏模式强制纯黑 + 无动画 + 高对比文本
+   =================================== */
+
+/* ── 系统级媒体查询 ── */
+
+/* 系统反转颜色时，避免深色 + 反转组合（亮度激增） */
+@media (inverted-colors: inverted) {
+  html:not(.a11y-high-contrast):not(.a11y-photosensitive) {
+    /* 淡化深色模式，改为中灰，避免反转后过亮 */
+    --color-bg-primary: #404040;
+    --color-bg-secondary: #4d4d4d;
+    --color-bg-tertiary: #595959;
+    --color-surface-solid: #4d4d4d;
+    --color-context-bg: rgba(77, 77, 77, 0.95);
+  }
+}
+
+/* prefers-contrast: more — 提供额外高对比度样式 */
+@media (prefers-contrast: more) {
+  html:not(.a11y-high-contrast) {
+    --color-border: rgba(255, 255, 255, 0.28);
+    --color-border-hover: rgba(255, 255, 255, 0.42);
+    --color-text-secondary: rgba(255, 255, 255, 0.92);
+    --color-text-tertiary: rgba(255, 255, 255, 0.72);
+  }
+
+  html.theme-light-grey:not(.a11y-high-contrast) {
+    --color-border: rgba(0, 0, 0, 0.28);
+    --color-border-hover: rgba(0, 0, 0, 0.42);
+    --color-text-secondary: rgba(0, 0, 0, 0.92);
+    --color-text-tertiary: rgba(0, 0, 0, 0.72);
+  }
+}
+
+/* forced-colors — 适配 Windows 高对比度模式 */
+@media (forced-colors: active) {
+  html {
+    /* 交给系统高对比度配色，去除自定义背景层 */
+    background-color: Canvas !important;
+    color: CanvasText !important;
+    forced-color-adjust: auto;
+  }
+
+  html * {
+    forced-color-adjust: auto;
+  }
+}
+
+/* ── 独立高对比度模式（class 驱动，独立于系统反转） ── */
+html.a11y-high-contrast {
+  /* 最大化文字与背景对比 */
+  --color-bg-primary: #000000;
+  --color-bg-secondary: #0a0a0a;
+  --color-bg-tertiary: #1a1a1a;
+  --color-surface: rgba(255, 255, 255, 0.08);
+  --color-surface-solid: #1a1a1a;
+  --color-surface-hover: rgba(255, 255, 255, 0.16);
+  --color-surface-active: rgba(255, 255, 255, 0.24);
+  --color-border: rgba(255, 255, 255, 0.5);
+  --color-border-hover: rgba(255, 255, 255, 0.75);
+
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #ffffff;
+  --color-text-tertiary: #e6e6e6;
+  --color-text-disabled: #b3b3b3;
+
+  --color-context-bg: rgba(0, 0, 0, 0.96);
+  --color-context-border: rgba(255, 255, 255, 0.5);
+}
+
+/* 高对比度模式下弱化纯色装饰，保留文本可读性 */
+html.a11y-high-contrast {
+  --color-overlay: rgba(0, 0, 0, 0.7);
+  --color-progress-track: rgba(255, 255, 255, 0.25);
+  --color-toggle-track: rgba(255, 255, 255, 0.35);
+}
+
+/* ── 光敏模式（class 驱动） ── */
+html.a11y-photosensitive {
+  /* 纯黑背景 + 高对比度文本 */
+  --color-bg-primary: #000000;
+  --color-bg-secondary: #000000;
+  --color-bg-tertiary: #000000;
+  --color-surface: rgba(255, 255, 255, 0.06);
+  --color-surface-solid: #000000;
+  --color-surface-hover: rgba(255, 255, 255, 0.12);
+  --color-surface-active: rgba(255, 255, 255, 0.18);
+  --color-border: rgba(255, 255, 255, 0.45);
+  --color-border-hover: rgba(255, 255, 255, 0.7);
+
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #ffffff;
+  --color-text-tertiary: #e6e6e6;
+  --color-text-disabled: #b3b3b3;
+
+  --color-context-bg: rgba(0, 0, 0, 0.97);
+  --color-context-border: rgba(255, 255, 255, 0.45);
+  --color-overlay: rgba(0, 0, 0, 0.85);
+}
+
+/* 光敏模式：无动画（禁止闪烁） */
+html.a11y-photosensitive,
+html.a11y-photosensitive *,
+html.a11y-photosensitive *::before,
+html.a11y-photosensitive *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}

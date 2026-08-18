@@ -12,6 +12,8 @@ export interface ToggleProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
   label?: string;
+  /** 描述文本（显示在 label 下方） */
+  description?: string;
   disabled?: boolean;
   id?: string;
   hoverable?: boolean;
@@ -41,6 +43,7 @@ const Toggle = ({
   checked,
   onChange,
   label,
+  description,
   disabled = false,
   id,
   hoverable = true,
@@ -67,12 +70,21 @@ const Toggle = ({
       >
 
         {/* L3 控件标签：nowrap 防止窄窗口被挤压成竖排 */}
-        {label && (
-          <motion.span
-            className='font-light text-sm min-w-0 whitespace-nowrap'
-          >
-            {label}
-          </motion.span>
+        {(label || description) && (
+          <div className="min-w-0 flex flex-col gap-0.5">
+            {label && (
+              <motion.span
+                className='font-light text-sm min-w-0 whitespace-nowrap'
+              >
+                {label}
+              </motion.span>
+            )}
+            {description && (
+              <span className='text-xs font-light min-w-0 text-[var(--color-text-tertiary)]'>
+                {description}
+              </span>
+            )}
+          </div>
         )}
 
         {/* 按钮：轨道颜色用 CSS transition 平滑过渡，滑块用 spring 弹性位移 + 按压缩放 */}

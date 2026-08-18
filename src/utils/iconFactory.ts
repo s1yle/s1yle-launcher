@@ -28,6 +28,7 @@ export const BLOCK_ICONS = {
   redstoneTorch: `${BLOCK_ICON_BASE}/redstone_torch.png`,
   redstoneTorchOff: `${BLOCK_ICON_BASE}/redstone_torch_off.png`,
   repeatingCommandBlock: `${BLOCK_ICON_BASE}/repeating_command_block.png`,
+  egg: `${BLOCK_ICON_BASE}/egg.png`
 } as const;
 
 const LOADER_BLOCK_ICONS: Record<ModLoaderType, string> = {
@@ -50,6 +51,7 @@ export const UI_BLOCK_ICONS = {
   account: BLOCK_ICONS.dragonEgg,
   settings: BLOCK_ICONS.anvil,
   world: BLOCK_ICONS.grassBlock,
+  help: BLOCK_ICONS.egg,
 } as const;
 
 const VERSION_TYPE_ICONS: Record<string, string> = {

@@ -6,7 +6,7 @@ import { useCallback, useRef, useState, useMemo, useEffect } from "react"
 import { useClickOutside } from "@/hooks/useClickOutside";
 import { Portal } from "./Portal";
 import { Z_INDEX } from "@/utils/zIndex";
-import { dropdown } from "@/utils/animations";
+import { dropdown, dropdownFromOrigin } from "@/utils/animations";
 import type { DropDownOption } from "@/utils/dropdownOption";
 
 export type { DropDownOption };
@@ -31,6 +31,8 @@ export interface DropDownProps {
   /** 搜索框占位文本 */
   searchPlaceholder?: string;
   openZIndex?: number;
+  /** 是否从原点展开（缩放动画）而非默认下滑动画 */
+  animateFromOrigin?: boolean;
 }
 
 /** 下拉选择组件，支持受控/非受控模式、搜索过滤和 Portal 浮动定位 */
@@ -49,6 +51,7 @@ const DropDown = ({
   showSearch = false,
   searchPlaceholder = '搜索...',
   openZIndex = Z_INDEX.DROPDOWN,
+  animateFromOrigin = false,
 }: DropDownProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -86,7 +89,7 @@ const DropDown = ({
     if (!isOpen) return;
     const id = requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        listRef.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'center' });
+        listRef.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
       })
     })
     return () => cancelAnimationFrame(id);
@@ -199,7 +202,7 @@ const DropDown = ({
                   ${isDropdownTransparent ? '' : 'bg-(--color-surface-solid)'}
                   min-w-[200px]
                 `}
-                variants={dropdown}
+                variants={animateFromOrigin ? dropdownFromOrigin : dropdown}
                 initial="initial"
                 animate="animate"
                 exit="exit"

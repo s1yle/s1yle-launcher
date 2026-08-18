@@ -2,13 +2,13 @@
 :root,
 .theme-dark-blue {
   /* 背景系统 - 同色系渐变，统一和谐不割裂 */
-  --color-bg-primary: #2c577e;    /* 主背景：深海蓝青（你选的主色） */
-  --color-bg-secondary: #244869;  /* 卡片背景：比主色深15%，同色系 */
-  --color-bg-tertiary: #1d3a54;   /* 高亮/按钮背景：比主色深25% */
+  --color-bg-primary: #3a6a92;    /* 主背景：深海蓝青（已调亮） */
+  --color-bg-secondary: #2e557a;  /* 卡片背景：比主色深15%，同色系（已调亮） */
+  --color-bg-tertiary: #264460;   /* 高亮/按钮背景：比主色深25%（已调亮） */
 
   /* 表面系统 - 重新校准透明度，适配彩色背景（不再用纯白半透明） */
   --color-surface: rgba(255, 255, 255, 0.05);
-  --color-surface-solid: #1d3a54;
+  --color-surface-solid: #264460;
   --color-surface-hover: rgba(255, 255, 255, 0.09);
   --color-surface-active: rgba(255, 255, 255, 0.13);
   /* 输入框背景 */
@@ -63,7 +63,7 @@
   /* 特效系统 - 完全适配彩色背景 */
   --color-overlay: rgba(0, 0, 0, 0.42);
   --color-backdrop-blur: var(--blur-value, 16px);
-  --color-context-bg: rgba(29, 58, 84, 0.95);
+  --color-context-bg: rgba(38, 68, 96, 0.95);
   --color-context-border: rgba(255, 255, 255, 0.12);
   --color-context-hover: rgba(255, 255, 255, 0.06);
   --color-progress-track: rgba(255, 255, 255, 0.12);

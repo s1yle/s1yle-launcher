@@ -4,7 +4,7 @@ import { createOptions, OptionValueType } from "@/utils/createOptions";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-/** 字体缩放级别配置（87.5% ~ 150%） */
+/** 字体缩放级别配置（87.5% ~ 200%） */
 export const fontScaleConfig = createOptions(
   [
     { value: 0.875, label: '较小 (87.5%)' },
@@ -12,6 +12,8 @@ export const fontScaleConfig = createOptions(
     { value: 1.125, label: '稍大 (112.5%)' },
     { value: 1.25, label: '大 (125%)' },
     { value: 1.5, label: '超大 (150%)' },
+    { value: 1.75, label: '特超大 (175%)' },
+    { value: 2, label: '极大 (200%)' },
   ] as const,
   1 // 默认值
 );
@@ -24,7 +26,7 @@ export type FontScale = OptionValueType<typeof fontScaleConfig>;
 
 const DEFAULT_FONT_SCALE: FontScale = 1;
 
-const FONT_SCALES: FontScale[] = [0.875, 1, 1.125, 1.25, 1.5];
+const FONT_SCALES: FontScale[] = [0.875, 1, 1.125, 1.25, 1.5, 1.75, 2];
 
 
 /** 字体 Store 的属性 */

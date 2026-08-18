@@ -5,6 +5,7 @@ import { SettingsPanel } from '@/components/common/SettingsPanel/SettingPanel';
 import { useState, useMemo } from 'react';
 import DropDown from '@/components/common/DropDown';
 import { fontScaleConfig } from '@/stores/fontStore';
+import { useAccessibilityStore } from '@/stores/accessibilityStore';
 import { useBackgroundStore } from '@/stores/backgroundStore';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import type { BackgroundType } from '@/config/types';
@@ -56,6 +57,12 @@ const AppearanceSettings = () => {
 
   // 背景store
   const { config, setBackground, resetBackground } = useBackgroundStore();
+
+  // 无障碍辅助
+  const photosensitive = useAccessibilityStore((s) => s.photosensitive);
+  const setPhotosensitive = useAccessibilityStore((s) => s.setPhotosensitive);
+  const highContrast = useAccessibilityStore((s) => s.highContrast);
+  const setHighContrast = useAccessibilityStore((s) => s.setHighContrast);
 
   const handleAnimationSetting = () => {
     setAnimation({ enabled: !animation.enabled });
@@ -136,15 +143,14 @@ const AppearanceSettings = () => {
             <Toggle
               checked={animation.enabled}
               onChange={handleAnimationSetting}
-              // TODO: 实现 description 并写 "Windows 需开启系统动画设置(窗口内的动画控件和元素)"
               label="页面动画（需系统动画支持）"
+              description="Windows 需开启系统动画设置（窗口内的动画控件和元素）"
               disabled={false}
             />
           </PageSection>
 
           <PageSection>
 
-            {/* TODO: 实现dropdown的 animateFromOrigin 开关 */}
             <SettingsPanel.Item>
               <SettingsPanel.DropDown
                 label='字体'
@@ -153,6 +159,7 @@ const AppearanceSettings = () => {
                 onSelect={handleFontSelect}
                 showSearch
                 searchPlaceholder='请搜索'
+                animateFromOrigin
               />
             </SettingsPanel.Item>
           </PageSection>
@@ -209,6 +216,30 @@ const AppearanceSettings = () => {
           </SettingsPanel>
         </Reveal>
       </PageSection>
+
+      <Reveal>
+        <SettingsPanel label="无障碍">
+          <SettingsPanel.Item>
+            <Toggle
+              checked={highContrast}
+              onChange={setHighContrast}
+              label="高对比度模式"
+              description="独立于系统反转，提供更高对比度的界面"
+              disabled={false}
+            />
+          </SettingsPanel.Item>
+
+          <SettingsPanel.Item>
+            <Toggle
+              checked={photosensitive}
+              onChange={setPhotosensitive}
+              label="光敏模式"
+              description="纯黑背景 + 无动画 + 高对比度文本，降低亮度与闪烁刺激"
+              disabled={false}
+            />
+          </SettingsPanel.Item>
+        </SettingsPanel>
+      </Reveal>
 
       <Reveal>
         <SettingsPanel label="背景">

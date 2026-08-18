@@ -1,5 +1,3 @@
-// FIXME: 有崩溃但是没有正确显示崩溃的log，需要修复一下
-
 import { useCallback, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2, Square, ChevronUp, Settings } from 'lucide-react';

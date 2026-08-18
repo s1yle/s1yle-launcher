@@ -1,26 +1,34 @@
-# WeCraft! Launcher - One-click Role Switch: Player / Server Owner
+# WeCraft! Launcher
 
-[![Version](https://img.shields.io/badge/version-0.1.0--alpha.2-blue.svg)](https://github.com/s1yle/s1yle-launcher/releases)
+[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/s1yle/s1yle-launcher/releases)
 [![License](https://img.shields.io/badge/license-GPL3.0-green.svg)](LICENSE)
 
 **English** | [**中文**](README.md)
 
-A modern Minecraft launcher with **one-click role switching between player and server owner**, built for small and medium server communities. Server owners can upload their servers for free; players can discover and play on community servers for free. Powered by Tauri 2 + React 19 + Rust.
+A modern, high-performance, open-source Minecraft launcher. Powered by Tauri 2 + React 19 + Rust. Supports version management & one-click download, Fabric/Forge/NeoForge loaders, multiple accounts (Microsoft / offline), instance management, theming, i18n, and accessibility.
+
+> 🚀 **v0.1.0 (Core Launcher)**: accounts, download, loaders, instances, launch, theming and accessibility.
+> ☁️ Cloud modules such as **Community Servers** and the **Server Owner Dashboard** are coming in later releases.<br/>
+> 🖼️ *(Screenshot placeholder — to be added at release.)*
+
+<p align="center">
+  <img src="docs/screenshot-placeholder.png" alt="WeCraft! Launcher screenshot" width="720"/>
+</p>
 
 ## 🚀 Usage
 
-### For Server Owners
+### For Players
+1. **Account Management** - Add Minecraft accounts (Microsoft / offline)
+2. **Download** - Choose game versions with optional Fabric/Forge/NeoForge loaders
+3. **Instance Management** - Create instances, configure game settings, mods, resource packs, worlds
+4. **Launch** - One-click game launch
+
+### For Server Owners (Coming Soon) 🚧
 1. **Switch to Owner Mode** - One-click toggle via the Dynamic Island
 2. **Upload Server** - Free server configuration upload, manage whitelist, resource packs, etc.
 3. **Dashboard** - Real-time server status and player analytics
 
-### For Players
-1. **Switch to Player Mode** - Back to player perspective
-2. **Discover Servers** - Browse community server list, join with one click
-3. **Account Management** - Add Minecraft accounts (Microsoft / offline)
-4. **Download** - Choose game versions with optional Fabric/Forge/NeoForge loaders
-5. **Instance Management** - Create instances, configure game settings, mods, resource packs, worlds
-6. **Launch** - One-click game launch
+> ☁️ These cloud capabilities are part of later releases. v0.1.0 ships the core launcher only.
 
 ## 🏗️ Project Structure
 
@@ -96,23 +104,24 @@ cd s1yle-launcher
 pnpm install
 pnpm tauri dev     # Development mode
 pnpm tauri build   # Production build
-pnpm lint          # ESLint
-pnpm typecheck     # TypeScript type check
+pnpm check:contracts   # Frontend invoke ↔ Rust command guard
+pnpm tsc --noEmit      # TypeScript type check
+pnpm test              # Unit tests
 ```
 
 ## ✨ Features
 
 - 🏝️ **Dynamic Island Navigation** - Floating capsule navigation with glassmorphism and window dragging
-- 👤 **Dual Role System** - One-click switch between player and server owner
-- 🖥️ **Server Owner Dashboard** - Free server uploads, configuration management, analytics
-- 🎮 **Community Servers** - Free server discovery and browsing
-- 📌 **Smart Portal** - 5 floating placement modes, anchor and drag support
-- 🎨 **Theme System** - Dark/light presets + 7 accent colors + 3 terminal themes
+- 🎨 **Theme System** - Dark/light presets + accent colors + terminal themes + accessibility (photosensitive/high contrast)
 - 🔐 **Account Management** - Microsoft and offline accounts
-- 🎮 **Instance Management** - Versioned directory structure, shared global resources
 - 📥 **Download Manager** - Game version downloads with Fabric/Forge/NeoForge loaders
+- 🎮 **Instance Management** - Versioned directory structure, shared global resources
 - ⚡ **High Performance** - Rust backend with Tokio async runtime
+- 📌 **Smart Portal** - 5 floating placement modes, anchor and drag support
 - 🌐 **Internationalization** - Chinese and English support
+- 👤 **Dual Role System** - Player ↔ server owner (owner side ☁️ coming soon)
+- 🖥️ **Server Owner Dashboard** - Server uploads, analytics (☁️ coming soon)
+- 🎮 **Community Servers** - Server discovery and browsing (☁️ coming soon)
 
 ## 📄 Open Source Strategy
 
@@ -123,7 +132,7 @@ This project follows a **client open-source, cloud closed-source** model:
 | **Client** | **GPL-3.0 Open Source** | All code in this repository is licensed under GPL-3.0 |
 | **Cloud Services** | **Closed Source** | Server-side code, API, and infrastructure are not public |
 
-Server uploads are **completely free** for owners, server discovery and play are **completely free** for players.
+Server uploads are **completely free** for owners, server discovery and play are **completely free** for players (cloud modules coming in later releases).
 
 ## 🙏 Acknowledgments
 

@@ -1,5 +1,7 @@
 /** 认证 Store（账户 + 登录会话）— 提供 useAuthStore hook */
 export { useAuthStore } from './authStore';
+/** 无障碍辅助模式 Store — 提供 useAccessibilityStore hook（光敏/高对比） */
+export { useAccessibilityStore } from './accessibilityStore';
 /** 全局应用状态 Store — 提供 useAppStore hook */
 export { useAppStore } from './appStore';
 /** 头像渲染模式 Store — 提供 useAvatarStore hook */

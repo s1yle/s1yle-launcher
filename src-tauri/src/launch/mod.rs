@@ -3,10 +3,12 @@
 //! 每次启动生成唯一游戏 ID（UUID），同一游戏目录也可并行启动多次，
 //! 每个游戏独立持有子进程与状态机，可独立停止 / 查询状态。
 
+#[cfg(target_os = "windows")]
+use windows::Win32::Foundation::LPARAM;
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
-use windows::Win32::Foundation::LPARAM;
 use core::convert::{From, Into};
+use core::prelude::v1::derive;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
@@ -596,7 +598,16 @@ async fn wait_for_game_window(game_id: &str) {
         }
 
         // 2. 检测游戏窗口是否出现
-        if crate::launch::window::process_has_visible_window(LPARAM(pid as isize)) {
+        if crate::launch::window::process_has_visible_window(
+        #[cfg(target_os = "windows")]
+            {
+                LPARAM(pid as isize)
+            },
+            #[cfg(target_os = "linux")]
+            {
+                pid
+            }
+        ) {
             if let Ok(mut manager) = lock_manager() {
                 if let Some(game) = manager.processes.get_mut(game_id) {
                     game.status = LaunchStatus::Running;

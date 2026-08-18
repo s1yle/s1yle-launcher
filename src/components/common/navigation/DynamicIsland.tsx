@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, ChevronDown,  FileQuestionMark, AlertTriangle, LogOut } from 'lucide-react';
+import { User, ChevronDown, FileQuestionMark, AlertTriangle, LogOut } from 'lucide-react';
 import { useUserRoleStore, UserRole } from '@/stores/userRoleStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useNavStore } from '@/stores/navStore';
@@ -47,10 +47,6 @@ const BOTTOM_TEXTS = [
   '今天玩什么？',
 ];
 
-/**
- * 灵动岛导航组件。
- * 悬浮式胶囊导航（顶部居中），毛玻璃背景，支持窗口拖曳 + 角色切换 180° 旋转动画。
- */
 const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
   const safeNavigate = useSafeNavigate();
   const location = useLocation();
@@ -64,7 +60,6 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
   const [isDraggingNav, setIsDraggingNav] = useState(false);
   const idleTimerRef = useRef<number | null>(null);
   const islandRef = useRef<HTMLDivElement>(null);
-  const navContainerRef = useRef<HTMLDivElement>(null);
   const longPressTimerRef = useRef<number | null>(null);
   const pointerStartXRef = useRef(0);
   const navDragActiveRef = useRef(false);
@@ -88,7 +83,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
         if (!isHovered) {
           setIsExpanded(false);
         }
-      }, TIMEOUT_IDLE); // 5 秒未访问收起
+      }, TIMEOUT_IDLE); // 空闲后未悬停则收起
     };
 
     resetTimer();
@@ -105,7 +100,7 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
     }, 8000); // 8 秒切换一次
 
     return () => clearInterval(interval);
-  }, []);
+}, []);
 
   const getDirection = (targetPath: string): 'left' | 'right' => {
     const currentPath = location.pathname;
@@ -368,280 +363,285 @@ const DynamicIsland = ({ onMenuClick }: DynamicIslandProps) => {
 
   return (
     <motion.div
-      className="fixed top-4 left-1/2 -translate-x-1/2 z-50"
-      initial={{ opacity: 0, y: -16, scale: 0.95 }}
-      animate={{
-        opacity: 1,
-        y: 0,
-        scale: isDraggingNav ? 0.94 : 1,
-      }}
-      transition={EASING.SPRING_SOFT}
-    >
-      <motion.div
-        ref={islandRef}
-        className={`
+      className="fixed top-4 left-0 right-0 z-50 flex justify-center"
+        initial={{ opacity: 0, y: -16, scale: 0.95 }}
+        animate={{
+          opacity: 1,
+          y: 0,
+          scale: isDraggingNav ? 0.94 : 1,
+        }}
+        transition={EASING.SPRING_SOFT}
+      >
+        <motion.div
+          ref={islandRef}
+          className={`
           relative flex items-center gap-1
           bg-[var(--color-surface)]/90
           border border-[var(--color-border)]/50
           rounded-full shadow-xl shadow-black/20
           select-none overflow-hidden py-0.5
+          min-w-max
           transition-all duration-500 ease-out
           ${isExpanded ? 'gap-2 px-6' : ''}
         `}
-        whileHover={{ scale: 1.02, y: -1 }}
-        transition={EASING.SPRING_BOUNCY}
-        onMouseEnter={() => {
-          setIsHovered(true);
-          setIsExpanded(true);
-        }}
-        onMouseLeave={() => setIsHovered(false)}
-        onMouseDown={handleDragStart}
-        data-tauri-drag-region="true"
-      >
-        {/* 角色切换按钮 */}
-        <div className="relative flex-shrink-0">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleRoleButtonClick();
-            }}
-            onMouseDown={(e) => e.stopPropagation()}
-            disabled={isTransitioning}
-            className={`
-              flex items-center gap-2 px-3 py-1.5 rounded-full
+          whileHover={{ scale: 1.02, y: -1 }}
+          transition={EASING.SPRING_BOUNCY}
+          onMouseEnter={() => {
+            setIsHovered(true);
+            setIsExpanded(true);
+          }}
+          onMouseLeave={() => setIsHovered(false)}
+          onMouseDown={handleDragStart}
+          data-tauri-drag-region="true"
+        >
+          {/* 角色切换按钮 */}
+          <div className="relative flex-shrink-0">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRoleButtonClick();
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              disabled={isTransitioning}
+              className={`
+              flex items-center gap-2 px-1 py-1.5 rounded-full
               text-sm font-medium transition-all duration-200 cursor-pointer
               ${currentRoleConfig.color}
               hover:bg-surface-hover
               active:scale-95
             `}
-            data-tauri-drag-region="false"
-          >
-            <div className="relative w-4 h-4">
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={currentRole}
-                  initial={{ opacity: 0, rotateY: -180, scale: 0.6 }}
-                  animate={{ opacity: 1, rotateY: 0, scale: 1 }}
-                  exit={{ opacity: 0, rotateY: 180, scale: 0.6 }}
-                  transition={{ duration: DURATION.MEDIUM, ease: EASING.OUT_FLUENT }}
-                  className="absolute inset-0"
-                >
-                  <currentRoleConfig.icon className="w-4 h-4" />
-                </motion.div>
-              </AnimatePresence>
-            </div>
-            <span className="relative">
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.span
-                  key={currentRole}
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 4 }}
-                  transition={{ duration: DURATION.NORMAL, ease: EASING.OUT_FLUENT }}
-                  className="whitespace-nowrap"
-                >
-                  {currentRoleConfig.label}
-                </motion.span>
-              </AnimatePresence>
-            </span>
-            {hasMultipleRoles && (
-              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showRoleMenu ? 'rotate-180' : ''}`} />
-            )}
-          </button>
+              data-tauri-drag-region="false"
+            >
+              <div className="relative w-4 h-4">
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={currentRole}
+                    initial={{ opacity: 0, rotateY: -180, scale: 0.6 }}
+                    animate={{ opacity: 1, rotateY: 0, scale: 1 }}
+                    exit={{ opacity: 0, rotateY: 180, scale: 0.6 }}
+                    transition={{ duration: DURATION.MEDIUM, ease: EASING.OUT_FLUENT }}
+                    className="absolute inset-0"
+                  >
+                    <currentRoleConfig.icon className="w-4 h-4" />
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+              <span className="relative">
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.span
+                    key={currentRole}
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 4 }}
+                    transition={{ duration: DURATION.NORMAL, ease: EASING.OUT_FLUENT }}
+                    className="whitespace-nowrap"
+                  >
+                    {currentRoleConfig.label}
+                  </motion.span>
+                </AnimatePresence>
+              </span>
+              {hasMultipleRoles && (
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showRoleMenu ? 'rotate-180' : ''}`} />
+              )}
+            </button>
 
-          {/* 角色下拉菜单 */}
-          {hasMultipleRoles && showRoleMenu && (
-            <motion.div
-              variants={dropdown}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              className="absolute top-full left-0 mt-2 py-1.5 min-w-[140px]
+            {/* 角色下拉菜单 */}
+            {hasMultipleRoles && showRoleMenu && (
+              <motion.div
+                variants={dropdown}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                className="absolute top-full left-0 mt-2 py-1.5 min-w-[140px]
                 bg-surface-solid
                 rounded-lg
                 shadow-xl z-50"
-              data-tauri-drag-region="false"
-            >
-              {AVAILABLE_ROLES.map((role) => {
-                const config = ROLE_CONFIG[role];
-                return (
-                  <button
-                    key={role}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRoleSelect(role);
-                    }}
-                    disabled={isTransitioning || role === currentRole}
-                    className={`
+                data-tauri-drag-region="false"
+              >
+                {AVAILABLE_ROLES.map((role) => {
+                  const config = ROLE_CONFIG[role];
+                  return (
+                    <button
+                      key={role}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRoleSelect(role);
+                      }}
+                      disabled={isTransitioning || role === currentRole}
+                      className={`
                       w-full flex items-center gap-2.5 px-3 py-2 text-sm
                       hover:bg-surface-hover transition-colors cursor-pointer
                       ${(role === currentRole || isTransitioning)
-                        ? 'opacity-50 cursor-not-allowed' : ''}
+                          ? 'opacity-50 cursor-not-allowed' : ''}
                     `}
-                    data-tauri-drag-region="false"
-                  >
-                    <config.icon className={`w-4 h-4 ${config.color}`} />
-                    <span className={`font-medium ${config.color}`}>
-                      切换到{config.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </motion.div>
-          )}
-        </div>
+                      data-tauri-drag-region="false"
+                    >
+                      <config.icon className={`w-4 h-4 ${config.color}`} />
+                      <span className={`font-medium ${config.color}`}>
+                        切换到{config.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </motion.div>
+            )}
+          </div>
 
-        {/* 分隔线 */}
-        <div className="w-px h-6 bg-[var(--color-border)]/30 flex-shrink-0 z-10" />
+          {/* 分隔线 */}
+          <div className="w-px h-6 bg-[var(--color-border)]/30 flex-shrink-0 z-10" />
 
-        {/* 导航菜单项 */}
-        <motion.div
-          ref={navContainerRef}
-          className="flex items-center gap-1 z-10 touch-none"
-          variants={{
-            initial: {},
-            animate: {
-              transition: {
-                staggerChildren: DURATION.STAGGER_CHILD,
-                delayChildren: DURATION.STAGGER_SECTION,
-              },
-            },
-          }}
-          initial="initial"
-          animate="animate"
-          onPointerDown={handleNavPointerDown}
-          style={{ touchAction: 'none' }}
-        >
-          {navItems.map((item) => (
-            <motion.div
-              key={item.id}
-              variants={{
-                initial: { opacity: 0, y: 8 },
-                animate: { opacity: 1, y: 0 },
-              }}
-              transition={{
-                opacity: { duration: DURATION.ELEMENT_ENTER, ease: EASING.OUT_FLUENT },
-                y: { ...EASING.SPRING_ENTER },
-              }}
-            >
-              <DynamicItem
-                isMainMenu={item.id === 'main'}
-                isActive={isActive(item.path)}
-                isExpanded={isExpanded}
-                isTransitioning={isTransitioning}
-                handleItemClick={handleItemClick}
-                homeItem={homeItem}
-                item={item}
-              />
-            </motion.div>
-          ))}
-        </motion.div>
-
-        {/* 退出登录按钮 */}
-        <div className="w-px h-6 bg-[var(--color-border)]/30 flex-shrink-0 z-10" />
-        <div className="relative flex-shrink-0 z-10">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowLogoutConfirm(!showLogoutConfirm);
-            }}
-            onMouseDown={(e) => e.stopPropagation()}
-            className="p-2 rounded-full text-[var(--color-text-secondary)] 
-              hover:text-red-400 hover:bg-red-500/10 
-                transition-all duration-200 cursor-pointer"
-            title="退出登录"
-            data-tauri-drag-region="false"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-
-          {/* 退出确认弹窗 */}
-          <ConfirmPopup
-            isOpen={showLogoutConfirm}
-            size='lg'
-            title="确认退出登录"
-            message="确认退出登录？"
-            confirmText="退出"
-            cancelText="取消"
-            confirmType="danger"
-            showIcon
-            iconType="warning"
-            onConfirm={handleLogout}
-            onCancel={() => setShowLogoutConfirm(false)}
-            onClose={() => setShowLogoutConfirm(false)}
-          />
-        </div>
-      </motion.div>
-
-      {/* 角色引导弹窗 */}
-      <AnimatePresence>
-        {showRoleGuide && (
+          {/* 导航菜单项 */}
           <motion.div
-            variants={modalOpen}
+            className="flex items-center gap-1 z-10 touch-none flex-shrink-0"
+            variants={{
+              initial: {},
+              animate: {
+                transition: {
+                  staggerChildren: DURATION.STAGGER_CHILD,
+                  delayChildren: DURATION.STAGGER_SECTION,
+                },
+              },
+            }}
             initial="initial"
             animate="animate"
-            exit="exit"
-            className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72
+            onPointerDown={handleNavPointerDown}
+            style={{ touchAction: 'none' }}
+          >
+            {navItems.map((item) => (
+              <motion.div
+                key={item.id}
+                className="flex-shrink-0"
+                variants={{
+                  initial: { opacity: 0, y: 8 },
+                  animate: { opacity: 1, y: 0 },
+                }}
+                transition={{
+                  opacity: { duration: DURATION.ELEMENT_ENTER, ease: EASING.OUT_FLUENT },
+                  y: { ...EASING.SPRING_ENTER },
+                }}
+              >
+<DynamicItem
+                  isMainMenu={item.id === 'main'}
+                  isActive={isActive(item.path)}
+                  isExpanded={isExpanded}
+                  isTransitioning={isTransitioning}
+                  handleItemClick={handleItemClick}
+                  homeItem={homeItem}
+                  item={item}
+                />
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* 退出登录按钮 */}
+          <div className="w-px h-6 bg-[var(--color-border)]/30 flex-shrink-0 z-10" />
+          <div className="relative flex-shrink-0 z-10">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowLogoutConfirm(!showLogoutConfirm);
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="p-2 rounded-full text-[var(--color-text-secondary)] 
+              hover:text-red-400 hover:bg-red-500/10 
+                transition-all duration-200 cursor-pointer"
+              title="退出登录"
+              data-tauri-drag-region="false"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+
+            {/* 退出确认弹窗 */}
+            <ConfirmPopup
+              isOpen={showLogoutConfirm}
+              size='lg'
+              title="确认退出登录"
+              message="确认退出登录？"
+              confirmText="退出"
+              cancelText="取消"
+              confirmType="danger"
+              showIcon
+              iconType="warning"
+              onConfirm={handleLogout}
+              onCancel={() => setShowLogoutConfirm(false)}
+              onClose={() => setShowLogoutConfirm(false)}
+            />
+          </div>
+        </motion.div>
+
+        {/* 角色引导弹窗 */}
+        <AnimatePresence>
+          {showRoleGuide && (
+            <motion.div
+              variants={modalOpen}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72
               bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl
               shadow-2xl z-50 p-4"
-            data-tauri-drag-region="false"
-          >
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-                <AlertTriangle className="w-4 h-4 text-amber-400" />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-sm font-semibold text-[var(--color-text-primary)] mb-1">
-                  需要玩家账户
-                </h4>
-                <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
-                  当前没有玩家账户。请先在账户管理中添加玩家账户，再切换到玩家身份。
-                </p>
-                <div className="flex gap-2 mt-3">
-                  <button
-                    onClick={() => setShowRoleGuide(false)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium
+              data-tauri-drag-region="false"
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="w-4 h-4 text-amber-400" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold text-[var(--color-text-primary)] mb-1">
+                    需要玩家账户
+                  </h4>
+                  <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
+                    当前没有玩家账户。请先在账户管理中添加玩家账户，再切换到玩家身份。
+                  </p>
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      onClick={() => setShowRoleGuide(false)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium
                       bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)]
                       hover:bg-[var(--color-border)] transition-colors"
-                  >
-                    知道了
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowRoleGuide(false);
-                      safeNavigate('/account');
-                    }}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium
+                    >
+                      知道了
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowRoleGuide(false);
+                        safeNavigate('/account');
+                      }}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium
                       bg-[var(--color-primary)]/10 text-[var(--color-primary)]
                       hover:bg-[var(--color-primary)]/20 transition-colors"
-                  >
-                    去管理
-                   </button>
+                    >
+                      去管理
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* 底部随机文本 */}
-      <AnimatePresence>
-        {!isExpanded && (
-          <motion.div
-            key={bottomText}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: DURATION.MEDIUM, ease: EASING.OUT_FLUENT }}
-            className="absolute top-full left-1/2 -translate-x-1/2 mt-1 whitespace-nowrap "
-          >
-            <span className="text-xs text-text-tertiary font-medium bg-[var(--color-bg-tertiary)] rounded-full px-3 py-1">
-              {bottomText}
-            </span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+        {/* 底部随机文本 */}
+        <AnimatePresence>
+          {!isExpanded && (
+            <motion.div
+              key={bottomText}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: DURATION.MEDIUM, ease: EASING.OUT_FLUENT }}
+              className="
+                absolute top-full left-1/2 -translate-x-1/2 mt-1 whitespace-nowrap
+                flex flex-row justify-center items-center
+                rounded-(--radius-sm) bg-(--color-bg-tertiary) px-2 py-1"
+            >
+              <BlockIcon src={UI_BLOCK_ICONS.help} w={7} h={7} />
+              <span className="text-xs font-base text-text-tertiary">
+                {bottomText}
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
   );
 };
 
@@ -693,7 +693,7 @@ export const DynamicItem = ({ isMainMenu, handleItemClick, homeItem, isActive, i
         whileTap={microInteractions.buttonTap}
         className={`
             relative flex items-center gap-0.5 px-2 py-0.5 rounded-full
-            text-sm font-medium transition-all duration-300 cursor-pointer z-10
+            text-sm font-medium transition-all duration-300 cursor-pointer z-10 flex-shrink-0
             ${isActive
             ? 'text-[var(--color-primary)] shadow-md'
             : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)]'
@@ -709,11 +709,11 @@ export const DynamicItem = ({ isMainMenu, handleItemClick, homeItem, isActive, i
 
         <span
           className={`
-              overflow-hidden whitespace-nowrap hidden sm:inline font-medium
+              overflow-hidden whitespace-nowrap hidden sm:inline font-medium flex-shrink-0
               transition-all duration-500 ease-out
               ${isExpanded || isActive
-              ? 'max-w-[120px] opacity-100 ml-1'
-              : 'max-w-0 opacity-0 ml-0'
+              ? 'max-w-[120px] min-w-max opacity-100 ml-1'
+              : 'max-w-0 min-w-0 opacity-0 ml-0'
             }
             `}
         >
