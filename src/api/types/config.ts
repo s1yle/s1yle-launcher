@@ -14,12 +14,10 @@ export interface WindowPosition {
   maximized: boolean;
 }
 
-/** 多窗口位置存储（按 label 索引） */
+/** 窗口位置存储（当前仅主窗口） */
 export interface WindowPositions {
   /** 主窗口位置 */
   main?: WindowPosition;
-  /** 登录窗口位置 */
-  login?: WindowPosition;
 }
 
 /** 应用全局配置（对应 Rust config/models.rs SystemConfig，snake_case 序列化） */

@@ -36,6 +36,7 @@ const blockNavIcon = (src: string) => (props: { className?: string }) => (
 
 /** 页面组件按路由懒加载（每个路由独立 chunk） */
 const Loading = lazy(() => import('../pages/Loading'));
+const LoginGate = lazy(() => import('../pages/Login/LoginGate'));
 const Home = lazy(() => import('../pages/Home'));
 const AccountDetail = lazy(() => import('../pages/AccountList/AccountDetail'));
 const GameGameSettings = lazy(() => import('../pages/Game/GameSettings/GameSettings.tsx'));
@@ -57,6 +58,14 @@ export const routes: RouteConfig[] = [
     path: '/loading',
     component: Loading,
     header: { type: SidebarType.MAIN, title: 'Loading', titleI18nKey: '' },
+    sidebarGroup: SidebarGroup.NONE,
+    needsScrollbar: false,
+    layoutMode: LayoutMode.FULLSCREEN,
+  },
+  {
+    path: '/login',
+    component: LoginGate,
+    header: { type: SidebarType.MAIN, title: '登录', titleI18nKey: 'nav.login' },
     sidebarGroup: SidebarGroup.NONE,
     needsScrollbar: false,
     layoutMode: LayoutMode.FULLSCREEN,

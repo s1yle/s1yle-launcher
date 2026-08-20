@@ -44,10 +44,6 @@ impl Default for WindowPosition {
 pub struct WindowPositions {
     #[serde(default)]
     pub main: Option<WindowPosition>,
-    #[serde(default)]
-    pub login: Option<WindowPosition>,
-    #[serde(default)]
-    pub loading: Option<WindowPosition>,
 }
 
 /// 全局应用配置（.wecraft.json 的 app 节）

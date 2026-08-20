@@ -18,15 +18,13 @@ mod window;
 
 use crate::app_context::AppContext;
 use crate::config::{ConfigManager, set_config_value};
-use crate::types::AccountType;
 
 use crate::microsoft_login::{
     cancel_device_code, get_login_status, poll_and_complete_login, start_device_code,
 };
 
 use crate::download::DownloadManager;
-use crate::window::{WindowType, create_and_show_window};
-use chrono::Utc;
+use crate::window::{WindowType, create_and_show_window, restore_main_window_state};
 use std::sync::OnceLock;
 use std::time::Instant;
 use tauri::webview::PageLoadEvent;
@@ -196,33 +194,28 @@ fn open_folder(path: String) -> Result<String, String> {
     Ok(path)
 }
 
-/// 检查登录时间是否已超过 7 天
-fn is_login_expired(login_time: &str) -> bool {
-    let login_time = match chrono::DateTime::parse_from_rfc3339(login_time) {
-        Ok(t) => t,
-        Err(_) => return true,
-    };
-    let elapsed = Utc::now().signed_duration_since(login_time);
-    elapsed.num_hours() > 7 * 24
+/// 解析启动器工作目录：
+/// - `WECRAFT_WORK_DIR` 环境变量优先（开发/便携工具）
+/// - 默认：exe 所在目录（配置/日志/缓存与启动器同目录存放）
+fn resolve_work_dir() -> std::path::PathBuf {
+    use std::path::PathBuf;
+
+    if let Ok(dir) = std::env::var("WECRAFT_WORK_DIR") {
+        return PathBuf::from(dir);
+    }
+
+    std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(|d| d.to_path_buf()))
+        .unwrap_or_else(|| PathBuf::from("."))
 }
 
 /// 初始化应用上下文（组合根）
 ///
-/// - 工作目录：`WECRAFT_WORK_DIR` 环境变量 → 回退 exe 所在目录
+/// - 工作目录：`resolve_work_dir()`（见上）
 /// - 游戏根目录：配置文件中 `app.game_dir` → 回退工作目录
 fn init_app_context() -> AppContext {
-    use std::path::PathBuf;
-
-    let work_dir = std::env::var("WECRAFT_WORK_DIR")
-        .map(PathBuf::from)
-        .ok()
-        .or_else(|| {
-            std::env::current_exe()
-                .ok()
-                // /home/scc/repos/s1yle-launcher/src-tauri/target/debug/WeCraft-Launcher.parent()
-                .and_then(|p| p.parent().map(|d| d.to_path_buf()))
-        })
-        .unwrap_or_else(|| PathBuf::from("."));
+    let work_dir = resolve_work_dir();
 
     let game_root = resolve_game_root(&work_dir);
     log_info!(
@@ -333,104 +326,35 @@ pub fn run() {
                 WindowType::Loading,
                 |window, payload| {
                     if let PageLoadEvent::Finished = payload.event() {
-                        window.show().expect("_loading_window 显示失败");
-                        window.set_focus().expect("_loading_window 聚焦失败");
+                        let _ = window.show();
+                        let _ = window.set_focus();
                     }
                 },
             )?;
 
             init_logging(app)?;
 
-            // 预先加载账户数据（登录状态在 accounts 节，窗口决策依赖）
+            // 预先加载账户数据（登录状态在 accounts 节）
             let _ = crate::account::load_accounts_from_disk_internal();
 
-            // 异步执行：判断登录态 → 创建目标窗口 → 关闭加载窗口
-            tauri::async_runtime::spawn(async move {
-                let lg_state = match crate::account::get_login_state() {
-                    Ok(s) => s,
-                    Err(_) => return,
-                };
-
-                let need_login = !lg_state.is_logged_in
-                    || lg_state.logged_in_type == AccountType::None
-                    || is_login_expired(&lg_state.login_time);
-
-                let start = Instant::now();
-                if need_login {
-                    // Login 窗口
-                    let handle_clone = handle.clone();
-
-                    let _login_window = create_and_show_window(
-                        &handle,
-                        "login",
-                        WebviewUrl::App("".into()),
-                        WindowType::Login,
-                        move |window, payload| {
-                            if let PageLoadEvent::Finished = payload.event() {
-                                if let Some(win) = handle_clone.get_webview_window("loading") {
-                                    let _ = win.close();
-                                }
-                                // 恢复窗口位置
-                                if let Some(app) = APP_HANDLE.get() {
-                                    if let Ok(Some(pos)) = app
-                                        .state::<ConfigManager>()
-                                        .get_window_pos_by_label("login")
-                                    {
-                                        let _ = window.set_position(tauri::Position::Physical(
-                                            tauri::PhysicalPosition { x: pos.x, y: pos.y },
-                                        ));
-                                    }
-                                }
-                                let _ = window.show();
-                                let _ = window.set_focus();
-                            }
-                        },
-                    )
-                    .expect("_login_window 创建失败");
-                } else {
-                    // Main 窗口
-                    let handle_clone = handle.clone();
-
-                    let _main_window = create_and_show_window(
-                        &handle,
-                        "main",
-                        WebviewUrl::App("".into()),
-                        WindowType::Main,
-                        move |window, payload| {
-                            if let PageLoadEvent::Finished = payload.event() {
-                                if let Some(win) = handle_clone.get_webview_window("loading") {
-                                    let _ = win.close();
-                                }
-                                // 恢复窗口位置
-                                if let Some(app) = APP_HANDLE.get() {
-                                    let cm = app.state::<ConfigManager>();
-                                    if let Ok(Some(pos)) = cm.get_window_pos_by_label("main") {
-                                        if pos.maximized {
-                                            let _ = window.maximize();
-                                        } else {
-                                            let _ = window.set_position(tauri::Position::Physical(
-                                                tauri::PhysicalPosition { x: pos.x, y: pos.y },
-                                            ));
-                                            let _ = window.set_size(tauri::Size::Physical(
-                                                tauri::PhysicalSize {
-                                                    width: pos.width,
-                                                    height: pos.height,
-                                                },
-                                            ));
-                                        }
-                                    }
-                                }
-                                let _ = window.show();
-                                let _ = window.set_focus();
-                            }
-                        },
-                    )
-                    .expect("_main_window 创建失败");
-                }
-
-                let duration = start.elapsed();
-                log_info!("窗口创建 耗时: {:?}", duration);
-            });
+            // 主窗口（隐藏创建）：页面加载完成后关闭 loading 窗口并显示
+            let handle_clone = handle.clone();
+            let _main_window = create_and_show_window(
+                &handle,
+                "main",
+                WebviewUrl::App("".into()),
+                WindowType::Main,
+                move |window, payload| {
+                    if let PageLoadEvent::Finished = payload.event() {
+                        if let Some(win) = handle_clone.get_webview_window("loading") {
+                            let _ = win.close();
+                        }
+                        restore_main_window_state(&window);
+                        let _ = window.show();
+                        let _ = window.set_focus();
+                    }
+                },
+            )?;
 
             Ok(())
         })
@@ -439,9 +363,6 @@ pub fn run() {
             greet,
             get_system_info,
             // 窗口管理
-            window::create_window,
-            window::close_window,
-            window::switch_window,
             window::save_window_position,
             window::load_window_position,
             window::save_window_position_by_label,

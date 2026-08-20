@@ -10,7 +10,8 @@ import {
   invokeAccInit,
 } from '@/api/account';
 import { invokeGetLoginState } from '@/api/config';
-import { saveLoginState, clearLoginState, switchWindow } from '@/helper';
+import { saveLoginState, clearLoginState } from '@/helper';
+import { navigateTo } from '@/router/navigationBridge';
 import { useUserRoleStore, UserRole } from './userRoleStore';
 import { create } from 'zustand';
 
@@ -125,13 +126,13 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     });
 
     await get().refreshLoginState();
-    await switchWindow("login", "Main");
+    navigateTo('/');
   },
 
 
   logout: async () => {
     await clearLoginState();
     await get().refreshLoginState();
-    await switchWindow("main", "Login");
+    navigateTo('/login');
   },
 }));

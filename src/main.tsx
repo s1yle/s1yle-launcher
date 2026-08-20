@@ -1,6 +1,5 @@
 import ReactDOM from "react-dom/client";
-import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
-import LoginGate from "./pages/Login/LoginGate";
+import { Window } from "@tauri-apps/api/window";
 import App from "./App";
 import NotificationProvider from "./components/common/NotificationProvider";
 
@@ -10,9 +9,20 @@ import './styles/themes/light.css';
 import './styles/themes/terminal.css';
 import './styles/animations.css';
 import './styles/accessibility.css';
-import { Window } from "@tauri-apps/api/window";
 
-// Global event handlers (both windows)
+// Global event handlers
+
+// 拦截浏览器级刷新快捷键（F5 / Ctrl+R / Cmd+R），避免启动器被意外刷新
+document.addEventListener('keydown', function (e) {
+  if (
+    e.key === 'F5' ||
+    e.key === 'F6' ||
+    ((e.ctrlKey || e.metaKey) && ['r', 'R'].includes(e.key))
+  ) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+}, true);
 
 document.addEventListener("wheel", function (e) {
   e.preventDefault();
@@ -45,30 +55,8 @@ window.addEventListener('DOMContentLoaded', () => {
   }, 1)  // 需要加延迟，否则仍可能白屏
 });
 
-// Detect window type and render accordingly
-
-const appWindow = getCurrentWebviewWindow();
-
-if (appWindow.label === "loading") {
-  ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-    <>
-      <h1>Hello, Surprise!</h1>
-      <h2>理论上来讲这段话从来不应该出现</h2>
-      <h2>如有疑问，请联系管理员</h2>
-    </>
-  );
-}
-
-if (appWindow.label === 'login') {
-  ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-    <NotificationProvider>
-      <LoginGate />
-    </NotificationProvider>
-  );
-} else {
-  ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-    <NotificationProvider>
-      <App />
-    </NotificationProvider>
-  );
-}
+ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+  <NotificationProvider>
+    <App />
+  </NotificationProvider>
+);

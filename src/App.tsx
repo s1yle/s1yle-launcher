@@ -18,8 +18,9 @@
 // 玩家身份需要使用正版/离线/第三方登录，每个玩家账户数据互相隔离(除了游戏)
 
 import { useEffect } from 'react';
-import { BrowserRouter as Router, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, useLocation, useNavigate } from 'react-router-dom';
 import { routes, findRouteByPath } from './router/config';
+import { registerNavigator } from './router/navigationBridge';
 import { useNavStore } from './stores/navStore';
 import { useLastVisitedStore } from './stores/lastVisitedStore';
 import { useThemeStore } from './stores/themeStore';
@@ -42,13 +43,30 @@ import { useSafeNavigate } from './router/navigation';
 
 const MainLayout = () => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const setCurrentPath = useNavStore((s) => s.setCurrentPath);
   const { mode: uiMode } = useUIModeStore();
+  const isLoggedIn = useAuthStore((s) => s.loginState.is_logged_in);
+  const authInitialized = useAuthStore((s) => s.initialized);
 
   const currentRoute = findRouteByPath(location.pathname, routes) || routes[0];
   const shell = resolveShell(uiMode, currentRoute);
   const safeNavigate = useSafeNavigate();
+
+  useEffect(() => {
+    registerNavigator(navigate);
+  }, [navigate]);
+
+  // 单窗口登录门：未登录跳 /login，已登录跳离 /login
+  useEffect(() => {
+    if (!authInitialized) return;
+    if (!isLoggedIn && location.pathname !== '/login') {
+      navigate('/login', { replace: true });
+    } else if (isLoggedIn && location.pathname === '/login') {
+      navigate('/', { replace: true });
+    }
+  }, [authInitialized, isLoggedIn, location.pathname, navigate]);
 
   const handleMenuClick = (targetPath: string) => {
     safeNavigate(targetPath);

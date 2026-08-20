@@ -92,13 +92,44 @@ fn is_jdk_at_path(java_home: &Path) -> bool {
     java_home.join("bin").join("javac").exists()
 }
 
+/// 避免子进程（java.exe 控制台程序）在 Windows 上弹出黑窗口。
+/// `CREATE_NO_WINDOW` (0x08000000)，非 Windows 平台为空操作。
+#[cfg(windows)]
+trait NoConsoleWindow {
+    fn no_console_window(&mut self) -> &mut Self;
+}
+
+#[cfg(windows)]
+impl NoConsoleWindow for Command {
+    fn no_console_window(&mut self) -> &mut Self {
+        use std::os::windows::process::CommandExt;
+        self.creation_flags(0x08000000) // CREATE_NO_WINDOW
+    }
+}
+
+#[cfg(not(windows))]
+trait NoConsoleWindow {
+    fn no_console_window(&mut self) -> &mut Self;
+}
+
+#[cfg(not(windows))]
+impl NoConsoleWindow for Command {
+    fn no_console_window(&mut self) -> &mut Self {
+        self
+    }
+}
+
 /// 校验候选 java 可执行文件：存在 + java -version 可运行，返回封装后的安装信息
 fn probe_java(java_path: &Path) -> Option<JavaInstallation> {
     if !java_path.exists() {
         return None;
     }
 
-    let output = Command::new(java_path).arg("-version").output().ok()?;
+    let output = Command::new(java_path)
+        .arg("-version")
+        .no_console_window()
+        .output()
+        .ok()?;
     let stderr = String::from_utf8_lossy(&output.stderr);
     let info = parse_java_version_output(&stderr);
 

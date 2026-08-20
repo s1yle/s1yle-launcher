@@ -1,7 +1,6 @@
 use crate::{
     APP_HANDLE,
     config::{ConfigManager, WindowPosition, window_check},
-    log_info,
 };
 use tauri::{
     Manager, State, WebviewWindowBuilder,
@@ -10,34 +9,18 @@ use tauri::{
     window::EffectState,
 };
 
+/// 窗口类型（主窗口 + 启动加载窗口）
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum WindowType {
     Main,
-    Login,
     Loading,
 }
 
 impl WindowType {
-    pub fn label(&self) -> &'static str {
-        match self {
-            WindowType::Main => "main",
-            WindowType::Login => "login",
-            WindowType::Loading => "loading",
-        }
-    }
-
     pub fn title(&self) -> &'static str {
         match self {
             WindowType::Main => "WeCraft! Launcher",
-            WindowType::Login => "WeCraft! Launcher - 登录",
             WindowType::Loading => "WeCraft! Launcher - loading...",
-        }
-    }
-
-    pub fn url(&self) -> tauri::WebviewUrl {
-        match self {
-            WindowType::Loading => tauri::WebviewUrl::App("/loading.html".into()),
-            _ => tauri::WebviewUrl::App("".into()),
         }
     }
 }
@@ -81,30 +64,6 @@ pub fn apply_window_config<'a>(
 
             builder
         }
-        WindowType::Login => {
-            let effect = WindowEffectsConfig {
-                effects: vec![],
-                state: Some(EffectState::Active),
-                color: None,
-                radius: Some(12.0),
-            };
-            builder = builder
-                .effects(effect)
-                .resizable(false)
-                .inner_size(480.0, 640.0)
-                .min_inner_size(480.0, 640.0)
-                .max_inner_size(480.0, 640.0);
-
-            if let Ok(main_pos) = load_window_position_by_label("login".to_string(), cm) {
-                if let Some(pos) = main_pos {
-                    builder = builder
-                        .position(pos.x.into(), pos.y.into())
-                        .inner_size(pos.width.into(), pos.height.into());
-                }
-            }
-
-            builder
-        }
         WindowType::Loading => {
             let effect = WindowEffectsConfig {
                 effects: vec![],
@@ -123,15 +82,6 @@ pub fn apply_window_config<'a>(
                 .maximizable(false)
                 .shadow(false)
                 .center();
-
-            if let Ok(main_pos) = load_window_position_by_label("loading".to_string(), cm) {
-                if let Some(pos) = main_pos {
-                    builder = builder
-                        .position(pos.x.into(), pos.y.into())
-                        .inner_size(pos.width.into(), pos.height.into());
-                }
-            }
-
             builder
         }
     };
@@ -154,47 +104,12 @@ where
 
     let window = apply_window_config(builder, window_type)?
         .on_page_load(move |window, payload| {
-            // 1. 先执行外部传入的回调
             on_page_loaded(window.clone(), payload);
         })
         .build()
         .map_err(|e| format!("创建窗口失败 ({}): {}", label, e))?;
 
     Ok(window)
-}
-
-/// 统一创建窗口，如果已存在则直接显示
-#[tauri::command]
-pub async fn create_window(app: tauri::AppHandle, window_type: WindowType) -> Result<(), String> {
-    let label = window_type.label();
-
-    log_info!("创建窗口: {}", label);
-
-    if let Some(win) = app.get_webview_window(label) {
-        win.show().map_err(|e| format!("显示窗口失败: {}", e))?;
-        return Ok(());
-    }
-
-    create_and_show_window(
-        &app,
-        window_type.label(),
-        window_type.url(),
-        window_type,
-        |_window, _payload| {},
-    )?;
-
-    Ok(())
-}
-
-/// 关闭指定标签的窗口
-#[tauri::command]
-pub fn close_window(app: tauri::AppHandle, label: String) -> Result<(), String> {
-    log_info!("关闭窗口: {}", label);
-    if let Some(window) = app.get_webview_window(&label) {
-        window.hide().map_err(|e| format!("隐藏窗口失败: {}", e))?;
-        window.close().map_err(|e| format!("关闭窗口失败: {}", e))?;
-    }
-    Ok(())
 }
 
 /// 保存窗口位置和大小信息（向后兼容，默认保存到 main）
@@ -261,19 +176,22 @@ pub fn load_window_position_by_label(
     cm.get_window_pos_by_label(&label)
 }
 
-/// 关闭指定窗口并打开另一个窗口（如退出登录：关闭 main，打开 login）
-#[tauri::command]
-pub async fn switch_window(
-    app: tauri::AppHandle,
-    close_label: String,
-    open_type: WindowType,
-) -> Result<(), String> {
-    log_info!("切换窗口: 关闭 {} → 打开 {:?}", close_label, open_type);
-
-    if let Some(window) = app.get_webview_window(&close_label) {
-        window.hide().map_err(|e| format!("隐藏窗口失败: {}", e))?;
-        window.close().map_err(|e| format!("关闭窗口失败: {}", e))?;
+/// 应用主窗口的保存状态（位置/尺寸/最大化）
+pub fn restore_main_window_state(window: &tauri::WebviewWindow) {
+    if let Some(app) = APP_HANDLE.get() {
+        let cm = app.state::<ConfigManager>();
+        if let Ok(Some(pos)) = cm.get_window_pos_by_label("main") {
+            if pos.maximized {
+                let _ = window.maximize();
+            } else {
+                let _ = window.set_position(tauri::Position::Physical(
+                    tauri::PhysicalPosition { x: pos.x, y: pos.y },
+                ));
+                let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
+                    width: pos.width,
+                    height: pos.height,
+                }));
+            }
+        }
     }
-
-    create_window(app, open_type).await
 }

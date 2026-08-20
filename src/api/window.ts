@@ -2,19 +2,6 @@ import { InvokeOptions } from "@tauri-apps/api/core";
 import { invokeRust } from "./client";
 import { logger } from "@/helper/logger";
 
-export type WindowType = "Main" | "Login" | "Loading";
-
-/**
- * 关闭指定窗口并打开另一个窗口
- * @param closeLabel (注意)这个参数，一定要传窗口的label，如main/login/loading
- * @param openType (注意)这个参数，一定要传窗口的类型，如Main/Login/Loading
- * @param options Tauri invoke 选项
- */
-export const invokeSwitchWindow = async (closeLabel: string, openType: WindowType): Promise<void> => {
-  logger.info('切换窗口', { closeLabel, openType });
-  await invokeRust("switch_window", { closeLabel, openType });
-};
-
 /**
  * 保存指定窗口的位置和尺寸
  * @param label 窗口标签

@@ -3,7 +3,6 @@ import { useAuthStore } from "@/stores/authStore";
 import { ViewContainer } from "./components/ViewContainer";
 import { PlayerLogin } from "./views/PlayerLogin";
 import { PlayerAdd } from "./views/PlayerAdd";
-import Header from "@/components/Header";
 import { NotificationProvider } from "@/components/common/NotificationProvider";
 import { useWindowPosition } from "@/hooks";
 import { useThemeStore } from "@/stores";
@@ -37,19 +36,6 @@ const LoginGateInner = () => {
     };
   }, []);
 
-  useEffect(() => {
-    const fixSize = async () => {
-      try {
-        const { getCurrentWebviewWindow } = await import('@tauri-apps/api/webviewWindow');
-        const { PhysicalSize } = await import('@tauri-apps/api/dpi');
-        const win = getCurrentWebviewWindow();
-        await win.setSize(new PhysicalSize(480, 640));
-        await win.setResizable(false);
-      } catch { }
-    };
-    fixSize();
-  }, []);
-
   const handlePlayerLogin = useCallback(async (uuid?: string) => {
     if (!uuid) return;
     await loginAsPlayer(uuid);
@@ -73,8 +59,6 @@ const LoginGateInner = () => {
       className="h-screen w-screen flex flex-col relative"
       onContextMenu={(e) => e.preventDefault()}
     >
-      <Header type="main" title="WeCraft! Launcher" />
-
       <div
         className="flex-1 flex flex-col 
           items-center justify-center 

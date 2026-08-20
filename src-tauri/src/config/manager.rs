@@ -54,7 +54,6 @@ impl ConfigManager {
         let config = self.get_config()?;
         match label {
             "main" => Ok(config.window_positions.main.clone()),
-            "login" => Ok(config.window_positions.login.clone()),
             _ => Ok(None),
         }
     }
@@ -68,7 +67,6 @@ impl ConfigManager {
         let mut config = self.get_config()?;
         match label {
             "main" => config.window_positions.main = Some(pos),
-            "login" => config.window_positions.login = Some(pos),
             _ => return Err(format!("未知窗口类型: {}", label)),
         }
         *self.config.lock().map_err(|e| e.to_string())? = config;
