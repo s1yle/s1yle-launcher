@@ -3,12 +3,11 @@
 //! 每次启动生成唯一游戏 ID（UUID），同一游戏目录也可并行启动多次，
 //! 每个游戏独立持有子进程与状态机，可独立停止 / 查询状态。
 
-#[cfg(target_os = "windows")]
-use windows::Win32::Foundation::LPARAM;
 use once_cell::sync::OnceCell;
-use serde::{Deserialize, Serialize};
+
 use core::convert::{From, Into};
 use core::prelude::v1::derive;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
@@ -20,7 +19,8 @@ use crate::download::models::FileDownload;
 use crate::download::{DownloadManager, extract_jar, parse_version_json};
 use crate::game::GameManager;
 use crate::launch::args::build_launch_args;
-use crate::log_info;
+use crate::{log_error, log_info};
+use tauri::Manager;
 
 mod args;
 pub mod command;
@@ -117,6 +117,12 @@ pub struct LaunchConfig {
     /// 窗口高度（用于 ${resolution_height}）
     #[serde(default)]
     pub resolution_height: Option<u32>,
+    /// 是否全屏启动游戏（追加 --fullscreen）
+    #[serde(default)]
+    pub fullscreen: bool,
+    /// 启动游戏后启动器窗口是否保持可见（false 时启动后隐藏，游戏退出后恢复）
+    #[serde(default = "default_true")]
+    pub launcher_visible: bool,
 }
 
 impl Default for LaunchConfig {
@@ -138,7 +144,55 @@ impl Default for LaunchConfig {
             game_args: Vec::new(),
             resolution_width: None,
             resolution_height: None,
+            fullscreen: false,
+            launcher_visible: true,
         }
+    }
+}
+
+/// 默认 true 的辅助函数（serde default）
+fn default_true() -> bool {
+    true
+}
+
+/// 关闭主启动器窗口（销毁 webview，真正释放 React/CPU/内存）。
+/// 同时置位 LAUNCHER_KEEP_ALIVE，阻止进程随窗口关闭而退出。
+fn close_launcher_window() {
+    if let Some(handle) = crate::APP_HANDLE.get() {
+        if let Some(window) = handle.get_webview_window("main") {
+            let _ = window.close();
+        }
+    }
+    if let Ok(mut g) = crate::LAUNCHER_KEEP_ALIVE.lock() {
+        *g = true;
+    }
+}
+
+/// 游戏结束后重建并恢复主启动器窗口；若窗口仍在则仅显示。
+/// 同时清除 LAUNCHER_KEEP_ALIVE，恢复默认退出行为。
+fn reopen_launcher_window() {
+    if let Some(handle) = crate::APP_HANDLE.get() {
+        if let Some(window) = handle.get_webview_window("main") {
+            let _ = window.show();
+            let _ = window.set_focus();
+        } else {
+            let _ = crate::window::create_and_show_window(
+                handle,
+                "main",
+                tauri::WebviewUrl::App("".into()),
+                crate::window::WindowType::Main,
+                |window, payload| {
+                    if let tauri::webview::PageLoadEvent::Finished = payload.event() {
+                        crate::window::restore_main_window_state(&window);
+                        let _ = window.show();
+                        let _ = window.set_focus();
+                    }
+                },
+            );
+        }
+    }
+    if let Ok(mut g) = crate::LAUNCHER_KEEP_ALIVE.lock() {
+        *g = false;
     }
 }
 
@@ -341,7 +395,9 @@ fn analyze_crash(game: &RunningGame) -> Option<String> {
         return Some("游戏内存不足 (OutOfMemoryError)，建议在设置中增大分配内存".to_string());
     }
     if joined.contains("UnsupportedClassVersionError") {
-        return Some("Java 版本不匹配 (UnsupportedClassVersionError)，请安装更新的 Java".to_string());
+        return Some(
+            "Java 版本不匹配 (UnsupportedClassVersionError)，请安装更新的 Java".to_string(),
+        );
     }
     if joined.contains("NoClassDefFoundError") {
         return Some("缺失类或依赖 (NoClassDefFoundError)，可能是模组或游戏文件损坏".to_string());
@@ -354,7 +410,11 @@ fn analyze_crash(game: &RunningGame) -> Option<String> {
     if find_by_prefix(&game_dir, "hs_err_pid").is_some() {
         return Some("检测到 JVM 崩溃报告 (hs_err_pid*.log)，可在游戏目录中查看".to_string());
     }
-    if game_dir.join("crash-reports").join("latest-crash.txt").exists() {
+    if game_dir
+        .join("crash-reports")
+        .join("latest-crash.txt")
+        .exists()
+    {
         return Some("检测到游戏崩溃报告 (crash-reports/latest-crash.txt)".to_string());
     }
     None
@@ -392,9 +452,9 @@ pub fn launch_game(
     };
     let game_id = Uuid::new_v4().to_string();
 
-    manager
-        .processes
-        .insert(game_id.clone(), RunningGame {
+    manager.processes.insert(
+        game_id.clone(),
+        RunningGame {
             config: config.clone(),
             child_process: None,
             status: LaunchStatus::Launching,
@@ -404,7 +464,8 @@ pub fn launch_game(
             exit_code: None,
             crash_summary: None,
             log_key: game_id.clone(),
-        });
+        },
+    );
     drop(manager);
 
     let task_id = game_id.clone();
@@ -442,13 +503,14 @@ async fn run_launch_pipeline(
 
     // ====== 阶段 1: 校验游戏文件（真实 SHA1 校验，10% → 35%） ======
     set_game_progress(game_id, 10, "正在校验游戏文件");
-    let validation = match crate::game::validator::validate_game_integrity(&ctx, &gm, &game_name, false) {
-        Ok(v) => v,
-        Err(e) => {
-            set_game_failed(game_id, &format!("校验失败: {}", e));
-            return;
-        }
-    };
+    let validation =
+        match crate::game::validator::validate_game_integrity(&ctx, &gm, &game_name, false) {
+            Ok(v) => v,
+            Err(e) => {
+                set_game_failed(game_id, &format!("校验失败: {}", e));
+                return;
+            }
+        };
 
     if validation.valid {
         set_game_progress(game_id, 85, "文件校验通过");
@@ -525,7 +587,9 @@ async fn run_launch_pipeline(
 
     // ====== 阶段 3: 构建启动参数（85% → 90%） ======
     set_game_progress(game_id, 88, "正在构建启动参数");
-    let access_token = crate::account::manager::get_current_account_token_internal().ok().flatten();
+    let access_token = crate::account::manager::get_current_account_token_internal()
+        .ok()
+        .flatten();
     let (main_class, launch_args) = match build_launch_args(&config, &ctx, access_token) {
         Ok(v) => v,
         Err(e) => {
@@ -568,7 +632,15 @@ async fn run_launch_pipeline(
             }
             log_info!("✅ Minecraft Java 进程已启动: {}", game_id);
             log_info!("  主类: {}", main_class);
-            wait_for_game_window(game_id).await;
+
+            // 启动器可见性：游戏窗口真正出现后再隐藏，游戏结束后恢复
+            wait_for_game_window(game_id, config.launcher_visible).await;
+
+            // 等待游戏进程结束，结束后重建并恢复启动器窗口
+            wait_until_game_exits(game_id).await;
+            if !config.launcher_visible {
+                reopen_launcher_window();
+            }
         }
         Err(e) => {
             let error_msg = format!("启动失败: {}", e);
@@ -579,7 +651,7 @@ async fn run_launch_pipeline(
 
 /// 等待游戏窗口出现后置为 Running（每 500ms 检测一次，最长 90 秒兜底）。
 /// 期间用户可停止游戏；进程提前退出视为启动失败。
-async fn wait_for_game_window(game_id: &str) {
+async fn wait_for_game_window(game_id: &str, launcher_visible: bool) {
     use std::time::{Duration, Instant};
 
     let pid = lock_manager()
@@ -593,7 +665,6 @@ async fn wait_for_game_window(game_id: &str) {
         .unwrap_or(0);
     if pid == 0 {
         set_game_failed(game_id, "启动失败: 无法获取游戏进程");
-        return;
     }
 
     let deadline = Instant::now() + Duration::from_secs(90);
@@ -604,7 +675,10 @@ async fn wait_for_game_window(game_id: &str) {
                 match game.child_process.as_mut().map(|c| c.try_wait()) {
                     Some(Ok(Some(status))) => {
                         game.exit_code = status.code();
-                        let msg = format!("启动失败: 游戏进程已退出 (代码 {})", game.exit_code.unwrap_or(-1));
+                        let msg = format!(
+                            "启动失败: 游戏进程已退出 (代码 {})",
+                            game.exit_code.unwrap_or(-1)
+                        );
                         set_game_failed(game_id, &msg);
                         return;
                     }
@@ -626,16 +700,7 @@ async fn wait_for_game_window(game_id: &str) {
         }
 
         // 2. 检测游戏窗口是否出现
-        if crate::launch::window::process_has_visible_window(
-        #[cfg(target_os = "windows")]
-            {
-                LPARAM(pid as isize)
-            },
-            #[cfg(target_os = "linux")]
-            {
-                pid
-            }
-        ) {
+        if crate::launch::window::process_has_visible_window(pid) {
             if let Ok(mut manager) = lock_manager() {
                 if let Some(game) = manager.processes.get_mut(game_id) {
                     game.status = LaunchStatus::Running;
@@ -644,6 +709,10 @@ async fn wait_for_game_window(game_id: &str) {
                 }
             }
             log_info!("🎮 Minecraft 窗口已出现，进入运行状态: {}", game_id);
+            // 启动器可见性：游戏窗口真正出现后才关闭启动器窗口（释放资源）
+            if !launcher_visible {
+                close_launcher_window();
+            }
             return;
         }
 
@@ -675,6 +744,37 @@ async fn wait_for_game_window(game_id: &str) {
         }
 
         tokio::time::sleep(Duration::from_millis(500)).await;
+    }
+}
+
+/// 等待游戏进程结束（最多 24 小时兜底）。用于"启动器可见性"设置：
+/// 游戏运行期间隐藏启动器窗口，进程退出后由调用方恢复。
+async fn wait_until_game_exits(game_id: &str) {
+    use std::time::{Duration, Instant};
+
+    let deadline = Instant::now() + Duration::from_secs(24 * 3600);
+    loop {
+        let ended = if let Ok(mut manager) = lock_manager() {
+            match manager.processes.get_mut(game_id) {
+                // 进程已被取走（用户停止）或记录不存在 → 视为已结束
+                None => true,
+                Some(game) => match game.child_process.as_mut().map(|c| c.try_wait()) {
+                    Some(Ok(Some(_))) => true,
+                    Some(Ok(None)) => false,
+                    Some(Err(_)) => true,
+                    None => true,
+                },
+            }
+        } else {
+            true
+        };
+        if ended {
+            return;
+        }
+        if Instant::now() >= deadline {
+            return;
+        }
+        tokio::time::sleep(Duration::from_millis(1000)).await;
     }
 }
 
@@ -715,10 +815,16 @@ async fn build_download_list(
         let mut found: Option<(String, FileDownload)> = None;
         match check.category.as_str() {
             "client" | "version" => {
-                found = manifest.client_jar.as_ref().map(|c| ("client".to_string(), c.clone()));
+                found = manifest
+                    .client_jar
+                    .as_ref()
+                    .map(|c| ("client".to_string(), c.clone()));
             }
             "index" => {
-                found = manifest.asset_index.as_ref().map(|c| ("index".to_string(), c.clone()));
+                found = manifest
+                    .asset_index
+                    .as_ref()
+                    .map(|c| ("index".to_string(), c.clone()));
             }
             "library" => {
                 found = manifest
@@ -915,7 +1021,10 @@ mod tests {
 
     #[test]
     fn aggregate_empty_is_idle() {
-        assert_eq!(aggregate_status(&LaunchManager::default()), LaunchStatus::Idle);
+        assert_eq!(
+            aggregate_status(&LaunchManager::default()),
+            LaunchStatus::Idle
+        );
     }
 
     #[test]
@@ -936,37 +1045,25 @@ mod tests {
 
     #[test]
     fn aggregate_launching_beats_running() {
-        let m = manager_with(&[
-            ("a", LaunchStatus::Launching),
-            ("b", LaunchStatus::Running),
-        ]);
+        let m = manager_with(&[("a", LaunchStatus::Launching), ("b", LaunchStatus::Running)]);
         assert_eq!(aggregate_status(&m), LaunchStatus::Launching);
     }
 
     #[test]
     fn aggregate_crashed_beats_stopped() {
-        let m = manager_with(&[
-            ("a", LaunchStatus::Crashed),
-            ("b", LaunchStatus::Stopped),
-        ]);
+        let m = manager_with(&[("a", LaunchStatus::Crashed), ("b", LaunchStatus::Stopped)]);
         assert_eq!(aggregate_status(&m), LaunchStatus::Crashed);
     }
 
     #[test]
     fn aggregate_all_stopped() {
-        let m = manager_with(&[
-            ("a", LaunchStatus::Stopped),
-            ("b", LaunchStatus::Stopped),
-        ]);
+        let m = manager_with(&[("a", LaunchStatus::Stopped), ("b", LaunchStatus::Stopped)]);
         assert_eq!(aggregate_status(&m), LaunchStatus::Stopped);
     }
 
     #[test]
     fn aggregate_mixed_idle_and_stopped_is_stopped() {
-        let m = manager_with(&[
-            ("a", LaunchStatus::Idle),
-            ("b", LaunchStatus::Stopped),
-        ]);
+        let m = manager_with(&[("a", LaunchStatus::Idle), ("b", LaunchStatus::Stopped)]);
         assert_eq!(aggregate_status(&m), LaunchStatus::Stopped);
     }
 
@@ -997,10 +1094,8 @@ mod tests {
     fn launch_returns_game_id_immediately() {
         let _ = LAUNCH_MANAGER.set(Mutex::new(LaunchManager::default()));
         let (ctx, gm) = {
-            let dir = std::env::temp_dir().join(format!(
-                "wecraft-launch-test-{}",
-                std::process::id()
-            ));
+            let dir =
+                std::env::temp_dir().join(format!("wecraft-launch-test-{}", std::process::id()));
             let ctx = crate::app_context::AppContext::new(dir.join("work"), dir.join("games"));
             let gm = GameManager::new(ctx.clone());
             (ctx, gm)

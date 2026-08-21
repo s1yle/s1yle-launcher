@@ -12,5 +12,13 @@ export const invokeScanJavaInstallations = async (
   options?: InvokeOptions
 ): Promise<JavaInstallation[]> => {
   logger.info("准备调用 scan_java_installations");
-  return invokeRust('scan_java_installations', {}, options);
+  const start = performance.now();
+  try {
+    const result = await invokeRust('scan_java_installations', {}, options);
+    logger.info(`scan_java_installations 耗时 ${(performance.now() - start).toFixed(1)}ms`);
+    return result;
+  } catch (e) {
+    logger.warn(`scan_java_installations 耗时 ${(performance.now() - start).toFixed(1)}ms（失败）`);
+    throw e;
+  }
 };

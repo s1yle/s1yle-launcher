@@ -28,18 +28,18 @@ import { useGameStore } from '@/stores/gameStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useDownloadStore } from '@/stores/downloadStore';
 import { refreshAll } from '@/stores/refreshStore';
-import { getGameSettings, getGlobalGameSettings } from '@/helper/rustInvoke';
+import { getGameSettings, getGlobalGameSettings, scanJavaInstallations } from '@/helper/rustInvoke';
+import { logger } from "@/helper/logger.ts";
+import { getErrorMessage } from "@/utils/errorUtils.ts";
 
 const blockNavIcon = (src: string) => (props: { className?: string }) => (
   <BlockIcon src={src} {...props} w={6} h={6} />
 );
 
 /** 页面组件按路由懒加载（每个路由独立 chunk） */
-const Loading = lazy(() => import('../pages/Loading'));
-const LoginGate = lazy(() => import('../pages/Login/LoginGate'));
 const Home = lazy(() => import('../pages/Home'));
 const AccountDetail = lazy(() => import('../pages/AccountList/AccountDetail'));
-const GameGameSettings = lazy(() => import('../pages/Game/GameSettings/GameSettings.tsx'));
+const GameSettings = lazy(() => import('../pages/Game/GameSettings/GameSettings.tsx'));
 const GameAutoInstall = lazy(() => import('../pages/Game/GameSettings/GameAutoInstall'));
 const GameMods = lazy(() => import('../pages/Game/GameSettings/GameMods'));
 const GameResourcePacks = lazy(() => import('../pages/Game/GameSettings/GameResourcePacks'));
@@ -56,16 +56,7 @@ const GlobalGameSettings = lazy(() => import('../pages/Settings/GlobalGameSettin
 export const routes: RouteConfig[] = [
   {
     path: '/loading',
-    component: Loading,
     header: { type: SidebarType.MAIN, title: 'Loading', titleI18nKey: '' },
-    sidebarGroup: SidebarGroup.NONE,
-    needsScrollbar: false,
-    layoutMode: LayoutMode.FULLSCREEN,
-  },
-  {
-    path: '/login',
-    component: LoginGate,
-    header: { type: SidebarType.MAIN, title: '登录', titleI18nKey: 'nav.login' },
     sidebarGroup: SidebarGroup.NONE,
     needsScrollbar: false,
     layoutMode: LayoutMode.FULLSCREEN,
@@ -166,15 +157,20 @@ export const routes: RouteConfig[] = [
     children: [
       {
         path: '/game-manage/:gameId/game-settings',
-        component: GameGameSettings,
+        component: GameSettings,
         loader: async (params) => {
           const game = useGameStore.getState().getGame(params.gameId ?? '');
           if (!game) return { loaded: {}, global: {} };
-          const [loaded, global] = await Promise.all([
+          const [loaded, global, javas] = await Promise.all([
             getGameSettings(game.name),
             getGlobalGameSettings(),
+            scanJavaInstallations()
+              .catch((e) => {
+                const msg = getErrorMessage(e);
+                logger.warn(`[useGameSettingsForm] 扫描 Java 失败: ${msg}`);
+              }),
           ]);
-          return { loaded, global };
+          return { loaded, global, javas };
         },
         header: { type: SidebarType.SECONDARY, title: '游戏设置', titleI18nKey: 'gameManage.gameSettings' },
         sidebarGroup: SidebarGroup.GAME,
@@ -395,7 +391,17 @@ export const routes: RouteConfig[] = [
       {
         path: '/settings/game',
         component: GlobalGameSettings,
-        loader: () => getGlobalGameSettings(),
+        loader: async () => {
+          const [loaded, javas] = await Promise.all([
+            getGlobalGameSettings(),
+            scanJavaInstallations()
+              .catch((e) => {
+                const msg = getErrorMessage(e);
+                logger.warn(`[useGameSettingsForm] 扫描 Java 失败: ${msg}`);
+              }),
+          ]);
+          return { loaded, javas };
+        },
         header: { type: SidebarType.SUB, title: '全局游戏设置', titleI18nKey: 'gameSettings.title' },
         sidebarGroup: SidebarGroup.COMMON,
         parentPath: '/',

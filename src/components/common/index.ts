@@ -205,3 +205,8 @@ export type { PageProps, PageSectionProps } from './Page';
 export { CountUp } from './CountUp';
 /** 数字滚动显示 Props */
 export type { CountUpProps } from './CountUp';
+
+/** 游戏设置共用区块组件（Java/内存/窗口，供全局与单游戏设置页复用） */
+export { default as GameSettingsSections } from './GameSettingsSections';
+/** 游戏设置共用区块 Props */
+export type { GameSettingsSectionsProps } from './GameSettingsSections';

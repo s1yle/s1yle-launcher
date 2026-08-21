@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use crate::app_context::AppContext;
 use crate::game::models::GameSettings;
@@ -64,10 +65,22 @@ pub struct SystemConfig {
     /// 配置文件版本
     #[serde(default = "default_version")]
     pub version: u32,
+
+    /// 背景配置（前端 BackgroundConfig 的 JSON 镜像，缺省为 null）
+    #[serde(default)]
+    pub background: Value,
+
+    /// 是否显示迎新界面（首次运行 / 重装后为 true，进入启动器后置 false）
+    #[serde(default = "default_true")]
+    pub first_run: bool,
 }
 
 fn default_version() -> u32 {
     CONFIG_VERSION
+}
+
+fn default_true() -> bool {
+    true
 }
 
 impl Default for SystemConfig {
@@ -77,6 +90,8 @@ impl Default for SystemConfig {
             window_positions: WindowPositions::default(),
             game_settings: GameSettings::default(),
             version: CONFIG_VERSION,
+            background: Value::Null,
+            first_run: true,
         }
     }
 }

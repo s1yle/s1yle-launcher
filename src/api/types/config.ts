@@ -1,4 +1,5 @@
 import type { GameSettings } from './game';
+import type { BackgroundConfig } from '@/config/types';
 
 /** 单窗口位置和尺寸信息 */
 export interface WindowPosition {
@@ -30,6 +31,10 @@ export interface AppConfig {
   window_positions: WindowPositions;
   /** 全局游戏设置（未启用游戏独立设置时的默认值，所有游戏共用） */
   game_settings: GameSettings;
+  /** 背景配置（对应前端 BackgroundConfig，缺省为 undefined） */
+  background?: BackgroundConfig;
+  /** 是否显示迎新界面：true 显示，false 不显示 */
+  first_run?: boolean;
 }
 
 /** 登录状态（对应 Rust account/models.rs StoreLoginState，经 get_login_state 命令读取，不随 get_config 返回） */

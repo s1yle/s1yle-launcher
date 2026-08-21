@@ -103,4 +103,8 @@ export interface LaunchConfig {
   resolution_width?: number;
   /** 窗口高度（用于 ${resolution_height}） */
   resolution_height?: number;
+  /** 是否全屏启动游戏（追加 --fullscreen） */
+  fullscreen?: boolean;
+  /** 启动游戏后启动器窗口是否保持可见（false 时启动后隐藏，游戏退出后恢复） */
+  launcher_visible?: boolean;
 }

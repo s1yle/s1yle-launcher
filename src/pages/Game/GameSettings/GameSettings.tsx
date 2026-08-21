@@ -3,10 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/stores/gameStore';
 import { useSafeNavigate } from '@/router/navigation';
 import { updateGameSettings, updateGlobalGameSettings, GameSettings } from '@/helper/rustInvoke';
-import { SettingsPanel, Toggle, Slider, useNotification, Page, PageSection } from '@/components/common';
-import PartitionBar, { getPartitionColor } from '@/components/common/PartitionBar';
+import { SettingsPanel, Toggle, GameSettingsSections, useNotification, Page, PageSection } from '@/components/common';
 import { useRouteParams } from '@/router/routeParams';
-import { useGameSettingsForm, formatMemory } from '@/hooks/useGameSettingsForm';
+import { useGameSettingsForm } from '@/hooks/useGameSettingsForm';
 import { useRouteData } from '@/router/routeData';
 import { getErrorMessage } from '@/utils/errorUtils';
 
@@ -60,20 +59,7 @@ const GameGameSettings = () => {
     }
   };
 
-  const {
-    systemMemory,
-    usedMemory,
-    availMemory,
-    gameMemory,
-    gapMemory,
-    handleAutoMemoryChange,
-    currentResolution,
-    resolutionOptionsWithCurrent,
-    javaOptions,
-    selectedJavaOption,
-    handleJavaSelect,
-    handleBrowseJava,
-  } = useGameSettingsForm({
+  const form = useGameSettingsForm({
     settings,
     updateSetting,
     autoMemory,
@@ -186,147 +172,13 @@ const GameGameSettings = () => {
             disabled={false}
           />
 
-          {/* 基础设置 */}
-          <SettingsPanel.Item>
-
-            {/* Java 配置 */}
-            <SettingsPanel.Sub
-              label={t('settings.java.title', 'Java 配置')}
-              disabled={!useGameSettings}
-            >
-
-              {/* Java 路径选择 */}
-              <div className="overflow-hidden">
-                <SettingsPanel.DropDown
-                  label={t('settings.java.path', '游戏 Java')}
-                  options={javaOptions}
-                  value={selectedJavaOption}
-                  onSelect={handleJavaSelect}
-                  buttonWidth="w-full"
-                />
-
-                <SettingsPanel.Input
-                  label={t('settings.java.custom', '自定义')}
-                  value={settings.java_path || ''}
-                  onChange={(value) => updateSetting('java_path', value)}
-                  placeholder={t('settings.java.pathPlaceholder', 'Java 可执行文件路径 (java.exe)')}
-                  disabled={false}
-                  onBrowse={handleBrowseJava}
-                />
-              </div>
-            </SettingsPanel.Sub>
-          </SettingsPanel.Item>
-
-          {/* 内存分配 */}
-          <SettingsPanel.Item>
-            <SettingsPanel.Sub
-              label='游戏内存'
-              gap='10px'
-              disabled={!useGameSettings}
-            >
-
-              {/* 自动分配开关 */}
-              <SettingsPanel.CheckSwitch
-                checked={autoMemory}
-                onChange={handleAutoMemoryChange}
-                label={t('settings.memoryAuto', '自动分配内存')}
-                disabled={false}
-                className='mt-3'
-              />
-
-              {/* 内存分配滑块（-Xmx，启动实际使用的最大堆内存）；最低内存仅做展示/随动，不参与启动 */}
-              {!autoMemory && (
-                <Slider
-                  value={settings.max_memory || 2048}
-                  min={512}
-                  max={systemMemory || 16384}
-                  step={256}
-                  onChange={(v) => {
-                    updateSetting('max_memory', v);
-                    if (Math.min(settings.min_memory ?? 1024, v) !== (settings.min_memory ?? 1024)) {
-                      updateSetting('min_memory', v);
-                    }
-                  }}
-                  label={t('settings.memoryDesc', '分配给游戏的最大内存')}
-                  unit="MB"
-                  fillColor={getPartitionColor({ level: 2 })}
-                  clampMax={systemMemory || 16384}
-                  disabled={false}
-                />
-              )}
-
-              {/* 分区条：已用内存占全内存份额，游戏分配占剩余可用份额，余量最浅色 */}
-              <PartitionBar
-                parts={[
-                  {
-                    label: t('settings.memoryUsed', '已使用内存'),
-                    value: usedMemory,
-                    dataText: `${formatMemory(usedMemory)} / ${formatMemory(systemMemory)}`,
-                    level: 1,
-                  },
-                  {
-                    label: t('settings.memoryGameAlloc', '游戏分配'),
-                    value: gameMemory,
-                    // 分配占满可用内存时（gap 为 0）才展示"（可用 X GB）"后缀
-                    dataText: gapMemory === 0
-                      ? `${formatMemory(settings.max_memory ? settings.max_memory : -1)}（${t('settings.memoryAvailable', '可用')} ${formatMemory(availMemory)}）`
-                      : formatMemory(gameMemory),
-                    level: 2,
-                  },
-                  ...(gapMemory > 0
-                    ? [{ label: '', value: gapMemory, level: 3 }]
-                    : []),
-                ]}
-                className='mb-3'
-              />
-            </SettingsPanel.Sub>
-          </SettingsPanel.Item>
-
-          <SettingsPanel.Item>
-            {/* 窗口配置 */}
-            <SettingsPanel.Sub
-              label={t('settings.window.title', '窗口配置')}
-              disabled={!useGameSettings}
-              gap='6px'
-            >
-              <SettingsPanel.Row
-                label='分辨率'
-              >
-                <SettingsPanel.DropDown
-                  label={''}
-                  options={resolutionOptionsWithCurrent}
-                  value={resolutionOptionsWithCurrent.find((o) => o.id === currentResolution)}
-                  onSelect={(option) => {
-                    const [width, height] = option.id.split('x').map(Number);
-                    updateSetting('width', width);
-                    updateSetting('height', height);
-                  }}
-                  disabled={settings.fullscreen}
-                />
-
-                <SettingsPanel.CheckSwitch
-                  checked={settings.fullscreen || false}
-                  onChange={(checked) => updateSetting('fullscreen', checked)}
-                  label={t('settings.window.fullscreen', '全屏')}
-                  disabled={false}
-                />
-              </SettingsPanel.Row>
-
-              <SettingsPanel.Row
-                label={t('settings.advanced.launcherVisible', '启动器可见性')}
-                description={t('settings.advanced.launcherVisibleDesc', '启动游戏后是否显示启动器窗口')}
-              >
-                <Toggle
-                  checked={settings.launcher_visible ?? true}
-                  onChange={(checked) => updateSetting('launcher_visible', checked)}
-                  disabled={false}
-                  hoverable={false}
-bgHidden
-                  variant="item"
-                />
-              </SettingsPanel.Row>
-            </SettingsPanel.Sub>
-          </SettingsPanel.Item>
+          <GameSettingsSections
+            form={form}
+            settings={settings}
+            updateSetting={updateSetting}
+            autoMemory={autoMemory}
+            disabled={!useGameSettings}
+          />
 
         </SettingsPanel>
 

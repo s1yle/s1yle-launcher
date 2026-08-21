@@ -9,9 +9,9 @@ import {
   type JavaInstallation,
 } from '@/helper/rustInvoke';
 import { DropDownOption } from '@/components/common/DropDown';
-import { logger } from '@/helper/logger';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { usePolling } from './usePolling';
+import { useRouteData } from '@/router/routeData';
 
 /** 格式化内存大小：>= 1024 MB 显示为 GB，否则显示 MB */
 export function formatMemory(mb: number): string {
@@ -19,6 +19,12 @@ export function formatMemory(mb: number): string {
     return `${(mb / 1024).toFixed(1)} GB`;
   }
   return `${mb} MB`;
+}
+
+/** 解析 "WxH" 分辨率的像素面积，用于升序排序 */
+function resolutionArea(res: string): number {
+  const [w, h] = res.split('x').map(Number);
+  return (Number.isFinite(w) ? w : 0) * (Number.isFinite(h) ? h : 0);
 }
 
 /** useGameSettingsForm 的配置选项 */
@@ -54,6 +60,18 @@ export function useGameSettingsForm({
   const [usedMemory, setUsedMemory] = useState(0);
   const [javaPaths, setJavaPaths] = useState<JavaInstallation[]>([]);
   const [displayResolutions, setDisplayResolutions] = useState<string[]>([]);
+  const routeData = useRouteData<{ javas?: JavaInstallation[] }>();
+
+  // 扫描系统中已安装的 Java：优先取路由 loader 提供的 javas，否则回退自行扫描
+  useEffect(() => {
+    if (routeData?.javas?.length) {
+      setJavaPaths(routeData.javas);
+    } else {
+      scanJavaInstallations()
+        .then(setJavaPaths)
+        .catch(() => setJavaPaths([]));
+    }
+  }, [routeData?.javas]);
 
   // 轮询真实内存使用（1s），数据来自 Rust get_memory_usage
   usePolling(async () => {
@@ -66,17 +84,6 @@ export function useGameSettingsForm({
       console.error('[useGameSettingsForm] memory refresh failed:', e);
     }
   }, { interval: 1000 });
-
-  // 扫描系统中已安装的 Java
-  useEffect(() => {
-    scanJavaInstallations()
-      .then(setJavaPaths)
-      .catch((e) => {
-        const msg = getErrorMessage(e);
-        logger.warn(`[useGameSettingsForm] 扫描 Java 失败: ${msg}`);
-        setJavaPaths([]);
-      });
-  }, []);
 
   // 加载显示器真实分辨率（失败静默，保留预设兜底）
   useEffect(() => {
@@ -105,23 +112,26 @@ export function useGameSettingsForm({
     }
   };
 
-  // 分辨率选项：真实显示器模式 + 常用预设兜底（去重，保持顺序）
+  // 分辨率选项：真实显示器模式 + 常用预设兜底（去重，按面积升序排列）
   const resolutionOptions: DropDownOption[] = useMemo(() => {
-    const presets = ['854x480', '1280x720', '1920x1080', '2560x1440', '3840x2160'];
+    const presets = ['854x480', '1280x720', '1920x1080'];
     const merged = [...new Set([...displayResolutions, ...presets])];
-    return merged.map((res) => ({ id: res, label: res }));
+    return merged
+      .map((res) => ({ id: res, label: res }))
+      .sort((a, b) => resolutionArea(a.id) - resolutionArea(b.id));
   }, [displayResolutions]);
 
   const currentResolution = settings.width && settings.height
     ? `${settings.width}x${settings.height}`
     : '1280x720';
 
-  // 当前值不在选项内（自定义分辨率）时动态并入，保证下拉显示当前值
+  // 当前值不在选项内（自定义分辨率）时动态并入，并按面积插入排序位置
   const resolutionOptionsWithCurrent = useMemo(() => {
     if (resolutionOptions.some((o) => o.id === currentResolution)) {
       return resolutionOptions;
     }
-    return [{ id: currentResolution, label: currentResolution }, ...resolutionOptions];
+    const current: DropDownOption = { id: currentResolution, label: currentResolution };
+    return [...resolutionOptions, current].sort((a, b) => resolutionArea(a.id) - resolutionArea(b.id));
   }, [resolutionOptions, currentResolution]);
 
   // DropDown 选项：自动选择 + 已扫描 Java + 当前自定义路径兜底

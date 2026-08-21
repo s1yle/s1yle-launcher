@@ -1,6 +1,8 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::Mutex;
+use std::time::{Duration, Instant};
 
 use crate::app_context::AppContext;
 use crate::config::ConfigManager;
@@ -16,7 +18,7 @@ use tauri::State;
 // 候选路径统一经 java -version 校验，解析主版本号与 64 位标记，按 Java Home 目录去重。
 
 /// Java 安装信息结构体
-#[derive(Serialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct JavaInstallation {
     /// Java 可执行文件的绝对路径
     pub path: PathBuf,
@@ -237,7 +239,7 @@ fn reg_read_string(hkey: windows::Win32::System::Registry::HKEY, value_name: &st
 
     // 先查询所需缓冲区字节数（UTF-16，含结尾空字符）；PATH 等环境变量可能超过 1KB，需动态分配
     let mut cb_data: u32 = 0;
-    let result = unsafe {
+    let result: windows::Win32::Foundation::WIN32_ERROR = unsafe {
         RegQueryValueExW(
             hkey,
             PCWSTR::from_raw(value.as_ptr()),
@@ -411,7 +413,8 @@ fn scan_dir_recursive(dir: &Path, depth: u32, out: &mut Vec<PathBuf>) {
 #[cfg(target_os = "windows")]
 fn scan_java_impl(ctx: &AppContext) -> Result<Vec<JavaInstallation>, String> {
     use std::collections::HashSet;
-    use std::fs;
+    use std::env::home_dir;
+use std::fs;
 
     let mut javas: Vec<JavaInstallation> = Vec::new();
     let mut seen_homes: HashSet<PathBuf> = HashSet::new();
@@ -443,7 +446,7 @@ fn scan_java_impl(ctx: &AppContext) -> Result<Vec<JavaInstallation>, String> {
             add_java(PathBuf::from(&value).join("bin").join("java.exe"));
         }
     }
-    for value in collect_env_var_values("PATH") {
+    for value in collect_env_var_values("Path") {
         for entry in std::env::split_paths(&value) {
             add_java(entry.join("java.exe"));
             add_java(entry.join("bin").join("java.exe"));
@@ -473,6 +476,22 @@ fn scan_java_impl(ctx: &AppContext) -> Result<Vec<JavaInstallation>, String> {
         }
     }
 
+    // hmcl 下载的java(C:\Users\admin\AppData\Roaming\.hmcl\java\windows-x86_64\mojang-java-runtime-gamma\binuser/AppData/Roaming/.hmcl/)
+    if let Some(user_dir) = home_dir() {
+        let dir_hmcl_installed_java = user_dir
+            .join("AppData")
+            .join("Roaming")
+            .join(".hmcl");
+        if let Ok(entries) =  fs::read_dir(&dir_hmcl_installed_java) {
+            for entry in entries.filter_map(|e| e.ok()) {
+                if !entry.path().is_dir() {
+                    continue;
+                }
+            }
+            scan_dir_recursive(&dir_hmcl_installed_java, 5, &mut candidates);
+        }
+    }
+
     for c in candidates {
         add_java(c);
     }
@@ -488,33 +507,46 @@ fn scan_java_impl(ctx: &AppContext) -> Result<Vec<JavaInstallation>, String> {
 // Tauri 命令
 // =============================================================================
 
-/// 扫描系统上所有可用的 Java 安装（缓存优先，缓存失效才全量扫描）
+const JAVA_SCAN_TTL: Duration = Duration::from_secs(30);
+static JAVA_SCAN_MEMO: Mutex<Option<(Instant, Vec<JavaInstallation>)>> = Mutex::new(None);
+
+/// 扫描系统上所有可用的 Java 安装
 #[tauri::command]
 pub fn scan_java_installations(
     ctx: State<'_, AppContext>,
     config: State<'_, ConfigManager>,
 ) -> Result<Vec<JavaInstallation>, String> {
-    // 1. 缓存优先：上一轮扫描成功的路径仍有效则直接返回
-    let cache: Vec<PathBuf> = config.read_section("java_cache").unwrap_or_default();
-    if !cache.is_empty() {
-        let mut cached = Vec::new();
-        for p in &cache {
-            if let Some(info) = probe_java(p) {
-                cached.push(info);
+    // 内存30秒缓存
+    if let Ok(guard) = JAVA_SCAN_MEMO.lock() {
+        if let Some((at, cached)) = &*guard {
+            if at.elapsed() < JAVA_SCAN_TTL {
+                return Ok(cached.clone());
             }
-        }
-        if !cached.is_empty() {
-            return Ok(cached);
         }
     }
 
-    // 2. 全量扫描
+    // 磁盘缓存
+    let cache: Vec<JavaInstallation> = config.read_section("java_cache").unwrap_or_default();
+    if !cache.is_empty() {
+        let alive: Vec<JavaInstallation> =
+            cache.into_iter().filter(|j| j.path.exists()).collect();
+        if !alive.is_empty() {
+            if let Ok(mut guard) = JAVA_SCAN_MEMO.lock() {
+                *guard = Some((Instant::now(), alive.clone()));
+            }
+            return Ok(alive);
+        }
+    }
+
+    // 全量扫描
     let javas = scan_java_impl(&ctx)?;
 
-    // 3. 写回缓存
+    // 回写磁盘缓存与内存缓存
     if !javas.is_empty() {
-        let paths: Vec<PathBuf> = javas.iter().map(|j| j.path.clone()).collect();
-        let _ = config.write_section("java_cache", &paths);
+        let _ = config.write_section("java_cache", &javas);
+    }
+    if let Ok(mut guard) = JAVA_SCAN_MEMO.lock() {
+        *guard = Some((Instant::now(), javas.clone()));
     }
 
     Ok(javas)

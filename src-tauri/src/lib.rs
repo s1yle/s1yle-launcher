@@ -25,7 +25,7 @@ use crate::microsoft_login::{
 
 use crate::download::DownloadManager;
 use crate::window::{WindowType, create_and_show_window, restore_main_window_state};
-use std::sync::OnceLock;
+use std::sync::{Mutex, OnceLock};
 use std::time::Instant;
 use tauri::webview::PageLoadEvent;
 use tauri::{Manager, WebviewUrl};
@@ -74,6 +74,10 @@ pub use font::{get_font, get_system_fonts};
 
 /// 全局 Tauri AppHandle，用于在非命令上下文中访问 Tauri 状态
 pub static APP_HANDLE: OnceLock<tauri::AppHandle> = OnceLock::new();
+
+/// 启动器可见性：游戏运行时关闭主窗口后保持进程存活（阻止默认退出），
+/// 游戏结束后由启动管线重建窗口并置回 false。
+pub static LAUNCHER_KEEP_ALIVE: Mutex<bool> = Mutex::new(false);
 
 /// 测试用的问候命令
 #[tauri::command]
@@ -449,6 +453,17 @@ pub fn run() {
             poll_and_complete_login,
             get_login_status,
         ])
-        .run(tauri::generate_context!())
-        .expect("启动失败！");
+        .build(tauri::generate_context!())
+        .expect("启动失败！")
+        .run(|_app, event| match event {
+            // 启动器可见性：游戏运行时关闭主窗口，需阻止默认退出以保留轻量监听
+            tauri::RunEvent::ExitRequested { api, .. } => {
+                if let Ok(g) = crate::LAUNCHER_KEEP_ALIVE.lock() {
+                    if *g {
+                        api.prevent_exit();
+                    }
+                }
+            }
+            _ => {}
+        });
 }

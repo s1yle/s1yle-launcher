@@ -1,6 +1,10 @@
 import { useBackgroundStore } from '@/stores/backgroundStore';
 import { Z_INDEX } from '@/utils/zIndex';
 
+function handleImageError() {
+  useBackgroundStore.getState().resetBackground();
+}
+
 const OVERLAY_TRANSITION = 'opacity 300ms ease';
 
 function ImageBackground({ path, fit, opacity, blur }: { path: string; fit: string; opacity: number; blur: number }) {
@@ -26,6 +30,7 @@ function ImageBackground({ path, fit, opacity, blur }: { path: string; fit: stri
           display: fit === 'tile' ? 'none' : undefined,
         }}
         draggable={false}
+        onError={handleImageError}
       />
       {blur > 0 && (
         <div className="absolute inset-0" style={{ backdropFilter: `blur(${blur}px)` }} />

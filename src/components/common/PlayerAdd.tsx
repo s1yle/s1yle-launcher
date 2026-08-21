@@ -3,7 +3,7 @@ import { ChevronLeft, Loader2, UserPlus } from "lucide-react";
 import { IconButton } from "@/components/common";
 import { useNotification } from "@/components/common/NotificationProvider";
 import { getErrorMessage } from "@/utils/errorUtils";
-import {  AccountType } from "@/api";
+import { AccountType } from "@/api";
 
 /** PlayerAdd 组件的 Props */
 interface PlayerAddProps {
@@ -46,12 +46,12 @@ export function PlayerAdd({ onAdd, onBack }: PlayerAddProps) {
             onChange={(e) => setName(e.target.value)}
             placeholder="输入游戏名称"
             maxLength={16}
-            className="w-full px-3 py-2 rounded-lg 
-              bg-[var(--color-surface-hover)] 
-              border border-[var(--color-border)] 
-              text-[var(--color-text-primary)] text-sm 
+            className="w-full px-3 py-2 rounded-lg
+              bg-[var(--color-surface-hover)]
+              border border-[var(--color-border)]
+              text-[var(--color-text-primary)] text-sm
               placeholder-[var(--color-text-secondary)]/50
-              focus:outline-none focus:border-[var(--color-primary)]/50 
+              focus:outline-none focus:border-[var(--color-primary)]/50
               focus:ring-1 focus:ring-[var(--color-primary)]/20
               transition-all"
           />
@@ -80,7 +80,7 @@ export function PlayerAdd({ onAdd, onBack }: PlayerAddProps) {
             </button>
           </div>
           {type === "microsoft" && (
-            <div className="p-2.5 rounded-lg bg-[var(--color-warning)]/10 border 
+            <div className="p-2.5 rounded-lg bg-[var(--color-warning)]/10 border
                   border-[var(--color-warning)]/30 text-warning text-xs mt-1"
             >
               微软账户需要完整的 OAuth 流程，当前为占位实现

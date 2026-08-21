@@ -81,28 +81,49 @@ pub use linux::process_has_visible_window;
 
 #[cfg(windows)]
 mod windows_impl {
+
+use windows::core::BOOL;
     use windows::Win32::{
         Foundation::{HWND, LPARAM},
         UI::WindowsAndMessaging::{EnumWindows, GetWindowThreadProcessId, IsWindowVisible},
     };
 
-    unsafe extern "system" fn enum_proc(hwnd: HWND, lparam: LPARAM) -> windows::core::BOOL {
-        let target_pid = lparam.0 as u32; // 转换为 u32
+    // 上下文结构体：存放目标 PID + 是否找到可见窗口标记
+    #[repr(C)]
+    struct Context {
+        target_pid: u32,
+        found: bool,
+    }
+
+    unsafe extern "system" fn enum_proc(hwnd: HWND, lparam: LPARAM) -> BOOL {
+        // lparam 传递 Context 指针（回调无法捕获栈变量）
+        let ctx_ptr = lparam.0 as *mut Context;
+        let ctx = &mut *ctx_ptr;
+
         let mut window_pid: u32 = 0;
-        let _ = !unsafe {
-            GetWindowThreadProcessId(hwnd, Some(&mut window_pid))
-        }; 
-        if window_pid == target_pid && !unsafe{ IsWindowVisible(hwnd).as_bool() } {
-            windows::core::BOOL(0) // 找到目标窗口，停止枚举
+        // 第二个参数输出窗口所属 PID，返回值无意义（取反/忽略皆可）
+        unsafe { GetWindowThreadProcessId(hwnd, Some(&mut window_pid)); }
+
+        // 窗口 PID 匹配 且 窗口可见 → 命中（对齐 PCL2 原版逻辑）
+        if window_pid == ctx.target_pid && unsafe { IsWindowVisible(hwnd).as_bool() } {
+            ctx.found = true;
+            BOOL(0) // 找到 → 返回 0 停止枚举
         } else {
-            windows::core::BOOL(1) // 继续枚举
+            BOOL(1) // 继续枚举
         }
     }
 
-    pub fn process_has_visible_window(pid: LPARAM) -> bool {
-        // 回调返回 FALSE 停止枚举时 EnumWindows 返回 FALSE，即视为命中
-        let found = !unsafe { EnumWindows(Some(enum_proc), pid).is_err() };
-        found
+    /// 判断指定 pid 是否存在【可见顶层窗口】
+    pub fn process_has_visible_window(target_pid: u32) -> bool {
+        let mut ctx = Context {
+            target_pid,
+            found: false,
+        };
+        let ctx_lparam = LPARAM(&mut ctx as *mut Context as isize);
+
+        // EnumWindows 仅参数非法时才返回 FALSE；是否命中由回调写入 ctx
+        let _ = unsafe { EnumWindows(Some(enum_proc), ctx_lparam) };
+        ctx.found
     }
 }
 

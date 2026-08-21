@@ -486,6 +486,21 @@ pub(super) fn build_launch_args(
     // 用户附加游戏参数
     game_args.extend(config.game_args.iter().cloned());
 
+    // 显式窗口参数：仅非全屏时传宽高（全屏交由 --fullscreen 控制，避免退出全屏后窗口恢复为异常尺寸）
+    if !config.fullscreen {
+        if let Some(w) = config.resolution_width {
+            game_args.push("--width".to_string());
+            game_args.push(w.to_string());
+        }
+        if let Some(h) = config.resolution_height {
+            game_args.push("--height".to_string());
+            game_args.push(h.to_string());
+        }
+    }
+    if config.fullscreen {
+        game_args.push("--fullscreen".to_string());
+    }
+
     // ---- 主类 ----
     let main_class = config
         .main_class

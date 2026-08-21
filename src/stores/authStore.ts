@@ -133,6 +133,6 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   logout: async () => {
     await clearLoginState();
     await get().refreshLoginState();
-    navigateTo('/login');
+    navigateTo('/account');
   },
 }));

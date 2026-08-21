@@ -55,8 +55,11 @@ const ActionButton = ({ className }: StartGameButtonProps) => {
         uuid,
         account_type: accountType,
         jvm_args: settings.jvm_args || [],
-        resolution_width: settings.width,
-        resolution_height: settings.height,
+        // 全屏时不传宽高（避免退出全屏后窗口恢复为异常尺寸）；非全屏时下限 640x480
+        resolution_width: settings.fullscreen ? undefined : Math.max(settings.width ?? 640, 640),
+        resolution_height: settings.fullscreen ? undefined : Math.max(settings.height ?? 480, 480),
+        fullscreen: settings.fullscreen,
+        launcher_visible: settings.launcher_visible,
       });
 
       useLaunchStore.getState().openOverlay({ gameId, game: selectedGame });

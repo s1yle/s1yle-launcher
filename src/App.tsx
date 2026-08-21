@@ -17,7 +17,7 @@
 //
 // 玩家身份需要使用正版/离线/第三方登录，每个玩家账户数据互相隔离(除了游戏)
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, useLocation, useNavigate } from 'react-router-dom';
 import { routes, findRouteByPath } from './router/config';
 import { registerNavigator } from './router/navigationBridge';
@@ -34,12 +34,17 @@ import { useWindowPosition } from './hooks/useWindowPosition';
 import GlobalDownloadBar from './components/GlobalDownloadBar';
 import { BackgroundLayer } from './components/common/BackgroundLayer';
 import ErrorBoundary from './components/common/ErrorBoundary';
-import { GlobalLoadingBar } from './components/common';
+import { GlobalLoadingBar, LoadingSurface } from './components/common';
 import './helper/i18n';
 import { AppShell, resolveShell } from './layout';
 import { useAuthStore } from './stores/authStore';
+import { useFirstRunStore } from './stores/firstRunStore';
+import { useBackgroundStore } from './stores/backgroundStore';
 import { useFontStore } from './stores';
+import { invokeGetConfig } from '@/api';
+import type { BackgroundConfig } from '@/config/types';
 import { useSafeNavigate } from './router/navigation';
+import { FirstRunAccountDialog } from './components/common/FirstRunAccountDialog';
 
 const MainLayout = () => {
   const location = useLocation();
@@ -47,29 +52,66 @@ const MainLayout = () => {
 
   const setCurrentPath = useNavStore((s) => s.setCurrentPath);
   const { mode: uiMode } = useUIModeStore();
-  const isLoggedIn = useAuthStore((s) => s.loginState.is_logged_in);
   const authInitialized = useAuthStore((s) => s.initialized);
+  const accounts = useAuthStore((s) => s.accounts);
+  const setupDone = useFirstRunStore((s) => s.setupDone);
+  const markSetupDone = useFirstRunStore((s) => s.markDone);
+  const setFirstRun = useFirstRunStore((s) => s.setFirstRun);
+
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [configReady, setConfigReady] = useState(false);
+
+  // 启动引导：从配置层（L2）加载背景与迎新状态，避免依赖卸载残留的 localStorage
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const cfg = await invokeGetConfig();
+        if (cancelled) return;
+        if (typeof cfg.first_run === 'boolean') {
+          useFirstRunStore.getState().initFirstRun(cfg.first_run);
+        }
+        if (cfg.background) {
+          useBackgroundStore.getState().initBackground(cfg.background as BackgroundConfig);
+        }
+        setShowWelcome(useFirstRunStore.getState().firstRun);
+      } catch (e) {
+        logger.error('加载启动器配置失败', e);
+        // 配置加载失败时回退：按默认（显示迎新）继续
+        setShowWelcome(useFirstRunStore.getState().firstRun);
+      } finally {
+        if (!cancelled) setConfigReady(true);
+      }
+    })();
+    // 安全网：即使 get_config 因任何原因挂起，也最多 2.5s 后放行，避免卡在加载界面
+    const safety = setTimeout(() => {
+      if (!cancelled) setConfigReady(true);
+    }, 2500);
+    return () => {
+      cancelled = true;
+      clearTimeout(safety);
+    };
+  }, []);
 
   const currentRoute = findRouteByPath(location.pathname, routes) || routes[0];
   const shell = resolveShell(uiMode, currentRoute);
   const safeNavigate = useSafeNavigate();
 
+  // 首次使用引导：初次进入且不存在任何账户时，弹出添加账户引导
+  // （与迎新界面错开，迎新结束后再显示）
+  const showFirstRun = authInitialized && !setupDone && accounts.length === 0 && !showWelcome;
+
   useEffect(() => {
     registerNavigator(navigate);
   }, [navigate]);
 
-  // 单窗口登录门：未登录跳 /login，已登录跳离 /login
-  useEffect(() => {
-    if (!authInitialized) return;
-    if (!isLoggedIn && location.pathname !== '/login') {
-      navigate('/login', { replace: true });
-    } else if (isLoggedIn && location.pathname === '/login') {
-      navigate('/', { replace: true });
-    }
-  }, [authInitialized, isLoggedIn, location.pathname, navigate]);
-
   const handleMenuClick = (targetPath: string) => {
     safeNavigate(targetPath);
+  };
+
+  const handleEnter = () => {
+    setShowWelcome(false);
+    setFirstRun(false);
   };
 
   useEffect(() => {
@@ -101,9 +143,22 @@ const MainLayout = () => {
     e.preventDefault();
   };
 
+  if (!configReady) {
+    return <LoadingSurface variant="loading" />;
+  }
+
+  if (showWelcome) {
+    return (
+      <LoadingSurface variant="welcome" onEnter={handleEnter} />
+    )
+  }
+
   return (
     <div className="renderpage h-screen flex flex-col" onContextMenu={handleContextMenu}>
       <AppShell shell={shell} route={currentRoute} handleMenuClick={handleMenuClick} />
+      {showFirstRun && (
+        <FirstRunAccountDialog open={showFirstRun} onClose={markSetupDone} />
+      )}
     </div>
   );
 };
@@ -119,6 +174,22 @@ function App() {
   const initDownload = useDownloadStore((s) => s.init);
   const initializeAccountStore = useAuthStore((s) => s.initialize);
   useWindowPosition();
+
+  // 全局错误捕获：release 下无 devtools，任何未处理的 JS 错误都直接显示到界面上，
+  // 避免“静默白屏 / 透明窗体看起来啥都没有”。
+  const [globalError, setGlobalError] = useState<string | null>(null);
+  useEffect(() => {
+    const onError = (e: ErrorEvent) =>
+      setGlobalError(`${e.message}\n${e.filename}:${e.lineno}\n${e.error?.stack ?? ''}`);
+    const onReject = (e: PromiseRejectionEvent) =>
+      setGlobalError(`UnhandledRejection: ${e.reason?.message ?? String(e.reason)}\n${e.reason?.stack ?? ''}`);
+    window.addEventListener('error', onError);
+    window.addEventListener('unhandledrejection', onReject);
+    return () => {
+      window.removeEventListener('error', onError);
+      window.removeEventListener('unhandledrejection', onReject);
+    };
+  }, []);
 
   useEffect(() => {
     initTheme();
@@ -149,14 +220,41 @@ function App() {
   }, []);
 
   return (
-    <Router>
-      <BackgroundLayer />
-      <GlobalLoadingBar />
-      <ErrorBoundary>
-        <MainLayout />
-        <GlobalDownloadBar />
-      </ErrorBoundary>
-    </Router>
+    <>
+      <Router>
+        <BackgroundLayer />
+        <GlobalLoadingBar />
+        <ErrorBoundary>
+          <MainLayout />
+          <GlobalDownloadBar />
+        </ErrorBoundary>
+      </Router>
+      {globalError && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: '#7f1d1d',
+            color: '#fff',
+            padding: 24,
+            fontFamily: 'monospace',
+            fontSize: 13,
+            whiteSpace: 'pre-wrap',
+            overflow: 'auto',
+          }}
+        >
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>运行时错误（release 无 devtools，此处显示）</div>
+          {globalError}
+          <button
+            style={{ marginTop: 16, padding: '6px 12px', cursor: 'pointer' }}
+            onClick={() => setGlobalError(null)}
+          >
+            关闭
+          </button>
+        </div>
+      )}
+    </>
   );
 }
 
