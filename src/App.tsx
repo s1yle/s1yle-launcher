@@ -25,7 +25,6 @@ import { useNavStore } from './stores/navStore';
 import { useLastVisitedStore } from './stores/lastVisitedStore';
 import { useThemeStore } from './stores/themeStore';
 import { useAccessibilityStore } from './stores/accessibilityStore';
-import { useAppStore } from './stores/appStore';
 import { useGameStore } from './stores/gameStore';
 import { useDownloadStore } from './stores/downloadStore';
 import { useUIModeStore } from './stores/uiModeStore';
@@ -39,10 +38,8 @@ import './helper/i18n';
 import { AppShell, resolveShell } from './layout';
 import { useAuthStore } from './stores/authStore';
 import { useFirstRunStore } from './stores/firstRunStore';
-import { useBackgroundStore } from './stores/backgroundStore';
 import { useFontStore } from './stores';
-import { invokeGetConfig } from '@/api';
-import type { BackgroundConfig } from '@/config/types';
+import { useBootstrapStore } from './stores/bootstrapStore';
 import { useSafeNavigate } from './router/navigation';
 import { FirstRunAccountDialog } from './components/common/FirstRunAccountDialog';
 
@@ -61,29 +58,23 @@ const MainLayout = () => {
   const [showWelcome, setShowWelcome] = useState(false);
   const [configReady, setConfigReady] = useState(false);
 
-  // 启动引导：从配置层（L2）加载背景与迎新状态，避免依赖卸载残留的 localStorage
+  // 启动引导：一次性聚合加载迎新 / 背景 / 系统信息等首屏状态
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const cfg = await invokeGetConfig();
+        await useBootstrapStore.getState().init();
         if (cancelled) return;
-        if (typeof cfg.first_run === 'boolean') {
-          useFirstRunStore.getState().initFirstRun(cfg.first_run);
-        }
-        if (cfg.background) {
-          useBackgroundStore.getState().initBackground(cfg.background as BackgroundConfig);
-        }
         setShowWelcome(useFirstRunStore.getState().firstRun);
       } catch (e) {
-        logger.error('加载启动器配置失败', e);
-        // 配置加载失败时回退：按默认（显示迎新）继续
+        logger.error('加载启动引导数据失败', e);
+        // 加载失败时回退：按默认（显示迎新）继续
         setShowWelcome(useFirstRunStore.getState().firstRun);
       } finally {
         if (!cancelled) setConfigReady(true);
       }
     })();
-    // 安全网：即使 get_config 因任何原因挂起，也最多 2.5s 后放行，避免卡在加载界面
+    // 安全网：即使引导数据因任何原因挂起，也最多 2.5s 后放行，避免卡在加载界面
     const safety = setTimeout(() => {
       if (!cancelled) setConfigReady(true);
     }, 2500);
@@ -114,6 +105,7 @@ const MainLayout = () => {
     setFirstRun(false);
   };
 
+  // 记录上一次访问的 route 的历史记录
   useEffect(() => {
     const currentPath = location.pathname;
     setCurrentPath(currentPath);
@@ -167,7 +159,6 @@ const MainLayout = () => {
 function App() {
   const initTheme = useThemeStore((s) => s.init);
   const initAccessibility = useAccessibilityStore((s) => s.init);
-  const initApp = useAppStore((s) => s.init);
   const initGames = useGameStore((s) => s.init);
   const initFont = useFontStore((s) => s.init);
   const setupDownloadListeners = useDownloadStore((s) => s.setupEventListeners);
@@ -194,12 +185,11 @@ function App() {
   useEffect(() => {
     initTheme();
     initAccessibility();
-    initApp();
     initGames();
     initFont();
     initializeAccountStore();
     initDownload();
-  }, [initTheme, initAccessibility, initApp, initGames, initFont, initializeAccountStore, initDownload]);
+  }, [initTheme, initAccessibility, initGames, initFont, initializeAccountStore, initDownload]);
 
   useEffect(() => {
     const cleanup = setupDownloadListeners();

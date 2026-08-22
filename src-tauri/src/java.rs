@@ -5,8 +5,9 @@ use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
 use crate::app_context::AppContext;
-use crate::config::ConfigManager;
 use tauri::State;
+
+mod store;
 
 // 扫描策略（对齐 PCL 四层搜索源）：
 // 1. 缓存：读取 .wecraft.json 的 java_cache 节，缓存仍有效则直接返回
@@ -463,16 +464,17 @@ use std::fs;
     for pf in [&program_files, &program_files_x86] {
         scan_dir_recursive(&PathBuf::from(pf).join("Java"), 4, &mut candidates);
     }
-    scan_dir_recursive(&ctx.game_root().join("runtime"), 4, &mut candidates);
-    scan_dir_recursive(&ctx.launcher_work_dir().join("runtime"), 4, &mut candidates);
+    scan_dir_recursive(&ctx.game_runtime_dir(), 4, &mut candidates);
+    scan_dir_recursive(&ctx.launcher_runtime_dir(), 4, &mut candidates);
 
     if let Ok(entries) = fs::read_dir(ctx.versions_dir()) {
         for entry in entries.filter_map(|e| e.ok()) {
             if !entry.path().is_dir() {
                 continue;
             }
-            scan_dir_recursive(&entry.path().join("runtime"), 4, &mut candidates);
-            scan_dir_recursive(&entry.path(), 2, &mut candidates);
+            let name = entry.file_name().to_string_lossy().to_string();
+            scan_dir_recursive(&ctx.game_dir(&name).join("runtime"), 4, &mut candidates);
+            scan_dir_recursive(&ctx.game_dir(&name), 2, &mut candidates);
         }
     }
 
@@ -514,7 +516,6 @@ static JAVA_SCAN_MEMO: Mutex<Option<(Instant, Vec<JavaInstallation>)>> = Mutex::
 #[tauri::command]
 pub fn scan_java_installations(
     ctx: State<'_, AppContext>,
-    config: State<'_, ConfigManager>,
 ) -> Result<Vec<JavaInstallation>, String> {
     // 内存30秒缓存
     if let Ok(guard) = JAVA_SCAN_MEMO.lock() {
@@ -526,7 +527,8 @@ pub fn scan_java_installations(
     }
 
     // 磁盘缓存
-    let cache: Vec<JavaInstallation> = config.read_section("java_cache").unwrap_or_default();
+    let cache: Vec<JavaInstallation> =
+        store::load_java_cache(&ctx.launcher_config_path());
     if !cache.is_empty() {
         let alive: Vec<JavaInstallation> =
             cache.into_iter().filter(|j| j.path.exists()).collect();
@@ -543,7 +545,7 @@ pub fn scan_java_installations(
 
     // 回写磁盘缓存与内存缓存
     if !javas.is_empty() {
-        let _ = config.write_section("java_cache", &javas);
+        let _ = store::save_java_cache(&ctx.launcher_config_path(), &javas);
     }
     if let Ok(mut guard) = JAVA_SCAN_MEMO.lock() {
         *guard = Some((Instant::now(), javas.clone()));

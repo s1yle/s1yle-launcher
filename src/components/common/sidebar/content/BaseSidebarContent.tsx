@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { ChevronRight, ChevronDown, Trash2, FolderOpen } from 'lucide-react';
 import { type SidebarMenuItem } from '../../../../router/config';
 import { useGameStore } from '../../../../stores/gameStore';
+import { useSidebarStore } from '../../../../stores/sidebarStore';
 import ContextMenu, { ContextMenuItemData, useContextMenu } from '../../ContextMenu';
 import clsx from 'clsx';
 import { DURATION, EASING, microInteractions, transitions, sidebarStaggerContainer, SIDEBAR_STAGGER_DELAY, SIDEBAR_STAGGER_STEP } from '../../../../utils/animations';
@@ -41,7 +42,6 @@ export interface BaseSidebarContentProps {
   isParentActive?: (path: string) => boolean;
   hasChildrenItems?: (item: SidebarMenuItem) => boolean;
 
-  isItemActive?: (id: string) => boolean;
   groupTitle?: string;
   groupTitleI18nKey?: string;
   onItemDelete?: (id: string) => void;
@@ -62,7 +62,6 @@ const BaseSidebarContent = ({
   isActive,
   isParentActive,
   hasChildrenItems,
-  isItemActive,
   groupTitle = "未知",
   groupTitleI18nKey,
   onItemDelete,
@@ -76,6 +75,7 @@ const BaseSidebarContent = ({
   const { t } = useTranslation();
   const location = useLocation();
   const game = useGameStore(s => s.getSelectedGame());
+  const activeItemId = useSidebarStore(s => s.activeItemId);
 
   // 初始化展开状态
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => {
@@ -250,7 +250,7 @@ const BaseSidebarContent = ({
     const hasChildren = childrenCheck(item);
     const isExpanded = expandedGroups.has(item.id);
     const active = item.type === 'route' && item.path ? activeCheck(item.path) : false;
-    const itemActive = isItemActive ? isItemActive(item.id) : false;
+    const itemActive = activeItemId === item.id || !!item.active;
     const parentActive = !active && item.type === 'route' && item.path ? parentActiveCheck(item.path) : false;
 
     // 渲染分隔符

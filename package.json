@@ -44,6 +44,7 @@
     "react-i18next": "^17.0.2",
     "react-router-dom": "^7.3.0",
     "tailwind-merge": "^3.5.0",
+    "tsx": "^4.23.12",
     "zustand": "^5.0.12"
   },
   "devDependencies": {

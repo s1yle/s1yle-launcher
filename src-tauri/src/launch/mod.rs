@@ -20,6 +20,7 @@ use crate::download::{DownloadManager, extract_jar, parse_version_json};
 use crate::game::GameManager;
 use crate::launch::args::build_launch_args;
 use crate::{log_error, log_info};
+use tauri::AppHandle;
 use tauri::Manager;
 
 mod args;
@@ -157,11 +158,9 @@ fn default_true() -> bool {
 
 /// 关闭主启动器窗口（销毁 webview，真正释放 React/CPU/内存）。
 /// 同时置位 LAUNCHER_KEEP_ALIVE，阻止进程随窗口关闭而退出。
-fn close_launcher_window() {
-    if let Some(handle) = crate::APP_HANDLE.get() {
-        if let Some(window) = handle.get_webview_window("main") {
-            let _ = window.close();
-        }
+fn close_launcher_window(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.close();
     }
     if let Ok(mut g) = crate::LAUNCHER_KEEP_ALIVE.lock() {
         *g = true;
@@ -170,26 +169,28 @@ fn close_launcher_window() {
 
 /// 游戏结束后重建并恢复主启动器窗口；若窗口仍在则仅显示。
 /// 同时清除 LAUNCHER_KEEP_ALIVE，恢复默认退出行为。
-fn reopen_launcher_window() {
-    if let Some(handle) = crate::APP_HANDLE.get() {
-        if let Some(window) = handle.get_webview_window("main") {
-            let _ = window.show();
-            let _ = window.set_focus();
-        } else {
-            let _ = crate::window::create_and_show_window(
-                handle,
-                "main",
-                tauri::WebviewUrl::App("".into()),
-                crate::window::WindowType::Main,
-                |window, payload| {
-                    if let tauri::webview::PageLoadEvent::Finished = payload.event() {
-                        crate::window::restore_main_window_state(&window);
-                        let _ = window.show();
-                        let _ = window.set_focus();
-                    }
-                },
-            );
-        }
+fn reopen_launcher_window(app: AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.set_focus();
+    } else {
+        let app_for_closure = app.clone();
+        let _ = crate::window::create_and_show_window(
+            &app,
+            "main",
+            tauri::WebviewUrl::App("".into()),
+            crate::window::WindowType::Main,
+            move |window, payload| {
+                if let tauri::webview::PageLoadEvent::Finished = payload.event() {
+                    crate::window::restore_main_window_state(
+                        &window,
+                        app_for_closure.state::<AppContext>().inner(),
+                    );
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
+            },
+        );
     }
     if let Ok(mut g) = crate::LAUNCHER_KEEP_ALIVE.lock() {
         *g = false;
@@ -487,6 +488,8 @@ async fn run_launch_pipeline(
     dm: DownloadManager,
     gm: GameManager,
 ) {
+    let app = ctx.app_handle();
+
     let game_dir = PathBuf::from(&config.game_dir);
     let game_name = game_dir
         .file_name()
@@ -634,12 +637,14 @@ async fn run_launch_pipeline(
             log_info!("  主类: {}", main_class);
 
             // 启动器可见性：游戏窗口真正出现后再隐藏，游戏结束后恢复
-            wait_for_game_window(game_id, config.launcher_visible).await;
+            wait_for_game_window(game_id, config.launcher_visible, &app).await;
 
             // 等待游戏进程结束，结束后重建并恢复启动器窗口
             wait_until_game_exits(game_id).await;
             if !config.launcher_visible {
-                reopen_launcher_window();
+                if let Some(app) = app.clone() {
+                    reopen_launcher_window(app);
+                }
             }
         }
         Err(e) => {
@@ -651,7 +656,7 @@ async fn run_launch_pipeline(
 
 /// 等待游戏窗口出现后置为 Running（每 500ms 检测一次，最长 90 秒兜底）。
 /// 期间用户可停止游戏；进程提前退出视为启动失败。
-async fn wait_for_game_window(game_id: &str, launcher_visible: bool) {
+async fn wait_for_game_window(game_id: &str, launcher_visible: bool, app: &Option<AppHandle>) {
     use std::time::{Duration, Instant};
 
     let pid = lock_manager()
@@ -711,7 +716,9 @@ async fn wait_for_game_window(game_id: &str, launcher_visible: bool) {
             log_info!("🎮 Minecraft 窗口已出现，进入运行状态: {}", game_id);
             // 启动器可见性：游戏窗口真正出现后才关闭启动器窗口（释放资源）
             if !launcher_visible {
-                close_launcher_window();
+                if let Some(app) = app {
+                    close_launcher_window(app);
+                }
             }
             return;
         }

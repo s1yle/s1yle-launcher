@@ -122,8 +122,8 @@ const GameListItem = ({
       <PageSection>
         <div
           className={`
-          flex items-center pl-1.5 pr-3 py-1
-          cursor-pointer transition-all border-l-3
+            flex items-center pl-1.5 pr-3 py-1
+            cursor-pointer transition-all border-l-3
           ${selected
               ? 'border-l-primary shadow-md shadow-primary/15'
               : 'border-l-transparent hover:shadow-sm'

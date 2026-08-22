@@ -2,6 +2,7 @@ import ReactDOM from "react-dom/client";
 import { Window } from "@tauri-apps/api/window";
 import App from "./App";
 import NotificationProvider from "./components/common/NotificationProvider";
+import InputDialogProvider from "./components/common/popup/InputDialogProvider";
 
 import './styles/themes/dark.css';
 import './styles/themes/accents.css';
@@ -57,6 +58,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <NotificationProvider>
-    <App />
+    <InputDialogProvider>
+      <App />
+    </InputDialogProvider>
   </NotificationProvider>
 );

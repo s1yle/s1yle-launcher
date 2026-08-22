@@ -52,6 +52,8 @@ export interface SidebarMenuItem {
   url?: string;
   action?: () => void;
   group: SidebarGroup;
+  /** 显式高亮（用于"当前使用的文件夹 / 账户"等需从状态派生的场景） */
+  active?: boolean;
   children?: SidebarMenuItem[];
   danger?: boolean;
   customRender?: React.ComponentType<{
@@ -144,4 +146,17 @@ export interface RouteConfig {
   nav?: RouteNavMeta;
   /** 侧边栏菜单元数据（存在即参与侧边栏菜单） */
   menu?: RouteMenuMeta;
+  /**
+   * 动态侧边栏项提供者（渲染时调用，返回该路由需要注入的动态菜单项）。
+   * useSmartSidebar 读取路由配置后自动调用，无需在 hook 里硬编码每种动态项的构建逻辑。
+   */
+  sidebarProvider?: () => SidebarMenuItem[];
+  /**
+   * sidebarProvider 返回项的注入位置：
+   * - `'replace'`：完全替换侧边栏内容（如账户页）
+   * - `'prepend'`：插入到已有子项之前（如游戏文件夹在游戏列表页顶部）
+   * - `'append'`：追加到已有子项之后
+   * 默认 `'append'`。
+   */
+  sidebarPlacement?: 'replace' | 'prepend' | 'append';
 }

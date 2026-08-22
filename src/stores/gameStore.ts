@@ -3,13 +3,14 @@ import {
   createGame,
   deleteGame,
   renameGame,
+  duplicateGame,
   updateGame,
-  updateGameSettings,
   getGameRoot,
+  getGameFolders,
   scanGames,
   validateGame,
 } from '../helper/rustInvoke';
-import type { Game, GameSettings, GameValidation } from '../helper/rustInvoke';
+import type { Game, GameValidation, GameFolder } from '../helper/rustInvoke';
 import { ModLoaderType } from '../helper/rustInvoke';
 import { getErrorMessage } from '@/utils/errorUtils';
 
@@ -66,8 +67,10 @@ interface GameState {
   searchQuery: string;
   /** 视图模式：网格或列表 */
   viewMode: 'grid' | 'list';
-  /** 游戏根目录（即 .minecraft 目录本身） */
+  /** 游戏根目录 */
   gameRoot: string;
+  /** 已添加的游戏文件夹列表（持久化于 wecraft.json，含自定义名称） */
+  gameFolders: GameFolder[];
   /** 游戏完整性校验结果（key = 游戏 id；null = 校验不可用，如版本 JSON 缺失） */
   validations: Record<string, GameValidation | null>;
   /** 是否正在后台校验游戏完整性 */
@@ -77,24 +80,24 @@ interface GameState {
   init: () => Promise<void>;
   /** 刷新游戏列表和根目录 */
   refresh: () => Promise<void>;
+  /** 设置游戏文件夹列表（用于添加/移除后同步） */
+  setGameFolders: (folders: GameFolder[]) => void;
   /** 校验全部游戏完整性（后台并发执行；结果写入 validations 并同步 broken 标记） */
   validateAll: () => Promise<void>;
   /** 校验单个游戏完整性（每次调用都执行，无缓存） */
   checkGame: (id: string) => Promise<GameValidation | null>;
   /** 选中游戏（同时持久化到 localStorage） */
   setSelectedGame: (id: string | null) => void;
-  /** 选中侧边栏项 */
-  setSelectedSidebarItem: (id: string | null) => void;
   /** 根据 ID 获取游戏 */
   getGame: (id: string) => Game | null;
   /** 创建新游戏 */
   createNew: (name: string, version: string, loaderType?: ModLoaderType, loaderVersion?: string, iconPath?: string) => Promise<void>;
   /** 删除指定游戏 */
   remove: (id: string) => Promise<void>;
-  /** 复制游戏 */
-  duplicate: (id: string, newName: string) => Promise<void>;
   /** 重命名游戏 */
   rename: (id: string, newName: string) => Promise<void>;
+  /** 复制游戏（生成同名新实例） */
+  duplicate: (id: string, newName: string) => Promise<void>;
   /** 启用/禁游戏 */
   toggle: (id: string, enabled: boolean) => Promise<void>;
   /** 设置搜索关键词 */
@@ -129,6 +132,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   searchQuery: '',
   viewMode: 'grid',
   gameRoot: '',
+  gameFolders: [],
   validations: {},
   validating: false,
 
@@ -137,9 +141,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     try {
       console.log('[gameStore.init] 开始初始化...');
 
-      const [gameRoot, games] = await Promise.all([
+      const [gameRoot, games, gameFolders] = await Promise.all([
         getGameRoot(),
         scanGames(),
+        getGameFolders(),
       ]);
 
       console.log('[gameStore.init] 加载的数据:', {
@@ -157,6 +162,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       set({
         games,
         gameRoot,
+        gameFolders,
         selectedGameId: validGameId,
       });
 
@@ -217,11 +223,12 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   refresh: async () => {
     try {
-      const [games, gameRoot] = await Promise.all([
+      const [games, gameRoot, gameFolders] = await Promise.all([
         scanGames(),
         getGameRoot(),
+        getGameFolders(),
       ]);
-      set({ games, gameRoot });
+      set({ games, gameRoot, gameFolders });
 
       const selectedId = get().selectedGameId;
       if (selectedId && !games.find(i => i.id === selectedId)) {
@@ -289,10 +296,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     return games.find(i => i.id === id) || null;
   },
 
-  setSelectedSidebarItem: (id: string | null) => {
-    set({ selectedSidebarItemId: id });
-  },
-
   createNew: async (name: string, version: string, loaderType?: ModLoaderType, loaderVersion?: string, iconPath?: string) => {
     try {
       const game = await createGame(name, version, loaderType || ModLoaderType.Vanilla, loaderVersion, iconPath);
@@ -333,36 +336,24 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
   },
 
-  duplicate: async (id: string, newName: string) => {
+  rename: async (id: string, newName: string) => {
     try {
       const { games } = get();
-      const source = games.find(i => i.id === id);
-      if (!source) {
-        throw new Error('源游戏不存在');
-      }
-      const game = await createGame(
-        newName,
-        source.version_id,
-        source.loader_type as ModLoaderType,
-        source.loader_version ?? undefined,
-        source.icon_path ?? undefined
-      );
-      const settings: GameSettings = source.game_settings ?? {};
-      await updateGameSettings(game.name, settings).catch(() => undefined);
+      const game = games.find(i => i.id === id);
+      await renameGame(game?.name ?? id, newName);
       await get().refresh();
-      set({ selectedGameId: game.id });
-      saveGameId(game.id);
     } catch (e) {
       set({ error: getErrorMessage(e) });
       throw e;
     }
   },
 
-  rename: async (id: string, newName: string) => {
+  duplicate: async (id: string, newName: string) => {
     try {
       const { games } = get();
       const game = games.find(i => i.id === id);
-      await renameGame(game?.name ?? id, newName);
+      if (!game) throw new Error('游戏不存在');
+      await duplicateGame(game.name, newName);
       await get().refresh();
     } catch (e) {
       set({ error: getErrorMessage(e) });
@@ -383,6 +374,10 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   setSearchQuery: (query: string) => {
     set({ searchQuery: query });
+  },
+
+  setGameFolders: (folders: GameFolder[]) => {
+    set({ gameFolders: folders });
   },
 
   setViewMode: (mode: 'grid' | 'list') => {

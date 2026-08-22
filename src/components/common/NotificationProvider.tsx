@@ -50,6 +50,19 @@ export const useNotification = (): NotificationContextValue => {
   return context;
 };
 
+/**
+ * 命令式通知入口：供非组件上下文（如路由 action 回调）使用，
+ * 内部持有 NotificationProvider 注册的函数引用，未挂载时为 no-op。
+ */
+let _addNotification: ((options: NotificationOptions) => string) | null = null;
+
+export const notify = {
+  success: (title: string, message?: string) => _addNotification?.({ type: 'success', title, message }),
+  error: (title: string, message?: string) => _addNotification?.({ type: 'error', title, message }),
+  warning: (title: string, message?: string) => _addNotification?.({ type: 'warning', title, message }),
+  info: (title: string, message?: string) => _addNotification?.({ type: 'info', title, message }),
+};
+
 interface NotificationProviderProps {
   children: ReactNode;
   maxNotifications?: number;
@@ -122,6 +135,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     warning: createShortcut('warning'),
     info: createShortcut('info'),
   };
+
+  _addNotification = addNotification;
 
   return (
     <NotificationContext.Provider value={value}>

@@ -39,6 +39,12 @@ interface NavState {
   currentPath: string;
   /** 上一个页面路径（用于返回） */
   previousPath: string | null;
+  /** 导航历史栈（按访问顺序排列的路径），返回时回退到上一项 */
+  history: string[];
+  /** 记录一次导航（replace 时替换栈顶，否则入栈） */
+  recordNavigation: (path: string, replace?: boolean) => void;
+  /** 弹出栈顶并返回上一项；栈仅剩一项时返回 null */
+  popHistory: () => string | null;
   /** 是否正在导航中（用于过渡动画） */
   isNavigating: boolean;
   /** 页面切换动画方向 */
@@ -76,6 +82,7 @@ interface NavState {
 export const useNavStore = create<NavState>((set, get) => ({
   currentPath: '/',
   previousPath: null,
+  history: ['/'],
   isNavigating: false,
   direction: null,
   directionAt: 0,
@@ -87,6 +94,27 @@ export const useNavStore = create<NavState>((set, get) => ({
 
   setPreviousPath: (path: string | null) => {
     set({ previousPath: path });
+  },
+
+  recordNavigation: (path: string, replace?: boolean) => {
+    set((state) => {
+      if (replace) {
+        const next = state.history.length
+          ? [...state.history.slice(0, -1), path]
+          : [path];
+        return { history: next };
+      }
+      if (state.history[state.history.length - 1] === path) return {};
+      return { history: [...state.history, path] };
+    });
+  },
+
+  popHistory: () => {
+    const hist = get().history;
+    if (hist.length <= 1) return null;
+    const prev = hist[hist.length - 2];
+    set({ history: hist.slice(0, -1) });
+    return prev;
   },
 
   setNavigating: (navigating: boolean) => {

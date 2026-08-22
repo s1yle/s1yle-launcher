@@ -88,8 +88,8 @@ const LoadingSurface = ({
             animate={isHandwritingDone ? { opacity: 1 } : {}}
             transition={{ duration: 0.8, delay: 0.3 }}
             onClick={onEnter}
-            className="mt-8 text- font-light bg-(--color-bg-primary) px-3 py-2
-              hover:bg-(--color-primary-hover)/50 rounded-(--radius-sm)"
+            className="mt-8 text- font-light bg-(--color-surface) px-3 py-2
+              hover:bg-(--color-surface-hover) rounded-(--radius-sm)"
           >
             进入启动器
           </motion.button>

@@ -1,11 +1,11 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
-use tauri::{AppHandle, Manager, State};
+use tauri::State;
 
 use super::manager::GameManager;
-use super::models::Game;
+use super::models::{Game, GameFolder};
+use super::state::GameState;
 use crate::app_context::AppContext;
-use crate::config::ConfigManager;
 use crate::modloader::ModLoaderType;
 
 /// 扫描所有已安装的游戏（同时准备全局兜底图标：asset scope 授权 + 兜底图标落盘）
@@ -55,6 +55,16 @@ pub fn rename_game(
     game_manager.rename_game(&game_name, &new_name)
 }
 
+/// 复制游戏（生成同名新实例）
+#[tauri::command]
+pub fn duplicate_game(
+    source_name: String,
+    new_name: String,
+    game_manager: State<'_, GameManager>,
+) -> Result<Game, String> {
+    game_manager.duplicate_game(&source_name, &new_name)
+}
+
 /// 更新游戏信息（名称、启用状态等）
 #[tauri::command]
 pub fn update_game(
@@ -96,13 +106,14 @@ pub fn get_game_root(app_context: State<'_, AppContext>) -> String {
 }
 
 /// 切换游戏根目录（校验 + 持久化 + 运行时生效）
+///
+/// 校验通过后调用 `AppContext::set_game_root`（唯一实现：内存切换 + 持久化）。
 #[tauri::command]
 pub fn set_game_root(
     path: String,
     app_context: State<'_, AppContext>,
-    config_manager: State<'_, ConfigManager>,
 ) -> Result<String, String> {
-    let root = std::path::PathBuf::from(&path);
+    let root = PathBuf::from(&path);
     if !root.exists() {
         return Err(format!("路径不存在: {}", path));
     }
@@ -110,7 +121,34 @@ pub fn set_game_root(
         return Err(format!("路径不是目录: {}", path));
     }
 
-    config_manager.set_game_root(&PathBuf::from(path.clone()))?;
+    app_context.set_game_root(root)?;
     app_context.ensure_dirs()?;
     Ok(path)
+}
+
+/// 获取已添加的游戏文件夹列表
+#[tauri::command]
+pub fn get_game_folders(
+    game_state: State<'_, GameState>,
+) -> Result<Vec<GameFolder>, String> {
+    Ok(game_state.get_folders())
+}
+
+/// 添加一个游戏文件夹到列表（名称 + 路径去重；不切换当前根目录）
+#[tauri::command]
+pub fn add_game_folder(
+    path: String,
+    name: String,
+    game_state: State<'_, GameState>,
+) -> Result<Vec<GameFolder>, String> {
+    game_state.add_folder(&path, &name)
+}
+
+/// 从列表中移除一个游戏文件夹（仅移除记录，不删除实际文件）
+#[tauri::command]
+pub fn remove_game_folder(
+    path: String,
+    game_state: State<'_, GameState>,
+) -> Result<Vec<GameFolder>, String> {
+    game_state.remove_folder(&path)
 }

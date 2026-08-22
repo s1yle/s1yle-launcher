@@ -158,7 +158,7 @@ const GameList: React.FC = () => {
       );
     }
 
-    if (filteredGames.length === 0) {
+    if (groupedGames.length === 0) {
       return (
         <EmptyState
           icon="folder"
@@ -170,6 +170,13 @@ const GameList: React.FC = () => {
 
     return (
       <div className="h-full overflow-y-auto scrollbar-hide-x space-y-3 px-5">
+        {/* 以 gameRoot 为 key：切换游戏文件夹时整列整体淡入，避免每个条目各自播退出动画 */}
+        <motion.div
+          key={gameRoot}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.18, ease: 'easeOut' }}
+        >
         {groupedGames.map((group) => (
           <PageSection>
             <div className="max-w-2xl mx-auto space-y-1 bg-(--color-surface) px-3 pb-3 rounded-(--radius-md)">
@@ -187,25 +194,30 @@ const GameList: React.FC = () => {
                   <motion.div
                     key={game.id}
                     layout
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15, ease: 'easeOut' } }}
+                    transition={{ duration: 0.2, ease: 'easeOut' }}
                   >
-                      <GameListItem
-                        className='rounded-r-(--radius-sm)'
-                        game={game}
-                        selected={game.id === selectedGameId}
-                        isFavorite={isFavorite(game.id)}
-                        onSelect={() => handleSelect(game.id)}
-                        onRename={() => { }}
-                        onDelete={() => handleDelete(game.id, game.name)}
-                        onOpenFolder={() => handleOpenFolder(game.path)}
-                        onSettings={() => safeNavigate(`/game-manage/${game.id}/game-settings`)}
-                        onFavorite={() => toggleFavorite(game.id)}
-                      />
-                    </motion.div>
+                    <GameListItem
+                      className='rounded-r-(--radius-sm)'
+                      game={game}
+                      selected={game.id === selectedGameId}
+                      isFavorite={isFavorite(game.id)}
+                      onSelect={() => handleSelect(game.id)}
+                      onRename={() => { }}
+                      onDelete={() => handleDelete(game.id, game.name)}
+                      onOpenFolder={() => handleOpenFolder(game.path)}
+                      onSettings={() => safeNavigate(`/game-manage/${game.id}/game-settings`)}
+                      onFavorite={() => toggleFavorite(game.id)}
+                    />
+                  </motion.div>
                 ))}
               </AnimatePresence>
             </div>
           </PageSection>
         ))}
+        </motion.div>
       </div>
     );
   };

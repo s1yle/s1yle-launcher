@@ -2,6 +2,17 @@ use crate::modloader::ModLoaderType;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+/// 游戏文件夹（侧边栏条目）：绝对路径 + 用户自定义名称
+///
+/// `path` 为唯一标识（用于切换根目录 / 移除），`name` 为显示名称（不允许重名）。
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct GameFolder {
+    /// 文件夹绝对路径
+    pub path: String,
+    /// 用户自定义显示名称（侧边栏展示，全局唯一）
+    pub name: String,
+}
+
 /// 版本隔离模式
 ///
 /// 决定依赖库（libraries/assets）的存储方式：

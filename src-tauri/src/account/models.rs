@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
 
-pub use crate::types::AccountType;
+pub use crate::shared::types::AccountType;
 
 /// 登录状态（持久化到 accounts 节的 login_state 字段）
 /// 当前账户由 accounts.current_uuid 单一事实源提供

@@ -1,27 +1,24 @@
-//! Microsoft 账户登录模块
+﻿//! Microsoft 账户登录流程（设备码流）
+//!
+//! 与账户模块合并后，登录相关的类型/网络/OAuth/token 存储均位于本模块同级子模块
+//! （`types.rs` / `oauth.rs` / `xbox.rs` / `uuid.rs` / `token_store.rs`）。
 
-mod oauth;
-#[cfg(test)]
-mod tests;
-pub mod token_store;
-mod types;
-mod uuid;
-mod xbox;
-
-use crate::account::{add_account_to_manager, Account, AccountInfo};
-use crate::microsoft_login::token_store::set_mc_token;
-use crate::types::AccountType;
+use crate::account::manager::add_account_to_manager;
+use crate::account::models::{Account, AccountInfo};
+use crate::account::token_store::set_mc_token;
+use crate::shared::types::AccountType;
 use chrono::Local;
-pub use oauth::{get_devicecode, get_user_authorize};
 use serde::{Deserialize, Serialize};
 use std::future::Future;
-pub use types::*;
-pub use uuid::get_user_uuid;
-pub use xbox::{get_minecraft_access_token, get_xbox_live_validation, get_xsts_validation};
 use tauri::Emitter;
 use tokio_util::sync::CancellationToken;
 
 use tauri::command;
+
+pub use super::oauth::{get_devicecode, get_user_authorize};
+pub use super::types::*;
+pub use super::uuid::get_user_uuid;
+pub use super::xbox::{get_minecraft_access_token, get_xbox_live_validation, get_xsts_validation};
 
 const CLIENT_ID: &str = "07e2e2dd-ee1f-4a8f-a09a-1325ba9ff0cd";
 
@@ -131,7 +128,7 @@ where
 
 /// 完成 Microsoft 登录全流程
 /// 轮询授权 + Xbox Live / XSTS / Minecraft 认证 + UUID 获取 + 凭据存储 + 账户入库
-/// 全程在 Rust 端完成，不向前端暴露任何 Token 敏感信息；
+/// 全程在 Rust 端完成，不向前端暴露任何 Token 敏感信息
 /// 任何步骤均可被取消，取消后流程立即终止且不会产生账户
 #[command]
 pub async fn poll_and_complete_login(app: tauri::AppHandle) -> Result<AccountInfo, String> {
@@ -213,7 +210,7 @@ pub async fn poll_and_complete_login(app: tauri::AppHandle) -> Result<AccountInf
     println!("[poll_and_complete_login] 存储凭据到系统密钥环...");
     emit_progress(&app, "storing", "正在保存登录凭据...");
     if let Err(e) = set_mc_token(&app, &mc) {
-        println!("[poll_and_complete_login] set_mc_token 失败（不阻断）: {}", e);
+        println!("[poll_and_complete_login] set_mc_token 失败（不阻断） {}", e);
     }
 
     println!("[poll_and_complete_login] 创建账户...");
@@ -230,7 +227,7 @@ pub async fn poll_and_complete_login(app: tauri::AppHandle) -> Result<AccountInf
         access_token: Some(token.access_token.clone()),
         refresh_token: Some(token.refresh_token.clone()),
     };
-    add_account_to_manager(Some(account))?;
+    add_account_to_manager(&app, Some(account))?;
 
     SESSION.lock().await.status = LoginStatus::Done;
     emit_progress(&app, "done", "登录完成");

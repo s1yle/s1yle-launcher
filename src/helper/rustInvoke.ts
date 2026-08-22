@@ -69,6 +69,8 @@ export const createGame = __.invokeCreateGame;
 export const deleteGame = __.invokeDeleteGame;
 /** 重命名游戏 */
 export const renameGame = __.invokeRenameGame;
+/** 复制游戏 */
+export const duplicateGame = __.invokeDuplicateGame;
 /** 更新游戏信息 */
 export const updateGame = __.invokeUpdateGame;
 /** 校验游戏完整性 （基于版本 JSON，deep 时对资源做 SHA1 全量校验） */
@@ -90,6 +92,14 @@ export const selectBackgroundImage = __.invokeSelectBackgroundImage;
 
 /** 获取当前游戏根目录 */
 export const getGameRoot = __.invokeGetGameRoot;
+/** 切换游戏根目录 */
+export const setGameRoot = __.invokeSetGameRoot;
+/** 获取游戏文件夹列表 */
+export const getGameFolders = __.invokeGetGameFolders;
+/** 添加游戏文件夹（保存到列表） */
+export const addGameFolder = __.invokeAddGameFolder;
+/** 移除游戏文件夹（仅移除记录） */
+export const removeGameFolder = __.invokeRemoveGameFolder;
 
 /** 保存登录状态 */
 export const saveLoginState = __.invokeSaveLoginState;

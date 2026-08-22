@@ -86,10 +86,11 @@ const AccountDetail = () => {
 
   if (!account) {
     return (
-      <Page className="p-6">
+      <Page>
         <EmptyState
           title="在侧边栏选择一个账户，或添加一个新账户"
           action={{ label: "添加账户", onClick: () => openAddPopup() }}
+          className="p-6"
         />
 
         <AddAccountPopup

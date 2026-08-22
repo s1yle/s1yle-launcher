@@ -1,9 +1,11 @@
-use crate::{
-    APP_HANDLE,
-    config::{ConfigManager, WindowPosition, window_check},
-};
+mod commands;
+pub mod models;
+pub mod store;
+pub use commands::*;
+
+use crate::app_context::AppContext;
 use tauri::{
-    Manager, State, WebviewWindowBuilder,
+    Manager, WebviewWindowBuilder,
     utils::config::WindowEffectsConfig,
     webview::{Color, PageLoadPayload},
     window::EffectState,
@@ -28,12 +30,8 @@ impl WindowType {
 pub fn apply_window_config<'a>(
     builder: WebviewWindowBuilder<'a, tauri::Wry, tauri::AppHandle>,
     window_type: WindowType,
+    ctx: &AppContext,
 ) -> Result<WebviewWindowBuilder<'a, tauri::Wry, tauri::AppHandle>, String> {
-    let cm = APP_HANDLE
-        .get()
-        .ok_or("APP_HANDLE 获取失败")?
-        .state::<ConfigManager>();
-
     let mut builder = builder
         .title(window_type.title())
         .visible(false)
@@ -54,12 +52,10 @@ pub fn apply_window_config<'a>(
                 .inner_size(1200.0, 800.0)
                 .min_inner_size(800.0, 600.0);
 
-            if let Ok(main_pos) = load_window_position_by_label("main".to_string(), cm) {
-                if let Some(pos) = main_pos {
-                    builder = builder
-                        .position(pos.x.into(), pos.y.into())
-                        .inner_size(pos.width.into(), pos.height.into());
-                }
+            if let Some(pos) = store::load_position(&ctx.launcher_config_path(), "main") {
+                builder = builder
+                    .position(pos.x.into(), pos.y.into())
+                    .inner_size(pos.width.into(), pos.height.into());
             }
 
             builder
@@ -100,9 +96,10 @@ pub fn create_and_show_window<F>(
 where
     F: Fn(tauri::WebviewWindow, PageLoadPayload<'_>) + Send + Sync + 'static,
 {
+    let ctx = app.state::<AppContext>();
     let builder = WebviewWindowBuilder::new(app, label, url);
 
-    let window = apply_window_config(builder, window_type)?
+    let window = apply_window_config(builder, window_type, ctx.inner())?
         .on_page_load(move |window, payload| {
             on_page_loaded(window.clone(), payload);
         })
@@ -112,86 +109,19 @@ where
     Ok(window)
 }
 
-/// 保存窗口位置和大小信息（向后兼容，默认保存到 main）
-#[tauri::command]
-pub fn save_window_position(
-    x: i32,
-    y: i32,
-    width: u32,
-    height: u32,
-    maximized: bool,
-    cm: State<'_, ConfigManager>,
-) -> Result<(), String> {
-    let mut position = WindowPosition {
-        x,
-        y,
-        width,
-        height,
-        maximized,
-    };
-
-    window_check(&mut position);
-
-    cm.update_window_pos_by_label("main", position)
-}
-
-/// 加载上次保存的窗口位置（向后兼容，默认加载 main）
-#[tauri::command]
-pub fn load_window_position(
-    cm: State<'_, ConfigManager>,
-) -> Result<Option<WindowPosition>, String> {
-    cm.get_window_pos_by_label("main")
-}
-
-/// 保存指定窗口的位置和大小
-#[tauri::command]
-pub fn save_window_position_by_label(
-    label: String,
-    x: i32,
-    y: i32,
-    width: u32,
-    height: u32,
-    maximized: bool,
-    cm: State<'_, ConfigManager>,
-) -> Result<(), String> {
-    let mut position = WindowPosition {
-        x,
-        y,
-        width,
-        height,
-        maximized,
-    };
-
-    window_check(&mut position);
-
-    cm.update_window_pos_by_label(&label, position)
-}
-
-/// 加载指定窗口的位置
-#[tauri::command]
-pub fn load_window_position_by_label(
-    label: String,
-    cm: State<'_, ConfigManager>,
-) -> Result<Option<WindowPosition>, String> {
-    cm.get_window_pos_by_label(&label)
-}
-
 /// 应用主窗口的保存状态（位置/尺寸/最大化）
-pub fn restore_main_window_state(window: &tauri::WebviewWindow) {
-    if let Some(app) = APP_HANDLE.get() {
-        let cm = app.state::<ConfigManager>();
-        if let Ok(Some(pos)) = cm.get_window_pos_by_label("main") {
-            if pos.maximized {
-                let _ = window.maximize();
-            } else {
-                let _ = window.set_position(tauri::Position::Physical(
-                    tauri::PhysicalPosition { x: pos.x, y: pos.y },
-                ));
-                let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
-                    width: pos.width,
-                    height: pos.height,
-                }));
-            }
+pub fn restore_main_window_state(window: &tauri::WebviewWindow, ctx: &AppContext) {
+    if let Some(pos) = store::load_position(&ctx.launcher_config_path(), "main") {
+        if pos.maximized {
+            let _ = window.maximize();
+        } else {
+            let _ = window.set_position(tauri::Position::Physical(
+                tauri::PhysicalPosition { x: pos.x, y: pos.y },
+            ));
+            let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
+                width: pos.width,
+                height: pos.height,
+            }));
         }
     }
 }

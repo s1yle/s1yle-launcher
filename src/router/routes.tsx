@@ -5,7 +5,8 @@ import {
   FolderOpen,
   Gamepad2,
   Package,
-  FolderTree,
+  Folder,
+  FolderPlus,
   RefreshCw,
   Sparkles,
   Puzzle,
@@ -18,14 +19,17 @@ import {
   UserPlus,
   SlidersHorizontal,
 } from 'lucide-react';
-import { LayoutMode, RouteConfig, SidebarGroup, SidebarType } from "./models";
+import { LayoutMode, RouteConfig, SidebarGroup, SidebarType, type SidebarMenuItem } from "./models";
 import { UserRole } from '@/stores/userRoleStore';
 import GameManageButton from '@/components/common/sidebar/renderer/GameManageButton';
 import BlockIcon from '@/components/common/BlockIcon';
+import { SkinAvatar } from '@/components/common';
 import { UI_BLOCK_ICONS } from '@/utils/iconFactory';
-import { handleRefreshGames } from './actionHandler';
+import { handleRefreshGames, handleAddGameFolder, handleSelectGameFolder } from './actionHandler';
 import { useGameStore } from '@/stores/gameStore';
 import { useAuthStore } from '@/stores/authStore';
+import { useAccountSelectionStore } from '@/stores/accountSelectionStore';
+import { useSidebarStore } from '@/stores/sidebarStore';
 import { useDownloadStore } from '@/stores/downloadStore';
 import { refreshAll } from '@/stores/refreshStore';
 import { getGameSettings, getGlobalGameSettings, scanJavaInstallations } from '@/helper/rustInvoke';
@@ -103,6 +107,34 @@ export const routes: RouteConfig[] = [
     menu: {
       id: 'account-list',
       icon: <BlockIcon src={UI_BLOCK_ICONS.account} />,
+    },
+    sidebarPlacement: 'replace',
+    sidebarProvider: () => {
+      const { accounts, currentAccount } = useAuthStore.getState();
+      const items: SidebarMenuItem[] = accounts.map(acc => ({
+        id: `account-${acc.uuid}`,
+        type: 'action' as const,
+        title: acc.name,
+        titleI18nKey: '',
+        icon: <SkinAvatar uuid={acc.uuid} size={20} />,
+        active: acc.uuid === currentAccount?.uuid,
+        action: () => {
+          useAccountSelectionStore.getState().selectAccount(acc.uuid);
+          useSidebarStore.getState().setActiveItem(`account-${acc.uuid}`);
+          useAuthStore.getState().setCurrentAccount(acc.uuid).catch(() => {});
+        },
+        group: SidebarGroup.ACCOUNT,
+      }));
+      items.push({
+        id: 'add-account-btn',
+        type: 'action' as const,
+        title: '添加账户',
+        titleI18nKey: '',
+        icon: <UserPlus className="w-4 h-4" />,
+        action: () => useAccountSelectionStore.getState().openAddPopup(),
+        group: SidebarGroup.ACCOUNT,
+      });
+      return items;
     },
   },
   {
@@ -269,12 +301,12 @@ export const routes: RouteConfig[] = [
           group: SidebarGroup.GAME
         },
         {
-          id: 'install-modpack',
+          id: 'add-game-folder',
           type: 'action',
-          title: '导入整合包',
-          titleI18nKey: 'games.installModpack',
-          icon: <Package className="w-4 h-4" />,
-          path: '/game-list',
+          title: '添加文件夹',
+          titleI18nKey: 'games.addGameFolder',
+          icon: <FolderPlus className="w-4 h-4" />,
+          action: handleAddGameFolder,
           group: SidebarGroup.GAME
         },
         {
@@ -289,26 +321,24 @@ export const routes: RouteConfig[] = [
         },
       ]
     },
-    children: [
-      {
-        path: '/game-list/game-folder:default',
-        component: DownloadGame,
-        loader: async () => {
-          const store = useDownloadStore.getState();
-          if (store.manifest) return;
-          await store.loadManifest();
+    sidebarPlacement: 'prepend',
+    sidebarProvider: () => {
+      const { gameFolders, gameRoot } = useGameStore.getState();
+      // 保持文件夹原始顺序，不在渲染期重排（选中不应改变顺序）
+      return gameFolders.map((f) => ({
+        id: `game-folder:${f.path}`,
+        type: 'action' as const,
+        title: f.name,
+        titleI18nKey: '',
+        icon: <Folder className="w-4 h-4" />,
+        active: f.path === gameRoot,
+        action: () => {
+          useSidebarStore.getState().setActiveItem(`game-folder:${f.path}`);
+          handleSelectGameFolder(f.path);
         },
-        header: { type: SidebarType.SECONDARY, title: '游戏目录', titleI18nKey: 'games.gameFolders' },
-        sidebarGroup: SidebarGroup.GAME,
-        parentPath: '/',
-        ownSidebar: true,
-        menu: {
-          id: 'game-folders',
-          path: '/game-list',
-          icon: <FolderTree className="w-4 h-4" />,
-        },
-      },
-    ]
+        group: SidebarGroup.GAME,
+      }));
+    },
   },
   {
     path: '/download',

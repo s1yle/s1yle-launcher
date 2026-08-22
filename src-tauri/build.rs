@@ -130,12 +130,16 @@ fn main() {
             "update_game",
             "get_game_root",
             "set_game_root",
+            "get_game_folders",
+            "add_game_folder",
+            "remove_game_folder",
             "get_game_settings",
             "update_game_settings",
             "get_global_game_settings",
             "update_global_game_settings",
             "validate_game",
             "get_login_state",
+            "get_bootstrap_data",
         ]),
     ))
     .unwrap();

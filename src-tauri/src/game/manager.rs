@@ -138,6 +138,44 @@ impl GameManager {
         Ok(record)
     }
 
+    /// 复制游戏（目录 + 记录），生成同名新实例
+    ///
+    /// 递归复制源游戏目录到新目录，并以源记录为新实例生成独立记录
+    /// （仅更新 `name`，其余版本 / 加载器 / 设置沿用源游戏）。
+    pub fn duplicate_game(
+        &self,
+        source_name: &str,
+        new_name: &str,
+    ) -> Result<Game, String> {
+        validate_name(new_name)?;
+
+        let source = self
+            .get_game(source_name)
+            .ok_or_else(|| format!("游戏不存在: {}", source_name))?;
+
+        let old_dir = self.ctx.game_dir(&source.name);
+        let new_dir = self.ctx.game_dir(new_name);
+        if new_dir.exists() {
+            return Err(format!("游戏 {} 已存在", new_name));
+        }
+
+        copy_dir_all(&old_dir, &new_dir).map_err(|e| format!("复制游戏目录失败: {}", e))?;
+
+        // 移除新目录内残留的源记录文件，避免旧身份污染
+        let old_record_name = self.ctx.record_path(&source.name);
+        if let Some(file_name) = old_record_name.file_name() {
+            let _ = fs::remove_file(new_dir.join(file_name));
+        }
+
+        let mut record = source;
+        record.name = new_name.to_string();
+        self.save_record(&record)?;
+
+        log_info!("游戏已复制：{} -> {}", source_name, new_name);
+        self.get_game(new_name)
+            .ok_or_else(|| "复制游戏后加载失败".to_string())
+    }
+
     // ==================== 游戏记录（原 storage 模块） ====================
 
     /// 加载游戏记录
@@ -211,6 +249,7 @@ impl GameManager {
     // ==================== 版本扫描（原 layout 根级函数） ====================
 
     /// 扫描所有游戏目录，生成游戏列表
+    /// 扫描路径：{game_root}/versions/
     ///
     /// 容错设计：不因记录缺失/损坏/下载中断而丢弃游戏目录——
     /// - 记录存在且合法：直接采用
@@ -305,6 +344,22 @@ fn validate_name(name: &str) -> Result<(), String> {
     }
     if name.contains('/') || name.contains('\\') || name.contains('\0') {
         return Err("游戏名称不能包含路径分隔符".to_string());
+    }
+    Ok(())
+}
+
+/// 递归复制目录（含子目录与文件）
+fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
+    fs::create_dir_all(dst)?;
+    for entry in fs::read_dir(src)? {
+        let entry = entry?;
+        let ty = entry.file_type()?;
+        let target = dst.join(entry.file_name());
+        if ty.is_dir() {
+            copy_dir_all(&entry.path(), &target)?;
+        } else {
+            fs::copy(entry.path(), &target)?;
+        }
     }
     Ok(())
 }

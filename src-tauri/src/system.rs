@@ -1,6 +1,12 @@
 //! 系统级命令（内存、分辨率等跨平台系统信息）
 
+use crate::app_context::AppContext;
+use crate::config_io;
+use crate::log_info;
+use crate::shared::models::{SystemConfig, SystemInfo};
+use serde_json::Value;
 use tauri::AppHandle;
+use tauri::State;
 
 /// 获取系统总内存（MB）
 /// 跨平台实现：Windows / macOS / Linux
@@ -265,6 +271,163 @@ pub fn get_display_resolutions(app: AppHandle) -> Vec<String> {
         let _ = &app;
         Vec::new()
     }
+}
+
+// ==================== 应用配置（.wecraft.json 的 `app` 节） ====================
+
+/// 获取全局配置（app 节反序列化为 SystemConfig）
+#[tauri::command]
+pub fn get_config(ctx: State<'_, AppContext>) -> Result<SystemConfig, String> {
+    Ok(config_io::read_section::<SystemConfig>(&ctx.launcher_config_path(), "app")
+        .unwrap_or_default())
+}
+
+/// 动态写入配置值（支持点号分隔的路径，写入 app 节下的嵌套字段）
+#[tauri::command]
+pub fn set_config_value(
+    ctx: State<'_, AppContext>,
+    key: String,
+    value: Value,
+) -> Result<(), String> {
+    let path = ctx.launcher_config_path();
+    let mut root = config_io::read_raw(&path);
+    if root.get("app").is_none() || !root["app"].is_object() {
+        root["app"] = serde_json::json!({});
+    }
+    set_nested_value(&mut root["app"], &parse_key_path(&key), value)?;
+    config_io::write_raw(&path, &root)
+}
+
+/// 将点号分隔的配置路径拆分为路径段
+fn parse_key_path(key: &str) -> Vec<&str> {
+    key.split('.').collect()
+}
+
+/// 根据路径段设置嵌套 JSON 值（自动创建中间节点）
+fn set_nested_value(value: &mut Value, path: &[&str], new_val: Value) -> Result<(), String> {
+    let mut current = value;
+    let (last, segments) = path.split_last().ok_or("空的配置路径")?;
+
+    for segment in segments {
+        if !current.get(segment).is_some() {
+            current[*segment] = Value::Object(serde_json::Map::new());
+        }
+        if !current[segment].is_object() {
+            return Err(format!("配置路径不是对象类型：{}", segment));
+        }
+        current = current.get_mut(segment).unwrap();
+    }
+
+    current[last] = new_val;
+    Ok(())
+}
+
+// ==================== 系统信息 ====================
+
+/// 计算系统信息（操作系统 / 架构 / 启动器数据目录）
+pub fn system_info(ctx: &AppContext) -> SystemInfo {
+    let os = if cfg!(target_os = "windows") {
+        "windows"
+    } else if cfg!(target_os = "macos") {
+        "macos"
+    } else if cfg!(target_os = "linux") {
+        "linux"
+    } else {
+        "unknown"
+    };
+
+    let arch = if cfg!(target_arch = "x86") {
+        "x86"
+    } else if cfg!(target_arch = "x86_64") {
+        "x64"
+    } else if cfg!(target_arch = "arm") {
+        "arm"
+    } else if cfg!(target_arch = "aarch64") {
+        "aarch64"
+    } else {
+        "unknown"
+    };
+
+    let wecraft_dir = ctx.wecraft_data_dir().to_string_lossy().to_string();
+
+    SystemInfo {
+        os: os.to_string(),
+        arch: arch.to_string(),
+        wecraft_dir,
+    }
+}
+
+/// 获取当前操作系统和架构信息
+#[tauri::command]
+pub fn get_system_info(ctx: State<'_, AppContext>) -> Result<SystemInfo, String> {
+    Ok(system_info(&ctx))
+}
+
+// ==================== 文件 / 磁盘 / 外部打开 ====================
+
+/// 获取指定路径所在磁盘的剩余可用空间（字节）
+#[tauri::command]
+pub fn get_disk_free_space(path: String) -> Result<u64, String> {
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::ffi::OsStrExt;
+        use windows::Win32::Storage::FileSystem::GetDiskFreeSpaceExW;
+
+        let path_u16: Vec<u16> = std::path::Path::new(&path)
+            .as_os_str()
+            .encode_wide()
+            .collect();
+        let mut free_bytes: u64 = 0;
+        let result = unsafe {
+            GetDiskFreeSpaceExW(
+                windows::core::PCWSTR(path_u16.as_ptr()),
+                Some(&mut free_bytes),
+                None,
+                None,
+            )
+        };
+        if result.is_ok() {
+            Ok(free_bytes)
+        } else {
+            Err("获取磁盘剩余空间失败".to_string())
+        }
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        use std::ffi::CString;
+
+        let c_path = CString::new(path).map_err(|e| format!("路径无效: {}", e))?;
+        let mut stat: libc::statvfs = unsafe { std::mem::zeroed() };
+        let ret = unsafe { libc::statvfs(c_path.as_ptr(), &mut stat) };
+        if ret == 0 {
+            let free = (stat.f_frsize as u64).saturating_mul(stat.f_bavail as u64);
+            Ok(free)
+        } else {
+            Err(format!("获取磁盘剩余空间失败 (errno {})", ret))
+        }
+    }
+}
+
+/// 使用系统默认浏览器打开指定 URL
+#[tauri::command]
+pub fn open_url(url: String) -> Result<String, String> {
+    log_info!("打开链接: {}", url);
+    tauri_plugin_opener::open_url(&url, None::<String>)
+        .map_err(|e| format!("打开链接失败: {}", e))?;
+    Ok(url)
+}
+
+/// 使用系统文件管理器打开指定文件夹（目录不存在时先创建，保证浏览子目录可用）
+#[tauri::command]
+pub fn open_folder(path: String) -> Result<String, String> {
+    log_info!("打开文件夹: {}", path);
+    if let Err(e) = std::fs::create_dir_all(&path) {
+        log_info!("创建目录失败（忽略并继续打开）: {}", e);
+    }
+    tauri_plugin_opener::open_path(&path, None::<&str>)
+        .map_err(|e| format!("打开文件夹失败: {}", e))?;
+    Ok(path)
 }
 
 #[test]

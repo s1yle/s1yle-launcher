@@ -13,3 +13,4 @@ export { usePrefersReducedMotion } from './usePrefersReducedMotion';
 export { useGameSettingsForm, formatMemory } from './useGameSettingsForm';
 export { useDeviceCodeLogin } from './useDeviceCodeLogin';
 export { useWindowPosition } from './useWindowPosition';
+export { useSmartSidebar } from './useSmartSidebar';

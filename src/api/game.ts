@@ -28,7 +28,6 @@ export const invokeUpdateGameSettings = async (
   settings: GameSettings,
   options?: InvokeOptions
 ): Promise<Game> => {
-  console.warn(gameName);
   return invokeRust('update_game_settings', { gameName, settings }, options);
 };
 
@@ -174,6 +173,22 @@ export const invokeRenameGame = async (
 };
 
 /**
+ * 复制游戏（生成同名新实例）
+ * @param sourceName 源游戏名称
+ * @param newName 新游戏名称
+ * @param options Tauri invoke 选项
+ * @returns 复制后的新游戏
+ */
+export const invokeDuplicateGame = async (
+  sourceName: string,
+  newName: string,
+  options?: InvokeOptions
+): Promise<Game> => {
+  logger.info('复制游戏', { sourceName, newName });
+  return await invokeRust("duplicate_game", { sourceName, newName }, options);
+};
+
+/**
  * 更新游戏属性
  * @param gameName 游戏名称
  * @param name 新名称（可选）
@@ -217,4 +232,68 @@ export const invokeGetGameRoot = async (
 ): Promise<string> => {
   logger.info('获取游戏根目录');
   return await invokeRust("get_game_root", {}, options);
+};
+
+/**
+ * 切换游戏根目录（校验 + 持久化 + 运行时生效）
+ * @param path 新的游戏根目录绝对路径
+ * @param options Tauri invoke 选项
+ * @returns 实际生效的根目录路径
+ */
+export const invokeSetGameRoot = async (
+  path: string,
+  options?: InvokeOptions
+): Promise<string> => {
+  logger.info('切换游戏根目录', { path });
+  return await invokeRust('set_game_root', { path }, options);
+};
+
+/** 游戏文件夹（侧边栏条目）：路径 + 用户自定义名称 */
+export interface GameFolder {
+  /** 文件夹绝对路径（唯一标识） */
+  path: string;
+  /** 用户自定义显示名称（侧边栏展示，全局唯一） */
+  name: string;
+}
+
+/**
+ * 获取已添加的游戏文件夹列表
+ * @param options Tauri invoke 选项
+ * @returns 游戏文件夹（路径 + 名称）数组
+ */
+export const invokeGetGameFolders = async (
+  options?: InvokeOptions
+): Promise<GameFolder[]> => {
+  logger.info('获取游戏文件夹列表');
+  return await invokeRust('get_game_folders', {}, options);
+};
+
+/**
+ * 添加一个游戏文件夹到列表（名称 + 路径去重；不切换当前根目录）
+ * @param path 游戏文件夹绝对路径
+ * @param name 用户自定义名称
+ * @param options Tauri invoke 选项
+ * @returns 更新后的游戏文件夹（路径 + 名称）数组
+ */
+export const invokeAddGameFolder = async (
+  path: string,
+  name: string,
+  options?: InvokeOptions
+): Promise<GameFolder[]> => {
+  logger.info('添加游戏文件夹', { path, name });
+  return await invokeRust('add_game_folder', { path, name }, options);
+};
+
+/**
+ * 从列表中移除一个游戏文件夹（仅移除记录，不删除实际文件）
+ * @param path 游戏文件夹绝对路径
+ * @param options Tauri invoke 选项
+ * @returns 更新后的游戏文件夹（路径 + 名称）数组
+ */
+export const invokeRemoveGameFolder = async (
+  path: string,
+  options?: InvokeOptions
+): Promise<GameFolder[]> => {
+  logger.info('移除游戏文件夹', { path });
+  return await invokeRust('remove_game_folder', { path }, options);
 };

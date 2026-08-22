@@ -4,7 +4,7 @@ use serde_json::from_str;
 use tauri::AppHandle;
 use tauri_plugin_keyring::{CredentialType, CredentialValue, KeyringExt};
 
-use crate::microsoft_login::MinecraftLoginResponse;
+use super::types::MinecraftLoginResponse;
 
 const MC_TOKEN_KEY: &str = "microsoft_token";
 

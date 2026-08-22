@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import BlockIcon from './BlockIcon';
 import { DURATION, EASING, fadeInUp, microInteractions } from '../../utils/animations';
 import { BLOCK_ICONS } from '@/utils/iconFactory';
+import { PageSection } from './Page';
 
 /** 空状态占位组件 Props */
 export interface EmptyStateProps {
@@ -33,18 +34,21 @@ const EmptyState = ({
   className = '',
 }: EmptyStateProps) => {
   return (
+
     <motion.div
-      className={`flex flex-col items-center justify-center py-12 px-4 text-center ${className}`}
+      className={`flex flex-col items-center justify-center px-4 text-center h-full ${className}`}
       variants={fadeInUp}
       initial="initial"
       animate="animate"
       exit="exit"
     >
-      <div className="mb-4 opacity-50">
-        <BlockIcon src={ICON_SRC[icon]} w={16} h={16} alt={icon} />
-      </div>
+      <PageSection>
+        <div className="mb-4 opacity-80">
+          <BlockIcon src={ICON_SRC[icon]} w={16} h={16} alt={icon} />
+        </div>
+      </PageSection>
       <motion.h3
-        className="text-lg font-medium text-text-secondary mb-2"
+        className="font-light text-(--color-text-secondary) mb-2"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: DURATION.FAST, duration: DURATION.ELEMENT_ENTER, ease: EASING.OUT_FLUENT }}
@@ -64,11 +68,11 @@ const EmptyState = ({
       {action && (
         <motion.button
           onClick={action.onClick}
-          className="px-4 py-2 bg-primary hover:bg-primary-hover text-text-primary text-sm font-medium rounded-lg transition-colors shadow-md"
+          className="px-4 py-1.5 bg-(--color-bg-secondary) hover:bg-(--color-primary-hover)/69
+            text-(--color-text-tertiary) text-sm font-light rounded-(--radius-sm) transition-colors"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: DURATION.SLOW, ...EASING.SPRING }}
-          whileHover={microInteractions.buttonHover}
           whileTap={microInteractions.buttonTap}
         >
           {action.label}

@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useLocation, useNavigate, type NavigateFunction } from 'react-router-dom';
-import { routes, findRouteByPath } from './config';
+import { routes, findRouteByPath, getParentPath } from './config';
 import { useNavStore } from '../stores/navStore';
 import { useGameStore } from '../stores/gameStore';
 import { usePageLifecycleStore } from '../stores/pageLifecycleStore';
@@ -85,6 +85,9 @@ export function safeNavigate(
     );
   }
 
+  // 记录导航历史（replace 时替换栈顶，否则入栈），供返回按钮回退到上次访问的路径
+  useNavStore.getState().recordNavigation(target, options?.replace);
+
   navigate(target, { replace: options?.replace });
   return true;
 }
@@ -108,3 +111,55 @@ export function useSafeNavigate() {
     [navigate, location.pathname],
   );
 }
+
+/**
+ * 跳过“重定向型”路由：若路径对应路由没有 component 但有子路由（会自动跳转到首个子路由），
+ * 继续向上取父路径，避免返回时落到一个会立即再次重定向的容器页（防止死循环）。
+ */
+const skipRedirectors = (path: string): string => {
+  let cur = path;
+  for (let i = 0; i < 10; i++) {
+    const route = findRouteByPath(cur, routes);
+    if (route && !route.component && route.children?.length) {
+      cur = getParentPath(cur);
+    } else {
+      break;
+    }
+  }
+  return cur;
+};
+
+/** 判断两条路径是否为同级页面（拥有相同的 parentPath） */
+const sameParentPath = (a: string, b: string): boolean => {
+  const pa = findRouteByPath(a, routes)?.parentPath;
+  const pb = findRouteByPath(b, routes)?.parentPath;
+  return pa != null && pb != null && pa === pb;
+};
+
+/**
+ * 返回上一页：优先回退到历史栈中的上一项（上次实际访问的路径），
+ * 历史栈为空时回退到 routes 配置的父路径（parentPath）。
+ *
+ * 同级页面（如设置下的 外观 / 全局游戏设置，或下载下的 游戏下载 / 整合包下载）
+ * 之间不互相回退，直接回到它们共同的上一级，避免“同级之间来回 back”。
+ */
+export function useGoBack() {
+  const navigate = useSafeNavigate();
+
+  return useCallback(() => {
+    const state = useNavStore.getState();
+    const current = state.history[state.history.length - 1] ?? '/';
+    const popped = state.popHistory();
+    let target: string;
+    if (!popped) {
+      target = getParentPath(current);
+    } else if (sameParentPath(popped, current)) {
+      target = getParentPath(current);
+    } else {
+      target = popped;
+    }
+    target = skipRedirectors(target);
+    navigate(target, { replace: true });
+  }, [navigate]);
+}
+

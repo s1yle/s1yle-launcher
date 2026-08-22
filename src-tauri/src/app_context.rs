@@ -18,23 +18,29 @@
 //! ```
 
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
+use tauri::AppHandle;
 
 /// 应用全局上下文（依赖注入容器）
 #[derive(Debug)]
 pub struct AppContext {
     /// 启动器自身的工作目录（用于存放配置、日志等）
     launcher_work_dir: PathBuf,
-    /// 当前游戏根目录（即 .minecraft 所在目录），可运行时切换
-    game_root: Mutex<PathBuf>,
+    /// 当前游戏根目录（即 .minecraft 所在目录），可运行时切换。
+    /// 使用 `Arc<Mutex<…>>`：克隆 AppContext 时各持有者共享同一份根目录，
+    /// 因此 `set_game_root` 对任一克隆生效，scan/download/launch 均读取最新根目录。
+    game_root: Arc<Mutex<PathBuf>>,
+    /// 应用句柄（组合根 setup 阶段注入；测试环境为 None）
+    app_handle: Arc<Mutex<Option<AppHandle>>>,
 }
 
 impl Clone for AppContext {
-    /// 克隆上下文（内部锁值拷贝，各持有者共享同一份游戏根目录）
+    /// 克隆上下文（共享内部 Arc，各持有者引用同一份游戏根目录 / 应用句柄）
     fn clone(&self) -> Self {
         Self {
             launcher_work_dir: self.launcher_work_dir.clone(),
-            game_root: Mutex::new(self.game_root()),
+            game_root: self.game_root.clone(),
+            app_handle: self.app_handle.clone(),
         }
     }
 }
@@ -44,8 +50,19 @@ impl AppContext {
     pub fn new(launcher_work_dir: PathBuf, game_root: PathBuf) -> Self {
         Self {
             launcher_work_dir,
-            game_root: Mutex::new(game_root),
+            game_root: Arc::new(Mutex::new(game_root)),
+            app_handle: Arc::new(Mutex::new(None)),
         }
+    }
+
+    /// 注入应用句柄（仅应在组合根 setup 阶段调用一次）
+    pub fn set_app_handle(&self, app: AppHandle) {
+        *self.app_handle.lock().unwrap() = Some(app);
+    }
+
+    /// 获取应用句柄（测试环境为 None）
+    pub fn app_handle(&self) -> Option<AppHandle> {
+        self.app_handle.lock().unwrap().clone()
     }
 
     // ==================== 目录相关 ====================
@@ -60,9 +77,17 @@ impl AppContext {
         self.game_root.lock().unwrap().clone()
     }
 
-    /// 切换游戏根目录（运行时）
-    pub fn set_game_root(&self, new_root: PathBuf) {
-        *self.game_root.lock().unwrap() = new_root;
+    /// 切换游戏根目录（运行时内存 + 持久化到 .wecraft.json 的 game.game_root）
+    pub fn set_game_root(&self, new_root: PathBuf) -> Result<(), String> {
+        *self.game_root.lock().unwrap() = new_root.clone();
+        // 持久化到 game.game_root（保留同节其他字段）
+        let config_path = self.launcher_config_path();
+        let mut root = crate::config_io::read_raw(&config_path);
+        if root.get("game").is_none() {
+            root["game"] = serde_json::json!({});
+        }
+        root["game"]["game_root"] = serde_json::json!(new_root.to_string_lossy().to_string());
+        crate::config_io::write_raw(&config_path, &root)
     }
 
     // ==================== 游戏根目录相关路径 ====================
@@ -118,6 +143,16 @@ impl AppContext {
     /// libraries 目录：{root}/libraries
     pub fn libraries_dir(&self) -> PathBuf {
         self.game_root().join("libraries")
+    }
+
+    /// 游戏根目录下的内置 Java 运行时目录：{root}/runtime
+    pub fn game_runtime_dir(&self) -> PathBuf {
+        self.game_root().join("runtime")
+    }
+
+    /// 启动器工作目录下的内置 Java 运行时目录：{work_dir}/runtime
+    pub fn launcher_runtime_dir(&self) -> PathBuf {
+        self.launcher_work_dir.join("runtime")
     }
 
     // ==================== 启动器工作目录相关 ====================
@@ -205,7 +240,7 @@ mod tests {
     #[test]
     fn set_game_root_switches_paths() {
         let c = ctx();
-        c.set_game_root(PathBuf::from("/tmp/other-root"));
+        c.set_game_root(PathBuf::from("/tmp/other-root")).unwrap();
         assert_eq!(c.game_root(), PathBuf::from("/tmp/other-root"));
     }
 }

@@ -126,7 +126,7 @@ const AppearanceSettings = () => {
   const currentFitOption = IMAGE_FIT_OPTIONS.find((o) => o.id === (config.imageFit || 'cover'));
 
   return (
-    <Page className="p-6 max-w-5xl mx-auto">
+    <Page className="overflow-y-auto p-6 max-w-5xl mx-auto">
       <PageSection>
         <SettingsPanel label="布局">
           <PageSection>
@@ -219,17 +219,15 @@ const AppearanceSettings = () => {
 
       <Reveal>
         <SettingsPanel label="无障碍">
-          <SettingsPanel.Item>
             <Toggle
               checked={highContrast}
               onChange={setHighContrast}
               label="高对比度模式"
               description="独立于系统反转，提供更高对比度的界面"
               disabled={false}
+              
             />
-          </SettingsPanel.Item>
 
-          <SettingsPanel.Item>
             <Toggle
               checked={photosensitive}
               onChange={setPhotosensitive}
@@ -237,7 +235,6 @@ const AppearanceSettings = () => {
               description="纯黑背景 + 无动画 + 高对比度文本，降低亮度与闪烁刺激"
               disabled={false}
             />
-          </SettingsPanel.Item>
         </SettingsPanel>
       </Reveal>
 

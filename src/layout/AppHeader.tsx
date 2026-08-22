@@ -32,7 +32,6 @@ const IslandHeader = ({ handleMenuClick }: { handleMenuClick: (path: string) => 
       "
       data-tauri-drag-region="true"
     >
-      <div className="absolute inset-0" data-tauri-drag-region />
     </div>
   </>
 );

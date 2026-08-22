@@ -45,7 +45,7 @@ export function Page({ children, className }: PageProps) {
         initial={enabled ? 'initial' : false}
         animate={enabled ? 'animate' : false}
         exit={enabled ? 'exit' : undefined}
-        className={className}
+        className={`${className} h-full`}
       >
         {children}
       </motion.div>

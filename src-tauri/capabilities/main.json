@@ -176,6 +176,10 @@
     "allow-validate-game",
     "allow-get-global-game-settings",
     "allow-update-global-game-settings",
-    "allow-get-login-state"
+    "allow-get-login-state",
+    "allow-add-game-folder",
+    "allow-get-game-folders",
+    "allow-remove-game-folder",
+    "allow-get-bootstrap-data"
   ]
 }

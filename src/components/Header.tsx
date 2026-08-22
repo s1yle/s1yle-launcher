@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Minus, X } from 'lucide-react';
 import { IconButton, BrandLogo, useNotification, getErrorMessage } from './common';
 import { getParentPath } from '../router/config';
-import { useSafeNavigate } from '../router/navigation';
+import { useSafeNavigate, useGoBack } from '../router/navigation';
 import { EASING } from '../utils/animations';
 
 interface HeaderProps {
@@ -25,10 +25,12 @@ const Header = ({ type, title, onBack }: HeaderProps) => {
 
   let location: ReturnType<typeof useLocation> | null = null;
   let safeNavigate: ReturnType<typeof useSafeNavigate> | null = null;
+  let goBack: ReturnType<typeof useGoBack> | null = null;
 
   try {
     location = useLocation();
     safeNavigate = useSafeNavigate();
+    goBack = useGoBack();
   } catch {
     // Outside <Router> — skip router hooks
   }
@@ -56,6 +58,10 @@ const Header = ({ type, title, onBack }: HeaderProps) => {
       onBack();
       return;
     }
+    if (goBack) {
+      goBack();
+      return;
+    }
     if (location && safeNavigate) {
       safeNavigate(getParentPath(location.pathname));
     }
@@ -65,7 +71,7 @@ const Header = ({ type, title, onBack }: HeaderProps) => {
     <header
       id='title-bar'
       className="bg-primary text-text-primary h-16 
-          flex items-center justify-between px-3 z-31
+          flex items-center justify-between px-3 z-1000
       "
       data-tauri-drag-region="true"
     >
